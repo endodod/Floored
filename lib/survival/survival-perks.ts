@@ -1,4 +1,3 @@
-import type { CoinSide } from '@/games/coin-flip/types'
 import type { GameName, PurchasedUpgrade } from '@/store/types'
 import { getCatalogItem, normalizeUpgradeId } from './upgrades-catalog'
 import { RAW_PAYOUT_MULT_CAP } from './balance'
@@ -107,52 +106,7 @@ export function getCoinBiasChance(purchasedUpgrades: PurchasedUpgrade[], game: G
   return COIN_BIAS_CHANCE_BY_LEVEL[level] ?? 0.55
 }
 
-export function hiloNextCardRange(deck: { value: number }[]): { min: number; max: number } | null {
-  if (deck.length === 0) return null
-  const values = deck.map((c) => c.value)
-  return { min: Math.min(...values), max: Math.max(...values) }
-}
-
-export function pickChickenScoutEliminate(winnerId: number, chickenCount = 4): number {
-  const others: number[] = []
-  for (let i = 0; i < chickenCount; i++) {
-    if (i !== winnerId) others.push(i)
-  }
-  return others[Math.floor(Math.random() * others.length)]!
-}
-
 /** Returns the fraction of the bet recovered when crash happens below 3×. */
 export function getCrashCushion(level = 1): number {
   return CRASH_CUSHION_BY_LEVEL[Math.max(1, Math.min(5, level)) - 1] ?? 0.25
-}
-
-export function findFirstSafeMineTile(tiles: { id: number; hasMine: boolean; revealed: boolean }[]): number | null {
-  const safe = tiles.find((t) => !t.hasMine && !t.revealed)
-  return safe?.id ?? null
-}
-
-export function rouletteEliminatedNumbers(winningNumber: number, count = 3): number[] {
-  const pool: number[] = []
-  for (let n = 0; n <= 36; n++) {
-    if (n !== winningNumber) pool.push(n)
-  }
-  const out: number[] = []
-  while (out.length < count && pool.length > 0) {
-    const idx = Math.floor(Math.random() * pool.length)
-    out.push(pool.splice(idx, 1)[0]!)
-  }
-  return out
-}
-
-export function streetCupsEliminatedCup(winningSlot: number): number {
-  const wrong = [0, 1, 2].filter((s) => s !== winningSlot)
-  return wrong[Math.floor(Math.random() * wrong.length)]!
-}
-
-export function kenoHeatNumbers(draw: number[], count = 2): number[] {
-  return draw.slice(0, count)
-}
-
-export function biasedCoinResult(playerPick: CoinSide, winChance = 0.55): CoinSide {
-  return Math.random() < winChance ? playerPick : playerPick === 'heads' ? 'tails' : 'heads'
 }

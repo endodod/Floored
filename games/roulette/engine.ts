@@ -163,3 +163,16 @@ export function loseGame(target: string, amount: number): RouletteState {
   const result = losers[Math.floor(Math.random() * losers.length)] ?? 1
   return settleRouletteSpin({ [target]: amount }, result)
 }
+
+export function rouletteEliminatedNumbers(winningNumber: number, count = 3): number[] {
+  const pool: number[] = []
+  for (let n = 0; n <= 36; n++) {
+    if (n !== winningNumber) pool.push(n)
+  }
+  const out: number[] = []
+  while (out.length < count && pool.length > 0) {
+    const idx = Math.floor(Math.random() * pool.length)
+    out.push(pool.splice(idx, 1)[0]!)
+  }
+  return out
+}

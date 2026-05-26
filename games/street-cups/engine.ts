@@ -85,3 +85,8 @@ export function loseGame(state: StreetCupsState, pickedSlot: number): StreetCups
     message: 'Wrong cup!',
   }
 }
+
+export function streetCupsEliminatedCup(winningSlot: number): number {
+  const wrong = [0, 1, 2].filter((s) => s !== winningSlot)
+  return wrong[Math.floor(Math.random() * wrong.length)]!
+}

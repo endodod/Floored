@@ -1,0 +1,787 @@
+{
+  "C:\\Users\\giova\\VsProjects\\Floored\\.eslintrc.json": {
+    "mtime": 1779176075.9771235,
+    "ast_hash": "f09740d526f714b8a04de7631b2e9c50",
+    "semantic_hash": "f09740d526f714b8a04de7631b2e9c50"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components.json": {
+    "mtime": 1779176076.0443006,
+    "ast_hash": "37a29c9df34954b404ce3681cbfc941b",
+    "semantic_hash": "37a29c9df34954b404ce3681cbfc941b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\next.config.mjs": {
+    "mtime": 1779276013.4546158,
+    "ast_hash": "2706a2ff7f256f6eb58fca6faeadd73a",
+    "semantic_hash": "2706a2ff7f256f6eb58fca6faeadd73a"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\package.json": {
+    "mtime": 1779277407.8143876,
+    "ast_hash": "0a57527cf8de74818a5485b9fea78934",
+    "semantic_hash": "0a57527cf8de74818a5485b9fea78934"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\postcss.config.mjs": {
+    "mtime": 1779176076.13827,
+    "ast_hash": "3507368dae6e94b0070b0a10efa15a05",
+    "semantic_hash": "3507368dae6e94b0070b0a10efa15a05"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\tailwind.config.ts": {
+    "mtime": 1779176076.1473014,
+    "ast_hash": "8bc140b7c078920233f3eb407057c42f",
+    "semantic_hash": "8bc140b7c078920233f3eb407057c42f"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\tsconfig.json": {
+    "mtime": 1779277430.7043576,
+    "ast_hash": "1afa98b1947286ac37c30222cbf20e13",
+    "semantic_hash": "1afa98b1947286ac37c30222cbf20e13"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\.claude\\settings.local.json": {
+    "mtime": 1779356754.3235257,
+    "ast_hash": "27211c5f1535d63b353ef252bdfbf042",
+    "semantic_hash": "27211c5f1535d63b353ef252bdfbf042"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\layout.tsx": {
+    "mtime": 1779352390.4468403,
+    "ast_hash": "8d64b3fd777bc8758ab90dde9acfdd86",
+    "semantic_hash": "8d64b3fd777bc8758ab90dde9acfdd86"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\page.tsx": {
+    "mtime": 1779176076.0170074,
+    "ast_hash": "b34003f5d3b2a47323536ed639209c09",
+    "semantic_hash": "b34003f5d3b2a47323536ed639209c09"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\freeplay\\layout.tsx": {
+    "mtime": 1779217364.163489,
+    "ast_hash": "54802a3909945d8b0fe6b975e1c28746",
+    "semantic_hash": "54802a3909945d8b0fe6b975e1c28746"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\freeplay\\loading.tsx": {
+    "mtime": 1779217364.164497,
+    "ast_hash": "c7603991262cade6892f760ae549b784",
+    "semantic_hash": "c7603991262cade6892f760ae549b784"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\freeplay\\page.tsx": {
+    "mtime": 1779176076.0039146,
+    "ast_hash": "3b5168ff01c67713f02a04cb90ca7cbc",
+    "semantic_hash": "3b5168ff01c67713f02a04cb90ca7cbc"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\freeplay\\[game]\\page.tsx": {
+    "mtime": 1779354863.237279,
+    "ast_hash": "8ad092bb297f54992bc6bbda9e5d1ed7",
+    "semantic_hash": "8ad092bb297f54992bc6bbda9e5d1ed7"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\survival\\layout.tsx": {
+    "mtime": 1779217364.166493,
+    "ast_hash": "aa20ec9e435a765decc27a0c7ad447b9",
+    "semantic_hash": "aa20ec9e435a765decc27a0c7ad447b9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\survival\\loading.tsx": {
+    "mtime": 1779217364.16749,
+    "ast_hash": "061b2fea0e3c60c78362da77a08b56fd",
+    "semantic_hash": "061b2fea0e3c60c78362da77a08b56fd"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\survival\\page.tsx": {
+    "mtime": 1779352390.4468403,
+    "ast_hash": "b2743b9559ee76162847a1d8c020fdeb",
+    "semantic_hash": "b2743b9559ee76162847a1d8c020fdeb"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\survival\\[game]\\page.tsx": {
+    "mtime": 1779354869.00823,
+    "ast_hash": "b25691ce89363f89d75a41dfda3bb7fb",
+    "semantic_hash": "b25691ce89363f89d75a41dfda3bb7fb"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\bankrupt-modal.tsx": {
+    "mtime": 1779176076.046287,
+    "ast_hash": "4acbe27f14653d182b2bd18ae56f4a95",
+    "semantic_hash": "4acbe27f14653d182b2bd18ae56f4a95"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\bet-panel.tsx": {
+    "mtime": 1779176076.046287,
+    "ast_hash": "c9f949922bae8ae97a4c87e583971ca6",
+    "semantic_hash": "c9f949922bae8ae97a4c87e583971ca6"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\difficulty-dialog.tsx": {
+    "mtime": 1779270642.9579246,
+    "ast_hash": "802d384b2feafb825af203987ffef3e9",
+    "semantic_hash": "802d384b2feafb825af203987ffef3e9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\floor-panel.tsx": {
+    "mtime": 1779356478.2161155,
+    "ast_hash": "36d58280f724d7faa5919fdffc210afd",
+    "semantic_hash": "36d58280f724d7faa5919fdffc210afd"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\game-dock-parts.tsx": {
+    "mtime": 1779352390.4521034,
+    "ast_hash": "e35ebc2b1617d5c2898cc28ecdb53857",
+    "semantic_hash": "e35ebc2b1617d5c2898cc28ecdb53857"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\game-dock-random-quote.tsx": {
+    "mtime": 1779176076.0604196,
+    "ast_hash": "ccb0725aca01ef4df01026863cc448d7",
+    "semantic_hash": "ccb0725aca01ef4df01026863cc448d7"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\game-history-utils.ts": {
+    "mtime": 1779176076.0604196,
+    "ast_hash": "beb2708b6fa0fe97307a591a5baf4466",
+    "semantic_hash": "beb2708b6fa0fe97307a591a5baf4466"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\game-layout.ts": {
+    "mtime": 1779270642.9604254,
+    "ast_hash": "5d5a1ab99d22ef97e7cccb8238f6f570",
+    "semantic_hash": "5d5a1ab99d22ef97e7cccb8238f6f570"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\game-match-history.tsx": {
+    "mtime": 1779279997.7170973,
+    "ast_hash": "fac21a58b9b086bbc08e4ba1bc5799e2",
+    "semantic_hash": "fac21a58b9b086bbc08e4ba1bc5799e2"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\game-outcome-toast.tsx": {
+    "mtime": 1779176076.062419,
+    "ast_hash": "e3bb5b593adaf4d9591a953b6dacced6",
+    "semantic_hash": "e3bb5b593adaf4d9591a953b6dacced6"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\lobby.tsx": {
+    "mtime": 1779352390.4541023,
+    "ast_hash": "593ea014b8e7facc63615cd7fba8ec81",
+    "semantic_hash": "593ea014b8e7facc63615cd7fba8ec81"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\mode-select.tsx": {
+    "mtime": 1779356147.7988677,
+    "ast_hash": "fc5874c6365f04e43d0af243a24a6ad5",
+    "semantic_hash": "fc5874c6365f04e43d0af243a24a6ad5"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\navbar.tsx": {
+    "mtime": 1779356141.8647282,
+    "ast_hash": "a17c232cd96814faa5a6b8abba0253de",
+    "semantic_hash": "a17c232cd96814faa5a6b8abba0253de"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\plinko-board.tsx": {
+    "mtime": 1779270642.965432,
+    "ast_hash": "7698ebde6c5105ac4462c6e5e920f297",
+    "semantic_hash": "7698ebde6c5105ac4462c6e5e920f297"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\run-summary.tsx": {
+    "mtime": 1779184292.0562544,
+    "ast_hash": "d0c4c219ede273fb429bc6b8a2b1a540",
+    "semantic_hash": "d0c4c219ede273fb429bc6b8a2b1a540"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\blackjack\\card.tsx": {
+    "mtime": 1779354440.389369,
+    "ast_hash": "cf2e547649da22573acb7c81656e82cb",
+    "semantic_hash": "cf2e547649da22573acb7c81656e82cb"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\blackjack\\game.tsx": {
+    "mtime": 1779355231.0736077,
+    "ast_hash": "edb386a857e374a5d12a9c193217c63b",
+    "semantic_hash": "edb386a857e374a5d12a9c193217c63b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\case-battles\\game.tsx": {
+    "mtime": 1779356710.7713346,
+    "ast_hash": "7fef2204249039ec9674cce2e0da5ebc",
+    "semantic_hash": "7fef2204249039ec9674cce2e0da5ebc"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\chicken-race\\game.tsx": {
+    "mtime": 1779354325.1565588,
+    "ast_hash": "2f3413d4ff638d8d436316ab8998f4a1",
+    "semantic_hash": "2f3413d4ff638d8d436316ab8998f4a1"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\chicken-road\\game.tsx": {
+    "mtime": 1779352390.4488385,
+    "ast_hash": "ef6030922cf8466f1b7d89d7a8e6dcdc",
+    "semantic_hash": "ef6030922cf8466f1b7d89d7a8e6dcdc"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\coin-flip\\game.tsx": {
+    "mtime": 1779352390.4498458,
+    "ast_hash": "75fd4bf7c61401506cfb64749977139c",
+    "semantic_hash": "75fd4bf7c61401506cfb64749977139c"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\crash\\game.tsx": {
+    "mtime": 1779354324.1302464,
+    "ast_hash": "2fc18f40dbb23471a582fd04e8dd82c6",
+    "semantic_hash": "2fc18f40dbb23471a582fd04e8dd82c6"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\dragon-tower\\game.tsx": {
+    "mtime": 1779352390.4510958,
+    "ast_hash": "026f1dc36852c9051d4f4700091017e5",
+    "semantic_hash": "026f1dc36852c9051d4f4700091017e5"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\hilo\\game.tsx": {
+    "mtime": 1779352390.453104,
+    "ast_hash": "3b0bfd9e6d4fedae6af0ad797b4bd5bc",
+    "semantic_hash": "3b0bfd9e6d4fedae6af0ad797b4bd5bc"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\keno\\game.tsx": {
+    "mtime": 1779352390.4541023,
+    "ast_hash": "dc81456ba3202b7bc9278d1d0809f122",
+    "semantic_hash": "dc81456ba3202b7bc9278d1d0809f122"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\mines\\game.tsx": {
+    "mtime": 1779352390.4551024,
+    "ast_hash": "444d027c414962943ee0bc9655c73fe4",
+    "semantic_hash": "444d027c414962943ee0bc9655c73fe4"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\over-under\\game.tsx": {
+    "mtime": 1779352390.4561026,
+    "ast_hash": "92f938306962cc9b8462afccdd0ee55d",
+    "semantic_hash": "92f938306962cc9b8462afccdd0ee55d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\plinko\\game.tsx": {
+    "mtime": 1779352390.4571028,
+    "ast_hash": "8e36f876b5170aa461b3eeac3d0e46b9",
+    "semantic_hash": "8e36f876b5170aa461b3eeac3d0e46b9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\poker-1p\\game.tsx": {
+    "mtime": 1779352390.4571028,
+    "ast_hash": "74bb2553b4ca3de2771ff700af697b1a",
+    "semantic_hash": "74bb2553b4ca3de2771ff700af697b1a"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\roulette\\game.tsx": {
+    "mtime": 1779352390.4581022,
+    "ast_hash": "2d957b530c5d49da0200834ad8b920db",
+    "semantic_hash": "2d957b530c5d49da0200834ad8b920db"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\run-dice\\game.tsx": {
+    "mtime": 1779352390.4581022,
+    "ast_hash": "4362a5d9eec09325b22012462f27d8b0",
+    "semantic_hash": "4362a5d9eec09325b22012462f27d8b0"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\slots\\game.tsx": {
+    "mtime": 1779352390.459102,
+    "ast_hash": "0b329db6bbb4c1e681ac1194c301af2b",
+    "semantic_hash": "0b329db6bbb4c1e681ac1194c301af2b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\street-cups\\game.tsx": {
+    "mtime": 1779352390.459102,
+    "ast_hash": "e73a66952e36fd7e4a37757b4d2a8ee5",
+    "semantic_hash": "e73a66952e36fd7e4a37757b4d2a8ee5"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\games\\wheel\\game.tsx": {
+    "mtime": 1779352390.4641006,
+    "ast_hash": "785e7dcd8a28771221297c84be5dcb26",
+    "semantic_hash": "785e7dcd8a28771221297c84be5dcb26"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\active-items-panel.tsx": {
+    "mtime": 1779270642.97312,
+    "ast_hash": "b1fa03fa23134f5532f72747e3435ca1",
+    "semantic_hash": "b1fa03fa23134f5532f72747e3435ca1"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\floor-complete-modal.tsx": {
+    "mtime": 1779352390.460102,
+    "ast_hash": "bb8b1e44eece0a52f430eb72c8aa3dc0",
+    "semantic_hash": "bb8b1e44eece0a52f430eb72c8aa3dc0"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\floor-pause-modal.tsx": {
+    "mtime": 1779352390.460102,
+    "ast_hash": "73f5110bc2fc102544be18e5a8de702d",
+    "semantic_hash": "73f5110bc2fc102544be18e5a8de702d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\mission-panel.tsx": {
+    "mtime": 1779352390.461104,
+    "ast_hash": "e7319ee0effcd7efb7560492a3ea69a4",
+    "semantic_hash": "e7319ee0effcd7efb7560492a3ea69a4"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\perk-hint.tsx": {
+    "mtime": 1779184292.0607686,
+    "ast_hash": "081994c8a5ea59a958f1f21410863970",
+    "semantic_hash": "081994c8a5ea59a958f1f21410863970"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\survival-defeat-modal.tsx": {
+    "mtime": 1779352390.461104,
+    "ast_hash": "da6e43e41d9e384b3b44b3a69c9ac767",
+    "semantic_hash": "da6e43e41d9e384b3b44b3a69c9ac767"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\survival-game-wrapper.tsx": {
+    "mtime": 1779352390.462106,
+    "ast_hash": "4903c1b533d8e9948f3696c43d0b33b3",
+    "semantic_hash": "4903c1b533d8e9948f3696c43d0b33b3"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\survival-shop.tsx": {
+    "mtime": 1779352390.4631045,
+    "ast_hash": "4c4767ecc8af920285806405c44bd25d",
+    "semantic_hash": "4c4767ecc8af920285806405c44bd25d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\survival\\survival-sidebar-panel.tsx": {
+    "mtime": 1779270642.9758909,
+    "ast_hash": "911b7401cc998dd5dc524d3c0b64a343",
+    "semantic_hash": "911b7401cc998dd5dc524d3c0b64a343"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\ui\\badge.tsx": {
+    "mtime": 1779176076.0818343,
+    "ast_hash": "16c24681ec994b7eac9ee0fadc37402c",
+    "semantic_hash": "16c24681ec994b7eac9ee0fadc37402c"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\ui\\button.tsx": {
+    "mtime": 1779176076.0828352,
+    "ast_hash": "f48a03f5ecd8f2a8dcf95e29592303e8",
+    "semantic_hash": "f48a03f5ecd8f2a8dcf95e29592303e8"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\ui\\card.tsx": {
+    "mtime": 1779176076.084356,
+    "ast_hash": "527ab962082ac079fe25010fb7c108b3",
+    "semantic_hash": "527ab962082ac079fe25010fb7c108b3"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\ui\\dialog.tsx": {
+    "mtime": 1779352390.4631045,
+    "ast_hash": "7e893da69a16659326c3d02f927d1f9e",
+    "semantic_hash": "7e893da69a16659326c3d02f927d1f9e"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\ui\\input.tsx": {
+    "mtime": 1779176076.0863712,
+    "ast_hash": "fa293b8a8380cbf45e8122bd8005ff5b",
+    "semantic_hash": "fa293b8a8380cbf45e8122bd8005ff5b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\ui\\label.tsx": {
+    "mtime": 1779176076.0863712,
+    "ast_hash": "a614b6abe5d06e677826a5d40cc7db91",
+    "semantic_hash": "a614b6abe5d06e677826a5d40cc7db91"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\components\\ui\\slider.tsx": {
+    "mtime": 1779176076.0883758,
+    "ast_hash": "637c4af0974e40ff51ee7f9cf37816c8",
+    "semantic_hash": "637c4af0974e40ff51ee7f9cf37816c8"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\blackjack\\engine.ts": {
+    "mtime": 1779352390.465101,
+    "ast_hash": "963b7e9adbfd34b03db962e535ab5ad9",
+    "semantic_hash": "963b7e9adbfd34b03db962e535ab5ad9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\blackjack\\types.ts": {
+    "mtime": 1779176076.0909133,
+    "ast_hash": "5a60c9229a668789a254148350a3cf7b",
+    "semantic_hash": "5a60c9229a668789a254148350a3cf7b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\case-battles\\engine.ts": {
+    "mtime": 1779275609.3059807,
+    "ast_hash": "97d72353762be02ae2a171bc9d0e39e2",
+    "semantic_hash": "97d72353762be02ae2a171bc9d0e39e2"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\case-battles\\types.ts": {
+    "mtime": 1779176076.09292,
+    "ast_hash": "f0ff8dd9b27a35b2582a7bddcadc6cd8",
+    "semantic_hash": "f0ff8dd9b27a35b2582a7bddcadc6cd8"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\chicken-race\\engine.ts": {
+    "mtime": 1779214512.6487265,
+    "ast_hash": "2fdcc2f7c6e184f3a8c8c1515e7e897d",
+    "semantic_hash": "2fdcc2f7c6e184f3a8c8c1515e7e897d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\chicken-race\\types.ts": {
+    "mtime": 1779176076.0941088,
+    "ast_hash": "c6e4d94402a31857ddf75d5a6c59cb02",
+    "semantic_hash": "c6e4d94402a31857ddf75d5a6c59cb02"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\chicken-road\\engine.ts": {
+    "mtime": 1779278237.9212253,
+    "ast_hash": "06952955da94475e25ef9dacba6b6034",
+    "semantic_hash": "06952955da94475e25ef9dacba6b6034"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\chicken-road\\types.ts": {
+    "mtime": 1779176076.096137,
+    "ast_hash": "5e71f6741bfb32451f39b950c78cddb9",
+    "semantic_hash": "5e71f6741bfb32451f39b950c78cddb9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\coin-flip\\engine.ts": {
+    "mtime": 1779214576.6313267,
+    "ast_hash": "05febf6b12c4b21a2d247c308c9db6cd",
+    "semantic_hash": "05febf6b12c4b21a2d247c308c9db6cd"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\coin-flip\\types.ts": {
+    "mtime": 1779176076.0971365,
+    "ast_hash": "f57b8161f85851a6b6c070ec92c8468f",
+    "semantic_hash": "f57b8161f85851a6b6c070ec92c8468f"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\crash\\engine.ts": {
+    "mtime": 1779354343.6177633,
+    "ast_hash": "b4e2cbbf5e9c3a282eabb19d7636169f",
+    "semantic_hash": "b4e2cbbf5e9c3a282eabb19d7636169f"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\crash\\types.ts": {
+    "mtime": 1779176076.098134,
+    "ast_hash": "511fd759d2a30a1b268ec3b9ef897406",
+    "semantic_hash": "511fd759d2a30a1b268ec3b9ef897406"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\dragon-tower\\engine.ts": {
+    "mtime": 1779214505.1130211,
+    "ast_hash": "8c44486c5837a71ebe18643241f72eb6",
+    "semantic_hash": "8c44486c5837a71ebe18643241f72eb6"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\dragon-tower\\types.ts": {
+    "mtime": 1779176076.1016805,
+    "ast_hash": "e5504365fba3f0a73b3c8c0db71b4523",
+    "semantic_hash": "e5504365fba3f0a73b3c8c0db71b4523"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\hilo\\engine.ts": {
+    "mtime": 1779270185.8136885,
+    "ast_hash": "86bee7cb7a67b16aa2b79849a0632ef5",
+    "semantic_hash": "86bee7cb7a67b16aa2b79849a0632ef5"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\hilo\\types.ts": {
+    "mtime": 1779268853.840998,
+    "ast_hash": "d3e87e97fca87c109d9f00093e39e7bd",
+    "semantic_hash": "d3e87e97fca87c109d9f00093e39e7bd"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\keno\\engine.ts": {
+    "mtime": 1779352390.466101,
+    "ast_hash": "0d48efd7af794d5ec9015b637def054d",
+    "semantic_hash": "0d48efd7af794d5ec9015b637def054d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\keno\\types.ts": {
+    "mtime": 1779176076.1046767,
+    "ast_hash": "4f7a1a94458ed4a449eab1f4ae50aed8",
+    "semantic_hash": "4f7a1a94458ed4a449eab1f4ae50aed8"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\mines\\engine.ts": {
+    "mtime": 1779217257.7621331,
+    "ast_hash": "5a13387aa05e2682aea9f883395ce559",
+    "semantic_hash": "5a13387aa05e2682aea9f883395ce559"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\mines\\types.ts": {
+    "mtime": 1779176076.1066973,
+    "ast_hash": "8ff86c298e4eb7a8bd067dc8ca85930b",
+    "semantic_hash": "8ff86c298e4eb7a8bd067dc8ca85930b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\over-under\\engine.ts": {
+    "mtime": 1779214601.6567535,
+    "ast_hash": "a75a6c011db736b7c7be80a6a272e0f0",
+    "semantic_hash": "a75a6c011db736b7c7be80a6a272e0f0"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\over-under\\types.ts": {
+    "mtime": 1779176076.107683,
+    "ast_hash": "6fb1a1647050b2063a6a28b2e9349402",
+    "semantic_hash": "6fb1a1647050b2063a6a28b2e9349402"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\plinko\\board-geometry.ts": {
+    "mtime": 1779191633.3986073,
+    "ast_hash": "42266acf38ffb81fdc07982eaa2f4c77",
+    "semantic_hash": "42266acf38ffb81fdc07982eaa2f4c77"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\plinko\\engine.ts": {
+    "mtime": 1779214586.6424768,
+    "ast_hash": "7687a065f849acf632c3c80b0cd95a2c",
+    "semantic_hash": "7687a065f849acf632c3c80b0cd95a2c"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\plinko\\types.ts": {
+    "mtime": 1779183172.6692293,
+    "ast_hash": "a781be725d84f271bc796665aff042fa",
+    "semantic_hash": "a781be725d84f271bc796665aff042fa"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\poker-1p\\engine.ts": {
+    "mtime": 1779270642.9788904,
+    "ast_hash": "fb6b403d3b4f3b01fb927baf256fdd84",
+    "semantic_hash": "fb6b403d3b4f3b01fb927baf256fdd84"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\poker-1p\\types.ts": {
+    "mtime": 1779176076.1116755,
+    "ast_hash": "1405b6d7eabda85ded0734c0cfdd57d7",
+    "semantic_hash": "1405b6d7eabda85ded0734c0cfdd57d7"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\roulette\\engine.ts": {
+    "mtime": 1779270642.9788904,
+    "ast_hash": "55b6de1c8137ec54957f8af39ae68991",
+    "semantic_hash": "55b6de1c8137ec54957f8af39ae68991"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\roulette\\types.ts": {
+    "mtime": 1779176076.1142087,
+    "ast_hash": "df9560ac3cc019aaeda9432ed50c946b",
+    "semantic_hash": "df9560ac3cc019aaeda9432ed50c946b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\run-dice\\engine.ts": {
+    "mtime": 1779214641.5037045,
+    "ast_hash": "5e9927a153c62413d2af3de36ff51d56",
+    "semantic_hash": "5e9927a153c62413d2af3de36ff51d56"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\run-dice\\types.ts": {
+    "mtime": 1779176076.1152003,
+    "ast_hash": "7791391a33f3fbd70058716bdce199ad",
+    "semantic_hash": "7791391a33f3fbd70058716bdce199ad"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\slots\\engine.ts": {
+    "mtime": 1779270642.9798903,
+    "ast_hash": "4771585e717db0e494d67ddf67b06198",
+    "semantic_hash": "4771585e717db0e494d67ddf67b06198"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\slots\\types.ts": {
+    "mtime": 1779270642.9798903,
+    "ast_hash": "faebf60b83eb6f0489f0667a178a67a0",
+    "semantic_hash": "faebf60b83eb6f0489f0667a178a67a0"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\street-cups\\engine.ts": {
+    "mtime": 1779352390.4671025,
+    "ast_hash": "782bbb8f1bc410494447bb23af137ac4",
+    "semantic_hash": "782bbb8f1bc410494447bb23af137ac4"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\street-cups\\types.ts": {
+    "mtime": 1779176076.11921,
+    "ast_hash": "9c6cbb1005ca2a6730377043febd606f",
+    "semantic_hash": "9c6cbb1005ca2a6730377043febd606f"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\wheel\\engine.ts": {
+    "mtime": 1779270642.9798903,
+    "ast_hash": "c43a882b9a8bf531cd802f44bba40142",
+    "semantic_hash": "c43a882b9a8bf531cd802f44bba40142"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\games\\wheel\\types.ts": {
+    "mtime": 1779176076.1222,
+    "ast_hash": "bcbcfafcded318608246b00d621bf2a1",
+    "semantic_hash": "bcbcfafcded318608246b00d621bf2a1"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-bet-guard.ts": {
+    "mtime": 1779192194.3187084,
+    "ast_hash": "78d0a57fa8bd7b84dd45aea854c7cf26",
+    "semantic_hash": "78d0a57fa8bd7b84dd45aea854c7cf26"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-blackjack-game.ts": {
+    "mtime": 1779354561.2725618,
+    "ast_hash": "84ad7be5d14f3d38af52a26ad5450bed",
+    "semantic_hash": "84ad7be5d14f3d38af52a26ad5450bed"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-bless.ts": {
+    "mtime": 1779214465.5522516,
+    "ast_hash": "6992b7a198b73388eb21baf5c560c481",
+    "semantic_hash": "6992b7a198b73388eb21baf5c560c481"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-curse.ts": {
+    "mtime": 1779193514.0619123,
+    "ast_hash": "3ea977f743fdc57267cca4f885478139",
+    "semantic_hash": "3ea977f743fdc57267cca4f885478139"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-game-bankroll.ts": {
+    "mtime": 1779352390.4691033,
+    "ast_hash": "f27601dd890e1d525269aa1528d1ab01",
+    "semantic_hash": "f27601dd890e1d525269aa1528d1ab01"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-opening-ticket.ts": {
+    "mtime": 1779184292.070289,
+    "ast_hash": "ec76dc569ec8a10c899a0333d407e0a0",
+    "semantic_hash": "ec76dc569ec8a10c899a0333d407e0a0"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-perk-proc.ts": {
+    "mtime": 1779196244.892637,
+    "ast_hash": "21ca30f1cdddf75b1e276263f6d864d9",
+    "semantic_hash": "21ca30f1cdddf75b1e276263f6d864d9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-survival-game-over.ts": {
+    "mtime": 1779352390.4691033,
+    "ast_hash": "2e91738b2e6674a6d4f6847904e0f3d9",
+    "semantic_hash": "2e91738b2e6674a6d4f6847904e0f3d9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\hooks\\use-survival-perks.ts": {
+    "mtime": 1779284327.3599498,
+    "ast_hash": "f82f6ce3e7ba542ef86a2fc882a8d337",
+    "semantic_hash": "f82f6ce3e7ba542ef86a2fc882a8d337"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\gambling-quotes.ts": {
+    "mtime": 1779176076.1241994,
+    "ast_hash": "0faffa02aa5c68518d102e8eeae4ee4a",
+    "semantic_hash": "0faffa02aa5c68518d102e8eeae4ee4a"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\game-registry.tsx": {
+    "mtime": 1779355223.1499782,
+    "ast_hash": "fdbeaaada69418591d15acf1b9aaacda",
+    "semantic_hash": "fdbeaaada69418591d15acf1b9aaacda"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\game-result-labels.ts": {
+    "mtime": 1779270904.4057274,
+    "ast_hash": "d7c94d27d8ed0ab4b6c3edb20e282f99",
+    "semantic_hash": "d7c94d27d8ed0ab4b6c3edb20e282f99"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\utils.ts": {
+    "mtime": 1779176076.128736,
+    "ast_hash": "6e7a2d4f1fa6b69ad722be7d66f8d57f",
+    "semantic_hash": "6e7a2d4f1fa6b69ad722be7d66f8d57f"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\apply-modifiers.ts": {
+    "mtime": 1779184292.0730824,
+    "ast_hash": "7b3833d76316490f77249ff7bad65c3a",
+    "semantic_hash": "7b3833d76316490f77249ff7bad65c3a"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\balance.ts": {
+    "mtime": 1779352390.4701047,
+    "ast_hash": "efb70db4e2db9a2d4b688f13aaa375ad",
+    "semantic_hash": "efb70db4e2db9a2d4b688f13aaa375ad"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\floor-generator.ts": {
+    "mtime": 1779184292.0740812,
+    "ast_hash": "9bd95928c5ad1bfed1c3a72554b7dac9",
+    "semantic_hash": "9bd95928c5ad1bfed1c3a72554b7dac9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\game-resolve.ts": {
+    "mtime": 1779184292.0750809,
+    "ast_hash": "e01324c5a8217ea60fdbe328f581af83",
+    "semantic_hash": "e01324c5a8217ea60fdbe328f581af83"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\lobby-ticket.ts": {
+    "mtime": 1779352390.4701047,
+    "ast_hash": "3494060170c02cbee094f6e1a4c87205",
+    "semantic_hash": "3494060170c02cbee094f6e1a4c87205"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\migrate.ts": {
+    "mtime": 1779352390.4711037,
+    "ast_hash": "af7263a737614ec33aa1b4bf105fd66f",
+    "semantic_hash": "af7263a737614ec33aa1b4bf105fd66f"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\mission-evaluator.ts": {
+    "mtime": 1779352390.4711037,
+    "ast_hash": "da28eb7fcc5f493e9c8336a7ca7098a9",
+    "semantic_hash": "da28eb7fcc5f493e9c8336a7ca7098a9"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\mission-reroll.ts": {
+    "mtime": 1779352390.472103,
+    "ast_hash": "4bd6bd7b6b89bfa98b5591dccbd695b0",
+    "semantic_hash": "4bd6bd7b6b89bfa98b5591dccbd695b0"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\missions.ts": {
+    "mtime": 1779352390.472103,
+    "ast_hash": "f7aa1bb4f9260a5e11d69e779bef4d10",
+    "semantic_hash": "f7aa1bb4f9260a5e11d69e779bef4d10"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\perk-proc.ts": {
+    "mtime": 1779275609.3079908,
+    "ast_hash": "5f8a542dc501047f09db980dd11d7efa",
+    "semantic_hash": "5f8a542dc501047f09db980dd11d7efa"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\shop-offers.ts": {
+    "mtime": 1779352390.4731028,
+    "ast_hash": "3ee09a2a6862a4f627df173e35696751",
+    "semantic_hash": "3ee09a2a6862a4f627df173e35696751"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\sparks-economy.ts": {
+    "mtime": 1779352390.4731028,
+    "ast_hash": "975845ec64c1f87572be27ece7699561",
+    "semantic_hash": "975845ec64c1f87572be27ece7699561"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\survival-perks.ts": {
+    "mtime": 1779352743.4772992,
+    "ast_hash": "37aa70280205ec48f4f2e75dfe8ef7c7",
+    "semantic_hash": "37aa70280205ec48f4f2e75dfe8ef7c7"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\survival-round.ts": {
+    "mtime": 1779352390.4741027,
+    "ast_hash": "883614812be5e7fba2e3ecd988455918",
+    "semantic_hash": "883614812be5e7fba2e3ecd988455918"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\types.ts": {
+    "mtime": 1779176076.128736,
+    "ast_hash": "e4fd425ea416fd8a1292cec3d3c24a28",
+    "semantic_hash": "e4fd425ea416fd8a1292cec3d3c24a28"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\upgrade-levels.ts": {
+    "mtime": 1779352729.893413,
+    "ast_hash": "0423ce3584fe643d0b39dd4413eed1bd",
+    "semantic_hash": "0423ce3584fe643d0b39dd4413eed1bd"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\lib\\survival\\upgrades-catalog.ts": {
+    "mtime": 1779352758.2009306,
+    "ast_hash": "9e8a7e12a768c931adde0c6db124f8ac",
+    "semantic_hash": "9e8a7e12a768c931adde0c6db124f8ac"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\scripts\\patch-roulette-ui.js": {
+    "mtime": 1779176076.14229,
+    "ast_hash": "432c84da2cfc9e503dbf1ddfd13b3095",
+    "semantic_hash": "432c84da2cfc9e503dbf1ddfd13b3095"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\scripts\\patch-slots-ui.js": {
+    "mtime": 1779176076.14229,
+    "ast_hash": "1b87808fa7e38fd5cfeb5a384d040d70",
+    "semantic_hash": "1b87808fa7e38fd5cfeb5a384d040d70"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\store\\freeplay-store.ts": {
+    "mtime": 1779176076.145287,
+    "ast_hash": "e675d59bf771342d0a580edf765ce5ee",
+    "semantic_hash": "e675d59bf771342d0a580edf765ce5ee"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\store\\settings-store.ts": {
+    "mtime": 1779356128.140715,
+    "ast_hash": "76f242fdb7b2b9e378682a722b564dad",
+    "semantic_hash": "76f242fdb7b2b9e378682a722b564dad"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\store\\survival-store.ts": {
+    "mtime": 1779353322.8628676,
+    "ast_hash": "80f9c0eca50bfcb63c6dcfb7918f4a6d",
+    "semantic_hash": "80f9c0eca50bfcb63c6dcfb7918f4a6d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\store\\types.ts": {
+    "mtime": 1779352630.5440514,
+    "ast_hash": "e37bd0e6881be0f4c48ddf5abe41c37f",
+    "semantic_hash": "e37bd0e6881be0f4c48ddf5abe41c37f"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\utils\\format.ts": {
+    "mtime": 1779279700.0883546,
+    "ast_hash": "240a1b7766e1a4f09fed32a399fa7116",
+    "semantic_hash": "240a1b7766e1a4f09fed32a399fa7116"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\utils\\math.ts": {
+    "mtime": 1779282779.752493,
+    "ast_hash": "146776a677fd06d9164a9842a0715c37",
+    "semantic_hash": "146776a677fd06d9164a9842a0715c37"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\utils\\rng.ts": {
+    "mtime": 1779176076.1492963,
+    "ast_hash": "21c02617de474ae2f604acce149e9fa6",
+    "semantic_hash": "21c02617de474ae2f604acce149e9fa6"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\utils\\supabase.ts": {
+    "mtime": 1779176076.150812,
+    "ast_hash": "8343c565090fc47f7e5ee2b34f76945d",
+    "semantic_hash": "8343c565090fc47f7e5ee2b34f76945d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\AI_HANDSHAKE.md": {
+    "mtime": 1779356172.0691462,
+    "ast_hash": "920a2cdd3048eaa1e2153b2127c6a283",
+    "semantic_hash": "920a2cdd3048eaa1e2153b2127c6a283"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\BALANCE_AUDIT.md": {
+    "mtime": 1779352390.4458408,
+    "ast_hash": "dc030efeb5fa2a39e76ff43dce46e9e1",
+    "semantic_hash": "dc030efeb5fa2a39e76ff43dce46e9e1"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\floored_balance_mega_prompt.md": {
+    "mtime": 1779352390.465101,
+    "ast_hash": "b68f85d78bcbe6cf97ac544ad5ae6745",
+    "semantic_hash": "b68f85d78bcbe6cf97ac544ad5ae6745"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\GAME_TEMPLATE.txt": {
+    "mtime": 1779217743.4139855,
+    "ast_hash": "30092905d552ae8e6650f020bd0fa358",
+    "semantic_hash": "30092905d552ae8e6650f020bd0fa358"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\pnpm-workspace.yaml": {
+    "mtime": 1779352390.4791012,
+    "ast_hash": "8c869f3d9a45bc695a84cf862e3dac13",
+    "semantic_hash": "8c869f3d9a45bc695a84cf862e3dac13"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\README.md": {
+    "mtime": 1779270642.95042,
+    "ast_hash": "1f7b3dc5265c884ced7134d7246ae250",
+    "semantic_hash": "1f7b3dc5265c884ced7134d7246ae250"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\scripts\\case-battles-dock.txt": {
+    "mtime": 1779176076.1402977,
+    "ast_hash": "d117e49ada0745f3fe902d5212db47cd",
+    "semantic_hash": "d117e49ada0745f3fe902d5212db47cd"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\scripts\\hilo-dock-tail.txt": {
+    "mtime": 1779176076.141288,
+    "ast_hash": "2423abf48c3127f69a918e8b30641a78",
+    "semantic_hash": "2423abf48c3127f69a918e8b30641a78"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\scripts\\roulette-ui-tail.txt": {
+    "mtime": 1779176076.1432981,
+    "ast_hash": "3ffeccc0264df4535da0d4331d93fd6d",
+    "semantic_hash": "3ffeccc0264df4535da0d4331d93fd6d"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\scripts\\slots-ui-tail.txt": {
+    "mtime": 1779270642.9883966,
+    "ast_hash": "e8fd6d34b0b8b18fd6d2d02b8acfb59b",
+    "semantic_hash": "e8fd6d34b0b8b18fd6d2d02b8acfb59b"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\scripts\\street-cups-dock-tail.txt": {
+    "mtime": 1779176076.144294,
+    "ast_hash": "f2e944f5867b684c738e33440b59b611",
+    "semantic_hash": "f2e944f5867b684c738e33440b59b611"
+  },
+  "C:\\Users\\giova\\VsProjects\\Floored\\app\\icon.svg": {
+    "mtime": 1779270642.9523919,
+    "ast_hash": "0ccb5ff18eba993eadd9b5f06baf39e8",
+    "semantic_hash": "0ccb5ff18eba993eadd9b5f06baf39e8"
+  }
+}

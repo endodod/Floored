@@ -83,8 +83,9 @@ export function revealMineTile(state: MinesState, tileId: number): MinesState {
   }
 
   const nextRemainingSafe = state.remainingSafe - 1
+  const totalUnrevealed = state.remainingSafe + DIFFICULTY_MINES[state.difficulty]
   const nextMultiplier = Number(
-    (state.multiplier * (25 / (nextRemainingSafe + 1))).toFixed(2)
+    (state.multiplier * (totalUnrevealed / state.remainingSafe)).toFixed(2)
   )
 
   if (nextRemainingSafe === 0) {
@@ -147,8 +148,9 @@ export function winGame(state: MinesState, tileId: number): MinesState {
   )
 
   const nextRemainingSafe = state.remainingSafe - 1
+  const totalUnrevealed = state.remainingSafe + DIFFICULTY_MINES[state.difficulty]
   const nextMultiplier = Number(
-    (state.multiplier * (25 / (nextRemainingSafe + 1))).toFixed(2)
+    (state.multiplier * (totalUnrevealed / state.remainingSafe)).toFixed(2)
   )
 
   if (nextRemainingSafe === 0) {
@@ -199,4 +201,9 @@ export function loseGame(state: MinesState, tileId: number): MinesState {
     outcome: 'loss',
     message: 'Boom! You hit a mine.',
   }
+}
+
+export function findFirstSafeMineTile(tiles: { id: number; hasMine: boolean; revealed: boolean }[]): number | null {
+  const safe = tiles.find((t) => !t.hasMine && !t.revealed)
+  return safe?.id ?? null
 }

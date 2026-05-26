@@ -199,3 +199,7 @@ export function getKenoPayout(state: KenoState) {
   if (state.revealedDrawn.length === 0) return 0
   return Math.round(state.betAmount * state.multiplier)
 }
+
+export function kenoHeatNumbers(draw: number[], count = 2): number[] {
+  return draw.slice(0, count)
+}
