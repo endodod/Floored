@@ -1,6 +1,6 @@
 # Floored
 
-Browser-based casino simulation — no real money, no accounts required.
+Browser-based casino simulation — no real money, no accounts required
 
 Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
