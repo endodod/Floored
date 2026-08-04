@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips, parseChips } from '@/utils/format'
 import { allPurchasedUpgradesForDev } from '@/lib/survival/upgrades-catalog'
+import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
 
 const HUD_PILL =
   'px-2.5 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-700/60 tabular-nums text-sm font-bold text-zinc-200'
@@ -21,23 +22,18 @@ export function Navbar() {
   const blessed = useSurvivalStore((s) => s.blessed)
   const setBlessed = useSurvivalStore((s) => s.setBlessed)
   const runActive = useSurvivalStore((s) => s.runActive)
-  const floorComplete = useSurvivalStore((s) => s.floorComplete)
-  const runDefeated = useSurvivalStore((s) => s.runDefeated)
-  const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
   const bankroll = useSurvivalStore((s) => s.bankroll)
+  const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
+  const floorBetsPlaced = useSurvivalStore((s) => s.floorBetsPlaced)
   const sparks = useSurvivalStore((s) => s.sparks)
   const setBankroll = useSurvivalStore((s) => s.setBankroll)
   const setSparks = useSurvivalStore((s) => s.setSparks)
   const devSetPurchasedUpgrades = useSurvivalStore((s) => s.devSetPurchasedUpgrades)
-  const floorMinBet = useSurvivalStore((s) => s.floorMinBet)
-  const finishQuotaEarly = useSurvivalStore((s) => s.finishQuotaEarly)
   const [menuOpen, setMenuOpen] = useState(false)
   const [devPassword, setDevPassword] = useState('')
   const [devPasswordError, setDevPasswordError] = useState(false)
   const [devBankroll, setDevBankroll] = useState('')
   const [devSparks, setDevSparks] = useState('')
-  const [cursedOverlay, setCursedOverlay] = useState(false)
-  const [cursedSorryPending, setCursedSorryPending] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const handleDevUnlock = useCallback(() => {
@@ -48,15 +44,19 @@ export function Navbar() {
     } else {
       setDevPasswordError(true)
       setTimeout(() => setDevPasswordError(false), 1000)
-      setCursed(true)
-      setCursedOverlay(true)
-      setCursedSorryPending(false)
     }
-  }, [devPassword, setDevModeUnlocked, setCursed])
+  }, [devPassword, setDevModeUnlocked])
 
   const isHome = pathname === '/'
   const inFreeplay = pathname?.startsWith('/freeplay')
   const inSurvival = pathname?.startsWith('/survival')
+  const inSurvivalGame = pathname?.startsWith('/survival/') ?? false
+
+  // runActive is persisted to localStorage, so it's only known after the client
+  // has mounted — gate on that to avoid an SSR/client hydration mismatch.
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => setHydrated(true), [])
+  const showSurvivalHud = hydrated && inSurvivalGame && runActive
 
   useEffect(() => {
     if (!menuOpen) return
@@ -82,42 +82,8 @@ export function Navbar() {
     </Link>
   )
 
-  const survivalMobile = (
-    <Link
-      href="/survival"
-      className={`flex-1 text-center py-1.5 rounded-lg text-sm font-medium transition-colors ${
-        inSurvival ? 'bg-amber-900/40 text-amber-300' : 'text-white/50 hover:text-white/80'
-      }`}
-    >
-      Survival
-    </Link>
-  )
-
-  const showFinishQuota = inSurvival && runActive && !floorComplete && !runDefeated
-  const finishQuotaEnabled = bankroll >= quotaTarget && bankroll >= floorMinBet
-
   return (
     <>
-      {cursedOverlay && (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm select-none">
-          <p className="text-7xl font-black uppercase tracking-widest text-red-500 drop-shadow-[0_0_40px_rgba(239,68,68,0.8)] animate-pulse text-center px-4">
-            YOU HAVE BEEN CURSED
-          </p>
-          <p className="mt-6 text-zinc-500 text-sm">All your games are now rigged to lose.</p>
-          <p className="mt-2 text-zinc-600 text-xs">Click sorry and the curse will break after a minute.</p>
-          <button
-            type="button"
-            onClick={() => {
-              setCursedOverlay(false)
-              setTimeout(() => { setCursed(false); setCursedSorryPending(false) }, 60_000)
-            }}
-            className="mt-10 px-8 py-3 rounded-xl bg-zinc-800 border border-zinc-600 text-zinc-200 text-sm font-semibold hover:bg-zinc-700 transition-colors"
-          >
-            sorry
-          </button>
-        </div>
-      )}
-
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0f]/95 backdrop-blur-md">
         <div className="container mx-auto px-4">
           <div className="relative flex items-center justify-between h-16">
@@ -147,25 +113,40 @@ export function Navbar() {
                   </Link>
                 </div>
               )}
+
             </div>
 
-            {/* Center: finish quota (always visible in survival) */}
-            {showFinishQuota && (
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-                <button
-                  type="button"
-                  onClick={() => finishQuotaEnabled && finishQuotaEarly()}
-                  disabled={!finishQuotaEnabled}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wide whitespace-nowrap transition-colors ${
-                    finishQuotaEnabled
-                      ? 'bg-amber-500 text-zinc-950 hover:bg-amber-400 shadow-lg shadow-amber-500/25 cursor-pointer'
-                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                  }`}
-                >
-                  Finish Quota
-                </button>
-              </div>
-            )}
+            {/* Center: survival in-game bankroll + bets (hidden on lg+, covered by the sidebar there) */}
+            <div className="flex-1 flex items-center justify-center min-w-0 px-1 sm:px-2 lg:hidden">
+              {showSurvivalHud && (
+                <>
+                  {/* Narrowest phones: compact, no labels */}
+                  <div className="flex sm:hidden items-center gap-1 text-[11px] font-bold tabular-nums">
+                    <span className="px-1.5 py-1 rounded-md bg-zinc-900/80 border border-zinc-700/60">
+                      <span className={bankroll >= quotaTarget ? 'text-zinc-200' : 'text-red-400'}>{formatChips(bankroll)}</span>
+                      <span className="text-zinc-500">/{formatChips(quotaTarget)}</span>
+                    </span>
+                    <span className="px-1.5 py-1 rounded-md bg-zinc-900/80 border border-zinc-700/60 text-zinc-200">
+                      {floorBetsPlaced}<span className="text-zinc-500">/{FLOOR_BET_LIMIT}</span>
+                    </span>
+                  </div>
+
+                  {/* sm and up: full labeled pills */}
+                  <div className="hidden sm:flex items-center gap-2">
+                    <div className={HUD_PILL}>
+                      <span className="text-[9px] font-normal text-zinc-500 mr-1">Bankroll</span>
+                      <span className={bankroll >= quotaTarget ? '' : 'text-red-400'}>{formatChips(bankroll)}</span>
+                      <span className="text-zinc-500">/{formatChips(quotaTarget)}</span>
+                    </div>
+                    <div className={HUD_PILL}>
+                      <span className="text-[9px] font-normal text-zinc-500 mr-1">Bets</span>
+                      {floorBetsPlaced}
+                      <span className="text-zinc-500">/{FLOOR_BET_LIMIT}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Right: bankroll + account */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 z-10">
@@ -356,21 +337,6 @@ export function Navbar() {
               </div>
             </div>
           </div>
-
-          {/* Mobile nav strip */}
-          {!isHome && (
-            <div className="sm:hidden flex gap-1 pb-2">
-              {survivalMobile}
-              <Link
-                href="/freeplay"
-                className={`flex-1 text-center py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  inFreeplay ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'
-                }`}
-              >
-                Freeplay
-              </Link>
-            </div>
-          )}
         </div>
       </nav>
     </>
