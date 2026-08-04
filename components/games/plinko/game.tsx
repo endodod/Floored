@@ -299,7 +299,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
         />
 
         <div className="flex-1 min-h-0 w-full flex flex-col">
-          <div className="flex flex-col items-center gap-1 py-1.5">
+          <div className="flex flex-col items-center gap-1 pt-10 pb-1.5 sm:py-1.5">
             <span className="text-xs text-zinc-600 font-semibold uppercase tracking-widest">Risk</span>
             <div className="flex gap-2">
               {(['low', 'medium', 'high'] as PlinkoRisk[]).map((r) => (

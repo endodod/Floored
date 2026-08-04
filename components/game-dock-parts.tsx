@@ -150,21 +150,25 @@ export function GameOutcomeColumns({
   const result = formatOutcomeDisplayText(resultSummary)
 
   if (size === 'dock') {
+    const dockLabelCls =
+      'text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-zinc-500 leading-tight mb-0.5 sm:mb-1 shrink-0'
+    const dockBoxCls =
+      'flex min-h-[3.25rem] sm:min-h-[4.25rem] flex-col justify-center rounded-lg border border-zinc-800 bg-zinc-900/70 px-1.5 py-1.5 sm:px-2.5 sm:py-2 text-center'
     return (
-      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-2">
-        <div className="flex min-h-[4.25rem] flex-col justify-center rounded-lg border border-zinc-800 bg-zinc-900/70 px-2.5 py-2 text-center">
-          <p className={`${OUTCOME_COL_LABEL} mb-1 shrink-0`}>Your bet</p>
-          <p className="text-sm sm:text-base font-semibold text-zinc-100 leading-tight line-clamp-2">{bet}</p>
+      <div className="grid w-full grid-cols-3 gap-1.5 sm:gap-2">
+        <div className={dockBoxCls}>
+          <p className={dockLabelCls}>Your bet</p>
+          <p className="text-xs sm:text-base font-semibold text-zinc-100 leading-tight line-clamp-2">{bet}</p>
         </div>
-        <div className="flex min-h-[4.25rem] flex-col justify-center rounded-lg border border-zinc-800 bg-zinc-900/70 px-2.5 py-2 text-center">
-          <p className={`${OUTCOME_COL_LABEL} mb-1 shrink-0`}>Result</p>
-          <p className="text-sm sm:text-base font-semibold text-zinc-100 leading-tight truncate" title={result}>
+        <div className={dockBoxCls}>
+          <p className={dockLabelCls}>Result</p>
+          <p className="text-xs sm:text-base font-semibold text-zinc-100 leading-tight truncate" title={result}>
             {result}
           </p>
         </div>
-        <div className="flex min-h-[4.25rem] flex-col justify-center rounded-lg border border-zinc-800 bg-zinc-900/70 px-2.5 py-2 text-center">
-          <p className={`${OUTCOME_COL_LABEL} mb-1 shrink-0`}>Profit</p>
-          <p className={`text-xl sm:text-2xl font-black tabular-nums leading-tight ${profitColor}`}>
+        <div className={dockBoxCls}>
+          <p className={dockLabelCls}>Profit</p>
+          <p className={`text-base sm:text-2xl font-black tabular-nums leading-tight ${profitColor}`}>
             {profitLabel}
           </p>
         </div>
