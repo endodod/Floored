@@ -8,21 +8,12 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
-  id                 String             @id @default(cuid())
-  email              String             @unique
-  username           String?            @unique
-  createdAt          DateTime           @default(now())
-  runs               Run[]
-  cosmetics          UserCosmetic[]
-  challenges         Challenge[]
-  leaderboardEntries LeaderboardEntry[]
-}
-
+// Identity/accounts are owned by Neon Auth, not Prisma — its `user` table
+// lives outside this schema. userId fields below are plain references to
+// that external id, not Prisma relations.
 model Run {
   id            String       @id @default(cuid())
   userId        String
-  user          User         @relation(fields: [userId], references: [id])
   difficulty    String
   startedAt     DateTime     @default(now())
   endedAt       DateTime?
@@ -52,15 +43,14 @@ model GameResult {
 model UserCosmetic {
   id         String   @id @default(cuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
   type       String
   itemId     String
   unlockedAt DateTime @default(now())
 }
 
 // Puzzle mode — see .md/PUZZLE_MODE_SPEC.md §7.
-// createdBy/userId are nullable: no login yet, so entries are attributed by
-// deviceId until accounts ship, then claimed by linking deviceId -> userId.
+// createdById/userId are nullable: entries are attributed by deviceId until
+// the player logs in (via Neon Auth), then claimed by linking deviceId -> userId.
 model Challenge {
   id                String             @id @default(cuid())
   date              String? // null for custom, "2026-08-18" for daily
@@ -75,8 +65,7 @@ model Challenge {
   visibility        String             @default("private") // "public" | "private"
   shareCode         String             @unique
   createdByDeviceId String? // null for daily
-  createdById       String? // set once the creator logs in
-  createdBy         User?              @relation(fields: [createdById], references: [id])
+  createdById       String? // Neon Auth user id, set once the creator logs in
   playCount         Int                @default(0)
   createdAt         DateTime           @default(now())
   entries           LeaderboardEntry[]
@@ -87,8 +76,7 @@ model LeaderboardEntry {
   challengeId String
   challenge   Challenge @relation(fields: [challengeId], references: [id])
   deviceId    String
-  userId      String? // null until login exists
-  user        User?     @relation(fields: [userId], references: [id])
+  userId      String? // Neon Auth user id, null until claimed
   displayName String?
   score       Int // endBankroll (Bankroll Attack) or betsUsed (Speedrun)
   betsUsed    Int

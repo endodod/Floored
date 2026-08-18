@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
+import { SignedIn, SignedOut, UserButton } from '@neondatabase/auth/react/ui'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -164,6 +165,17 @@ export function Navbar() {
                 </div>
               )}
 
+              <SignedOut>
+                <Link
+                  href="/auth/sign-in"
+                  className="px-3 py-2 rounded-lg text-sm font-semibold text-white/60 hover:text-white hover:bg-white/8 transition-colors"
+                >
+                  Sign In
+                </Link>
+              </SignedOut>
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
 
               <div className="relative" ref={menuRef}>
                 <button
