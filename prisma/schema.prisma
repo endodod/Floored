@@ -3,17 +3,20 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id         String         @id @default(cuid())
-  email      String         @unique
-  username   String?        @unique
-  createdAt  DateTime       @default(now())
-  runs       Run[]
-  cosmetics  UserCosmetic[]
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  username           String?            @unique
+  createdAt          DateTime           @default(now())
+  runs               Run[]
+  cosmetics          UserCosmetic[]
+  challenges         Challenge[]
+  leaderboardEntries LeaderboardEntry[]
 }
 
 model Run {
@@ -53,4 +56,43 @@ model UserCosmetic {
   type       String
   itemId     String
   unlockedAt DateTime @default(now())
+}
+
+// Puzzle mode — see .md/PUZZLE_MODE_SPEC.md §7.
+// createdBy/userId are nullable: no login yet, so entries are attributed by
+// deviceId until accounts ship, then claimed by linking deviceId -> userId.
+model Challenge {
+  id                String             @id @default(cuid())
+  date              String? // null for custom, "2026-08-18" for daily
+  objective         String // "bankroll" | "speedrun"
+  seed              String
+  games             String[] // 5 GameNames
+  scenarios         Json? // resolved scenario set for this challenge
+  startBankroll     Int
+  betCap            Int? // Bankroll Attack
+  targetBankroll    Int? // Speedrun
+  name              String? // custom challenges only
+  visibility        String             @default("private") // "public" | "private"
+  shareCode         String             @unique
+  createdByDeviceId String? // null for daily
+  createdById       String? // set once the creator logs in
+  createdBy         User?              @relation(fields: [createdById], references: [id])
+  playCount         Int                @default(0)
+  createdAt         DateTime           @default(now())
+  entries           LeaderboardEntry[]
+}
+
+model LeaderboardEntry {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  deviceId    String
+  userId      String? // null until login exists
+  user        User?     @relation(fields: [userId], references: [id])
+  displayName String?
+  score       Int // endBankroll (Bankroll Attack) or betsUsed (Speedrun)
+  betsUsed    Int
+  endBankroll Int
+  completed   Boolean // did the player reach the objective (Speedrun) / finish the cap (Bankroll Attack)
+  completedAt DateTime  @default(now())
 }
