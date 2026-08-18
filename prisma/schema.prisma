@@ -49,35 +49,33 @@ model UserCosmetic {
 }
 
 // Puzzle mode — see .md/PUZZLE_MODE_SPEC.md §7.
-// createdById/userId are nullable: entries are attributed by deviceId until
-// the player logs in (via Neon Auth), then claimed by linking deviceId -> userId.
+// Playing never requires an account; creating a challenge or submitting a
+// leaderboard score does, so identity here is always a Neon Auth user id.
 model Challenge {
-  id                String             @id @default(cuid())
-  date              String? // null for custom, "2026-08-18" for daily
-  objective         String // "bankroll" | "speedrun"
-  seed              String
-  games             String[] // 5 GameNames
-  scenarios         Json? // resolved scenario set for this challenge
-  startBankroll     Int
-  betCap            Int? // Bankroll Attack
-  targetBankroll    Int? // Speedrun
-  name              String? // custom challenges only
-  visibility        String             @default("private") // "public" | "private"
-  shareCode         String             @unique
-  createdByDeviceId String? // null for daily
-  createdById       String? // Neon Auth user id, set once the creator logs in
-  playCount         Int                @default(0)
-  createdAt         DateTime           @default(now())
-  entries           LeaderboardEntry[]
+  id             String             @id @default(cuid())
+  date           String? // null for custom, "2026-08-18" for daily
+  objective      String // "bankroll" | "speedrun"
+  seed           String
+  games          String[] // 5 GameNames
+  scenarios      Json? // resolved scenario set for this challenge
+  startBankroll  Int
+  betCap         Int? // Bankroll Attack
+  targetBankroll Int? // Speedrun
+  name           String? // custom challenges only
+  visibility     String             @default("private") // "public" | "private"
+  shareCode      String             @unique
+  createdById    String? // Neon Auth user id; null for daily (system-generated)
+  playCount      Int                @default(0)
+  createdAt      DateTime           @default(now())
+  entries        LeaderboardEntry[]
 }
 
 model LeaderboardEntry {
   id          String    @id @default(cuid())
   challengeId String
   challenge   Challenge @relation(fields: [challengeId], references: [id])
-  deviceId    String
-  userId      String? // Neon Auth user id, null until claimed
-  displayName String?
+  userId      String // Neon Auth user id — submitting a score requires signing in
+  displayName String? // per-challenge override; defaults to the account's name
   score       Int // endBankroll (Bankroll Attack) or betsUsed (Speedrun)
   betsUsed    Int
   endBankroll Int

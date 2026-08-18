@@ -177,15 +177,21 @@ enforcement (disable a tab, grey out a button) rather than engine changes.
   most played) or **private** (only reachable via share code/link).
 - A share code/link is generated regardless of visibility — public challenges
   can still be shared directly; private ones are *only* reachable via the code.
-- No login required to create or play (login isn't implemented yet). Creator
-  identity is a `deviceId` until accounts exist; a display name can be typed in
-  at creation time in the meantime.
+- Playing any challenge (Daily or Create Challenge) never requires an account.
+- **Creating** a challenge or **submitting a score to a leaderboard** requires
+  signing in (Neon Auth — see `.md/AI_HANDSHAKE.md`). Creator identity and
+  leaderboard attribution are the Neon Auth user id, not an anonymous
+  device-level id. Display name defaults to the account's name, with an
+  optional per-challenge override at creation/submission time.
 
 ---
 
 ## 7. Data model
 
 ```prisma
+// Identity/accounts are owned by Neon Auth, not Prisma — its `user` table
+// lives outside this schema. userId/createdById below are plain references
+// to that external id, not Prisma relations.
 model Challenge {
   id             String   @id @default(cuid())
   date           String?          // null for custom, "2026-08-18" for daily
@@ -199,7 +205,7 @@ model Challenge {
   name           String?          // custom challenges only
   visibility     String   @default("private")  // "public" | "private"
   shareCode      String   @unique
-  createdBy      String?          // deviceId/userId, null for daily
+  createdById    String?          // Neon Auth user id; null for daily (system-generated)
   playCount      Int      @default(0)
   createdAt      DateTime @default(now())
 }
@@ -207,9 +213,8 @@ model Challenge {
 model LeaderboardEntry {
   id          String   @id @default(cuid())
   challengeId String
-  deviceId    String
-  userId      String?          // null until login exists
-  displayName String?
+  userId      String           // Neon Auth user id — submitting a score requires signing in
+  displayName String?          // per-challenge override; defaults to the account's name
   score       Int              // endBankroll (Bankroll Attack) or betsUsed (Speedrun)
   betsUsed    Int
   endBankroll Int
@@ -217,9 +222,6 @@ model LeaderboardEntry {
   completedAt DateTime @default(now())
 }
 ```
-
-Migration note: when login ships, anonymous scores can be claimed by linking
-`deviceId` → `userId` retroactively.
 
 ---
 
@@ -240,9 +242,12 @@ interface PuzzleState {
   lastGamePlayed?: GameName         // for Relay enforcement
   gameStats: Record<GameName, { bets: number; net: number }>
   status: 'active' | 'busted' | 'ended' | 'submitted'
-  deviceId: string
 }
 ```
+
+Playing needs no client-side identity field at all — a run only needs one once
+the player submits to a leaderboard, at which point identity comes from the
+signed-in Neon Auth session (prompting sign-in first if they aren't).
 
 ---
 
@@ -250,6 +255,6 @@ interface PuzzleState {
 
 - Exact weighting curve for extreme-tier scenario rarity.
 - Public challenge feed sorting beyond "newest" / "most played" (e.g. trending).
-- Anti-abuse for anonymous challenge creation (e.g. per-device daily cap).
+- Anti-abuse for challenge creation (e.g. per-account daily cap).
 - Whether "Create Challenge" challenges can include scenarios, or are
   vanilla-only for v1.

@@ -49,6 +49,32 @@
     --input: 220 10% 18%;
     --ring: 210 10% 96%;
   }
+
+  /* Neon Auth reads these as raw color values (no hsl() wrapping applied on
+     its side), but this app stores bare "H S% L%" triples per the shadcn
+     convention. Wrap them here so the auth UI actually matches the theme
+     instead of silently falling back to Neon's own default palette. */
+  :root {
+    --neon-background: hsl(var(--background));
+    --neon-foreground: hsl(var(--foreground));
+    --neon-card: hsl(var(--card));
+    --neon-card-foreground: hsl(var(--card-foreground));
+    --neon-popover: hsl(var(--popover));
+    --neon-popover-foreground: hsl(var(--popover-foreground));
+    --neon-primary: hsl(var(--primary));
+    --neon-primary-foreground: hsl(var(--primary-foreground));
+    --neon-secondary: hsl(var(--secondary));
+    --neon-secondary-foreground: hsl(var(--secondary-foreground));
+    --neon-muted: hsl(var(--muted));
+    --neon-muted-foreground: hsl(var(--muted-foreground));
+    --neon-accent: hsl(var(--accent));
+    --neon-accent-foreground: hsl(var(--accent-foreground));
+    --neon-destructive: hsl(var(--destructive));
+    --neon-destructive-foreground: hsl(var(--destructive-foreground));
+    --neon-border: hsl(var(--border));
+    --neon-input: hsl(var(--input));
+    --neon-ring: hsl(var(--ring));
+  }
 }
 
 @layer base {

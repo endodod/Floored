@@ -122,6 +122,10 @@ export interface SurvivalStore {
   modifiers: Modifier[]
   history: GameResult[]
   peakBankroll: number
+  /** All-time highest floor reached across all runs (10 for a claimed, non-endless victory). */
+  survivalHighscore: number
+  /** All-time count of runs ended via "Claim Victory". */
+  survivalWinCount: number
   lastRun: RunSummary | null
 
   // ── Per-floor generated state (Step 2 / 3) ───────────────────────────────
@@ -227,4 +231,8 @@ export interface FreeplayStore {
   bust: boolean
   markBust: () => void
   reset: () => void
+  /** All-time highest bankroll ever reached in freeplay. */
+  peakBankroll: number
+  /** All-time count of bankroll resets (i.e. times busted out and reset). */
+  resetCount: number
 }

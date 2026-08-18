@@ -84,6 +84,8 @@ const RUN_PERSIST_KEYS = [
   'modifiers',
   'history',
   'peakBankroll',
+  'survivalHighscore',
+  'survivalWinCount',
   'lastRun',
   'quotaTarget',
   'floorStartBankroll',
@@ -175,6 +177,8 @@ export const useSurvivalStore = create<SurvivalStore>()(
       modifiers: [],
       history: [],
       peakBankroll: STARTING_BANKROLL,
+      survivalHighscore: 0,
+      survivalWinCount: 0,
       lastRun: null,
 
       quotaTarget: 0,
@@ -330,6 +334,7 @@ export const useSurvivalStore = create<SurvivalStore>()(
               }) + s.missions.filter((m) => m.completed).reduce((sum, m) => sum + m.rewardSparks, 0)
             : 0
           const totalSparks = s.sparks + floorSparkIncome
+          const floorsReached = opts?.victory ? MAX_FLOORS : s.currentFloor
           return {
             runActive: false,
             runSeed: null,
@@ -339,10 +344,12 @@ export const useSurvivalStore = create<SurvivalStore>()(
             defeatReason: null,
             pendingDefeatReason: null,
             sparks: totalSparks,
+            survivalHighscore: Math.max(s.survivalHighscore, floorsReached),
+            survivalWinCount: s.survivalWinCount + (opts?.victory ? 1 : 0),
             lastRun: {
               endedAt: new Date().toISOString(),
               endBankroll: s.bankroll,
-              floorsReached: opts?.victory ? MAX_FLOORS : s.currentFloor,
+              floorsReached,
               gamesPlayed: s.gamesPlayed,
               peakBankroll: s.peakBankroll,
               sparksEarned: totalSparks,
