@@ -19,7 +19,7 @@ import {
 export function FloorPanel() {
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const { currentFloor, floorMinBet, bankroll, quotaTarget, floorStartBankroll, floorComplete, runDefeated, runActive, floorBetsPlaced, endlessMode, abandonRun, finishQuotaEarly } = useSurvivalStore()
+  const { currentFloor, floorMinBet, bankroll, quotaTarget, floorStartBankroll, floorComplete, runDefeated, runActive, floorBetsPlaced, endlessMode, endRun, finishQuotaEarly } = useSurvivalStore()
 
   const netProgress = bankroll - floorStartBankroll
   const netTarget = quotaTarget - floorStartBankroll
@@ -145,7 +145,7 @@ export function FloorPanel() {
             <button
               onClick={() => {
                 setConfirmOpen(false)
-                abandonRun()
+                endRun({ victory: false, exiting: true })
                 router.push('/')
               }}
               className="text-sm px-4 py-2 rounded bg-red-900/60 border border-red-800 text-red-300 hover:bg-red-900 transition-colors"

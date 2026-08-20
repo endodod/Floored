@@ -102,15 +102,17 @@ export function MissionPanel({ compact = false }: MissionPanelProps) {
               +{m.rewardSparks} ✦
             </span>
           </div>
-          <div className="flex h-7 w-7 items-center justify-center">
+          <div className="flex h-7 items-center justify-center">
             {showReroll ? (
               <button
                 type="button"
                 onClick={() => rerollMissionWithTicket(idx)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-700 bg-zinc-950/80 text-xs font-semibold text-zinc-100 hover:bg-zinc-900"
+                className="inline-flex h-7 items-center gap-1 rounded-md border border-zinc-700 bg-zinc-950/80 pl-1.5 pr-2 text-zinc-100 hover:bg-zinc-900"
                 title="Use a lobby reroll ticket to reroll this mission (once per mission)"
               >
-                ↻
+                <span aria-hidden className="text-xs leading-none">↻:</span>
+                <span aria-hidden className="text-xs leading-none">🎟️</span>
+                <span className="text-[10px] font-bold tabular-nums leading-none">×1</span>
               </button>
             ) : (
               <span className="h-7 w-7" />

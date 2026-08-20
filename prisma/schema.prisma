@@ -21,10 +21,13 @@ model Run {
   peakBankroll  Int          @default(1000)
   floorsReached Int          @default(0)
   gamesPlayed   Int          @default(0)
+  victory       Boolean      @default(false)
   seed          String
   diceWinSums   Int[]
   diceLossSums  Int[]
   results       GameResult[]
+
+  @@index([userId])
 }
 
 model GameResult {

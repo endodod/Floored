@@ -16,12 +16,12 @@ import { calcShopPrice } from '@/lib/survival/balance'
 import {
   getLobbyTicketCount,
   LOBBY_REROLL_TICKET,
-  LOBBY_REROLL_TICKET_RULES,
 } from '@/lib/survival/lobby-ticket'
 
 export default function SurvivalPage() {
   const router = useRouter()
   const runActive = useSurvivalStore((s) => s.runActive)
+  const runEndedByExit = useSurvivalStore((s) => s.runEndedByExit)
   const lastRun = useSurvivalStore((s) => s.lastRun)
   const floorComplete = useSurvivalStore((s) => s.floorComplete)
   const runDefeated = useSurvivalStore((s) => s.runDefeated)
@@ -32,7 +32,6 @@ export default function SurvivalPage() {
 
   const [difficultyOpen, setDifficultyOpen] = useState(!runActive)
   const [mobileTab, setMobileTab] = useState<'games' | 'shop'>('games')
-  const [showTicketInfo, setShowTicketInfo] = useState(false)
 
   function handleDifficultyClose() {
     setDifficultyOpen(false)
@@ -40,6 +39,9 @@ export default function SurvivalPage() {
   }
 
   if (!runActive) {
+    // Defeat/abandon route straight home — don't flash the difficulty picker or
+    // run summary here while that navigation is in flight.
+    if (runEndedByExit) return null
     return (
       <>
         <DifficultyDialog open={difficultyOpen} onClose={handleDifficultyClose} />
@@ -92,23 +94,11 @@ export default function SurvivalPage() {
             {/* Lobby reroll ticket buy — above the shop */}
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span aria-hidden className="text-sm leading-none shrink-0">🎟️</span>
                   <p className="text-sm font-bold text-zinc-200 tabular-nums truncate">
                     Lobby Reroll Tickets: {ticketCount}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowTicketInfo((v) => !v)}
-                    aria-label="Show reroll ticket rules"
-                    aria-expanded={showTicketInfo}
-                    className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold italic transition-colors ${
-                      showTicketInfo
-                        ? 'border-sky-500 text-sky-400 bg-sky-950/40'
-                        : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
-                    }`}
-                  >
-                    i
-                  </button>
                 </div>
                 <Button
                   size="sm"
@@ -121,13 +111,6 @@ export default function SurvivalPage() {
                   <span className="ml-1 font-bold text-amber-400 tabular-nums">✦ {ticketPrice}</span>
                 </Button>
               </div>
-              {showTicketInfo && (
-                <ul className="text-[10px] text-zinc-500 leading-snug mt-3 space-y-1 list-disc list-inside">
-                  {LOBBY_REROLL_TICKET_RULES.map((rule) => (
-                    <li key={rule}>{rule}</li>
-                  ))}
-                </ul>
-              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">

@@ -10,12 +10,6 @@ export const LOBBY_REROLL_TICKET = {
   baseCost: 8,
 } as const
 
-/** Shown in the survival lobby ticket purchase panel. */
-export const LOBBY_REROLL_TICKET_RULES = [
-  'Lobby games and shop offers share a pool per floor — each game or item can only appear once (including the initial lineup).',
-  'Missions can only be rerolled once per floor; each mission type can only appear once per floor.',
-] as const
-
 export function getLobbyTicketCount(inventory: { id: string; count: number }[]): number {
   return inventory.find((i) => i.id === LOBBY_REROLL_TICKET_ID)?.count ?? 0
 }

@@ -9,5 +9,9 @@ export function generateStaticParams() {
 
 export default async function AuthPage({ params }: { params: Promise<{ path: string }> }) {
   const { path } = await params
-  return <AuthView pathname={path} />
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <AuthView pathname={path} />
+    </div>
+  )
 }
