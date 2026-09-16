@@ -26,7 +26,7 @@ import type { GameName } from '@/store/types'
 import { formatChips } from '@/utils/format'
 import { SurvivalSidebarPanel, SurvivalSidebarRow } from '@/components/survival/survival-sidebar-panel'
 
-const CARD_HEIGHT = 'min-h-[12rem]'
+const CARD_HEIGHT = 'min-h-[6.5rem] sm:min-h-[12rem]'
 
 interface SurvivalShopProps {
   /** Hide title when embedded in floor-complete modal */
@@ -126,46 +126,19 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
           : 'text-zinc-500'
 
     return (
-      <div
+      <OfferCard
         key={`slot-${slotIndex}`}
-        className={`relative rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 flex flex-col gap-2 ${CARD_HEIGHT}`}
-      >
-        {showRerollButton(slotIndex) && (
-          <button
-            type="button"
-            title="Use a lobby reroll ticket on this offer"
-            onClick={() => rerollShopOfferWithTicket(slotIndex)}
-            className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-xs font-bold text-white/90 hover:bg-black/60"
-          >
-            ↻
-          </button>
-        )}
-        <div className="flex items-start justify-between gap-2 pr-7">
-          <div className="min-w-0">
-            {scopeLabel && (
-              <p className={`text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${scopeTone}`}>
-                {scopeLabel}
-              </p>
-            )}
-            <p className="text-sm font-semibold text-zinc-200">{item.name}</p>
-            {item.level != null && <p className="text-[10px] text-zinc-500">Level {item.level}</p>}
-            {item.rarity && (
-              <p className="text-[10px] uppercase tracking-wider text-zinc-600">{item.rarity}</p>
-            )}
-          </div>
-          <span className="text-sm font-bold text-amber-400 tabular-nums shrink-0">✦ {price}</span>
-        </div>
-        <p className="text-xs text-zinc-500 leading-snug flex-1">{item.description}</p>
-        <Button
-          size="sm"
-          variant={ownedText ? 'secondary' : 'default'}
-          disabled={disabled}
-          className="w-full mt-auto"
-          onClick={() => purchaseUpgrade(item.id, price, slotIndex)}
-        >
-          {ownedText ?? (canAfford ? 'Purchase' : 'Not enough sparks')}
-        </Button>
-      </div>
+        item={item}
+        price={price}
+        ownedText={ownedText}
+        canAfford={canAfford}
+        disabled={disabled}
+        scopeLabel={scopeLabel}
+        scopeTone={scopeTone}
+        canReroll={showRerollButton(slotIndex)}
+        onReroll={() => rerollShopOfferWithTicket(slotIndex)}
+        onPurchase={() => purchaseUpgrade(item.id, price, slotIndex)}
+      />
     )
   }
 
@@ -260,6 +233,99 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
           No shop items left for this floor — try next floor after more purchases.
         </p>
       )}
+    </div>
+  )
+}
+
+interface OfferCardProps {
+  item: CatalogItem
+  price: number
+  ownedText: string | null
+  canAfford: boolean
+  disabled: boolean
+  scopeLabel: string | null
+  scopeTone: string
+  canReroll: boolean
+  onReroll: () => void
+  onPurchase: () => void
+}
+
+function OfferCard({
+  item,
+  price,
+  ownedText,
+  canAfford,
+  disabled,
+  scopeLabel,
+  scopeTone,
+  canReroll,
+  onReroll,
+  onPurchase,
+}: OfferCardProps) {
+  const [showInfo, setShowInfo] = useState(false)
+
+  return (
+    <div
+      className={`relative rounded-xl border border-zinc-800 bg-zinc-950/50 p-2 sm:p-3 flex flex-col gap-1.5 sm:gap-2 ${CARD_HEIGHT}`}
+    >
+      {canReroll && (
+        <button
+          type="button"
+          title="Use a lobby reroll ticket on this offer"
+          onClick={onReroll}
+          className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-xs font-bold text-white/90 hover:bg-black/60"
+        >
+          ↻
+        </button>
+      )}
+      <div className="flex items-start justify-between gap-2 pr-7">
+        <div className="min-w-0">
+          {scopeLabel && (
+            <p className={`text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${scopeTone}`}>
+              {scopeLabel}
+            </p>
+          )}
+          <p className="text-sm font-semibold text-zinc-200">{item.name}</p>
+          {item.level != null && <p className="text-[10px] text-zinc-500">Level {item.level}</p>}
+          {item.rarity && (
+            <p className="text-[10px] uppercase tracking-wider text-zinc-600">{item.rarity}</p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span className="text-sm font-bold text-amber-400 tabular-nums">✦ {price}</span>
+          <button
+            type="button"
+            onClick={() => setShowInfo((v) => !v)}
+            aria-label="Show description"
+            aria-expanded={showInfo}
+            className={`sm:hidden flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold italic transition-colors ${
+              showInfo
+                ? 'border-sky-500 text-sky-400 bg-sky-950/40'
+                : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            i
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop: description always visible */}
+      <p className="hidden sm:block text-xs text-zinc-500 leading-snug flex-1">{item.description}</p>
+
+      {/* Mobile: description only when info toggle is on */}
+      {showInfo && (
+        <p className="sm:hidden text-[11px] text-zinc-500 leading-snug">{item.description}</p>
+      )}
+
+      <Button
+        size="sm"
+        variant={ownedText ? 'secondary' : 'default'}
+        disabled={disabled}
+        className="w-full mt-auto"
+        onClick={onPurchase}
+      >
+        {ownedText ?? (canAfford ? 'Purchase' : 'Not enough sparks')}
+      </Button>
     </div>
   )
 }

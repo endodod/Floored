@@ -198,18 +198,20 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
         <div className="flex min-h-0 flex-1 w-full max-w-lg flex-col">
           <div className="min-h-0 flex-1 shrink" aria-hidden />
           <div className="flex w-full flex-col items-center gap-3 shrink-0">
-          <div className="w-full h-[4.75rem] shrink-0 flex flex-col justify-center">
-            <div className="flex items-center gap-1 sm:gap-2 justify-center">
-              <div
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-lg flex-shrink-0 ${
-                  currentStep === 0 && !isSettled
-                    ? 'border-yellow-400 bg-yellow-400/20'
-                    : 'border-white/20 bg-white/5'
-                }`}
-              >
-                🐔
-              </div>
-              {Array.from({ length: MAX_STEPS }, (_, i) => {
+          <div className="w-full shrink-0 flex flex-col justify-center min-h-[4.75rem] sm:h-[4.75rem]">
+            {(() => {
+              const chicken = (
+                <div
+                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-lg flex-shrink-0 ${
+                    currentStep === 0 && !isSettled
+                      ? 'border-yellow-400 bg-yellow-400/20'
+                      : 'border-white/20 bg-white/5'
+                  }`}
+                >
+                  🐔
+                </div>
+              )
+              const renderStep = (i: number) => {
                 const stepNum = i + 1
                 const isPassed = currentStep >= stepNum && !isSettled
                 const isCurrent = currentStep === stepNum && isInProgress
@@ -237,8 +239,29 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                     </div>
                   </div>
                 )
-              })}
-            </div>
+              }
+              const half = MAX_STEPS / 2
+              return (
+                <>
+                  {/* sm and up: single row */}
+                  <div className="hidden sm:flex items-center gap-1 sm:gap-2 justify-center">
+                    {chicken}
+                    {Array.from({ length: MAX_STEPS }, (_, i) => renderStep(i))}
+                  </div>
+
+                  {/* Mobile: split into 2 rows so the road fits the screen width */}
+                  <div className="flex sm:hidden flex-col items-center gap-1.5">
+                    <div className="flex items-center gap-1 justify-center">
+                      {chicken}
+                      {Array.from({ length: half }, (_, i) => renderStep(i))}
+                    </div>
+                    <div className="flex items-center gap-1 justify-center">
+                      {Array.from({ length: MAX_STEPS - half }, (_, i) => renderStep(i + half))}
+                    </div>
+                  </div>
+                </>
+              )
+            })()}
             <div className="flex justify-between text-xs text-white/30 mt-2 px-1 h-4 shrink-0">
               <span>Start</span>
               <span>

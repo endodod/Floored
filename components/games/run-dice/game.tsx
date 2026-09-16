@@ -302,7 +302,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
           visible={!isBetting && round.betAmount > 0}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 shrink-0">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 shrink-0 justify-center sm:justify-start">
         <div className="flex items-center justify-center min-h-[100px] shrink-0">
           {isRolling ? (
             <div className="flex flex-col items-center gap-2">

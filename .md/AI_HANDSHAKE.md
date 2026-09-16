@@ -17,9 +17,15 @@ Tech: Next.js 15 App Router · TypeScript · Tailwind CSS (JIT) · Zustand store
 
 ## Key files to know
 
+All project docs (this file included) live under [.md/](.md/), not the repo root.
+
 | Path | Purpose |
 |---|---|
-| `GAME_TEMPLATE.txt` | **The law.** All conventions for building a new game. Read before writing any game code. |
+| `.md/GAME_TEMPLATE.md` | **The law.** All conventions for building a new game. Read before writing any game code. |
+| `.md/BALANCE_AUDIT.md` | Balance pass notes across games/survival. |
+| `.md/ACTIVE_ITEMS_SPEC.md` | Design spec for a survival consumables system — **not yet implemented in code**. |
+| `.md/PUZZLE_MODE_SPEC.md` | Design spec for a third game mode (Puzzles) — **not yet implemented in code**. |
+| `hooks/use-is-mobile.ts` | `useIsMobile()` — SSR-safe hook tracking the `sm` (640px) breakpoint; used by `mode-select.tsx` and `app/survival/layout.tsx` for mobile-specific layout. |
 | `components/game-layout.ts` | Exports `GAME_CARD_SHELL`, `GAME_BOARD_ARENA`, `GAME_CONTROL_DOCK_M`, `GAME_STATUS_BAR` — layout constants shared by all games. |
 | `components/game-match-history.tsx` | `GameFieldWithHistory` — board wrapper with slide-out history panel. |
 | `components/lobby.tsx` | Game grid for freeplay/survival. Edit `GAMES[]` to add/unlock games. |
@@ -73,7 +79,7 @@ Game components live at `components/games/<name>/game.tsx`. Each game can have s
 **Board arena:** Playfield and surrounding UI must not shift between game-loop phases (betting /
 playing / settled). Use a fixed-height stack in the board (stats, selectors, playfield, hints)
 with `invisible pointer-events-none` instead of conditional mount. Anchor with `justify-start`
-on the arena. See `GAME_TEMPLATE.txt` section 6 and `components/games/mines/game.tsx`.
+on the arena. See `GAME_TEMPLATE.md` section 6 and `components/games/mines/game.tsx`.
 
 **Control dock:** The dock must never resize when transitioning between phases.
 The rule: **never conditionally render elements that have height in the control zone.**
@@ -84,7 +90,7 @@ Instead use two techniques:
 - Single adaptive button — one `<button>` whose `onClick`, label, and className change per
   phase. Never three separate conditionally-rendered buttons.
 
-See section 7 of `GAME_TEMPLATE.txt` for the exact DOM structure.
+See section 7 of `GAME_TEMPLATE.md` for the exact DOM structure.
 Reference: `components/games/chicken-race/game.tsx` and `components/games/dragon-tower/game.tsx`.
 
 ### Tailwind JIT + data objects
@@ -256,7 +262,7 @@ Unlocked by entering `"geek"` in the settings panel.
 
 ## Game UI rollout — all complete
 
-All 18 games conform to `GAME_TEMPLATE.txt` sections 6–7 and `components/games/mines/game.tsx`.
+All 18 games conform to `GAME_TEMPLATE.md` sections 6–7 and `components/games/mines/game.tsx`.
 
 **Per-game requirements (quick reference)**
 
@@ -283,5 +289,5 @@ All 18 games conform to `GAME_TEMPLATE.txt` sections 6–7 and `components/games
 2. `games/<name>/engine.ts` — pure init/start/action/settle functions
 3. Add `'<name>'` to `GameName` union in `store/types.ts`
 4. Add entry to `GAMES[]` in `components/lobby.tsx` (pick an unused accent color)
-5. `components/games/<name>/game.tsx` — follow `GAME_TEMPLATE.txt` exactly; add sub-components alongside as needed
+5. `components/games/<name>/game.tsx` — follow `GAME_TEMPLATE.md` exactly; add sub-components alongside as needed
 6. Add `'<name>': YourGame` to `GAME_REGISTRY` in `lib/game-registry.tsx` — **no individual page files needed**

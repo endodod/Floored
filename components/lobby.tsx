@@ -337,20 +337,21 @@ export function Lobby({ mode }: Props) {
             />
 
             {/* Card content */}
-            <div className={`relative p-5 flex flex-col justify-between ${isOrphan ? 'h-24 sm:h-32' : 'h-32'}`}>
+            <div className={`relative p-5 flex flex-col ${isOrphan ? 'min-h-24 sm:min-h-32' : 'min-h-32'}`}>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl leading-none select-none">{g.symbol}</span>
-                  <p className="text-white font-black text-xl sm:text-2xl leading-tight tracking-tight group-hover:scale-105 origin-left transition-transform duration-200">
+                <div className="flex items-start gap-2 min-h-[2.875rem] sm:min-h-[3.75rem]">
+                  <span className="text-2xl leading-none select-none shrink-0">{g.symbol}</span>
+                  <p className="text-white font-black text-lg sm:text-2xl leading-tight tracking-tight line-clamp-2 group-hover:scale-105 origin-left transition-transform duration-200">
                     {g.label}
                   </p>
                 </div>
-                <p className="text-white/40 text-xs mt-1">{g.sub}</p>
+                <p className="text-white/40 text-xs mt-1 line-clamp-1">{g.sub}</p>
               </div>
 
+              <div className="mt-auto pt-2">
               {available ? (
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors shrink-0">
                     {isLoading ? (
                       <svg className="w-3.5 h-3.5 animate-spin text-white" viewBox="0 0 24 24" fill="none" aria-hidden>
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -368,13 +369,14 @@ export function Lobby({ mode }: Props) {
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5 text-white/20 text-xs">
-                  <svg viewBox="0 0 12 12" className="w-3 h-3 fill-white/20" aria-hidden>
+                  <svg viewBox="0 0 12 12" className="w-3 h-3 fill-white/20 shrink-0" aria-hidden>
                     <rect x="2" y="5" width="8" height="6" rx="1" />
                     <path d="M4 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" strokeWidth="1.2" fill="none" />
                   </svg>
                   Coming soon
                 </div>
               )}
+              </div>
             </div>
           </button>
           </div>

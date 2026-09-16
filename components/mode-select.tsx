@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useSurvivalStore } from '@/store/survival-store'
 import { DifficultyDialog } from '@/components/difficulty-dialog'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 
 const FELT = {
   backgroundImage:
@@ -19,12 +20,21 @@ const PLAY_ICON = (
   </svg>
 )
 
+const LOCK_ICON = (
+  <svg viewBox="0 0 12 12" className="w-3 h-3 fill-white/60" aria-hidden>
+    <rect x="2" y="5" width="8" height="6" rx="1" />
+    <path d="M4 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+  </svg>
+)
+
 export function ModeSelect() {
   const router = useRouter()
   const runActive = useSurvivalStore((s) => s.runActive)
   const [difficultyOpen, setDifficultyOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   function handleSurvivalClick() {
+    if (isMobile) return
     if (runActive) {
       router.push('/survival')
     } else {
@@ -40,8 +50,15 @@ export function ModeSelect() {
         <button
           type="button"
           onClick={handleSurvivalClick}
-          onMouseEnter={() => router.prefetch('/survival')}
-          className="relative overflow-hidden rounded-2xl border border-amber-900/50 hover:border-amber-600 bg-gradient-to-br from-amber-950 to-red-950 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] group transition-all duration-200 text-left"
+          onMouseEnter={() => !isMobile && router.prefetch('/survival')}
+          disabled={isMobile}
+          aria-disabled={isMobile}
+          className={[
+            'relative overflow-hidden rounded-2xl border transition-all duration-200 text-left',
+            isMobile
+              ? 'border-amber-900/20 bg-gradient-to-br from-amber-950/40 to-red-950/40 opacity-50 cursor-not-allowed'
+              : 'border-amber-900/50 hover:border-amber-600 bg-gradient-to-br from-amber-950 to-red-950 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] group',
+          ].join(' ')}
         >
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={FELT} />
 
@@ -51,7 +68,9 @@ export function ModeSelect() {
                 Survival
               </p>
               <p className="text-white/40 text-xs mt-1.5">
-                Hit each floor&apos;s bankroll quota within {FLOOR_BET_LIMIT} bets — or the run ends.
+                {isMobile
+                  ? 'Not available on mobile — open this on a larger screen to play.'
+                  : <>Hit each floor&apos;s bankroll quota within {FLOOR_BET_LIMIT} bets — or the run ends.</>}
               </p>
             </div>
 
@@ -71,10 +90,10 @@ export function ModeSelect() {
 
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
-                {PLAY_ICON}
+                {isMobile ? LOCK_ICON : PLAY_ICON}
               </div>
               <span className="text-white/50 text-xs font-medium group-hover:text-white/80 transition-colors">
-                {runActive ? 'Continue run' : 'Play now'}
+                {isMobile ? 'Desktop only' : runActive ? 'Continue run' : 'Play now'}
               </span>
             </div>
           </div>

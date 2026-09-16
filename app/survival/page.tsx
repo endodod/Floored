@@ -31,6 +31,8 @@ export default function SurvivalPage() {
   const purchaseLobbyRerollTicket = useSurvivalStore((s) => s.purchaseLobbyRerollTicket)
 
   const [difficultyOpen, setDifficultyOpen] = useState(!runActive)
+  const [mobileTab, setMobileTab] = useState<'games' | 'shop'>('games')
+  const [showTicketInfo, setShowTicketInfo] = useState(false)
 
   function handleDifficultyClose() {
     setDifficultyOpen(false)
@@ -57,39 +59,82 @@ export default function SurvivalPage() {
       <SurvivalDefeatModal />
       <div className="flex flex-col gap-3">
         <FloorPanel />
-        <Lobby mode="survival" />
 
         {showHubPanels && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <div className="lg:col-span-2">
-              <SurvivalShop />
-            </div>
-            <div className="lg:col-span-1 flex flex-col gap-3">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-zinc-200 tabular-nums mt-1">
-                      Lobby Reroll Tickets: {ticketCount}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!canBuyTicket}
-                    className="h-8 border-zinc-700 text-xs"
-                    onClick={() => purchaseLobbyRerollTicket()}
+          <div className="sm:hidden flex gap-1 rounded-xl bg-zinc-900/60 border border-zinc-800 p-1">
+            <button
+              type="button"
+              onClick={() => setMobileTab('games')}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                mobileTab === 'games' ? 'bg-amber-900/40 text-amber-300' : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              Games
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('shop')}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                mobileTab === 'shop' ? 'bg-amber-900/40 text-amber-300' : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              Shop
+            </button>
+          </div>
+        )}
+
+        <div className={showHubPanels ? `${mobileTab === 'games' ? 'block' : 'hidden'} sm:block` : ''}>
+          <Lobby mode="survival" />
+        </div>
+
+        {showHubPanels && (
+          <div className={`${mobileTab === 'shop' ? 'flex' : 'hidden'} sm:flex flex-col gap-3`}>
+            {/* Lobby reroll ticket buy — above the shop */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="text-sm font-bold text-zinc-200 tabular-nums truncate">
+                    Lobby Reroll Tickets: {ticketCount}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowTicketInfo((v) => !v)}
+                    aria-label="Show reroll ticket rules"
+                    aria-expanded={showTicketInfo}
+                    className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold italic transition-colors ${
+                      showTicketInfo
+                        ? 'border-sky-500 text-sky-400 bg-sky-950/40'
+                        : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
-                    Buy ticket
-                    <span className="ml-1 font-bold text-amber-400 tabular-nums">✦ {ticketPrice}</span>
-                  </Button>
+                    i
+                  </button>
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!canBuyTicket}
+                  className="h-8 border-zinc-700 text-xs shrink-0"
+                  onClick={() => purchaseLobbyRerollTicket()}
+                >
+                  Buy ticket
+                  <span className="ml-1 font-bold text-amber-400 tabular-nums">✦ {ticketPrice}</span>
+                </Button>
+              </div>
+              {showTicketInfo && (
                 <ul className="text-[10px] text-zinc-500 leading-snug mt-3 space-y-1 list-disc list-inside">
                   {LOBBY_REROLL_TICKET_RULES.map((rule) => (
                     <li key={rule}>{rule}</li>
                   ))}
                 </ul>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <div className="lg:col-span-2">
+                <SurvivalShop />
               </div>
-              <div className="flex-1">
+              <div className="lg:col-span-1">
                 <MissionPanel />
               </div>
             </div>
