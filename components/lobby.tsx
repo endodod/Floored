@@ -310,9 +310,11 @@ export function Lobby({ mode }: Props) {
                     type="button"
                     title="Use a ticket to reroll this lobby game"
                     onClick={() => rerollLobbyGame(slotIndex)}
-                    className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg border border-white/20 bg-black/40 text-sm font-bold text-white/90 hover:bg-black/60 hover:border-white/40 transition-colors"
+                    className="absolute top-2 right-2 z-10 flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-black/40 pl-1.5 pr-2 text-white/90 hover:bg-black/60 hover:border-white/40 transition-colors"
                   >
-                    ↻
+                    <span aria-hidden className="text-xs leading-none">↻:</span>
+                    <span aria-hidden className="text-xs leading-none">🎟️</span>
+                    <span className="text-[10px] font-bold tabular-nums leading-none">×1</span>
                   </button>
                 )
               })()}

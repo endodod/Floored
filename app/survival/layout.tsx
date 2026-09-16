@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useIsMobile } from '@/hooks/use-is-mobile'
+import { RunSync } from '@/components/survival/run-sync'
 
 export default function SurvivalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -14,5 +15,10 @@ export default function SurvivalLayout({ children }: { children: React.ReactNode
 
   if (isMobile) return null
 
-  return <>{children}</>
+  return (
+    <>
+      <RunSync />
+      {children}
+    </>
+  )
 }

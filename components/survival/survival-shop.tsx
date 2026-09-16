@@ -136,6 +136,7 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
         scopeLabel={scopeLabel}
         scopeTone={scopeTone}
         canReroll={showRerollButton(slotIndex)}
+        ticketCount={lobbyTicketCount}
         onReroll={() => rerollShopOfferWithTicket(slotIndex)}
         onPurchase={() => purchaseUpgrade(item.id, price, slotIndex)}
       />
@@ -246,9 +247,12 @@ interface OfferCardProps {
   scopeLabel: string | null
   scopeTone: string
   canReroll: boolean
+  ticketCount: number
   onReroll: () => void
   onPurchase: () => void
 }
+
+const REROLL_TICKET_COST = 1
 
 function OfferCard({
   item,
@@ -259,6 +263,7 @@ function OfferCard({
   scopeLabel,
   scopeTone,
   canReroll,
+  ticketCount,
   onReroll,
   onPurchase,
 }: OfferCardProps) {
@@ -271,14 +276,16 @@ function OfferCard({
       {canReroll && (
         <button
           type="button"
-          title="Use a lobby reroll ticket on this offer"
+          title={`Spend 1 lobby reroll ticket to reroll this offer (${ticketCount} owned)`}
           onClick={onReroll}
-          className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-black/40 text-xs font-bold text-white/90 hover:bg-black/60"
+          className="absolute top-2 right-2 z-10 flex items-center gap-1 h-6 pl-1 pr-1.5 rounded-md border border-white/20 bg-black/40 text-white/90 hover:bg-black/60"
         >
-          ↻
+          <span aria-hidden className="text-xs leading-none">↻:</span>
+          <span aria-hidden className="text-xs leading-none">🎟️</span>
+          <span className="text-[10px] font-bold tabular-nums leading-none">×{REROLL_TICKET_COST}</span>
         </button>
       )}
-      <div className="flex items-start justify-between gap-2 pr-7">
+      <div className="flex items-start justify-between gap-2 pr-14">
         <div className="min-w-0">
           {scopeLabel && (
             <p className={`text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${scopeTone}`}>
@@ -292,7 +299,6 @@ function OfferCard({
           )}
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
-          <span className="text-sm font-bold text-amber-400 tabular-nums">✦ {price}</span>
           <button
             type="button"
             onClick={() => setShowInfo((v) => !v)}
@@ -321,10 +327,15 @@ function OfferCard({
         size="sm"
         variant={ownedText ? 'secondary' : 'default'}
         disabled={disabled}
-        className="w-full mt-auto"
+        className="w-full mt-auto flex items-center justify-center gap-1.5"
         onClick={onPurchase}
       >
-        {ownedText ?? (canAfford ? 'Purchase' : 'Not enough sparks')}
+        {ownedText ?? (
+          <>
+            <span>{canAfford ? 'Purchase' : 'Not enough sparks'}</span>
+            <span className="font-bold tabular-nums">✦ {price}</span>
+          </>
+        )}
       </Button>
     </div>
   )

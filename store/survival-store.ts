@@ -87,6 +87,8 @@ const RUN_PERSIST_KEYS = [
   'survivalHighscore',
   'survivalWinCount',
   'lastRun',
+  'runStartedAt',
+  'lastSyncedRunAt',
   'quotaTarget',
   'floorStartBankroll',
   'floorGames',
@@ -180,6 +182,9 @@ export const useSurvivalStore = create<SurvivalStore>()(
       survivalHighscore: 0,
       survivalWinCount: 0,
       lastRun: null,
+      runStartedAt: null,
+      lastSyncedRunAt: null,
+      markRunSynced: (endedAt) => set({ lastSyncedRunAt: endedAt }),
 
       quotaTarget: 0,
       floorStartBankroll: STARTING_BANKROLL,
@@ -209,6 +214,7 @@ export const useSurvivalStore = create<SurvivalStore>()(
       endlessMode: false,
       cursed: false,
       blessed: false,
+      runEndedByExit: false,
       ...initialFloorBetState(),
 
       startRun: (difficulty: Difficulty) => {
@@ -236,6 +242,7 @@ export const useSurvivalStore = create<SurvivalStore>()(
           history: [],
           peakBankroll: STARTING_BANKROLL,
           lastRun: null,
+          runStartedAt: new Date().toISOString(),
           quotaTarget: floor1.quotaTarget,
           floorStartBankroll: STARTING_BANKROLL,
           floorGames: floor1.floorGames,
@@ -253,6 +260,7 @@ export const useSurvivalStore = create<SurvivalStore>()(
           runDefeated: false,
           defeatReason: null,
           pendingDefeatReason: null,
+          runEndedByExit: false,
           firstBetInsuranceUsed: false,
           shopRerollCount: 0,
           shopPurchaseCount: 0,
@@ -275,53 +283,6 @@ export const useSurvivalStore = create<SurvivalStore>()(
         })
       },
 
-      abandonRun: () =>
-        set({
-          runActive: false,
-          runSeed: null,
-          lastRun: null,
-          gamesPlayed: 0,
-          streak: 0,
-          currentFloor: 1,
-          slotsUsed: 0,
-          floorMinBet: getFloorMinBet(1),
-          difficulty: null,
-          modifiers: [],
-          history: [],
-          peakBankroll: STARTING_BANKROLL,
-          bankroll: STARTING_BANKROLL,
-          sparks: STARTING_SPARKS,
-          quotaTarget: 0,
-          floorStartBankroll: STARTING_BANKROLL,
-          floorGames: [],
-          missions: [],
-          completedMissionIds: [],
-          purchasedUpgrades: [],
-          inventory: [],
-          floorHistory: [],
-          floorComplete: false,
-          floorCompleteReason: null,
-          runDefeated: false,
-          defeatReason: null,
-          pendingDefeatReason: null,
-          firstBetInsuranceUsed: false,
-          shopRerollCount: 0,
-          shopPurchaseCount: 0,
-          shopPurchasedSlotIndices: [],
-          missionRerollCount: 0,
-          lobbyRerollCount: 0,
-          shopSlotItemIds: [...EMPTY_SHOP_SLOT_ITEM_IDS],
-          shopOfferedIds: { game: [], run: [], active: [] },
-          shopTicketRollSeq: 0,
-          missionOfferedKeys: [],
-          missionTicketRerolledSlots: [],
-          lobbyGamesOffered: [],
-          endlessMode: false,
-          cursed: false,
-          blessed: false,
-          ...initialFloorBetState(),
-        }),
-
       endRun: (opts) =>
         set((s) => {
           const floorSparkIncome = (opts?.victory ?? false) && s.difficulty != null
@@ -343,6 +304,7 @@ export const useSurvivalStore = create<SurvivalStore>()(
             runDefeated: false,
             defeatReason: null,
             pendingDefeatReason: null,
+            runEndedByExit: opts?.exiting ?? false,
             sparks: totalSparks,
             survivalHighscore: Math.max(s.survivalHighscore, floorsReached),
             survivalWinCount: s.survivalWinCount + (opts?.victory ? 1 : 0),
@@ -356,6 +318,9 @@ export const useSurvivalStore = create<SurvivalStore>()(
               difficulty: s.difficulty,
               victory: opts?.victory ?? false,
               endlessMode: s.endlessMode,
+              seed: s.runSeed,
+              startedAt: s.runStartedAt,
+              results: s.history,
             },
             endlessMode: false,
           }
@@ -539,7 +504,7 @@ export const useSurvivalStore = create<SurvivalStore>()(
         }),
 
       confirmDefeat: () => {
-        get().abandonRun()
+        get().endRun({ victory: false, exiting: true })
       },
 
       clearLastRun: () => set({ lastRun: null }),

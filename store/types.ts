@@ -97,6 +97,10 @@ export interface RunSummary {
   victory?: boolean
   /** True if the player continued past floor 10 into endless mode. */
   endlessMode?: boolean
+  /** Run seed and per-bet history, captured for server sync — `runSeed`/`history` are cleared/reset by the time this is read. */
+  seed: string | null
+  startedAt: string | null
+  results: GameResult[]
 }
 
 export interface SurvivalStore {
@@ -127,6 +131,11 @@ export interface SurvivalStore {
   /** All-time count of runs ended via "Claim Victory". */
   survivalWinCount: number
   lastRun: RunSummary | null
+  /** ISO timestamp the current run started — used to report run duration to the server. */
+  runStartedAt: string | null
+  /** `lastRun.endedAt` of the most recent run successfully persisted to the server; guards against re-syncing. */
+  lastSyncedRunAt: string | null
+  markRunSynced: (endedAt: string) => void
 
   // ── Per-floor generated state (Step 2 / 3) ───────────────────────────────
   /** Bankroll value the player must reach to clear this floor. */
@@ -189,11 +198,13 @@ export interface SurvivalStore {
   cursed: boolean
   /** Player is blessed — all games are rigged to win. */
   blessed: boolean
+  /** True when the run just ended via defeat or abandon (not victory) — suppresses the
+   *  post-run difficulty picker / summary flash on the survival page while it navigates home. */
+  runEndedByExit: boolean
 
   // ── Actions ──────────────────────────────────────────────────────────────
   startRun: (difficulty: Difficulty) => void
-  endRun: (opts?: { victory?: boolean }) => void
-  abandonRun: () => void
+  endRun: (opts?: { victory?: boolean; exiting?: boolean }) => void
   advanceFloor: () => void
   continueToEndless: () => void
   dismissFloorComplete: () => void

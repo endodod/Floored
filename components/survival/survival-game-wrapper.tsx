@@ -102,6 +102,7 @@ export function SurvivalGameWrapper({
   const router = useRouter()
   const runActive = useSurvivalStore((s) => s.runActive)
   const lastRun = useSurvivalStore((s) => s.lastRun)
+  const runEndedByExit = useSurvivalStore((s) => s.runEndedByExit)
   const currentFloor = useSurvivalStore((s) => s.currentFloor)
   const floorMinBet = useSurvivalStore((s) => s.floorMinBet)
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
@@ -114,8 +115,10 @@ export function SurvivalGameWrapper({
 
   useEffect(() => {
     if (runActive) return
-    router.replace(lastRun ? '/survival' : '/')
-  }, [runActive, lastRun, router])
+    // Defeat/abandon route straight home; only victory (which keeps lastRun without
+    // exiting) sends the player back to the hub to see the run summary.
+    router.replace(runEndedByExit ? '/' : lastRun ? '/survival' : '/')
+  }, [runActive, lastRun, runEndedByExit, router])
 
   if (!runActive) return null
 
