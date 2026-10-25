@@ -1,24 +1,9 @@
-'use client'
-
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useIsMobile } from '@/hooks/use-is-mobile'
-import { RunSync } from '@/components/survival/run-sync'
+import { notFound } from 'next/navigation'
+import { SURVIVAL_ENABLED } from '@/lib/features'
+import { SurvivalShell } from './survival-shell'
 
 export default function SurvivalLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const isMobile = useIsMobile()
-
-  useEffect(() => {
-    if (isMobile) router.replace('/')
-  }, [isMobile, router])
-
-  if (isMobile) return null
-
-  return (
-    <>
-      <RunSync />
-      {children}
-    </>
-  )
+  // Survival is parked — its routes 404 until the flag is turned back on.
+  if (!SURVIVAL_ENABLED) notFound()
+  return <SurvivalShell>{children}</SurvivalShell>
 }

@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { CardFace, CardBack } from './card'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
@@ -24,7 +25,7 @@ const CARD_CSS: React.CSSProperties = {
 } as React.CSSProperties
 
 interface BlackjackGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<BlackjackResult>

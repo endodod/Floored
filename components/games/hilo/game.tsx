@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -117,7 +118,7 @@ interface HiLoResult {
 }
 
 interface HiLoGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<HiLoResult>
@@ -128,7 +129,8 @@ type PendingResult = GamePendingResult
 export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   const router = useRouter()
   const { floorMinBet } = useSurvivalStore()
-  const { autoReBet, forceTie } = useSettingsStore()
+  const { autoReBet, forceTie: forceTieSetting } = useSettingsStore()
+  const forceTie = forceTieSetting && mode !== 'daily'
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()

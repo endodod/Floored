@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -67,7 +68,7 @@ interface MinesResult {
 }
 
 interface MinesGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<MinesResult>

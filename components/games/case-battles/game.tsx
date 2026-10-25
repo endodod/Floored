@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -51,7 +52,7 @@ interface CaseBattlesResult {
 }
 
 interface CaseBattlesGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<CaseBattlesResult>

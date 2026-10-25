@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -52,7 +53,7 @@ interface DragonTowerResult {
 }
 
 interface DragonTowerGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<DragonTowerResult>

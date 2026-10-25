@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
@@ -52,7 +53,7 @@ export function GameDockBackButton({
   mode,
   visible,
 }: {
-  mode: 'freeplay' | 'survival'
+  mode: GameMode
   visible: boolean
 }) {
   const router = useRouter()
@@ -63,7 +64,7 @@ export function GameDockBackButton({
       onClick={() => router.push(`/${mode}`)}
       className="absolute left-2 top-2 z-10 rounded-xl border border-zinc-600 bg-zinc-900 px-3 py-2 shadow-lg text-sm font-semibold text-zinc-200 hover:bg-zinc-800 hover:border-zinc-400 hover:text-white transition-colors"
     >
-      {mode === 'survival' ? '← Lobby' : '← Game Selection'}
+      {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily' : '← Game Selection'}
     </button>
   )
 }
@@ -80,7 +81,7 @@ export function GameDockLeaveButton({
   mode,
   className = GAME_DOCK_LEAVE_BTN,
 }: {
-  mode: 'freeplay' | 'survival'
+  mode: GameMode
   className?: string
 }) {
   const router = useRouter()
@@ -99,7 +100,7 @@ export function GameDockSettledActions({
   onNext,
   nextLabel = 'Next →',
 }: {
-  mode: 'freeplay' | 'survival'
+  mode: GameMode
   showGameOver: boolean
   onGameOver: () => void
   onNext: () => void

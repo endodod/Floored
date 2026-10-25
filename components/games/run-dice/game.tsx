@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -62,7 +63,7 @@ interface RunDiceResult {
 type PendingResult = GamePendingResult
 
 interface RunDiceGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   config?: RunDiceConfig
   onBet?: (amount: number) => void

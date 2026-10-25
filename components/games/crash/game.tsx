@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useState } from 'react'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -41,7 +42,7 @@ interface CrashResult {
 }
 
 interface CrashGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<CrashResult>

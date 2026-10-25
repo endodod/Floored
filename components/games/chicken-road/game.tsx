@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -58,7 +59,7 @@ interface ChickenResult {
 }
 
 interface ChickenGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<ChickenResult>

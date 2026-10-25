@@ -7,6 +7,13 @@ import { useSurvivalStore } from '@/store/survival-store'
 import { DifficultyDialog } from '@/components/difficulty-dialog'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
 import { useIsMobile } from '@/hooks/use-is-mobile'
+import { useHydrated } from '@/hooks/use-hydrated'
+import { SURVIVAL_ENABLED } from '@/lib/features'
+import { dailyDateKey, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
+import { dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
+import { useDailyStore } from '@/store/daily-store'
+import { formatChips } from '@/utils/format'
+import { DailyCountdown } from '@/components/daily/countdown'
 
 const FELT = {
   backgroundImage:
@@ -32,6 +39,18 @@ export function ModeSelect() {
   const runActive = useSurvivalStore((s) => s.runActive)
   const [difficultyOpen, setDifficultyOpen] = useState(false)
   const isMobile = useIsMobile()
+  const hydrated = useHydrated()
+  const dailyDate = useDailyStore((s) => s.date)
+  const dailyHistory = useDailyStore((s) => s.history)
+  const dailyProgress = useDailyStore((s) => s.progress)
+
+  // The home page is prerendered, so today's challenge is only known once mounted.
+  const today = hydrated ? dailyDateKey() : null
+  const challenge = today ? generateDailyChallenge(today) : null
+  const todayRecord = today ? dailyHistory[today] : undefined
+  const dailyStarted =
+    hydrated && dailyDate === today && Object.values(dailyProgress).some((p) => (p?.betsUsed ?? 0) > 0)
+  const dailyCta = todayRecord ? 'See results' : dailyStarted ? 'Continue' : 'Play today'
 
   function handleSurvivalClick() {
     if (isMobile) return
@@ -46,7 +65,54 @@ export function ModeSelect() {
     <>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
-        {/* ── Survival ── */}
+        {/* ── Daily ── */}
+        <Link
+          href="/daily"
+          className="relative overflow-hidden rounded-2xl border border-amber-900/50 hover:border-amber-600 bg-gradient-to-br from-amber-950 to-red-950 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] group transition-all duration-200 text-left"
+        >
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={FELT} />
+          <div className="relative p-6 flex flex-col gap-5">
+            <div>
+              <p className="text-white font-black text-3xl tracking-tight group-hover:scale-[1.04] origin-left transition-transform duration-200">
+                Daily{challenge && ` #${challenge.number}`}
+              </p>
+              <p className="text-white/40 text-xs mt-1.5">
+                Same challenge for everyone. One attempt. Split your bankroll across six games.
+              </p>
+            </div>
+
+            <ul className="space-y-1.5">
+              {[
+                challenge ? `${formatChips(challenge.bankroll)} shared bankroll` : 'One shared bankroll',
+                challenge ? `6 games · ${totalDailyBets(challenge)} bets total` : '6 random games',
+                todayRecord
+                  ? `Today: ${formatChips(todayRecord.endBankroll)} (${formatMultiplier(dailyMultiplier(todayRecord))})`
+                  : 'One try per day',
+              ].map((text) => (
+                <li key={text} className="flex items-center gap-2 text-white/50 text-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />
+                  {text}
+                </li>
+              ))}
+              <li className="flex items-center gap-2 text-white/50 text-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />
+                New daily in&nbsp;<DailyCountdown />
+              </li>
+            </ul>
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
+                {PLAY_ICON}
+              </div>
+              <span className="text-white/50 text-xs font-medium group-hover:text-white/80 transition-colors">
+                {dailyCta}
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        {/* ── Survival (parked — see lib/features.ts) ── */}
+        {SURVIVAL_ENABLED && (
         <button
           type="button"
           onClick={handleSurvivalClick}
@@ -98,6 +164,7 @@ export function ModeSelect() {
             </div>
           </div>
         </button>
+        )}
 
         {/* ── Freeplay ── */}
         <Link
@@ -141,7 +208,9 @@ export function ModeSelect() {
         </Link>
       </div>
 
-      <DifficultyDialog open={difficultyOpen} onClose={() => setDifficultyOpen(false)} />
+      {SURVIVAL_ENABLED && (
+        <DifficultyDialog open={difficultyOpen} onClose={() => setDifficultyOpen(false)} />
+      )}
     </>
   )
 }

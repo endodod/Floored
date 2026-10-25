@@ -7,6 +7,8 @@ import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
+import { SURVIVAL_ENABLED } from '@/lib/features'
+import { useDailyStore } from '@/store/daily-store'
 
 const HUD_PILL =
   'px-2.5 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-700/60 tabular-nums text-sm font-bold text-zinc-200'
@@ -14,6 +16,7 @@ const HUD_PILL =
 export function Navbar() {
   const pathname = usePathname()
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
+  const dailyBankroll = useDailyStore((s) => s.bankroll)
   const runActive = useSurvivalStore((s) => s.runActive)
   const bankroll = useSurvivalStore((s) => s.bankroll)
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
@@ -21,6 +24,8 @@ export function Navbar() {
 
   const isHome = pathname === '/'
   const inFreeplay = pathname?.startsWith('/freeplay')
+  const inDaily = pathname?.startsWith('/daily')
+  const inSettings = pathname?.startsWith('/settings')
   const inSurvival = pathname?.startsWith('/survival')
   const inSurvivalGame = pathname?.startsWith('/survival/') ?? false
 
@@ -60,7 +65,18 @@ export function Navbar() {
 
               {!isHome && (
                 <div className="hidden sm:flex items-center gap-1">
-                  {survivalDesktop}
+                  <Link
+                    href="/daily"
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                      inDaily
+                        ? 'bg-amber-900/40 text-amber-300'
+                        : 'text-white/60 hover:text-white hover:bg-white/8'
+                    }`}
+                  >
+                    Daily
+                  </Link>
+
+                  {SURVIVAL_ENABLED && survivalDesktop}
 
                   <Link
                     href="/freeplay"
@@ -109,8 +125,22 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Right: bankroll + account */}
+            {/* Right: bankroll + settings */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 z-10">
+              {inDaily && hydrated && (
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                  <div className="text-right">
+                    <p className="text-white/40 text-[10px] uppercase tracking-wider leading-none mb-0.5">
+                      Daily
+                    </p>
+                    <p className="text-white font-bold text-sm leading-none tabular-nums">
+                      {formatChips(dailyBankroll)}
+                    </p>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50 flex-shrink-0" />
+                </div>
+              )}
+
               {inFreeplay && (
                 <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10">
                   <div className="text-right">
@@ -126,12 +156,14 @@ export function Navbar() {
               )}
 
               <Link
-                href="/account"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-                aria-label="Account"
+                href="/settings"
+                className={`flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 transition-colors ${
+                  inSettings ? 'bg-white/15 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                }`}
+                aria-label="Settings"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.04.31-.07.63-.07.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" />
                 </svg>
               </Link>
             </div>

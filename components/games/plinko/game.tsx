@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -66,7 +67,7 @@ interface PlinkoDropAccumulator {
 }
 
 interface PlinkoGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<PlinkoResult>
@@ -204,7 +205,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
     const acc = dropAccumulatorRef.current
     let resolved: PlinkoResult & { firstBetWasFree?: boolean; payoutBoostMult?: number }
 
-    if (acc && modeRef.current === 'survival') {
+    if (acc && modeRef.current !== 'freeplay') {
       acc.totalPayout += finalPayout
       acc.maxMultiplier = Math.max(acc.maxMultiplier, finalMultiplier)
       if (finalOutcome === 'loss' && session.bet >= minBetRef.current) {

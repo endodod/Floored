@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -63,7 +64,7 @@ interface PokerResult {
 }
 
 interface Poker1pGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<PokerResult>

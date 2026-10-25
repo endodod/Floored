@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useEffect, useRef, useState } from 'react'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -50,7 +51,7 @@ export function useBlackjackGame({
   onBet,
   onResolve,
 }: {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<BlackjackResult>

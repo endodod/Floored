@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
+import { useDailyStore } from '@/store/daily-store'
 import type { GameName } from '@/store/types'
 import { applyResolveModifiers } from '@/lib/survival/apply-modifiers'
 import { evaluateMissionsOnGame } from '@/lib/survival/mission-evaluator'
@@ -204,4 +205,44 @@ export function useSurvivalGameBankroll(game: GameName) {
   )
 
   return { bankroll, wagerCap, openingBetFree, handleBet, handleResolve }
+}
+
+export function useDailyGameBankroll(game: GameName, bets: number) {
+  const bankroll = useDailyStore((s) => s.bankroll)
+  const finished = useDailyStore((s) => s.finished)
+  const openRound = useDailyStore((s) => s.openRound)
+  const used = useDailyStore((s) => s.progress[game]?.betsUsed ?? 0)
+  const placeBet = useDailyStore((s) => s.placeBet)
+  const resolve = useDailyStore((s) => s.resolve)
+
+  const betsRemaining = Math.max(0, bets - used)
+  const roundOpen = openRound === game
+  // With no bets left the game sees an empty wallet, so it can't start another round.
+  const wagerCap = !finished && (betsRemaining > 0 || roundOpen) ? Math.max(0, bankroll) : 0
+
+  // Payout already credited by partial resolves (Plinko balls) in the current round.
+  const roundCreditedRef = useRef(0)
+
+  const handleBet = useCallback(
+    (amount: number) => {
+      if (useDailyStore.getState().openRound !== game) roundCreditedRef.current = 0
+      placeBet(game, amount)
+    },
+    [game, placeBet],
+  )
+
+  const handleResolve = useCallback(
+    <R extends GameResolvePayload>(result: R): R => {
+      const settle = result.settleFloorBet !== false
+      const credit = result.payoutAlreadyCredited
+        ? result.payout - roundCreditedRef.current
+        : result.payout
+      roundCreditedRef.current = settle ? 0 : roundCreditedRef.current + result.payout
+      resolve(game, credit, settle)
+      return result
+    },
+    [game, resolve],
+  )
+
+  return { bankroll, wagerCap, betsRemaining, roundOpen, finished, handleBet, handleResolve }
 }
