@@ -8,6 +8,9 @@ export const DAILY_MAX_BETS = 5
 /** Possible shared starting bankrolls — one is picked per day. */
 export const DAILY_BANKROLLS = [1_000, 1_500, 2_000, 2_500, 3_000, 4_000, 5_000] as const
 
+/** Possible min bets as a share of the day's bankroll. */
+export const DAILY_MIN_BET_SHARES = [0.01, 0.02, 0.03] as const
+
 /** Day #1 of the daily challenge (UTC). */
 const EPOCH_UTC = Date.UTC(2026, 9, 25)
 const DAY_MS = 86_400_000
@@ -25,6 +28,8 @@ export interface DailyChallenge {
   number: number
   /** Shared bankroll for all six games. */
   bankroll: number
+  /** Smallest allowed stake per bet. Dropping below it with bets left fails the day. */
+  minBet: number
   games: DailyGameSlot[]
 }
 
@@ -59,7 +64,10 @@ export function generateDailyChallenge(date: string): DailyChallenge {
     bets: DAILY_MIN_BETS + Math.floor(rng() * (DAILY_MAX_BETS - DAILY_MIN_BETS + 1)),
   }))
 
-  return { date, number: dailyNumber(date), bankroll, games }
+  const share = DAILY_MIN_BET_SHARES[Math.floor(rng() * DAILY_MIN_BET_SHARES.length)]!
+  const minBet = Math.max(5, Math.round((bankroll * share) / 5) * 5)
+
+  return { date, number: dailyNumber(date), bankroll, minBet, games }
 }
 
 export function totalDailyBets(challenge: DailyChallenge): number {

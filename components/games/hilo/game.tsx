@@ -1,9 +1,9 @@
 'use client'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import type { GameMode } from '@/store/types'
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -128,14 +128,13 @@ type PendingResult = GamePendingResult
 
 export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet, forceTie: forceTieSetting } = useSettingsStore()
   const forceTie = forceTieSetting && mode !== 'daily'
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
   const { hiloHotStreak } = useSurvivalPerks('hilo')
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<HiLoState>(initHiLo)
   const [currentBet, setCurrentBet] = useState(0)

@@ -1,11 +1,13 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useSurvivalStore } from '@/store/survival-store'
 import { isOpeningBetFreeAvailable } from '@/lib/survival/survival-perks'
 
 /** True when Opening Ticket free first bet is still available this floor. */
 export function useOpeningTicketActive(): boolean {
-  return useSurvivalStore((s) =>
+  const inSurvival = usePathname()?.startsWith('/survival') ?? false
+  const active = useSurvivalStore((s) =>
     isOpeningBetFreeAvailable({
       currentFloor: s.currentFloor,
       history: s.history,
@@ -14,4 +16,5 @@ export function useOpeningTicketActive(): boolean {
       runActive: s.runActive,
     }),
   )
+  return inSurvival && active
 }

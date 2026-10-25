@@ -77,7 +77,7 @@ export function ModeSelect() {
                 Daily{challenge && ` #${challenge.number}`}
               </p>
               <p className="text-white/40 text-xs mt-1.5">
-                Same challenge for everyone. One attempt. Split your bankroll across six games.
+                Same challenge for everyone. One attempt. Play every bet across six games without going under.
               </p>
             </div>
 
@@ -86,8 +86,12 @@ export function ModeSelect() {
                 challenge ? `${formatChips(challenge.bankroll)} shared bankroll` : 'One shared bankroll',
                 challenge ? `6 games · ${totalDailyBets(challenge)} bets total` : '6 random games',
                 todayRecord
-                  ? `Today: ${formatChips(todayRecord.endBankroll)} (${formatMultiplier(dailyMultiplier(todayRecord))})`
-                  : 'One try per day',
+                  ? todayRecord.endReason === 'failed'
+                    ? 'Today: 💀 Failed'
+                    : `Today: ${formatChips(todayRecord.endBankroll)} (${formatMultiplier(dailyMultiplier(todayRecord))})`
+                  : challenge
+                    ? `Use every bet · min ${formatChips(challenge.minBet)}`
+                    : 'One try per day',
               ].map((text) => (
                 <li key={text} className="flex items-center gap-2 text-white/50 text-sm">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />

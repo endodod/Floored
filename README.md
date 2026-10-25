@@ -10,8 +10,9 @@ A new challenge every day at 00:00 UTC — the same for every player, and you ge
 
 - One **shared bankroll** (randomly $1K–$5K) for the whole day
 - **Six random games**, each with a random number of bets (1–5)
-- Play them in any order and split your bankroll however you like — the goal is to finish the day with as much as possible
-- The day ends when every bet is used, you bust, or you choose to cash out early
+- A **min bet** per bet (1–3% of the bankroll)
+- You **must place every bet** — play the games in any order and split your bankroll to finish the day with as much as possible
+- If your bankroll drops below the min bet, **today's challenge is failed**
 - Leaving a game mid-round forfeits that round's stake (the bet still counts)
 - Results are shareable as a spoiler-free emoji grid; streaks and best result are kept locally
 

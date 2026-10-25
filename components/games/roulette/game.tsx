@@ -2,7 +2,6 @@
 import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_BOARD_ARENA,
@@ -52,6 +51,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { RouletteBetType, RouletteState } from '@/games/roulette/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 // Standard European roulette board layout: 3 rows top-to-bottom, 12 columns left-to-right
 const BOARD_ROWS = [
@@ -122,7 +122,6 @@ function betBtnStyle(type: RouletteBetType, isActive: boolean): string {
 }
 
 export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameProps) {
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -133,7 +132,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
     'perk_roulette_tracker',
     rouletteTrackerLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<RouletteState>(initRoulette())
   const [trackerEliminated, setTrackerEliminated] = useState<number[]>([])

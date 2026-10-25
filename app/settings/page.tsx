@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { SURVIVAL_ENABLED } from '@/lib/features'
 import { useDailyStore } from '@/store/daily-store'
-import { currentStreak, dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
+import { bestMultiplier, currentStreak, formatMultiplier } from '@/lib/daily/share'
 import { dailyDateKey } from '@/lib/daily/challenge'
 import { useHydrated } from '@/hooks/use-hydrated'
 import { useFreeplayStore } from '@/store/freeplay-store'
@@ -49,7 +49,7 @@ export default function SettingsPage() {
   const hydrated = useHydrated()
   const dailyHistory = useDailyStore((s) => s.history)
   const dailyRecords = Object.values(dailyHistory)
-  const bestDaily = dailyRecords.reduce((m, r) => Math.max(m, dailyMultiplier(r)), 0)
+  const bestDaily = bestMultiplier(dailyHistory)
   const freeplayPeakBankroll = useFreeplayStore((s) => s.peakBankroll)
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
   const {

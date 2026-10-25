@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -43,6 +42,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { CaseBattleState, CaseRarity } from '@/games/case-battles/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 interface CaseBattlesResult {
   outcome: 'win' | 'loss' | 'push'
@@ -122,14 +122,13 @@ const FREEPLAY_BASE = 10
 
 export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattlesGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
   const { caseXray, caseXrayLevel } = useSurvivalPerks('case-battles')
   const xrayProc = usePerkProc(mode === 'survival' && caseXray, 'perk_case_xray', caseXrayLevel)
-  const minBet = mode === 'survival' ? floorMinBet : FREEPLAY_BASE
+  const minBet = useGameMinBet(mode, FREEPLAY_BASE)
   const cases = getCases(minBet)
 
   const [state, setState] = useState<CaseBattleState>(initCaseBattle)

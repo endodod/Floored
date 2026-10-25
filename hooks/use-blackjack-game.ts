@@ -2,7 +2,6 @@
 import type { GameMode } from '@/store/types'
 
 import { useEffect, useRef, useState } from 'react'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { buildPendingResult, type GamePendingResult } from '@/lib/game-result-labels'
 import { survivalAfterNext } from '@/lib/survival/survival-round'
@@ -34,6 +33,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { MatchHistoryEntry } from '@/components/game-match-history'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 export interface BlackjackResult {
   outcome: BlackjackOutcome
@@ -56,12 +56,11 @@ export function useBlackjackGame({
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<BlackjackResult>
 }) {
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
   const { peekDealer, peekDealerLevel } = useSurvivalPerks('blackjack')
   const showDealerHole = mode === 'survival' && peekDealer
 

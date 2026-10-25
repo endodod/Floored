@@ -4,21 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDailyStore, betsLeft } from '@/store/daily-store'
 import { dailyDateKey, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
-import { currentStreak, dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
+import { bestMultiplier, currentStreak, formatMultiplier } from '@/lib/daily/share'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { useHydrated } from '@/hooks/use-hydrated'
 import { formatChips } from '@/utils/format'
 import { DailyCountdown } from '@/components/daily/countdown'
 import { DailyResults } from '@/components/daily/daily-results'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog'
 import type { GameName } from '@/store/types'
 
 const FELT = {
@@ -58,9 +49,7 @@ export default function DailyPage() {
   const progress = useDailyStore((s) => s.progress)
   const finished = useDailyStore((s) => s.finished)
   const history = useDailyStore((s) => s.history)
-  const cashOut = useDailyStore((s) => s.cashOut)
   const [pending, setPending] = useState<GameName | null>(null)
-  const [cashOutOpen, setCashOutOpen] = useState(false)
 
   useEffect(() => {
     syncToday()
@@ -88,7 +77,7 @@ export default function DailyPage() {
   const started = usedBets > 0
   const net = bankroll - challenge.bankroll
   const records = Object.values(history)
-  const best = records.reduce((m, r) => Math.max(m, dailyMultiplier(r)), 0)
+  const best = bestMultiplier(history)
 
   function handlePick(game: GameName) {
     if (pending) return
@@ -118,20 +107,26 @@ export default function DailyPage() {
         <>
           {!started && (
             <div className="rounded-2xl border border-amber-900/40 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/80 leading-relaxed">
-              You get <b className="text-white">{formatChips(challenge.bankroll)}</b> for all six games. Each game allows a
-              fixed number of bets — split your bankroll however you like to finish with as much as possible.
+              You get <b className="text-white">{formatChips(challenge.bankroll)}</b> for all six games and must place
+              every bet — each at least <b className="text-white">{formatChips(challenge.minBet)}</b>. Split your bankroll
+              to finish with as much as possible. Drop below the min bet and today&apos;s challenge is failed.
               One attempt per day, same challenge for everyone.
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-2">
-            <Stat label="Bankroll" value={formatChips(bankroll)} />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <Stat
+              label="Bankroll"
+              value={formatChips(bankroll)}
+              tone={bankroll < challenge.minBet * 3 ? 'text-amber-400' : 'text-white'}
+            />
             <Stat
               label="Net"
               value={`${net > 0 ? '+' : ''}${formatChips(net)}`}
               tone={net > 0 ? 'text-emerald-400' : net < 0 ? 'text-red-400' : 'text-white'}
             />
             <Stat label="Bets left" value={`${totalBets - usedBets}/${totalBets}`} />
+            <Stat label="Min bet" value={formatChips(challenge.minBet)} />
           </div>
         </>
       )}
@@ -142,7 +137,7 @@ export default function DailyPage() {
           if (!entry) return null
           const p = progress[game]
           const left = betsLeft(progress, game, bets)
-          const playable = !finished && left > 0 && bankroll >= 1
+          const playable = !finished && left > 0 && bankroll >= challenge.minBet
           const gameNet = p && p.betsUsed > 0 ? p.returned - p.wagered : null
           const isLoading = pending === game
 
@@ -192,52 +187,14 @@ export default function DailyPage() {
         })}
       </div>
 
-      {!record && started && (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => setCashOutOpen(true)}
-            className="px-4 py-2 border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white font-bold rounded-lg transition-colors text-sm"
-          >
-            Cash out &amp; end today
-          </button>
-        </div>
-      )}
-
       {records.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           <Stat label="Played" value={String(records.length)} />
           <Stat label="Streak" value={String(currentStreak(history, dailyDateKey()))} />
-          <Stat label="Best" value={formatMultiplier(best)} />
+          <Stat label="Best" value={best > 0 ? formatMultiplier(best) : '–'} />
         </div>
       )}
 
-      <Dialog open={cashOutOpen} onOpenChange={setCashOutOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>End today&apos;s daily?</DialogTitle>
-            <DialogDescription>
-              You&apos;ll finish with {formatChips(bankroll)}. Unused bets are forfeited and you can&apos;t play again until tomorrow.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <DialogClose asChild>
-              <button className="text-sm px-4 py-2 rounded border border-zinc-700 text-muted-foreground hover:bg-zinc-800 transition-colors">
-                Keep playing
-              </button>
-            </DialogClose>
-            <button
-              onClick={() => {
-                setCashOutOpen(false)
-                cashOut()
-              }}
-              className="text-sm px-4 py-2 rounded bg-amber-900/60 border border-amber-800 text-amber-200 hover:bg-amber-900 transition-colors"
-            >
-              Cash out
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

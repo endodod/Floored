@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -43,6 +42,7 @@ import {
 } from '@/games/street-cups/engine'
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 /* Slot left-percent anchors (center of each slot in a 100%-wide container). */
 const SLOT_X = ['16%', '50%', '84%'] as const
@@ -178,7 +178,6 @@ type PendingResult = GamePendingResult
 
 export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet }   = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -190,7 +189,7 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
     streetCupsTruthLevel,
   )
   const cupsProcActiveRef = useRef(false)
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound]         = useState<StreetCupsState>(initStreetCups)
   const [currentBet, setCurrentBet] = useState(0)

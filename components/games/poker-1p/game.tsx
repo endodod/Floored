@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -43,6 +42,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { Card, PokerHandRank, PokerState } from '@/games/poker-1p/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const HAND_ORDER: PokerHandRank[] = [
   'royal-flush',
@@ -128,7 +128,6 @@ const HAND_RANK_COLOR: Record<PokerHandRank, string> = {
 
 export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -140,7 +139,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
     pokerHoldBiasLevel,
   )
   const holdBiasRef = useRef(false)
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [state, setState] = useState<PokerState>(initPoker)
   const [currentBet, setCurrentBet] = useState(0)

@@ -2,7 +2,6 @@
 import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -33,6 +32,7 @@ import { computeMultiplier, initCrash, loseGame, startCrashRound, winGame } from
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { CrashState } from '@/games/crash/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 interface CrashResult {
   outcome: 'win' | 'loss' | 'push'
@@ -179,13 +179,12 @@ function CrashCurve({
 }
 
 export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) {
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
   const { crashCushion, crashCushionLevel } = useSurvivalPerks('crash')
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound]         = useState<CrashState>(initCrash())
   const [currentBet, setCurrentBet] = useState(0)

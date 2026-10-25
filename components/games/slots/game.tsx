@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_BOARD_ARENA,
@@ -38,6 +37,7 @@ import { getSlotsResultPayout, initSlots, loseGame, PAYTABLE, spinSlots, winGame
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { SlotsState, SlotsSymbol } from '@/games/slots/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const SYMBOL_DISPLAY: Record<SlotsSymbol, { glyph: string; color: string; bg: string }> = {
   cherry:  { glyph: '🍒', color: 'text-red-400',    bg: 'bg-red-950/60' },
@@ -112,7 +112,6 @@ function Reel({ symbol, spinning, landed }: { symbol: SlotsSymbol | null; spinni
 
 export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -123,7 +122,7 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
     'perk_slots_shield',
     slotsShieldLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<SlotsState>(initSlots())
   const [currentBet, setCurrentBet] = useState(0)

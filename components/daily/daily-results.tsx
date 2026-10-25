@@ -7,16 +7,11 @@ import { buildShareText, dailyMultiplier, formatMultiplier } from '@/lib/daily/s
 import { formatChips } from '@/utils/format'
 import { DailyCountdown } from './countdown'
 
-const END_LABEL: Record<DailyRecord['endReason'], string> = {
-  complete: 'All bets played',
-  cashout: 'Cashed out early',
-  bust: 'Busted',
-}
-
 export function DailyResults({ record }: { record: DailyRecord }) {
   const [copied, setCopied] = useState(false)
   const m = dailyMultiplier(record)
   const up = record.endBankroll >= record.startBankroll
+  const failed = record.endReason === 'failed'
 
   async function handleShare() {
     const text = buildShareText(record, window.location.origin)
@@ -37,17 +32,23 @@ export function DailyResults({ record }: { record: DailyRecord }) {
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-            {END_LABEL[record.endReason]}
+          <p className={`text-[10px] font-semibold uppercase tracking-wider ${failed ? 'text-red-400/80' : 'text-zinc-500'}`}>
+            {failed ? 'Challenge failed' : 'Challenge complete'}
           </p>
-          <p className="mt-1 text-4xl font-black tabular-nums text-white">
-            {formatChips(record.endBankroll)}
-            <span className={`ml-2 text-xl ${up ? 'text-emerald-400' : 'text-red-400'}`}>
-              {formatMultiplier(m)}
-            </span>
-          </p>
+          {failed ? (
+            <p className="mt-1 text-4xl font-black text-red-400">💀 Failed</p>
+          ) : (
+            <p className="mt-1 text-4xl font-black tabular-nums text-white">
+              {formatChips(record.endBankroll)}
+              <span className={`ml-2 text-xl ${up ? 'text-emerald-400' : 'text-red-400'}`}>
+                {formatMultiplier(m)}
+              </span>
+            </p>
+          )}
           <p className="text-xs text-zinc-500 mt-1">
-            Started with {formatChips(record.startBankroll)}
+            {failed
+              ? `Bankroll fell to ${formatChips(record.endBankroll)}, below the min bet.`
+              : `Started with ${formatChips(record.startBankroll)}`}
           </p>
         </div>
         <div className="flex flex-col items-start sm:items-end gap-2">

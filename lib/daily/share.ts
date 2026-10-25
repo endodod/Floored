@@ -20,21 +20,32 @@ function netSquare(net: number | null): string {
 export function buildShareText(record: DailyRecord, url: string): string {
   const m = dailyMultiplier(record)
   const squares = record.gameNets.map((g) => netSquare(g.net)).join('')
-  const tag = record.endReason === 'bust' ? ' 💀' : ''
+  const line =
+    record.endReason === 'failed'
+      ? `${formatChips(record.startBankroll)} → 💀 Failed`
+      : `${formatChips(record.startBankroll)} → ${formatChips(record.endBankroll)} (${formatMultiplier(m)})`
   return [
     `Floored Daily #${record.number}`,
-    `${formatChips(record.startBankroll)} → ${formatChips(record.endBankroll)} (${formatMultiplier(m)})${tag}`,
+    line,
     squares,
     url,
   ].join('\n')
 }
 
-/** Consecutive days played ending today or yesterday (UTC). */
+/** Best multiplier across completed (not failed) dailies; 0 if none. */
+export function bestMultiplier(history: Record<string, DailyRecord>): number {
+  return Object.values(history)
+    .filter((r) => r.endReason === 'complete')
+    .reduce((m, r) => Math.max(m, dailyMultiplier(r)), 0)
+}
+
+/** Consecutive completed (not failed) dailies ending today or yesterday (UTC). */
 export function currentStreak(history: Record<string, DailyRecord>, today: string): number {
+  const cleared = (date: string) => history[date]?.endReason === 'complete'
   const day = new Date(`${today}T00:00:00Z`)
-  if (!history[today]) day.setUTCDate(day.getUTCDate() - 1)
+  if (!cleared(today)) day.setUTCDate(day.getUTCDate() - 1)
   let streak = 0
-  while (history[day.toISOString().slice(0, 10)]) {
+  while (cleared(day.toISOString().slice(0, 10))) {
     streak++
     day.setUTCDate(day.getUTCDate() - 1)
   }

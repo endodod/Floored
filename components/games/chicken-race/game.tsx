@@ -2,7 +2,6 @@
 import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -46,6 +45,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { ChickenRaceState } from '@/games/chicken-race/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 interface ChickenRaceResult {
   outcome: 'win' | 'loss'
@@ -64,7 +64,6 @@ interface ChickenRaceGameProps {
 type PendingResult = GamePendingResult
 
 export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRaceGameProps) {
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -75,7 +74,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
     'perk_chicken_scout',
     chickenScoutLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [state, setState] = useState<ChickenRaceState>(initChickenRace)
   const [scoutEliminate, setScoutEliminate] = useState<number | null>(null)

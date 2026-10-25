@@ -14,7 +14,8 @@ export interface DailyGameProgress {
   returned: number
 }
 
-export type DailyEndReason = 'complete' | 'bust' | 'cashout'
+/** `complete` = every bet used; `failed` = bankroll fell below the min bet. */
+export type DailyEndReason = 'complete' | 'failed'
 
 export interface DailyRecord {
   date: string
@@ -45,7 +46,6 @@ interface DailyStore {
   placeBet: (game: GameName, amount: number) => void
   /** Credits a payout; `settle` closes the round and may end the day. */
   resolve: (game: GameName, payout: number, settle: boolean) => void
-  cashOut: () => void
 }
 
 function emptyDay(date: string) {
@@ -133,14 +133,23 @@ export const useDailyStore = create<DailyStore>()(
         })
         if (settle) maybeFinish()
       },
-
-      cashOut: () => {
-        const s = get()
-        if (s.finished || s.openRound || !s.date) return
-        finish('cashout')
-      },
     }),
-    { name: 'floored-daily' },
+    {
+      name: 'floored-daily',
+      version: 1,
+      migrate: (persisted, version) => {
+        const state = persisted as DailyStore
+        if (version < 1) {
+          // v0 had early cash-out and a separate bust reason.
+          const legacy = (r: string | null) => (r === 'bust' ? 'failed' : r == null ? null : 'complete')
+          state.endReason = legacy(state.endReason) as DailyEndReason | null
+          for (const rec of Object.values(state.history ?? {})) {
+            rec.endReason = legacy(rec.endReason) as DailyEndReason
+          }
+        }
+        return state
+      },
+    },
   ),
 )
 
@@ -154,12 +163,12 @@ function finish(endReason: DailyEndReason) {
   })
 }
 
-/** Ends the day once every bet is used or the bankroll can't cover a $1 bet. */
+/** Fails the day once the bankroll can't cover the min bet; completes it once every bet is used. */
 function maybeFinish() {
   const s = useDailyStore.getState()
   if (s.finished || s.openRound || !s.date) return
-  if (s.bankroll < 1) return finish('bust')
   const challenge = generateDailyChallenge(s.date)
+  if (s.bankroll < challenge.minBet) return finish('failed')
   const allUsed = challenge.games.every(({ game, bets }) => (s.progress[game]?.betsUsed ?? 0) >= bets)
   if (allUsed) finish('complete')
 }

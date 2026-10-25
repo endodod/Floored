@@ -2,7 +2,6 @@
 import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_CARD_SHELL,
@@ -46,6 +45,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { OverUnderState } from '@/games/over-under/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const ROLL_ANIM_MS = 620
 
@@ -66,7 +66,6 @@ interface OverUnderGameProps {
 type PendingResult = GamePendingResult
 
 export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGameProps) {
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -77,7 +76,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
     'perk_over_under_shield',
     overUnderShieldLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [safeZone, setSafeZone] = useState(40)
   const [round, setRound] = useState<OverUnderState>(initOverUnder())

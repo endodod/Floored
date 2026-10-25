@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -44,6 +43,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { DragonTowerState, TileRow } from '@/games/dragon-tower/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 interface DragonTowerResult {
   outcome: 'win' | 'loss'
@@ -99,7 +99,6 @@ function tileContent(row: TileRow, tileIdx: number): string {
 
 export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowerGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -110,7 +109,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
     'perk_dragon_blindspot',
     dragonBlindspotLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [state, setState] = useState<DragonTowerState>(initDragonTower)
   const [currentBet, setCurrentBet] = useState(0)

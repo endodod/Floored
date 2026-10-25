@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_CARD_SHELL,
@@ -49,6 +48,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { WheelColor, WheelState } from '@/games/wheel/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const COLOR_STYLES: Record<WheelColor, { bg: string; border: string; text: string; ring: string }> = {
   red:   { bg: 'bg-red-600',     border: 'border-red-400',     text: 'text-red-300',     ring: 'ring-red-400'     },
@@ -147,7 +147,6 @@ function wheelColorMultiplier(color: WheelColor) {
 
 export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -158,7 +157,7 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
     'perk_wheel_scout',
     wheelScoutLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<WheelState>(initWheel())
   const [crossedOutColor, setCrossedOutColor] = useState<WheelColor | null>(null)

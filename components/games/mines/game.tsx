@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_BOARD_ARENA,
@@ -50,6 +49,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { MinesState } from '@/games/mines/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const DIFFICULTIES: MinesState['difficulty'][] = ['easy', 'medium', 'hard', 'insane']
 
@@ -78,7 +78,6 @@ type PendingResult = GamePendingResult
 
 export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -89,7 +88,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
     'perk_mines_safe',
     minesSafeLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [difficulty, setDifficulty] = useState<MinesState['difficulty']>('easy')
   const [lastDifficulty, setLastDifficulty] = useState<MinesState['difficulty']>('easy')

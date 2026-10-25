@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -33,6 +32,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import { cashOut, flipAgain, initCoinFlip, loseFlipAgain, loseGame, startFlip, winFlipAgain, winGame } from '@/games/coin-flip/engine'
 import type { CoinFlipState, CoinSide } from '@/games/coin-flip/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const COIN_SPIN_MS = 1500
 const COIN_LAND_MS = 900
@@ -67,13 +67,12 @@ type PendingResult = GamePendingResult
 
 export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
   const { coinBias, purchasedUpgrades } = useSurvivalPerks('coin-flip')
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
   const biasChance =
     mode === 'survival' && coinBias
       ? getCoinBiasChance(purchasedUpgrades, 'coin-flip')

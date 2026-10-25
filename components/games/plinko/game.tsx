@@ -32,6 +32,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { PlinkoPayoutResult, PlinkoRisk } from '@/games/plinko/types'
 import { PlinkoBoard, type PlinkoBall } from '@/components/plinko-board'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const MIN_BALLS = 1
 const MAX_BALLS = 10
@@ -76,7 +77,6 @@ interface PlinkoGameProps {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps) {
-  const floorMinBet = useSurvivalStore((s) => s.floorMinBet)
   const pendingDefeatReason = useSurvivalStore((s) => s.pendingDefeatReason)
   const { cursed } = useCurse()
   const { blessed } = useBless()
@@ -87,7 +87,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
     plinkoGoldenBallLevel,
   )
   const { autoReBet } = useSettingsStore()
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [risk, setRisk] = useState<PlinkoRisk>('medium')
   const [ballCount, setBallCount] = useState(MIN_BALLS)

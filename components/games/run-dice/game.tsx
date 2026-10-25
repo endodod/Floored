@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_CARD_SHELL,
@@ -47,6 +46,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { RunDiceConfig, RunDiceState } from '@/games/run-dice/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const DICE_WEIGHT: Record<number, number> = {2:1,3:2,4:3,5:4,6:5,7:6,8:5,9:4,10:3,11:2,12:1}
 
@@ -72,7 +72,6 @@ interface RunDiceGameProps {
 
 export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDiceGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -83,7 +82,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
     'perk_run_dice_insight',
     runDiceInsightLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<RunDiceState>(initRunDice(config))
   const protectionActiveRef = useRef(false)

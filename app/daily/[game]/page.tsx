@@ -15,7 +15,8 @@ import type { GameName } from '@/store/types'
 const PILL =
   'px-2.5 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-700/60 tabular-nums text-sm font-bold text-zinc-200'
 
-function DailyGame({ game, bets }: { game: GameName; bets: number }) {
+function DailyGame({ game, bets, minBet }: { game: GameName; bets: number; minBet: number }) {
+  const endReason = useDailyStore((s) => s.endReason)
   const { bankroll, wagerCap, betsRemaining, roundOpen, finished, handleBet, handleResolve } =
     useDailyGameBankroll(game, bets)
   const GameComponent = GAME_REGISTRY[game]
@@ -35,14 +36,12 @@ function DailyGame({ game, bets }: { game: GameName; bets: number }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
-        <Link
-          href="/daily"
-          className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-zinc-200 hover:bg-zinc-800 hover:border-zinc-500 transition-colors"
-        >
-          ← Daily
-        </Link>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-2">
+          <div className={PILL}>
+            <span className="text-[9px] font-normal text-zinc-500 mr-1">Min bet</span>
+            {formatChips(minBet)}
+          </div>
           <div className={PILL}>
             <span className="text-[9px] font-normal text-zinc-500 mr-1">{entry?.label ?? game} bets</span>
             {betsRemaining}
@@ -59,10 +58,12 @@ function DailyGame({ game, bets }: { game: GameName; bets: number }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-xs rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center shadow-2xl">
             <h2 className="text-2xl font-black text-foreground mb-2">
-              {finished ? 'Daily complete' : 'Out of bets'}
+              {!finished ? 'Out of bets' : endReason === 'failed' ? 'Challenge failed' : 'Daily complete'}
             </h2>
             <p className="text-zinc-500 text-sm mb-8">
-              {finished
+              {finished && endReason === 'failed'
+                ? `Your bankroll (${formatChips(bankroll)}) fell below the min bet. Try again tomorrow.`
+                : finished
                 ? `You finished today with ${formatChips(bankroll)}.`
                 : `No bets left on ${entry?.label ?? game}. Bankroll: ${formatChips(bankroll)}.`}
             </p>
@@ -95,10 +96,8 @@ export default function DailyGamePage({ params }: { params: Promise<{ game: stri
     setReady(true)
   }, [syncToday, abandonOpenRound])
 
-  const slot = useMemo(
-    () => generateDailyChallenge(date ?? dailyDateKey()).games.find((g) => g.game === game),
-    [date, game],
-  )
+  const challenge = useMemo(() => generateDailyChallenge(date ?? dailyDateKey()), [date])
+  const slot = challenge.games.find((g) => g.game === game)
 
   const invalid = hydrated && ready && !slot
   useEffect(() => {
@@ -106,5 +105,5 @@ export default function DailyGamePage({ params }: { params: Promise<{ game: stri
   }, [invalid, router])
 
   if (!hydrated || !ready || !slot) return null
-  return <DailyGame key={`${date}-${game}`} game={slot.game} bets={slot.bets} />
+  return <DailyGame key={`${date}-${game}`} game={slot.game} bets={slot.bets} minBet={challenge.minBet} />
 }

@@ -3,7 +3,6 @@ import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_BOARD_ARENA,
@@ -55,6 +54,7 @@ import {
   winGame,
 } from '@/games/keno/engine'
 import type { KenoState } from '@/games/keno/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 const DRAW_TICK_MS = 380
 
@@ -76,7 +76,6 @@ type PendingResult = GamePendingResult
 
 export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -87,7 +86,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
     'perk_keno_heat',
     kenoHeatLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<KenoState>(initKeno())
   const [currentBet, setCurrentBet] = useState(0)
