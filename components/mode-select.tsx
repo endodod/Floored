@@ -77,14 +77,14 @@ export function ModeSelect() {
                 Daily{challenge && ` #${challenge.number}`}
               </p>
               <p className="text-white/40 text-xs mt-1.5">
-                Same challenge for everyone. One attempt. Play every bet across six games without going under.
+                Same challenge for everyone. One attempt. Play every bet across three games without going under.
               </p>
             </div>
 
             <ul className="space-y-1.5">
               {[
                 challenge ? `${formatChips(challenge.bankroll)} shared bankroll` : 'One shared bankroll',
-                challenge ? `6 games · ${totalDailyBets(challenge)} bets total` : '6 random games',
+                challenge ? `3 games · ${totalDailyBets(challenge)} bets total` : '3 random games',
                 todayRecord
                   ? todayRecord.endReason === 'failed'
                     ? 'Today: 💀 Failed'

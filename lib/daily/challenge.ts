@@ -2,9 +2,9 @@ import type { GameName } from '@/store/types'
 import { GAMES } from '@/lib/game-catalog'
 import { createRng, seedFromString } from '@/utils/rng'
 
-export const DAILY_GAME_COUNT = 6
+export const DAILY_GAME_COUNT = 3
 export const DAILY_MIN_BETS = 1
-export const DAILY_MAX_BETS = 5
+export const DAILY_MAX_BETS = 3
 /** Possible shared starting bankrolls — one is picked per day. */
 export const DAILY_BANKROLLS = [1_000, 1_500, 2_000, 2_500, 3_000, 4_000, 5_000] as const
 
@@ -26,7 +26,7 @@ export interface DailyChallenge {
   date: string
   /** 1-based day number since launch. */
   number: number
-  /** Shared bankroll for all six games. */
+  /** Shared bankroll for all the day's games. */
   bankroll: number
   /** Smallest allowed stake per bet. Dropping below it with bets left fails the day. */
   minBet: number

@@ -29,10 +29,10 @@ export const GAME_DOCK_SETTLED_SLOT =
 export const GAME_DOCK_ACTIONS = 'shrink-0 w-full flex flex-col items-center gap-1'
 
 const CHIP_BTN =
-  'w-12 h-12 rounded-full border-2 font-bold text-sm shadow-lg transition-all duration-100 active:scale-90 hover:scale-105 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100'
+  'w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full border-2 font-bold text-xs sm:text-sm shadow-lg transition-all duration-100 active:scale-90 hover:scale-105 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100'
 
 const FRAC_BTN =
-  'h-12 px-3 rounded-full border-2 font-bold text-sm shadow-lg transition-all duration-100 active:scale-90 hover:scale-105 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100'
+  'h-11 sm:h-12 px-2.5 sm:px-3 shrink-0 whitespace-nowrap rounded-full border-2 font-bold text-xs sm:text-sm shadow-lg transition-all duration-100 active:scale-90 hover:scale-105 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100'
 
 const BET_SECTION_TITLE =
   'text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-400 leading-tight'
@@ -380,7 +380,7 @@ export function GameDockChipRow({
 
   return (
     <div
-      className={`flex shrink-0 flex-nowrap justify-center items-center gap-2 min-h-12 ${!visible ? 'hidden' : ''}`}
+      className={`flex shrink-0 flex-wrap justify-center items-center gap-1.5 sm:gap-2 min-h-12 ${!visible ? 'hidden' : ''}`}
     >
       {showQuote && quoteIdx !== undefined ? (
         <GameDockRandomQuote quoteIdx={quoteIdx} />

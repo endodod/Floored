@@ -8,7 +8,7 @@ export default function HomePage() {
           FLOORED
         </h1>
         <p className="text-white/30 text-[10px] sm:text-[11px] tracking-[0.2em] sm:tracking-[0.3em] uppercase">
-          One bankroll &middot; Six games &middot; New every day
+          One bankroll &middot; Three games &middot; New every day
         </p>
       </div>
       <ModeSelect />

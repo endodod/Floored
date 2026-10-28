@@ -9,7 +9,7 @@ Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 A new challenge every day at 00:00 UTC — the same for every player, and you get one attempt.
 
 - One **shared bankroll** (randomly $1K–$5K) for the whole day
-- **Six random games**, each with a random number of bets (1–5)
+- **Three random games**, each with a random number of bets (1–3)
 - A **min bet** per bet (1–3% of the bankroll)
 - You **must place every bet** — play the games in any order and split your bankroll to finish the day with as much as possible
 - If your bankroll drops below the min bet, **today's challenge is failed**

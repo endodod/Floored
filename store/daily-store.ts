@@ -153,6 +153,13 @@ export const useDailyStore = create<DailyStore>()(
   ),
 )
 
+// Keep open tabs in sync — otherwise a second tab's stale state could overwrite a finished day.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === useDailyStore.persist.getOptions().name) void useDailyStore.persist.rehydrate()
+  })
+}
+
 function finish(endReason: DailyEndReason) {
   const s = useDailyStore.getState()
   if (!s.date) return

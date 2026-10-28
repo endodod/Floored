@@ -65,7 +65,7 @@ export function DailyResults({ record }: { record: DailyRecord }) {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
         {record.gameNets.map(({ game, net }) => {
           const entry = GAME_BY_NAME.get(game)
           return (

@@ -54,6 +54,9 @@ export default function DailyPage() {
   useEffect(() => {
     syncToday()
     abandonOpenRound()
+    // Switch to the new challenge if the page is left open past 00:00 UTC.
+    const id = setInterval(syncToday, 1000)
+    return () => clearInterval(id)
   }, [syncToday, abandonOpenRound])
 
   const challenge = useMemo(() => generateDailyChallenge(date ?? dailyDateKey()), [date])
@@ -107,7 +110,7 @@ export default function DailyPage() {
         <>
           {!started && (
             <div className="rounded-2xl border border-amber-900/40 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/80 leading-relaxed">
-              You get <b className="text-white">{formatChips(challenge.bankroll)}</b> for all six games and must place
+              You get <b className="text-white">{formatChips(challenge.bankroll)}</b> for all three games and must place
               every bet — each at least <b className="text-white">{formatChips(challenge.minBet)}</b>. Split your bankroll
               to finish with as much as possible. Drop below the min bet and today&apos;s challenge is failed.
               One attempt per day, same challenge for everyone.
@@ -131,7 +134,7 @@ export default function DailyPage() {
         </>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {challenge.games.map(({ game, bets }) => {
           const entry = GAME_BY_NAME.get(game)
           if (!entry) return null
