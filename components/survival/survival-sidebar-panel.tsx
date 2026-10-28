@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 
 export const SURVIVAL_SIDEBAR_PANEL_CLASS =
-  'rounded-xl border border-zinc-800 bg-zinc-900/60 p-2 flex flex-col gap-1.5 min-h-0'
+  'rounded-md bg-surface p-2.5 flex flex-col gap-1.5 min-h-0'
 
 export function SurvivalSidebarPanel({
   title,
@@ -24,16 +24,14 @@ export function SurvivalSidebarPanel({
 }) {
   return (
     <div className={`${SURVIVAL_SIDEBAR_PANEL_CLASS} ${compact ? 'h-full' : 'shrink'}`}>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 shrink-0">
+      <p className="shrink-0 text-[13px] font-semibold text-ink">
         {title}
-        {count != null && (
-          <span className="text-zinc-600 font-normal normal-case tracking-normal"> ({count})</span>
-        )}
+        {count != null && <span className="font-normal text-dim"> {count}</span>}
       </p>
 
       {empty ? (
         <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-1 text-center px-1">
-          <span className="text-[10px] text-zinc-600">{emptyLabel ?? 'Nothing here yet'}</span>
+          <span className="text-xs text-dim">{emptyLabel ?? 'Nothing here yet'}</span>
           {footer}
         </div>
       ) : (
@@ -54,9 +52,9 @@ export function SurvivalSidebarRow({
 }) {
   return (
     <div className="flex flex-col gap-0.5 py-0.5">
-      <p className="text-[11px] text-zinc-300 leading-snug">{name}</p>
+      <p className="text-[12px] leading-snug text-soft">{name}</p>
       {scope && (
-        <p className="text-[9px] text-zinc-600 uppercase tracking-wide leading-none">{scope}</p>
+        <p className="text-[11px] leading-tight text-dim">{scope}</p>
       )}
     </div>
   )

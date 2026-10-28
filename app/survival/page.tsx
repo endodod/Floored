@@ -11,10 +11,7 @@ import { MissionPanel } from '@/components/survival/mission-panel'
 import { SurvivalShop } from '@/components/survival/survival-shop'
 import { Button } from '@/components/ui/button'
 import { calcShopPrice } from '@/lib/survival/balance'
-import {
-  getLobbyTicketCount,
-  LOBBY_REROLL_TICKET,
-} from '@/lib/survival/lobby-ticket'
+import { getLobbyTicketCount, LOBBY_REROLL_TICKET } from '@/lib/survival/lobby-ticket'
 
 export default function SurvivalPage() {
   const runActive = useSurvivalStore((s) => s.runActive)
@@ -52,71 +49,55 @@ export default function SurvivalPage() {
   const showHubPanels = !floorComplete && !runDefeated && pendingDefeatReason == null
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
       <FloorPanel />
       <FloorCompletePanel />
       <SurvivalDefeatPanel />
 
       {showHubPanels && (
-        <div className="sm:hidden flex gap-1 rounded-xl bg-zinc-900/60 border border-zinc-800 p-1">
-          <button
-            type="button"
-            onClick={() => setMobileTab('games')}
-            className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-              mobileTab === 'games' ? 'bg-amber-900/40 text-amber-300' : 'text-white/50 hover:text-white/80'
-            }`}
-          >
-            Games
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab('shop')}
-            className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-              mobileTab === 'shop' ? 'bg-amber-900/40 text-amber-300' : 'text-white/50 hover:text-white/80'
-            }`}
-          >
-            Shop
-          </button>
+        <div className="flex gap-6 border-b border-line sm:hidden" role="tablist">
+          {(['games', 'shop'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={mobileTab === tab}
+              data-active={mobileTab === tab}
+              onClick={() => setMobileTab(tab)}
+              className={`mark-line h-10 text-[13px] font-medium capitalize ${mobileTab === tab ? 'text-ink' : 'text-dim'}`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       )}
 
       {showHubPanels && (
-        <div className={`${mobileTab === 'games' ? 'block' : 'hidden'} sm:block`}>
-          <Lobby mode="survival" />
-        </div>
-      )}
-
-      {showHubPanels && (
-        <div className={`${mobileTab === 'shop' ? 'flex' : 'hidden'} sm:flex flex-col gap-3`}>
-          {/* Lobby reroll ticket buy — above the shop */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span aria-hidden className="text-sm leading-none shrink-0">🎟️</span>
-                <p className="text-sm font-bold text-zinc-200 tabular-nums truncate">
-                  Lobby Reroll Tickets: {ticketCount}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!canBuyTicket}
-                className="h-8 border-zinc-700 text-xs shrink-0"
-                onClick={() => purchaseLobbyRerollTicket()}
-              >
-                Buy ticket
-                <span className="ml-1 font-bold text-amber-400 tabular-nums">✦ {ticketPrice}</span>
+        <section className={`${mobileTab === 'games' ? 'flex' : 'hidden'} flex-col gap-4 sm:flex`} aria-labelledby="floor-games">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="floor-games" className="text-base font-semibold text-ink">
+              This floor&apos;s games
+            </h2>
+            <div className="flex items-center gap-3">
+              <p className="text-[13px] text-dim">
+                <span className="num text-ink">{ticketCount}</span> reroll ticket{ticketCount === 1 ? '' : 's'}
+              </p>
+              <Button size="sm" variant="outline" disabled={!canBuyTicket} onClick={() => purchaseLobbyRerollTicket()}>
+                Buy one for <span className="num text-gold">{ticketPrice}</span> sparks
               </Button>
             </div>
           </div>
+          <Lobby mode="survival" />
+        </section>
+      )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <div className="lg:col-span-2">
-              <SurvivalShop />
-            </div>
-            <div className="lg:col-span-1">
-              <MissionPanel />
-            </div>
+      {showHubPanels && (
+        <div className={`${mobileTab === 'shop' ? 'grid' : 'hidden'} grid-cols-1 items-start gap-3 sm:grid lg:grid-cols-3`}>
+          <div className="lg:col-span-2">
+            <SurvivalShop />
+          </div>
+          <div className="lg:col-span-1">
+            <MissionPanel />
           </div>
         </div>
       )}

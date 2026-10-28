@@ -16,7 +16,24 @@ const config = {
       screens: { "2xl": "1400px" },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-floored-sans)", "Inter", "system-ui", "sans-serif"],
+        mono: ["var(--font-floored-mono)", "ui-monospace", "monospace"],
+      },
       colors: {
+        // Data-terminal palette: one ground, cards a step darker, colour only on data.
+        ground: "var(--ground)",
+        surface: "var(--surface)",
+        raised: "var(--raised)",
+        line: "var(--line)",
+        rule: "var(--rule)",
+        control: "var(--control)",
+        ink: "var(--ink)",
+        soft: "var(--soft)",
+        dim: "var(--dim)",
+        felt: { DEFAULT: "var(--felt)", tint: "var(--felt-tint)" },
+        loss: { DEFAULT: "var(--loss)", tint: "var(--loss-tint)" },
+        gold: { DEFAULT: "var(--gold)", tint: "var(--gold-tint)" },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

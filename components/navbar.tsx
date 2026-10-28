@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { Menu, User, X } from 'lucide-react'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
@@ -10,12 +11,28 @@ import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
 import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
 import { useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
+import { FlooredMark } from '@/components/ui/terminal'
 
-const HUD_PILL =
-  'px-2.5 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-700/60 tabular-nums text-sm font-bold text-zinc-200'
+const MODES = [
+  { href: '/daily', label: 'Daily', enabled: true },
+  { href: '/ladder', label: 'Ladder', enabled: LADDER_ENABLED },
+  { href: '/survival', label: 'Survival', enabled: SURVIVAL_ENABLED },
+  { href: '/freeplay', label: 'Freeplay', enabled: true },
+].filter((m) => m.enabled)
+
+/** The mode's money, always in the same place: grey label, mono figure. */
+function BarFigure({ label, value, unit }: { label: string; value: string; unit?: string }) {
+  return (
+    <p className="flex items-baseline gap-1.5 whitespace-nowrap">
+      <span className="hidden text-xs text-dim md:inline">{label}</span>
+      <span className="num text-sm text-ink">{value}</span>
+      {unit && <span className="num text-xs text-dim">{unit}</span>}
+    </p>
+  )
+}
 
 export function Navbar() {
-  const pathname = usePathname()
+  const pathname = usePathname() ?? '/'
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
   const dailyBankroll = useDailyStore((s) => s.bankroll)
   const ladderPot = useLadderStore((s) => s.pot)
@@ -24,183 +41,143 @@ export function Navbar() {
   const bankroll = useSurvivalStore((s) => s.bankroll)
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
   const floorBetsPlaced = useSurvivalStore((s) => s.floorBetsPlaced)
+  const [menuOpen, setMenuOpen] = useState(false)
 
-  const isHome = pathname === '/'
-  const inFreeplay = pathname?.startsWith('/freeplay')
-  const inDaily = pathname?.startsWith('/daily')
-  const inLadder = pathname?.startsWith('/ladder')
-  const inAccount = pathname?.startsWith('/account')
-  const inSurvival = pathname?.startsWith('/survival')
-  const inSurvivalGame = pathname?.startsWith('/survival/') ?? false
+  const inFreeplay = pathname.startsWith('/freeplay')
+  const inDaily = pathname.startsWith('/daily')
+  const inLadder = pathname.startsWith('/ladder')
+  const inAccount = pathname.startsWith('/account')
+  const inSurvivalGame = pathname.startsWith('/survival/')
 
-  // runActive is persisted to localStorage, so it's only known after the client
-  // has mounted — gate on that to avoid an SSR/client hydration mismatch.
+  // Stores are persisted to localStorage, so their values are only known after the
+  // client has mounted — gate on that to avoid an SSR/client hydration mismatch.
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => setHydrated(true), [])
-  const showSurvivalHud = hydrated && inSurvivalGame && runActive
+  useEffect(() => setMenuOpen(false), [pathname])
 
-  const survivalDesktop = (
-    <Link
-      href="/survival"
-      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-        inSurvival
-          ? 'bg-amber-900/40 text-amber-300'
-          : 'text-white/60 hover:text-white hover:bg-white/8'
-      }`}
-    >
-      Survival
-    </Link>
-  )
+  const showSurvivalHud = hydrated && inSurvivalGame && runActive
+  const current = MODES.find((m) => pathname.startsWith(m.href))?.label ?? (inAccount ? 'Account' : null)
+
+  let figure: React.ReactNode = null
+  if (hydrated && inDaily) figure = <BarFigure label="Daily bankroll" value={formatChips(dailyBankroll)} />
+  else if (hydrated && inLadder && ladderStatus === 'climbing') figure = <BarFigure label="Pot" value={formatChips(ladderPot)} />
+  else if (hydrated && inFreeplay) figure = <BarFigure label="Balance" value={formatChips(freeplayBankroll)} />
 
   return (
     <>
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0f]/95 backdrop-blur-md">
-        <div className="container mx-auto px-4">
-          <div className="relative flex items-center justify-between h-16">
+      <nav className="sticky top-0 z-50 shrink-0 border-b border-line bg-ground">
+        <div className="container mx-auto flex h-12 items-center gap-6 px-4 sm:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2 text-ink" aria-label="Floored, home">
+            <FlooredMark />
+            <span className="text-[15px] font-semibold tracking-[-0.01em]">Floored</span>
+          </Link>
 
-            {/* Left: brand + nav links */}
-            <div className="flex items-center gap-4 min-w-0 z-10">
-              <Link
-                href="/"
-                className="text-lg font-black tracking-[0.2em] uppercase text-white hover:text-white/80 transition-colors shrink-0"
-              >
-                FLOORED
-              </Link>
+          {current && <span className="text-[13px] text-dim sm:hidden">{current}</span>}
 
-              {!isHome && (
-                <div className="hidden sm:flex items-center gap-1">
-                  <Link
-                    href="/daily"
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                      inDaily
-                        ? 'bg-emerald-900/40 text-emerald-300'
-                        : 'text-white/60 hover:text-white hover:bg-white/8'
-                    }`}
-                  >
-                    Daily
-                  </Link>
+          <div className="hidden h-12 items-stretch gap-6 sm:flex">
+            {MODES.map((m) => {
+              const active = pathname.startsWith(m.href)
+              return (
+                <Link
+                  key={m.href}
+                  href={m.href}
+                  aria-current={active ? 'page' : undefined}
+                  data-active={active}
+                  className={`mark-line flex items-center text-[13px] font-medium transition-colors ${
+                    active ? 'text-ink' : 'text-dim hover:text-ink'
+                  }`}
+                >
+                  {m.label}
+                </Link>
+              )
+            })}
+          </div>
 
-                  {LADDER_ENABLED && (
-                    <Link
-                      href="/ladder"
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                        inLadder
-                          ? 'bg-violet-900/40 text-violet-300'
-                          : 'text-white/60 hover:text-white hover:bg-white/8'
-                      }`}
-                    >
-                      Ladder
-                    </Link>
-                  )}
+          {/* Survival in-game bankroll and bets — below lg the game's sidebar is hidden, so they live here. */}
+          <div className="flex min-w-0 flex-1 items-center justify-center lg:hidden">
+            {showSurvivalHud && (
+              <p className="num flex items-baseline gap-3 whitespace-nowrap text-[13px]">
+                <span>
+                  <span className={bankroll >= quotaTarget ? 'text-ink' : 'text-loss'}>{formatChips(bankroll)}</span>
+                  <span className="text-dim"> / {formatChips(quotaTarget)}</span>
+                </span>
+                <span>
+                  <span className="text-ink">{floorBetsPlaced}</span>
+                  <span className="text-dim"> / {FLOOR_BET_LIMIT} bets</span>
+                </span>
+              </p>
+            )}
+          </div>
 
-                  {SURVIVAL_ENABLED && survivalDesktop}
-
-                  <Link
-                    href="/freeplay"
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                      inFreeplay
-                        ? 'bg-white/15 text-white'
-                        : 'text-white/60 hover:text-white hover:bg-white/8'
-                    }`}
-                  >
-                    Freeplay
-                  </Link>
-                </div>
-              )}
-
-            </div>
-
-            {/* Center: survival in-game bankroll + bets (hidden on lg+, covered by the sidebar there) */}
-            <div className="flex-1 flex items-center justify-center min-w-0 px-1 sm:px-2 lg:hidden">
-              {showSurvivalHud && (
-                <>
-                  {/* Narrowest phones: compact, no labels */}
-                  <div className="flex sm:hidden items-center gap-1 text-[11px] font-bold tabular-nums">
-                    <span className="px-1.5 py-1 rounded-md bg-zinc-900/80 border border-zinc-700/60">
-                      <span className={bankroll >= quotaTarget ? 'text-zinc-200' : 'text-red-400'}>{formatChips(bankroll)}</span>
-                      <span className="text-zinc-500">/{formatChips(quotaTarget)}</span>
-                    </span>
-                    <span className="px-1.5 py-1 rounded-md bg-zinc-900/80 border border-zinc-700/60 text-zinc-200">
-                      {floorBetsPlaced}<span className="text-zinc-500">/{FLOOR_BET_LIMIT}</span>
-                    </span>
-                  </div>
-
-                  {/* sm and up: full labeled pills */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    <div className={HUD_PILL}>
-                      <span className="text-[9px] font-normal text-zinc-500 mr-1">Bankroll</span>
-                      <span className={bankroll >= quotaTarget ? '' : 'text-red-400'}>{formatChips(bankroll)}</span>
-                      <span className="text-zinc-500">/{formatChips(quotaTarget)}</span>
-                    </div>
-                    <div className={HUD_PILL}>
-                      <span className="text-[9px] font-normal text-zinc-500 mr-1">Bets</span>
-                      {floorBetsPlaced}
-                      <span className="text-zinc-500">/{FLOOR_BET_LIMIT}</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Right: bankroll + account */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 z-10">
-              {inDaily && hydrated && (
-                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10">
-                  <div className="text-right">
-                    <p className="text-white/40 text-[10px] uppercase tracking-wider leading-none mb-0.5">
-                      Daily
-                    </p>
-                    <p className="text-white font-bold text-sm leading-none tabular-nums">
-                      {formatChips(dailyBankroll)}
-                    </p>
-                  </div>
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 flex-shrink-0" />
-                </div>
-              )}
-
-              {inLadder && hydrated && ladderStatus === 'climbing' && (
-                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10">
-                  <div className="text-right">
-                    <p className="text-white/40 text-[10px] uppercase tracking-wider leading-none mb-0.5">
-                      Pot
-                    </p>
-                    <p className="text-white font-bold text-sm leading-none tabular-nums">
-                      {formatChips(ladderPot)}
-                    </p>
-                  </div>
-                  <div className="w-2 h-2 rounded-full bg-violet-400 shadow-sm shadow-violet-400/50 flex-shrink-0" />
-                </div>
-              )}
-
-              {inFreeplay && (
-                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10">
-                  <div className="text-right">
-                    <p className="text-white/40 text-[10px] uppercase tracking-wider leading-none mb-0.5">
-                      Freeplay
-                    </p>
-                    <p className="text-white font-bold text-sm leading-none tabular-nums">
-                      {formatChips(freeplayBankroll)}
-                    </p>
-                  </div>
-                  <div className="w-2 h-2 rounded-full bg-blue-400 shadow-sm shadow-blue-400/50 flex-shrink-0" />
-                </div>
-              )}
-
-              <Link
-                href="/account"
-                className={`flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 transition-colors ${
-                  inAccount ? 'bg-white/15 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
-                }`}
-                aria-label="Account"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </Link>
-            </div>
+          <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0 lg:flex-1 lg:justify-end">
+            {figure}
+            <Link
+              href="/account"
+              aria-label="Account"
+              aria-current={inAccount ? 'page' : undefined}
+              className={`hidden h-8 w-8 items-center justify-center rounded-full border transition-colors sm:flex ${
+                inAccount ? 'border-felt text-ink' : 'border-control text-soft hover:border-dim hover:text-ink'
+              }`}
+            >
+              <User className="h-4 w-4" strokeWidth={1.5} />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={menuOpen}
+              className="-mr-2 flex h-10 w-10 items-center justify-center text-soft sm:hidden"
+            >
+              <Menu className="h-5 w-5" strokeWidth={1.5} />
+            </button>
           </div>
         </div>
       </nav>
+
+      {menuOpen && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-ground sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="flex h-12 items-center justify-between border-b border-line px-4">
+            <Link href="/" className="flex items-center gap-2 text-ink">
+              <FlooredMark />
+              <span className="text-[15px] font-semibold">Floored</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Close menu"
+              className="-mr-2 flex h-10 w-10 items-center justify-center text-soft"
+            >
+              <X className="h-5 w-5" strokeWidth={1.5} />
+            </button>
+          </div>
+          <ul className="flex flex-col px-4 py-2">
+            {[{ href: '/', label: 'Home' }, ...MODES, { href: '/account', label: 'Account' }].map((m) => {
+              const active = m.href === '/' ? pathname === '/' : pathname.startsWith(m.href)
+              const desktopOnly = m.href === '/survival'
+              return (
+                <li key={m.href} className="border-b border-rule">
+                  {desktopOnly ? (
+                    <span className="flex h-14 items-center justify-between text-lg text-dim">
+                      {m.label}
+                      <span className="text-xs">Desktop only</span>
+                    </span>
+                  ) : (
+                    <Link
+                      href={m.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex h-14 items-center text-lg ${active ? 'text-ink' : 'text-soft'}`}
+                    >
+                      <span className="mark-line" data-active={active}>
+                        {m.label}
+                      </span>
+                    </Link>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
     </>
   )
 }

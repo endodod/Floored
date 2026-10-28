@@ -6,6 +6,8 @@ import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { buildShareText, dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
 import { formatChips } from '@/utils/format'
 import { DailyCountdown } from './countdown'
+import { Button } from '@/components/ui/button'
+import { signed } from '@/components/ui/terminal'
 
 export function DailyResults({ record }: { record: DailyRecord }) {
   const [copied, setCopied] = useState(false)
@@ -29,62 +31,47 @@ export function DailyResults({ record }: { record: DailyRecord }) {
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <section className="grid grid-cols-1 gap-6 rounded-md bg-surface p-5 sm:p-6 lg:grid-cols-2 lg:gap-10" aria-labelledby="daily-result">
+      <div className="flex flex-col gap-4">
         <div>
-          <p className={`text-[10px] font-semibold uppercase tracking-wider ${failed ? 'text-red-400/80' : 'text-zinc-500'}`}>
+          <h2 id="daily-result" className={`text-[13px] ${failed ? 'text-loss' : 'text-dim'}`}>
             {failed ? 'Challenge failed' : 'Challenge complete'}
-          </p>
+          </h2>
           {failed ? (
-            <p className="mt-1 text-4xl font-black text-red-400">💀 Failed</p>
+            <p className="num mt-1 text-[32px] leading-tight text-loss">{formatChips(record.endBankroll)}</p>
           ) : (
-            <p className="mt-1 text-4xl font-black tabular-nums text-white">
-              {formatChips(record.endBankroll)}
-              <span className={`ml-2 text-xl ${up ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatMultiplier(m)}
-              </span>
+            <p className="mt-1 flex items-baseline gap-3">
+              <span className="num text-[32px] leading-tight text-ink">{formatChips(record.endBankroll)}</span>
+              <span className={`num text-lg ${up ? 'text-felt' : 'text-loss'}`}>{formatMultiplier(m)}</span>
             </p>
           )}
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className="mt-1 text-[13px] text-dim">
             {failed
-              ? `Bankroll fell to ${formatChips(record.endBankroll)}, below the min bet.`
-              : `Started with ${formatChips(record.startBankroll)}`}
+              ? `The bankroll fell below the min bet.`
+              : `Started with ${formatChips(record.startBankroll)}.`}
           </p>
         </div>
-        <div className="flex flex-col items-start sm:items-end gap-2">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="px-5 py-2 bg-white hover:bg-zinc-100 text-zinc-900 font-bold rounded-lg transition-colors text-sm shadow-lg"
-          >
-            {copied ? 'Copied!' : 'Share result'}
-          </button>
-          <p className="text-xs text-zinc-500">
-            Next daily in <DailyCountdown className="font-semibold text-zinc-300" />
+        <div className="mt-auto flex flex-wrap items-center gap-4">
+          <Button onClick={handleShare}>{copied ? 'Copied' : 'Share result'}</Button>
+          <p className="text-[13px] text-dim">
+            Next daily in <DailyCountdown className="num text-ink" />
           </p>
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <dl className="divide-y divide-rule self-start">
         {record.gameNets.map(({ game, net }) => {
           const entry = GAME_BY_NAME.get(game)
           return (
-            <div key={game} className="flex items-center justify-between gap-2 rounded-lg bg-black/25 border border-white/5 px-3 py-2">
-              <span className="text-sm text-white/80 truncate">
-                <span className="mr-1.5" aria-hidden>{entry?.symbol}</span>
-                {entry?.label ?? game}
-              </span>
-              <span
-                className={`text-sm font-bold tabular-nums shrink-0 ${
-                  net == null ? 'text-zinc-600' : net > 0 ? 'text-emerald-400' : net < 0 ? 'text-red-400' : 'text-zinc-300'
-                }`}
-              >
-                {net == null ? '—' : `${net > 0 ? '+' : ''}${formatChips(net)}`}
-              </span>
+            <div key={game} className="flex items-baseline justify-between gap-4 py-2.5">
+              <dt className="truncate text-[13px] text-soft">{entry?.label ?? game}</dt>
+              <dd className={`num shrink-0 text-[14px] ${net == null ? 'text-dim' : net > 0 ? 'text-felt' : net < 0 ? 'text-loss' : 'text-ink'}`}>
+                {net == null ? '—' : signed(net, formatChips)}
+              </dd>
             </div>
           )
         })}
-      </div>
-    </div>
+      </dl>
+    </section>
   )
 }

@@ -5,49 +5,47 @@
 @tailwind utilities;
 
 @layer base {
+  /* Floored — data-terminal tokens. One ground, cards a step darker, figures in
+     mono, and the felt green as the one accent: a 1px line on whatever is selected,
+     and the colour of a win. Red only for a loss, gold only for sparks. */
   :root {
-    --background: 220 8% 8%;
-    --foreground: 210 10% 96%;
-    --card: 220 12% 14%;
-    --card-foreground: 210 10% 96%;
-    --popover: 220 12% 16%;
-    --popover-foreground: 210 10% 96%;
-    --primary: 210 10% 96%;
-    --primary-foreground: 222.2 12% 8%;
-    --secondary: 220 12% 20%;
-    --secondary-foreground: 210 10% 96%;
-    --muted: 220 12% 22%;
-    --muted-foreground: 210 10% 70%;
-    --accent: 220 10% 24%;
-    --accent-foreground: 210 10% 96%;
-    --destructive: 0 50% 54%;
-    --destructive-foreground: 210 10% 96%;
-    --border: 220 10% 28%;
-    --input: 220 10% 18%;
-    --ring: 210 10% 96%;
-    --radius: 0.75rem;
-  }
+    --ground: #171719;
+    --surface: #131217;
+    --raised: #212023;
+    --line: #26252a;
+    --rule: #1d1c21;
+    --control: #3a3a3e;
+    --ink: #ffffff;
+    --soft: #bdbdc0;
+    --dim: #8a8c92;
+    --felt: #4fae84;
+    --felt-tint: #17271f;
+    --loss: #e5566f;
+    --loss-tint: #2c1a20;
+    --gold: #d9a441;
+    --gold-tint: #2a2416;
 
-  .dark {
-    --background: 220 8% 8%;
-    --foreground: 210 10% 96%;
-    --card: 220 12% 14%;
-    --card-foreground: 210 10% 96%;
-    --popover: 220 12% 16%;
-    --popover-foreground: 210 10% 96%;
-    --primary: 210 10% 96%;
-    --primary-foreground: 222.2 12% 8%;
-    --secondary: 220 12% 20%;
-    --secondary-foreground: 210 10% 96%;
-    --muted: 220 12% 22%;
-    --muted-foreground: 210 10% 70%;
-    --accent: 220 10% 24%;
-    --accent-foreground: 210 10% 96%;
-    --destructive: 0 50% 54%;
-    --destructive-foreground: 210 10% 96%;
-    --border: 220 10% 28%;
-    --input: 220 10% 18%;
-    --ring: 210 10% 96%;
+    /* shadcn roles, as bare "H S% L%" triples */
+    --background: 240 4% 9%;
+    --foreground: 0 0% 100%;
+    --card: 252 12% 8%;
+    --card-foreground: 0 0% 100%;
+    --popover: 260 4% 13%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 240 4% 9%;
+    --secondary: 260 4% 13%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 260 4% 13%;
+    --muted-foreground: 225 4% 56%;
+    --accent: 260 4% 13%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 350 73% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 255 6% 16%;
+    --input: 240 3% 24%;
+    --ring: 153 38% 50%;
+    --radius: 0.375rem;
   }
 
   /* Neon Auth reads these as raw color values (no hsl() wrapping applied on
@@ -81,8 +79,57 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: dark;
+  }
   body {
     @apply min-h-screen bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background: var(--felt);
+    color: var(--ground);
+  }
+  :focus-visible {
+    outline: 1px solid var(--felt);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Every figure: mono, tabular, so columns of money stack digit for digit. */
+  .num {
+    font-family: var(--font-floored-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* The one selection mark: a 1px felt line exactly as wide as the label, on the
+     nearest edge. Set data-active on the element that carries the label. */
+  .mark-line {
+    position: relative;
+  }
+  .mark-line::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--felt);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .mark-line[data-active='true']::after,
+  .group:hover:not(:disabled) .mark-line::after,
+  .group:focus-visible .mark-line::after {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark-line::after {
+    transition: none;
   }
 }
 

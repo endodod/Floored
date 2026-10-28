@@ -26,7 +26,7 @@ import type { GameName } from '@/store/types'
 import { formatChips } from '@/utils/format'
 import { SurvivalSidebarPanel, SurvivalSidebarRow } from '@/components/survival/survival-sidebar-panel'
 
-const CARD_HEIGHT = 'min-h-[6.5rem] sm:min-h-[12rem]'
+const CARD_HEIGHT = 'min-h-[6.5rem] sm:min-h-[10rem]'
 
 interface SurvivalShopProps {
   /** Hide title when embedded in floor-complete modal */
@@ -118,12 +118,7 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
     const canAfford = sparks >= price
     const disabled = (item.scope !== 'consumable' && owned) || !canAfford
     const scopeLabel = catalogScopeLabel(item)
-    const scopeTone =
-      item.scope === 'game'
-        ? 'text-sky-400/90'
-        : item.scope === 'run'
-          ? 'text-violet-400/80'
-          : 'text-zinc-500'
+    const scopeTone = 'text-dim'
 
     return (
       <OfferCard
@@ -147,26 +142,11 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
     return (
       <div
         key={`bought-${slotIndex}`}
-        className={`rounded-xl border border-zinc-800/40 bg-zinc-950/20 p-3 flex flex-col gap-2 ${CARD_HEIGHT} opacity-50`}
+        className={`flex flex-col justify-center gap-1 rounded-md border border-dashed border-control p-4 ${CARD_HEIGHT}`}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5 text-zinc-600">
-              {label}
-            </p>
-            <p className="text-sm font-semibold text-zinc-600">Already Bought</p>
-          </div>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/60 text-base text-zinc-600 shrink-0">
-            ✓
-          </span>
-        </div>
-        <p className="text-xs text-zinc-700 leading-snug flex-1">Refreshes next floor.</p>
-        <button
-          disabled
-          className="w-full mt-auto rounded-md bg-zinc-900 text-zinc-700 text-xs py-1.5 cursor-not-allowed"
-        >
-          Already Bought
-        </button>
+        <p className="text-[13px] text-dim">{label}</p>
+        <p className="text-[15px] font-semibold text-soft">Bought</p>
+        <p className="text-[13px] text-dim">A new offer arrives next floor.</p>
       </div>
     )
   }
@@ -175,26 +155,11 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
     return (
       <div
         key={`empty-${slotIndex}`}
-        className={`rounded-xl border border-dashed border-zinc-700/50 bg-zinc-950/20 p-3 flex flex-col gap-2 opacity-60 ${CARD_HEIGHT}`}
+        className={`flex flex-col justify-center gap-1 rounded-md border border-dashed border-control p-4 ${CARD_HEIGHT}`}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5 text-zinc-600">
-              {label}
-            </p>
-            <p className="text-sm font-semibold text-zinc-600">Empty</p>
-          </div>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-lg text-zinc-700 shrink-0">
-            ∅
-          </span>
-        </div>
-        <p className="text-xs text-zinc-700 leading-snug flex-1">No offer available this floor.</p>
-        <button
-          disabled
-          className="w-full mt-auto rounded-md bg-zinc-900 text-zinc-700 text-xs py-1.5 cursor-not-allowed"
-        >
-          —
-        </button>
+        <p className="text-[13px] text-dim">{label}</p>
+        <p className="text-[15px] font-semibold text-soft">Nothing on offer</p>
+        <p className="text-[13px] text-dim">This slot has no item left this floor.</p>
       </div>
     )
   }
@@ -206,22 +171,22 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
   }
 
   return (
-    <div className={`flex flex-col gap-3 ${embedded ? '' : 'rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4'}`}>
+    <div className={`flex flex-col gap-4 ${embedded ? '' : 'rounded-md bg-surface p-5'}`}>
       {!embedded && (
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Shop</h3>
-          <span className="text-sm font-bold text-amber-400 tabular-nums">
-            <span className="text-[10px] font-normal text-zinc-500 mr-1">Sparks:</span>✦ {formatChips(sparks)}
-          </span>
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="text-base font-semibold text-ink">Shop</h3>
+          <p className="text-[13px] text-dim">
+            <span className="num text-gold">{formatChips(sparks)}</span> sparks
+          </p>
         </div>
       )}
 
-      <p className="text-[10px] text-zinc-600 leading-snug">
-        Shared pools per floor — each item or mission appears at most once. One ticket reroll per slot.
-        {shopRerollCount > 0 && ` · Rerolled ${shopRerollCount}× this floor`}
+      <p className="-mt-2 text-[13px] leading-5 text-dim">
+        Each item or mission appears at most once per floor; each slot can be rerolled once with a ticket.
+        {shopRerollCount > 0 && ` Rerolled ${shopRerollCount}× this floor.`}
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {renderSlot(runOffer, SHOP_SLOT_RUN, 'Run upgrade')}
         {renderSlot(activeOffer, SHOP_SLOT_ACTIVE, 'Active item')}
         {gameOffers.map((offer, i) =>
@@ -230,8 +195,8 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
       </div>
 
       {poolEmpty && (
-        <p className="text-xs text-zinc-500 text-center py-2">
-          No shop items left for this floor — try next floor after more purchases.
+        <p className="py-2 text-center text-[13px] text-dim">
+          The shop is empty for this floor. New items arrive as you climb.
         </p>
       )}
     </div>
@@ -268,72 +233,58 @@ function OfferCard({
   onPurchase,
 }: OfferCardProps) {
   const [showInfo, setShowInfo] = useState(false)
+  const meta = [scopeLabel, item.level != null ? `Level ${item.level}` : null, item.rarity]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
-    <div
-      className={`relative rounded-xl border border-zinc-800 bg-zinc-950/50 p-2 sm:p-3 flex flex-col gap-1.5 sm:gap-2 ${CARD_HEIGHT}`}
-    >
+    <div className={`relative flex flex-col gap-2 rounded-md bg-raised p-4 ${CARD_HEIGHT}`}>
       {canReroll && (
         <button
           type="button"
-          title={`Spend 1 lobby reroll ticket to reroll this offer (${ticketCount} owned)`}
+          title={`Spend 1 reroll ticket on this offer (${ticketCount} owned)`}
           onClick={onReroll}
-          className="absolute top-2 right-2 z-10 flex items-center gap-1 h-6 pl-1 pr-1.5 rounded-md border border-white/20 bg-black/40 text-white/90 hover:bg-black/60"
+          className="absolute right-3 top-3 z-10 h-7 rounded-full border border-control px-2.5 text-xs font-medium text-soft transition-colors hover:border-dim hover:text-ink"
         >
-          <span aria-hidden className="text-xs leading-none">↻:</span>
-          <span aria-hidden className="text-xs leading-none">🎟️</span>
-          <span className="text-[10px] font-bold tabular-nums leading-none">×{REROLL_TICKET_COST}</span>
+          Reroll · {REROLL_TICKET_COST} ticket
         </button>
       )}
-      <div className="flex items-start justify-between gap-2 pr-14">
+      <div className={`flex items-start justify-between gap-2 ${canReroll ? 'pr-28' : ''}`}>
         <div className="min-w-0">
-          {scopeLabel && (
-            <p className={`text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${scopeTone}`}>
-              {scopeLabel}
-            </p>
-          )}
-          <p className="text-sm font-semibold text-zinc-200">{item.name}</p>
-          {item.level != null && <p className="text-[10px] text-zinc-500">Level {item.level}</p>}
-          {item.rarity && (
-            <p className="text-[10px] uppercase tracking-wider text-zinc-600">{item.rarity}</p>
-          )}
+          {meta && <p className={`text-[13px] ${scopeTone}`}>{meta}</p>}
+          <p className="mt-0.5 text-[15px] font-semibold leading-snug text-ink">{item.name}</p>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowInfo((v) => !v)}
-            aria-label="Show description"
-            aria-expanded={showInfo}
-            className={`sm:hidden flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold italic transition-colors ${
-              showInfo
-                ? 'border-sky-500 text-sky-400 bg-sky-950/40'
-                : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            i
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowInfo((v) => !v)}
+          aria-label="Show description"
+          aria-expanded={showInfo}
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] italic transition-colors sm:hidden ${
+            showInfo ? 'border-felt text-ink' : 'border-control text-dim hover:text-ink'
+          }`}
+        >
+          i
+        </button>
       </div>
 
       {/* Desktop: description always visible */}
-      <p className="hidden sm:block text-xs text-zinc-500 leading-snug flex-1">{item.description}</p>
+      <p className="hidden flex-1 text-[13px] leading-5 text-soft sm:block">{item.description}</p>
 
       {/* Mobile: description only when info toggle is on */}
-      {showInfo && (
-        <p className="sm:hidden text-[11px] text-zinc-500 leading-snug">{item.description}</p>
-      )}
+      {showInfo && <p className="text-[13px] leading-5 text-soft sm:hidden">{item.description}</p>}
 
       <Button
         size="sm"
-        variant={ownedText ? 'secondary' : 'default'}
+        variant={ownedText || !canAfford ? 'outline' : 'default'}
         disabled={disabled}
-        className="w-full mt-auto flex items-center justify-center gap-1.5"
+        className="mt-auto w-full"
         onClick={onPurchase}
       >
         {ownedText ?? (
           <>
-            <span>{canAfford ? 'Purchase' : 'Not enough sparks'}</span>
-            <span className="font-bold tabular-nums">✦ {price}</span>
+            <span>{canAfford ? 'Buy for' : 'Needs'}</span>
+            <span className="num">{price}</span>
+            <span>sparks</span>
           </>
         )}
       </Button>
@@ -342,9 +293,9 @@ function OfferCard({
 }
 
 const RARITY_TONE: Record<string, string> = {
-  common: 'text-zinc-500',
-  rare: 'text-sky-400',
-  epic: 'text-fuchsia-400',
+  common: 'text-dim',
+  rare: 'text-soft',
+  epic: 'text-gold',
 }
 
 /** Compact list of owned run upgrades for game sidebar */
@@ -398,16 +349,14 @@ export function OwnedUpgradesList({
               key={item.id}
               onMouseEnter={() => setHoveredItem(item)}
               onMouseLeave={() => setHoveredItem(null)}
-              className={`flex flex-col gap-0.5 py-1 px-1.5 rounded-md cursor-default transition-colors ${
-                relevant
-                  ? 'bg-sky-950/50 border border-sky-900/40'
-                  : 'hover:bg-zinc-800/40 border border-transparent'
+              className={`flex cursor-default flex-col gap-0.5 rounded px-1.5 py-1 transition-colors ${
+                relevant ? 'bg-raised' : 'hover:bg-raised'
               }`}
             >
-              <p className={`text-[11px] leading-snug ${relevant ? 'text-sky-200' : 'text-zinc-300'}`}>
+              <p className={`text-[12px] leading-snug ${relevant ? 'text-ink' : 'text-soft'}`}>
                 {item.name}
               </p>
-              <p className={`text-[9px] uppercase tracking-wide leading-none ${relevant ? 'text-sky-500/70' : 'text-zinc-600'}`}>
+              <p className={`text-[11px] leading-tight ${relevant ? 'text-felt' : 'text-dim'}`}>
                 {catalogScopeLabel(item)}
               </p>
             </div>
@@ -420,31 +369,31 @@ export function OwnedUpgradesList({
               key={id}
               onMouseEnter={() => setHoveredItem(ci)}
               onMouseLeave={() => setHoveredItem(null)}
-              className="flex flex-col gap-0.5 py-1 px-1.5 rounded-md cursor-default hover:bg-zinc-800/40 border border-transparent"
+              className="flex cursor-default flex-col gap-0.5 rounded px-1.5 py-1 hover:bg-raised"
             >
-              <p className="text-[11px] text-zinc-300 leading-snug">{ci.name} ×{count}</p>
-              <p className="text-[9px] text-zinc-600 uppercase tracking-wide leading-none">Consumable</p>
+              <p className="text-[12px] leading-snug text-soft">{ci.name} ×{count}</p>
+              <p className="text-[11px] leading-tight text-dim">Consumable</p>
             </div>
           )
         })}
       </SurvivalSidebarPanel>
 
       {hoveredItem && (
-        <div className="absolute left-full top-0 ml-2 z-50 w-56 rounded-xl border border-zinc-700 bg-zinc-900 shadow-xl p-3 pointer-events-none flex flex-col gap-1">
-          <p className="text-xs font-semibold text-zinc-100 leading-snug">{hoveredItem.name}</p>
+        <div className="pointer-events-none absolute left-full top-0 z-50 ml-2 flex w-56 flex-col gap-1 rounded-md border border-line bg-raised p-3 shadow-[0_12px_28px_rgba(0,0,0,.4)]">
+          <p className="text-[13px] font-semibold leading-snug text-ink">{hoveredItem.name}</p>
           <div className="flex items-center gap-2">
             {hoveredItem.rarity && (
-              <p className={`text-[9px] font-semibold uppercase tracking-wider ${RARITY_TONE[hoveredItem.rarity] ?? 'text-zinc-500'}`}>
+              <p className={`text-[11px] capitalize ${RARITY_TONE[hoveredItem.rarity] ?? 'text-dim'}`}>
                 {hoveredItem.rarity}
               </p>
             )}
             {catalogScopeLabel(hoveredItem) && (
-              <p className="text-[9px] uppercase tracking-wider text-zinc-600">
+              <p className="text-[11px] text-dim">
                 {catalogScopeLabel(hoveredItem)}
               </p>
             )}
           </div>
-          <p className="text-[11px] text-zinc-400 leading-snug mt-0.5">{hoveredItem.description}</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-soft">{hoveredItem.description}</p>
         </div>
       )}
     </div>

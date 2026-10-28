@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
-import { MAX_FLOORS } from '@/lib/survival/balance'
+import { FLOOR_BET_LIMIT, MAX_FLOORS, REROLL_TICKETS_PER_FLOOR, STARTING_REROLL_TICKETS } from '@/lib/survival/balance'
+import { signed } from '@/components/ui/terminal'
 import { calcFloorSparksEarned } from '@/lib/survival/sparks-economy'
 import { evaluateMissionsOnFloorComplete } from '@/lib/survival/mission-evaluator'
 
@@ -99,92 +100,71 @@ export function FloorCompletePanel() {
 
   if (!floorComplete) return null
 
+  const title = isFinalFloorChoice
+    ? `All ${MAX_FLOORS} floors cleared`
+    : isEarly
+      ? `Quota met on floor ${currentFloor}`
+      : `Floor ${currentFloor} complete`
+  const body = isFinalFloorChoice
+    ? 'Claim your victory, or push into endless mode where quotas and min bets keep scaling.'
+    : isEarly
+      ? 'You still have bets left. Keep playing to build your bankroll, or move up now.'
+      : endlessMode
+        ? 'Endless run — collect your sparks and keep climbing.'
+        : `All ${FLOOR_BET_LIMIT} bets used with the quota met. Collect your sparks, then pick a game on the next floor.`
+
+  const rows: { label: string; value: string; tone?: string }[] = [
+    { label: 'Quota', value: formatChips(quotaTarget) },
+    { label: 'Net this floor', value: signed(netProgress, formatChips), tone: netProgress >= 0 ? 'text-felt' : 'text-loss' },
+    ...(overQuota > 0 ? [{ label: 'Over quota', value: `+${formatChips(overQuota)}`, tone: 'text-felt' }] : []),
+    ...completedMissions.map((m) => ({ label: `Mission: ${m.type.replace(/_/g, ' ')}`, value: `+${m.rewardSparks} sparks`, tone: 'text-gold' })),
+    { label: 'Floor sparks', value: `+${sparksEarned} sparks`, tone: 'text-gold' },
+  ]
+
   return (
-    <div className="rounded-2xl border border-amber-500/30 bg-zinc-950 p-5 sm:p-6 shadow-lg">
-      <div className="space-y-1.5">
-        <h2 className={`font-bold ${isFinalFloorChoice ? 'text-amber-400 text-2xl' : 'text-lg text-foreground'}`}>
-          {isFinalFloorChoice
-            ? '🏆 All 10 floors cleared!'
-            : isEarly
-              ? `Quota met — floor ${currentFloor}`
-              : endlessMode
-                ? `Floor ${currentFloor} complete`
-                : `Floor ${currentFloor} Complete!`}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {isFinalFloorChoice
-            ? 'Claim your victory or push into endless mode — quotas and min bets keep scaling.'
-            : isEarly
-              ? 'You still have bets remaining. Keep playing to build your bankroll, or advance now.'
-              : endlessMode
-                ? 'Endless run — collect sparks and keep climbing.'
-                : 'All 10 bets used — quota met. Collect sparks, then pick your next game on the lobby.'}
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-3 mt-4">
-        <div className="text-xs text-zinc-500">You start runs with 3 reroll tickets and gain 3 additional reroll tickets each floor.</div>
-        <div className="rounded-xl bg-muted/50 px-4 py-3 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Goal bankroll</span>
-            <span className="font-semibold">{formatChips(quotaTarget)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Net profit</span>
-            <span className={`font-semibold ${netProgress >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netProgress >= 0 ? '+' : ''}{formatChips(netProgress)}</span>
-          </div>
-          {overQuota > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Over quota</span>
-              <span className="font-semibold text-emerald-400">+{formatChips(overQuota)}</span>
-            </div>
-          )}
-          <div className="border-t border-border pt-2 flex justify-between">
-            <span className="text-muted-foreground">Floor sparks</span>
-            <span className="font-bold text-amber-400">✦ {sparksEarned}</span>
-          </div>
+    <section
+      aria-labelledby="floor-complete-title"
+      className="grid grid-cols-1 gap-6 rounded-md bg-surface p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10"
+    >
+      <div className="flex flex-col gap-4">
+        <div>
+          <h2 id="floor-complete-title" className="text-xl font-semibold text-ink">
+            {title}
+          </h2>
+          <p className="mt-1 text-[13px] leading-5 text-soft">{body}</p>
         </div>
-
-        {completedMissions.length > 0 && (
-          <div className="rounded-xl bg-muted/30 px-4 py-3 text-sm">
-            <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Missions completed</p>
-            <ul className="space-y-1">
-              {completedMissions.map((m) => (
-                <li key={m.id} className="flex justify-between">
-                  <span className="text-xs capitalize text-emerald-400">{m.type.replace(/_/g, ' ')}</span>
-                  <span className="text-xs font-semibold text-yellow-400">✦ {m.rewardSparks}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {isFinalFloorChoice ? (
-          <div className="flex flex-col gap-2">
-            <Button onClick={handleClaimVictory} className="w-full">
-              Claim Victory
-            </Button>
-            <Button onClick={handleContinueEndless} variant="secondary" className="w-full">
-              Continue — Endless Mode
-            </Button>
-          </div>
-        ) : isEarly ? (
-          <div className="flex flex-col gap-2">
-            <Button onClick={handleContinue} className="w-full">
-              {endlessMode ? `Continue to Floor ${currentFloor + 1}` : `Advance to Floor ${currentFloor + 1}`}
-            </Button>
-            <Button onClick={handleKeepPlaying} variant="secondary" className="w-full">
-              Keep Playing
-            </Button>
-          </div>
-        ) : (
-          <Button onClick={handleContinue} className="w-full">
-            {endlessMode
-              ? `Continue to Floor ${currentFloor + 1}`
-              : `Continue to Floor ${currentFloor + 1}`}
-          </Button>
-        )}
+        <p className="text-xs leading-5 text-dim">
+          Runs start with {STARTING_REROLL_TICKETS} reroll tickets and every floor adds {REROLL_TICKETS_PER_FLOOR} more.
+        </p>
+        <div className="mt-auto flex flex-col gap-2 sm:flex-row">
+          {isFinalFloorChoice ? (
+            <>
+              <Button onClick={handleClaimVictory}>Claim victory</Button>
+              <Button onClick={handleContinueEndless} variant="outline">
+                Continue in endless mode
+              </Button>
+            </>
+          ) : isEarly ? (
+            <>
+              <Button onClick={handleContinue}>Go to floor {currentFloor + 1}</Button>
+              <Button onClick={handleKeepPlaying} variant="outline">
+                Keep playing this floor
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleContinue}>Go to floor {currentFloor + 1}</Button>
+          )}
+        </div>
       </div>
-    </div>
+
+      <dl className="divide-y divide-rule self-start">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-baseline justify-between gap-4 py-2.5">
+            <dt className="text-[13px] capitalize text-dim">{r.label}</dt>
+            <dd className={`num text-[14px] ${r.tone ?? 'text-ink'}`}>{r.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   )
 }
