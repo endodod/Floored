@@ -1324,6 +1324,8 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .fw-tick,
 :root[data-motion='reduced'] .sl-strip,
 :root[data-motion='reduced'] .sl-land,
+:root[data-motion='reduced'] .cb-strip,
+:root[data-motion='reduced'] .cb-wait,
 :root[data-motion='reduced'] .animate-in,
 :root[data-motion='reduced'] .g-deal,
 :root[data-motion='reduced'] .g-pop,
@@ -1508,6 +1510,149 @@ body > div.neon-auth-ui {
 @container board (max-height: 260px) {
   .sl-pays-title {
     display: none;
+  }
+}
+
+
+/* Case Battles: drawn cases on the felt, then a duel of two sides. Items are a
+   gem in their rarity colour (common dim → uncommon soft → rare felt → epic
+   gold outline → legendary gold). While an item opens, a strip of gems runs
+   under a gold marker (cb-strip). Tall boards: two columns of rows; short
+   boards: two lanes of square tiles (names live in the tile title). */
+.cb-r-common {
+  --rar: var(--dim);
+}
+.cb-r-uncommon {
+  --rar: var(--soft);
+}
+.cb-r-rare {
+  --rar: var(--felt);
+}
+.cb-r-epic,
+.cb-r-legendary {
+  --rar: var(--gold);
+}
+.cb-gem {
+  color: var(--rar, var(--dim));
+}
+.cb-r-legendary .cb-gem {
+  filter: drop-shadow(0 0 6px rgba(217, 164, 65, 0.6));
+}
+.cb-pick {
+  --case: clamp(2.6rem, min(calc((100cqh - 11.5rem) / 0.8), calc((100cqw - 3rem) / 5.6)), 7rem);
+  width: min(100%, calc(var(--case) * 5 + 8rem));
+  margin-top: 2.25rem;
+}
+.cb-case {
+  width: var(--case);
+  height: calc(var(--case) * 0.8);
+}
+.cb-duel {
+  --slot-h: clamp(2rem, calc((100cqh - 11rem) / 5), 3.4rem);
+  width: min(100%, 36rem);
+  margin-top: 2.25rem;
+}
+.cb-slot {
+  height: var(--slot-h);
+  border-color: var(--line);
+  background: var(--surface);
+}
+.cb-slot-shown {
+  border-color: color-mix(in srgb, var(--rar) 55%, var(--line));
+  background: color-mix(in srgb, var(--rar) 9%, var(--surface));
+}
+.cb-r-legendary.cb-slot-shown {
+  background: var(--gold-tint);
+}
+.cb-slot-open {
+  border-color: var(--gold);
+}
+.cb-slot .cb-icon {
+  width: calc(var(--slot-h) * 0.62);
+  height: calc(var(--slot-h) * 0.62);
+}
+.cb-tile-value {
+  display: none;
+}
+/* The strip runs twice its own length, so -50% loops seamlessly. */
+@keyframes cb-strip {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.cb-strip {
+  animation: cb-strip 520ms linear infinite;
+}
+.cb-marker {
+  width: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(217, 164, 65, 0.7);
+}
+@keyframes cb-wait {
+  50% {
+    opacity: 0.45;
+  }
+}
+.cb-wait {
+  animation: cb-wait 1.1s ease-in-out infinite;
+}
+@container board (max-height: 300px) {
+  .cb-pick-title {
+    display: none;
+  }
+  .cb-pick {
+    --case: clamp(2.4rem, min(calc((100cqh - 9.75rem) / 0.8), calc((100cqw - 3rem) / 5.6)), 6rem);
+    margin-top: 2.75rem;
+  }
+}
+/* Short boards: each side is a lane — label, five square tiles, total. */
+@container board (max-height: 360px) {
+  .cb-duel {
+    --slot-h: clamp(2.3rem, min(calc((100cqh - 6.25rem) / 2.2), calc((100cqw - 11rem) / 5.5)), 4.25rem);
+    flex-direction: column;
+    width: auto;
+    gap: 0.4rem;
+    margin-top: 3rem;
+  }
+  .cb-side {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .cb-items {
+    flex-direction: row;
+    gap: 0.35rem;
+  }
+  .cb-head {
+    width: 2.5rem;
+    text-align: left;
+  }
+  .cb-total {
+    width: 4.25rem;
+    border-top: 0;
+    border-left: 2px solid var(--line);
+    margin: 0;
+    padding: 0 0 0 0.4rem;
+  }
+  .cb-slot {
+    width: var(--slot-h);
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.15rem;
+  }
+  .cb-slot .cb-icon {
+    width: calc(var(--slot-h) * 0.5);
+    height: calc(var(--slot-h) * 0.5);
+  }
+  .cb-row-text {
+    display: none;
+  }
+  .cb-tile-value {
+    display: block;
   }
 }
 
@@ -1856,21 +2001,3 @@ body > div.neon-auth-ui {
   --sc-ring: var(--loss);
 }
 
-@keyframes case-item-suspense {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);   transform: scale(1); }
-  50%       { box-shadow: 0 0 22px 5px rgba(234, 179, 8, 0.38); transform: scale(1.025); }
-}
-
-.case-item-suspense {
-  animation: case-item-suspense 0.52s ease-in-out infinite;
-}
-
-@keyframes case-item-reveal {
-  0%   { opacity: 0; transform: scale(0.65); filter: brightness(2.8); }
-  55%  { transform: scale(1.1); filter: brightness(1.15); }
-  100% { opacity: 1; transform: scale(1); filter: brightness(1); }
-}
-
-.case-item-reveal {
-  animation: case-item-reveal 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
