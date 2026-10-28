@@ -13,7 +13,7 @@ const VIEWS = [['phone-360',360,740,3],['phone-390',390,844,3],['tablet-768',768
     await p.evaluate(() => document.querySelector('main')?.scrollTo(0,0));
     const res = await p.evaluate(() => {
       const clipped=[]; for (const el of document.querySelectorAll('main *')) {
-        if (el.closest('[aria-hidden="true"], .tile-suit, .invisible')) continue;
+        if (el.closest('[aria-hidden="true"], .tile-suit, .invisible') || (el.ownerSVGElement && el.tagName.toLowerCase() !== 'svg')) continue; // shapes inside an SVG are clipped by it on purpose
         const cs=getComputedStyle(el); if (cs.display==='none'||cs.visibility==='hidden'||cs.position==='absolute'||cs.position==='fixed'||+cs.opacity===0) continue;
         const rc=el.getBoundingClientRect(); if (rc.width<4||rc.height<4) continue;
         let a=el.parentElement; while (a && a.tagName!=='MAIN') { const s=getComputedStyle(a); if (/(hidden|clip)/.test(s.overflowX+s.overflowY)) break; a=a.parentElement; }

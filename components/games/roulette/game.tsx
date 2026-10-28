@@ -403,7 +403,9 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
             : covered
               ? 'shadow-[inset_0_0_0_2px_rgba(217,164,65,0.85)]'
               : '',
-          isSettled && !isResult ? 'opacity-55' : '',
+          // The winning pocket pops (and glows when it paid you); the rest fall back.
+          isResult ? (direct || covered ? 'g-win' : 'g-pop') : '',
+          isSettled && !isResult ? 'g-dim' : '',
           out ? 'opacity-25 line-through' : '',
           isBetting ? 'cursor-pointer hover:brightness-125' : 'cursor-default',
           extra,
@@ -426,7 +428,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         aria-label={`${BET_LABELS[type]}, pays 1 to 1`}
         aria-pressed={active}
         className={[
-          'relative col-span-3 flex h-9 items-center justify-center bg-[#163021] text-[12px] font-semibold text-[#f4f1ea] transition-[filter] duration-150 select-none sm:h-11 sm:text-[13px]',
+          'rl-out relative col-span-3 flex items-center justify-center bg-[#163021] text-[12px] font-semibold text-[#f4f1ea] transition-[filter] duration-150 select-none sm:text-[13px]',
           isBetting ? 'cursor-pointer hover:brightness-125' : 'cursor-default',
         ].join(' ')}
       >
@@ -456,7 +458,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-3 py-4 sm:px-6"
+        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-3 py-[clamp(0.5rem,2.5cqh,1rem)] sm:px-6"
         entries={matchHistory}
         gameLabel="Roulette"
       >
@@ -472,10 +474,10 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
           visible={activeBet > 0 && !isBetting}
         />
 
-        <div className="mt-10 flex w-full max-w-4xl flex-col items-center gap-5 sm:mt-6 lg:flex-row lg:items-center lg:gap-10">
+        <div className="rl-layout flex w-full max-w-4xl flex-col items-center">
           {/* The wheel and the number it stopped on */}
-          <div className="flex shrink-0 flex-col items-center gap-3">
-            <div className="aspect-square w-[clamp(160px,min(30vh,42vw),300px)]">
+          <div className="rl-wheel-col flex shrink-0 flex-col items-center gap-3">
+            <div className="rl-wheel aspect-square">
               <RouletteWheel
                 rotation={wheelRotation}
                 ballRotation={ballRotation}
@@ -506,13 +508,13 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
           </div>
 
           {/* The table: zero, the 3 × 12 grid and the outside bets, ruled in gold */}
-          <div className={`w-full max-w-[560px] ${!isBetting ? 'pointer-events-none' : ''}`}>
+          <div className={`rl-table ${!isBetting ? 'pointer-events-none' : ''}`}>
             <div
               className="grid gap-px rounded-sm bg-[rgba(217,164,65,0.4)] p-px shadow-[0_18px_40px_-20px_rgba(0,0,0,0.9)]"
               style={{ gridTemplateColumns: 'minmax(26px,1.15fr) repeat(12, minmax(0, 1fr))' }}
             >
               {numberCell(0, 'row-span-3 rounded-l-sm')}
-              {BOARD_ROWS.map((row) => row.map((n) => numberCell(n, 'aspect-[4/5] sm:aspect-[5/6]')))}
+              {BOARD_ROWS.map((row) => row.map((n) => numberCell(n, 'rl-cell')))}
               <span aria-hidden className="bg-[#163021]" />
               {(['even', 'red', 'black', 'odd'] as const).map((type) => (
                 <span key={type} className="contents">
@@ -524,7 +526,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
           </div>
         </div>
 
-        <div className="mt-4 flex min-h-8 w-full shrink-0 items-center justify-center px-2">
+        <div className="rl-hint mt-4 flex min-h-8 w-full shrink-0 items-center justify-center px-2">
           <p className="max-w-md text-center text-[13px] text-dim">
             {isBetting
               ? 'Pick a number or an outside bet, add chips, then spin.'

@@ -522,6 +522,75 @@ body > div.neon-auth-ui {
   }
 }
 
+/* Roulette board sizing. Stacked (wheel over table) on tall boards, side by
+   side on wide or short ones. The table's width sets its cell height, and the
+   wheel takes the height that is left. On short boards the bottom hint steps
+   aside: the line under the wheel already says the same. */
+.rl-layout {
+  --tw: min(560px, calc(100cqw - 1.5rem));
+  --cell-h: calc(var(--tw) / 13.15);
+  --wheel: clamp(7rem, calc(100cqh - 3 * var(--cell-h) - 12.25rem), 300px);
+  margin-top: 2.5rem;
+  gap: 1rem;
+}
+.rl-wheel {
+  width: var(--wheel);
+}
+.rl-table {
+  width: var(--tw);
+}
+.rl-cell {
+  height: var(--cell-h);
+}
+.rl-out {
+  height: 2.5rem;
+}
+.rl-hint {
+  display: none;
+}
+@container board (min-height: 560px) {
+  .rl-layout {
+    --wheel: clamp(7rem, calc(100cqh - 3 * var(--cell-h) - 15.25rem), 300px);
+  }
+  .rl-hint {
+    display: flex;
+  }
+}
+@container board (min-width: 52rem) or (min-aspect-ratio: 8 / 5) {
+  .rl-layout {
+    --wheel: clamp(6rem, calc(100cqh - 7.5rem), 300px);
+    --tw: min(560px, calc(100cqw - var(--wheel) - 4rem));
+    --cell-h: min(calc(var(--tw) / 13.15), calc((100cqh - 9.25rem) / 3));
+    flex-direction: row;
+    justify-content: center;
+    gap: 2.5rem;
+  }
+}
+@container board (min-height: 560px) and ((min-width: 52rem) or (min-aspect-ratio: 8 / 5)) {
+  .rl-layout {
+    --cell-h: min(calc(var(--tw) / 13.15), calc((100cqh - 12.25rem) / 3));
+  }
+}
+
+/* Very short, wide boards: the readout sits beside the wheel, the outside
+   row slims down, and everything clears the bet badge and History. */
+@container board (max-height: 300px) and (min-aspect-ratio: 8 / 5) {
+  .rl-layout {
+    --wheel: clamp(5rem, calc(100cqh - 4.5rem), 300px);
+    --tw: min(560px, calc(100cqw - var(--wheel) - 12rem));
+    --cell-h: calc((100cqh - 7.75rem) / 3);
+    margin-top: 3.25rem;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+  .rl-wheel-col {
+    flex-direction: row;
+  }
+  .rl-out {
+    height: 1.75rem;
+  }
+}
+
 /* Roulette: the ball rides the outer track, then drops into the pocket ring and settles. */
 @keyframes roulette-ball-drop {
   0%,

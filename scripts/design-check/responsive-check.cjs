@@ -34,7 +34,7 @@ const VIEWS = [
         // Content cut off by a clipping (overflow hidden) container — the board hides it, nothing scrolls.
         const clipped = [];
         for (const el of document.querySelectorAll('main *')) {
-          if (el.closest('[aria-hidden="true"], .tile-suit, .invisible')) continue;
+          if (el.closest('[aria-hidden="true"], .tile-suit, .invisible') || (el.ownerSVGElement && el.tagName.toLowerCase() !== 'svg')) continue; // shapes inside an SVG are clipped by it on purpose
           const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'fixed' || cs.position === 'absolute' || +cs.opacity === 0) continue;
           if (el.children.length && el.textContent.trim() === '' && !['IMG','SVG','CANVAS','BUTTON'].includes(el.tagName.toUpperCase())) continue;
           const rc = el.getBoundingClientRect(); if (rc.width < 4 || rc.height < 4) continue;
