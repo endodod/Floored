@@ -529,6 +529,7 @@ body > div.neon-auth-ui {
 .rl-layout {
   --tw: min(560px, calc(100cqw - 1.5rem));
   --cell-h: calc(var(--tw) / 13.15);
+  --out-h: 2.5rem;
   --wheel: clamp(7rem, calc(100cqh - 3 * var(--cell-h) - 12.25rem), 300px);
   margin-top: 2.5rem;
   gap: 1rem;
@@ -543,7 +544,7 @@ body > div.neon-auth-ui {
   height: var(--cell-h);
 }
 .rl-out {
-  height: 2.5rem;
+  height: var(--out-h);
 }
 .rl-hint {
   display: none;
@@ -579,15 +580,13 @@ body > div.neon-auth-ui {
     --wheel: clamp(5rem, calc(100cqh - 4.5rem), 300px);
     --tw: min(560px, calc(100cqw - var(--wheel) - 12rem));
     --cell-h: calc((100cqh - 7.75rem) / 3);
+    --out-h: 1.75rem;
     margin-top: 3.25rem;
     gap: 1.25rem;
     align-items: flex-start;
   }
   .rl-wheel-col {
     flex-direction: row;
-  }
-  .rl-out {
-    height: 1.75rem;
   }
 }
 

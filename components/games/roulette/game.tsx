@@ -16,7 +16,12 @@ import {
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
+  GameDockChipPicker,
   GameDockChipRow,
+  GAME_DOCK_RACK_BTN,
+  dockChips,
+  useOpeningTicketChip,
+  type DockChip,
   GameDockGameOverButton,
   GameDockLeaveButton,
   GameDockSettledRow,
@@ -41,19 +46,18 @@ import {
   getOutcomeLabelForTarget,
   formatRouletteResultLabel,
   getNumberColor,
-  getPayoutForTarget,
+  bestPayout,
   initRoulette,
   isNumberCoveredByTarget,
   loseGame,
-  spinRoulette,
+  spinRouletteMulti,
   spinRouletteWithResult,
   winGame,
 } from '@/games/roulette/engine'
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
-import type { RouletteState } from '@/games/roulette/types'
+import type { BetMap, RouletteState } from '@/games/roulette/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
-import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 // Standard European roulette table layout: 3 rows top-to-bottom, 12 columns left-to-right
 const BOARD_ROWS = [
@@ -186,14 +190,78 @@ function RouletteWheel({
   )
 }
 
-/** A chip sitting on the table where the bet is placed. */
-function TableChip() {
+function sumBets(bets: BetMap): number {
+  return Object.values(bets).reduce((a, b) => a + b, 0)
+}
+
+/** A bet set in words: the one spot it is on, or how many spots. */
+function describeBets(bets: BetMap): string {
+  const targets = Object.keys(bets).filter((t) => bets[t]! > 0)
+  return targets.length === 1 ? getOutcomeLabelForTarget(targets[0]!) : `${targets.length} spots`
+}
+
+/** Where each bet sits on the table grid: [column, row] lines, matching the mat below. */
+function betCell(target: string): { gridColumn: string; gridRow: string } | null {
+  if (target === '0') return { gridColumn: '1', gridRow: '1 / span 3' }
+  const n = Number(target)
+  if (Number.isInteger(n) && n >= 1 && n <= 36) {
+    const r = BOARD_ROWS.findIndex((row) => row.includes(n))
+    return { gridColumn: String(BOARD_ROWS[r]!.indexOf(n) + 2), gridRow: String(r + 1) }
+  }
+  const start = { even: 2, red: 5, black: 8, odd: 11 }[target]
+  return start ? { gridColumn: `${start} / span 3`, gridRow: '4' } : null
+}
+
+/** The chip colour for a stake: the biggest denomination it reaches, as on a real table. */
+function chipFor(amount: number, chips: DockChip[]): DockChip {
+  const sorted = [...chips].sort((a, b) => a.value - b.value)
+  return sorted.filter((c) => c.value <= amount).pop() ?? sorted[0]!
+}
+
+/**
+ * The chips on the table. A layer laid over the mat on the same grid, so each
+ * stack sits centred on its spot, above every tile, without moving the number
+ * under it. Taps pass through to the mat.
+ */
+function ChipLayer({ bets, chips, result }: { bets: BetMap; chips: DockChip[]; result: number | null }) {
   return (
-    <span
+    <div
       aria-hidden
-      className="chip pointer-events-none absolute left-1/2 top-1/2 z-10 h-[min(22px,80%)] w-[min(22px,80%)] -translate-x-1/2 -translate-y-1/2 shadow-[0_3px_8px_rgba(0,0,0,0.6)]"
-      style={{ '--chip': '#d9a441', '--chip-ink': '#1d1c21' } as CSSProperties}
-    />
+      className="pointer-events-none absolute inset-0 z-20 grid gap-px p-px"
+      style={{
+        gridTemplateColumns: 'minmax(26px,1.15fr) repeat(12, minmax(0, 1fr))',
+        gridTemplateRows: 'repeat(3, var(--cell-h)) var(--out-h)',
+      }}
+    >
+      {Object.entries(bets).map(([target, amount]) => {
+        const at = betCell(target)
+        if (!at || amount <= 0) return null
+        const chip = chipFor(amount, chips)
+        const stacked = amount > chip.value
+        const fx = result == null ? 'g-pop' : isNumberCoveredByTarget(result, target) ? 'g-gold' : 'g-dim'
+        return (
+          <span key={`${target}-${amount}`} className="relative flex items-center justify-center" style={at}>
+            <span
+              className={`chip relative flex aspect-square items-center justify-center font-bold tracking-[-0.04em] tabular-nums ${fx}`}
+              style={
+                {
+                  '--chip': chip.chip,
+                  '--chip-ink': chip.ink,
+                  width: 'min(calc(var(--cell-h) * 0.92), 2.25rem)',
+                  fontSize: 'clamp(6px, calc(var(--cell-h) * 0.27), 10.5px)',
+                  // A stack shows its lower chips as edges under the top one.
+                  boxShadow: stacked
+                    ? `0 2px 0 ${chip.chip}, 0 3px 0 rgba(0,0,0,0.5), 0 5px 0 ${chip.chip}, 0 7px 10px rgba(0,0,0,0.6)`
+                    : '0 3px 8px rgba(0,0,0,0.6)',
+                } as CSSProperties
+              }
+            >
+              {formatChips(amount)}
+            </span>
+          </span>
+        )
+      })}
+    </div>
   )
 }
 
@@ -212,11 +280,15 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
 
   const [round, setRound] = useState<RouletteState>(initRoulette())
   const [trackerEliminated, setTrackerEliminated] = useState<number[]>([])
-  const [currentBet, setCurrentBet] = useState(0)
-  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
-  const [currentTarget, setCurrentTarget] = useState<string | null>(null)
-  const [lastBet, setLastBet] = useState(0)
-  const [lastTarget, setLastTarget] = useState<string | null>(null)
+  // Bets on the table: target → stake. `placed` remembers each chip, for Undo.
+  const [bets, setBets] = useState<BetMap>({})
+  const [placed, setPlaced] = useState<{ target: string; amount: number }[]>([])
+  const [lastBets, setLastBets] = useState<BetMap>({})
+  const ladder = mode === 'ladder'
+  const ticketChip = useOpeningTicketChip(minBet)
+  const chips = useMemo(() => (ticketChip ? [ticketChip] : dockChips(minBet)), [ticketChip, minBet])
+  const [chipValue, setChipValue] = useState(0)
+  const selectedChip = chips.some((c) => c.value === chipValue) ? chipValue : chips[0]!.value
   const [spinning, setSpinning] = useState(false)
   const [wheelRotation, setWheelRotation] = useState(0)
   const [ballRotation, setBallRotation] = useState(0)
@@ -250,53 +322,65 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- roll once per betting phase
   }, [isBetting, mode, rouletteTracker, round.stage])
-  const canSpin =
-    currentTarget !== null && currentBet >= minBet && currentBet <= bankroll
+  const currentBet = sumBets(bets)
+  const lastBet = sumBets(lastBets)
+  const canSpin = currentBet > 0 && currentBet >= minBet && currentBet <= bankroll
   const activeBet = spinning || isSettled ? lastBet : 0
-  const potentialWinnings = useMemo(() => {
-    if (!spinning || !lastTarget || lastBet <= 0) return 0
-    return lastBet * getPayoutForTarget(lastTarget)
-  }, [spinning, lastTarget, lastBet])
+  const potentialWinnings = useMemo(() => (spinning ? bestPayout(lastBets) : 0), [spinning, lastBets])
 
-  function selectTarget(target: string) {
-    if (currentTarget === target) {
-      setCurrentTarget(null)
-    } else {
-      setCurrentTarget(target)
+  /** A tap on the table: one chip of the picked value (the whole pot in Ladder). */
+  function placeChip(target: string) {
+    if (!isBetting) return
+    if (ladder) {
+      if (bankroll <= 0) return
+      setBets({ [target]: bankroll })
+      setPlaced([{ target, amount: bankroll }])
+      return
     }
+    const cap = ticketChip ? ticketChip.value : bankroll
+    if (currentBet + selectedChip > cap) return
+    setBets((prev) => ({ ...prev, [target]: (prev[target] ?? 0) + selectedChip }))
+    setPlaced((prev) => [...prev, { target, amount: selectedChip }])
   }
 
-  function addChip(value: number) {
-    if (!currentTarget) return
-    setCurrentBet((prev) => Math.min(prev + value, bankroll))
+  function undoChip() {
+    const last = placed[placed.length - 1]
+    if (!last) return
+    setPlaced(placed.slice(0, -1))
+    setBets((prev) => {
+      const left = (prev[last.target] ?? 0) - last.amount
+      const next = { ...prev }
+      if (left > 0) next[last.target] = left
+      else delete next[last.target]
+      return next
+    })
   }
 
   function clearBet() {
-    setCurrentBet(0)
-    setCurrentTarget(null)
+    setBets({})
+    setPlaced([])
   }
 
   function handleSpin() {
-    if (!canSpin || spinning || !currentTarget || !lock()) return
+    if (!canSpin || spinning || !lock()) return
 
     const total = currentBet
-    const spunTarget = currentTarget
+    const spunBets = bets
 
     onBet?.(total)
-    setLastBet(currentBet)
-    setLastTarget(currentTarget)
-    setCurrentBet(0)
-    setCurrentTarget(null)
+    setLastBets(spunBets)
+    setBets({})
+    setPlaced([])
     setPendingResult(null)
 
     const preRolled = pendingSpinResult.current
     const result = blessed
-      ? winGame(spunTarget, total)
+      ? winGame(spunBets)
       : cursed
-        ? loseGame(spunTarget, total)
+        ? loseGame(spunBets)
         : preRolled != null
-          ? spinRouletteWithResult(spunTarget, total, preRolled)
-          : spinRoulette(spunTarget, total)
+          ? spinRouletteWithResult(spunBets, preRolled)
+          : spinRouletteMulti(spunBets)
     pendingSpinResult.current = null
     setQuoteIdx((prev) => pickQuote(prev))
 
@@ -327,7 +411,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         result.result ?? 0,
         result.resultColor ?? 'green',
       )
-      const betLabel = getOutcomeLabelForTarget(spunTarget)
+      const betLabel = describeBets(spunBets)
       const partial =
         outcome === 'loss' && result.totalPayout > 0 && result.totalPayout < result.totalBetAmount
       const outcomeWord = outcome === 'win' ? 'Win!' : outcome === 'push' ? 'Push' : partial ? 'Partial return' : 'Miss'
@@ -355,11 +439,17 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
     setTrackerEliminated([])
     setRound(initRoulette())
     setPendingResult(null)
-    if (autoReBet && lastBet > 0 && lastTarget && lastBet <= bankroll) {
-      setCurrentBet(lastBet)
-      setCurrentTarget(lastTarget)
+    if (autoReBet && lastBet > 0 && lastBet <= bankroll) {
+      if (ladder) {
+        const target = Object.keys(lastBets)[0]!
+        setBets({ [target]: bankroll })
+        setPlaced([{ target, amount: bankroll }])
+      } else {
+        setBets(lastBets)
+        setPlaced(Object.entries(lastBets).map(([target, amount]) => ({ target, amount })))
+      }
     }
-  }, [autoReBet, lastBet, lastTarget, bankroll])
+  }, [autoReBet, lastBet, lastBets, ladder, bankroll])
 
   function handleNext() {
     if (pendingResult) setMatchHistory(h => [pendingResult.entry, ...h].slice(0, 80))
@@ -372,13 +462,12 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
   }, [])
 
   // What the table shows: the bet being placed, or the one riding on the spin.
-  const shownTarget = isBetting ? currentTarget : lastTarget
+  const shownBets = isBetting ? bets : lastBets
   const eliminated = new Set(isBetting ? trackerEliminated : [])
 
   function cellState(n: number) {
-    const target = shownTarget
-    const direct = target === String(n)
-    const covered = target != null && !direct && isNumberCoveredByTarget(n, target)
+    const direct = (shownBets[String(n)] ?? 0) > 0
+    const covered = !direct && Object.keys(shownBets).some((t) => isNumberCoveredByTarget(n, t))
     const isResult = isSettled && round.result === n
     return { direct, covered, isResult }
   }
@@ -390,7 +479,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
       <button
         key={n}
         type="button"
-        onClick={() => selectTarget(String(n))}
+        onClick={() => placeChip(String(n))}
         disabled={!isBetting}
         aria-label={`${n} ${getNumberColor(n)}`}
         aria-pressed={direct}
@@ -412,18 +501,17 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         ].join(' ')}
       >
         {n}
-        {direct && <TableChip />}
       </button>
     )
   }
 
   function outsideCell(type: 'even' | 'red' | 'black' | 'odd') {
-    const active = shownTarget === type
+    const active = (shownBets[type] ?? 0) > 0
     return (
       <button
         key={type}
         type="button"
-        onClick={() => selectTarget(type)}
+        onClick={() => placeChip(type)}
         disabled={!isBetting}
         aria-label={`${BET_LABELS[type]}, pays 1 to 1`}
         aria-pressed={active}
@@ -441,7 +529,6 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         ) : (
           BET_LABELS[type]
         )}
-        {active && <TableChip />}
       </button>
     )
   }
@@ -470,7 +557,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         )}
         <GameActiveBetBadge
           betAmount={activeBet}
-          betType={activeBet > 0 && lastTarget ? getOutcomeLabelForTarget(lastTarget) : undefined}
+          betType={activeBet > 0 ? describeBets(lastBets) : undefined}
           visible={activeBet > 0 && !isBetting}
         />
 
@@ -509,6 +596,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
 
           {/* The table: zero, the 3 × 12 grid and the outside bets, ruled in gold */}
           <div className={`rl-table ${!isBetting ? 'pointer-events-none' : ''}`}>
+            <div className="relative">
             <div
               className="grid gap-px rounded-sm bg-[rgba(217,164,65,0.4)] p-px shadow-[0_18px_40px_-20px_rgba(0,0,0,0.9)]"
               style={{ gridTemplateColumns: 'minmax(26px,1.15fr) repeat(12, minmax(0, 1fr))' }}
@@ -522,6 +610,8 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                 </span>
               ))}
             </div>
+            <ChipLayer bets={shownBets} chips={chips} result={isSettled ? round.result : null} />
+            </div>
             <p className="felt-print mt-2 text-center text-[9.5px]">Numbers pay 36 for 1 · Outside bets pay 2 for 1</p>
           </div>
         </div>
@@ -529,7 +619,9 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         <div className="rl-hint mt-4 flex min-h-8 w-full shrink-0 items-center justify-center px-2">
           <p className="max-w-md text-center text-[13px] text-dim">
             {isBetting
-              ? 'Pick a number or an outside bet, add chips, then spin.'
+              ? ladder
+                ? 'Tap a spot: the whole pot rides on it.'
+                : 'Pick a chip, then tap the table to place it. Stack chips and cover as many spots as you like.'
               : spinning
                 ? 'No more bets.'
                 : ' '}
@@ -539,11 +631,23 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
 
       <div className={GAME_CONTROL_DOCK_M}>
         <div className={GAME_DOCK_INNER}>
+          {isBetting && !ladder && (
+            <GameDockChipPicker
+              chips={chips}
+              selected={selectedChip}
+              onSelect={setChipValue}
+              remaining={(ticketChip ? ticketChip.value : bankroll) - currentBet}
+            >
+              <button type="button" onClick={undoChip} disabled={placed.length === 0} className={GAME_DOCK_RACK_BTN}>
+                Undo
+              </button>
+            </GameDockChipPicker>
+          )}
           <GameDockChipRow
-            visible={isBetting || spinning}
+            visible={spinning || (isBetting && ladder)}
             bankroll={bankroll}
             currentBet={currentBet}
-            onAddChip={addChip}
+            onAddChip={() => {}}
             quoteIdx={quoteIdx}
             showQuote={spinning}
             minBet={minBet}

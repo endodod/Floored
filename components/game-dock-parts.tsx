@@ -497,6 +497,75 @@ export function GameDockChipRow({
   )
 }
 
+export type DockChip = { value: number; label: string; chip: string; ink: string }
+
+/** The chips a game offers: the standard four, or four scaled to the survival floor's minimum bet. */
+export function dockChips(minBet?: number): DockChip[] {
+  if ((minBet ?? 1) <= 1) return GAME_CHIPS.map((c) => ({ ...c }))
+  return [1, 2.5, 10, 50].map((m, i) => {
+    const value = Math.round(minBet! * m)
+    return { value, label: formatChips(value), ...SURVIVAL_CHIP_COLOURS[i]! }
+  })
+}
+
+/** The survival opening ticket as a single chip worth its cap, or null when no ticket is active. */
+export function useOpeningTicketChip(minBet?: number): DockChip | null {
+  const active = useOpeningTicketActive()
+  const purchasedUpgrades = useSurvivalStore((s) => s.purchasedUpgrades)
+  if (!active || (minBet ?? 1) <= 1) return null
+  const value = minBet! * getOpeningTicketCapMultiplier(purchasedUpgrades)
+  return { value, label: 'Ticket', chip: '#2f8a62', ink: '#f4f1ea' }
+}
+
+/**
+ * Chip rack for games where chips are placed on a table (Roulette): pick a value,
+ * then each tap on the table places one chip of it. The picked chip sits raised
+ * with a gold ring. `children` go after the chips (Undo and the like).
+ */
+export function GameDockChipPicker({
+  chips,
+  selected,
+  onSelect,
+  remaining,
+  children,
+}: {
+  chips: DockChip[]
+  selected: number
+  onSelect: (value: number) => void
+  /** What is left to bet; chips worth more are disabled. */
+  remaining: number
+  children?: ReactNode
+}) {
+  return (
+    <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-center gap-1.5 sm:gap-2" role="radiogroup" aria-label="Chip value">
+      {chips.map((chip) => {
+        const on = chip.value === selected
+        return (
+          <button
+            key={chip.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onSelect(chip.value)}
+            disabled={chip.value > remaining}
+            aria-label={`${chip.label} chip`}
+            className={`${CHIP_BTN} m-still g-lift ${chip.label.length > 3 ? 'w-auto min-w-11 px-2 sm:min-w-12' : ''} ${
+              on ? '-translate-y-1 ring-2 ring-gold ring-offset-2 ring-offset-ground' : ''
+            }`}
+            style={chipStyle(chip.chip, chip.ink)}
+          >
+            <span>{chip.label}</span>
+          </button>
+        )
+      })}
+      {children}
+    </div>
+  )
+}
+
+/** A small outlined pill beside the chip rack (Undo, Rebet). */
+export const GAME_DOCK_RACK_BTN = FRAC_BTN
+
 export function GameBoardHint({ children }: { children: ReactNode }) {
   return <p className="max-w-md px-2 text-center text-[13px] text-dim">{children}</p>
 }
