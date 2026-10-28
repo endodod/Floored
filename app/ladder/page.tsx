@@ -19,6 +19,16 @@ import { useHydrated } from '@/hooks/use-hydrated'
 import { formatChips } from '@/utils/format'
 import { LadderResults } from '@/components/ladder/ladder-results'
 import { describeLadderResult } from '@/components/ladder/result-text'
+import { ModeTutorial, useTutorial, type TutorialStep } from '@/components/mode-tutorial'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import type { GameName } from '@/store/types'
 
 const FELT = {
@@ -61,6 +71,54 @@ function Rules() {
     </div>
   )
 }
+
+const TUTORIAL: TutorialStep[] = [
+  {
+    icon: '🪜',
+    title: 'Climb the rungs',
+    body: (
+      <>
+        Start with {formatChips(START_POT)} and climb {LADDER_RUNGS} rungs. Each rung, pick a game and go all-in with
+        your whole pot.
+      </>
+    ),
+  },
+  {
+    icon: '📈',
+    title: 'Any profit clears a rung',
+    body: 'Finish the round with more than you staked and you climb — the payout becomes your new pot. A push replays the rung.',
+  },
+  {
+    icon: '🎲',
+    title: 'Each game once',
+    body: 'Every game can only clear one rung per run, so save the safe ones for when the pot gets big.',
+  },
+  {
+    icon: '🏁',
+    title: 'Checkpoints',
+    body: (
+      <>
+        Every {CHECKPOINT_EVERY} rungs saves your pot. Lose a round and you fall back to the last checkpoint — the games
+        used since then are free again.
+      </>
+    ),
+  },
+  {
+    icon: '❤️',
+    title: `${LADDER_LIVES} lives`,
+    body: 'Each fall costs a life. Lose the last one and you bank your last checkpoint.',
+  },
+  {
+    icon: '💰',
+    title: 'Cash out, top out or abandon',
+    body: (
+      <>
+        Cash out between rounds to bank your pot, reach the top for a ×{TOP_BONUS} bonus, or abandon to give up the
+        run without banking anything.
+      </>
+    ),
+  },
+]
 
 function LadderRungs({ rung, cleared, checkpointRung }: { rung: number; cleared: { game: GameName; multiplier: number }[]; checkpointRung: number }) {
   const rows = Array.from({ length: LADDER_RUNGS }, (_, i) => LADDER_RUNGS - i)
@@ -112,6 +170,8 @@ export default function LadderPage() {
   const hydrated = useHydrated()
   const s = useLadderStore()
   const [pending, setPending] = useState<GameName | null>(null)
+  const [confirmAbandon, setConfirmAbandon] = useState(false)
+  const tutorial = useTutorial('ladder')
 
   useEffect(() => {
     // A round left mid-way on a previous visit counts as a fall.
@@ -153,12 +213,30 @@ export default function LadderPage() {
           </p>
           <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-none mt-1">Ladder</h1>
         </div>
-        {stats.runs > 0 && (
-          <p className="text-xs text-zinc-500 tabular-nums">
-            Best {formatChips(stats.bestPot)} · highest rung {stats.bestRung} · topped {stats.tops}×
-          </p>
-        )}
+        <div className="flex flex-col sm:items-end gap-1">
+          <button
+            type="button"
+            onClick={() => tutorial.setOpen(true)}
+            className="self-start sm:self-end text-xs font-semibold text-violet-300 hover:text-violet-200 transition-colors"
+          >
+            How to play
+          </button>
+          {stats.runs > 0 && (
+            <p className="text-xs text-zinc-500 tabular-nums">
+              Best {formatChips(stats.bestPot)} · highest rung {stats.bestRung} · topped {stats.tops}×
+            </p>
+          )}
+        </div>
       </header>
+
+      <ModeTutorial
+        id="ladder"
+        title="Ladder"
+        intro="Climb as high as you can, one all-in round per rung."
+        steps={TUTORIAL}
+        open={tutorial.open}
+        onOpenChange={tutorial.setOpen}
+      />
 
       {s.status !== 'climbing' ? (
         <>
@@ -216,7 +294,41 @@ export default function LadderPage() {
             >
               Cash out {formatChips(s.pot)}
             </button>
+            <button
+              type="button"
+              onClick={() => setConfirmAbandon(true)}
+              className="px-5 py-2 border border-red-900/50 hover:bg-red-950/40 text-red-400 font-semibold rounded-lg transition-colors text-sm"
+            >
+              Abandon
+            </button>
           </div>
+
+          <Dialog open={confirmAbandon} onOpenChange={setConfirmAbandon}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Abandon this run?</DialogTitle>
+                <DialogDescription>
+                  Your {formatChips(s.pot)} pot won&apos;t be banked and the run won&apos;t count toward your stats.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <DialogClose asChild>
+                  <button className="text-sm px-4 py-2 rounded border border-zinc-700 text-muted-foreground hover:bg-zinc-800 transition-colors">
+                    Cancel
+                  </button>
+                </DialogClose>
+                <button
+                  onClick={() => {
+                    setConfirmAbandon(false)
+                    s.abandonRun()
+                  }}
+                  className="text-sm px-4 py-2 rounded bg-red-900/60 border border-red-800 text-red-300 hover:bg-red-900 transition-colors"
+                >
+                  Abandon run
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4 items-start">
             <div className="order-2 lg:order-1">

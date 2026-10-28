@@ -10,11 +10,57 @@ import { SurvivalDefeatPanel } from '@/components/survival/survival-defeat-panel
 import { MissionPanel } from '@/components/survival/mission-panel'
 import { SurvivalShop } from '@/components/survival/survival-shop'
 import { Button } from '@/components/ui/button'
-import { calcShopPrice } from '@/lib/survival/balance'
+import { ModeTutorial, useTutorial, type TutorialStep } from '@/components/mode-tutorial'
+import {
+  calcQuotaTarget,
+  calcShopPrice,
+  FLOOR_BET_LIMIT,
+  MAX_FLOORS,
+  STARTING_BANKROLL,
+} from '@/lib/survival/balance'
+import { formatChips } from '@/utils/format'
 import {
   getLobbyTicketCount,
   LOBBY_REROLL_TICKET,
 } from '@/lib/survival/lobby-ticket'
+
+const TUTORIAL: TutorialStep[] = [
+  {
+    icon: '🏢',
+    title: `Clear ${MAX_FLOORS} floors`,
+    body: (
+      <>
+        You start with {formatChips(STARTING_BANKROLL)}. Each floor sets a bankroll quota — floor 1 asks for{' '}
+        {formatChips(calcQuotaTarget(1, 'normal'))}, floor {MAX_FLOORS} for {formatChips(calcQuotaTarget(MAX_FLOORS, 'normal'))}.
+      </>
+    ),
+  },
+  {
+    icon: '🎯',
+    title: `${FLOOR_BET_LIMIT} bets per floor`,
+    body: 'Hit the quota before your bets run out. Once you reach it you can finish the floor early or keep betting to build a cushion.',
+  },
+  {
+    icon: '🎰',
+    title: 'A fresh lobby each floor',
+    body: 'Every floor offers a handful of games. Spend a lobby reroll ticket to swap one you don\'t like.',
+  },
+  {
+    icon: '✦',
+    title: 'Sparks & the shop',
+    body: 'Clearing floors, beating the quota and completing missions earn sparks. Spend them in the shop on run upgrades, game perks and items.',
+  },
+  {
+    icon: '📋',
+    title: 'Missions',
+    body: 'Each floor comes with missions like winning streaks or big multipliers — finish them for bonus sparks.',
+  },
+  {
+    icon: '💀',
+    title: 'Game over',
+    body: 'Going bust or running out of bets below the quota ends the run. You can also abandon a run at any time.',
+  },
+]
 
 export default function SurvivalPage() {
   const runActive = useSurvivalStore((s) => s.runActive)
@@ -30,6 +76,7 @@ export default function SurvivalPage() {
 
   const startRun = useSurvivalStore((s) => s.startRun)
   const [mobileTab, setMobileTab] = useState<'games' | 'shop'>('games')
+  const tutorial = useTutorial('survival')
 
   // Difficulty picker is disabled for now — landing here without a run (and
   // without a summary to show) starts a Normal run straight away.
@@ -53,6 +100,22 @@ export default function SurvivalPage() {
 
   return (
     <div className="flex flex-col gap-3">
+      <ModeTutorial
+        id="survival"
+        title="Survival"
+        intro="A roguelike run across the casino floors — hit every quota to survive."
+        steps={TUTORIAL}
+        open={tutorial.open}
+        onOpenChange={tutorial.setOpen}
+        accent="text-amber-400"
+      />
+      <button
+        type="button"
+        onClick={() => tutorial.setOpen(true)}
+        className="self-end text-xs font-semibold text-amber-300 hover:text-amber-200 transition-colors"
+      >
+        How to play
+      </button>
       <FloorPanel />
       <FloorCompletePanel />
       <SurvivalDefeatPanel />

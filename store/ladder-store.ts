@@ -73,6 +73,8 @@ interface LadderStore {
   /** A round left mid-way (navigated away) counts as a fall. */
   abandonOpenRound: () => void
   cashOut: () => void
+  /** Gives up the current run between rounds: nothing is banked or recorded, back to the start screen. */
+  abandonRun: () => void
   dismissResult: () => void
 }
 
@@ -214,6 +216,12 @@ export const useLadderStore = create<LadderStore>()(
           if (s.status !== 'climbing' || s.openRound) return
           set({ lastResult: null })
           end('cashed', s.pot)
+        },
+
+        abandonRun: () => {
+          const s = get()
+          if (s.status !== 'climbing' || s.openRound) return
+          set({ ...freshRun(), status: 'idle' })
         },
 
         dismissResult: () => set({ lastResult: null }),
