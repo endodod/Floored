@@ -68,7 +68,6 @@ function ModeRow({ name, description, track, trackCaption, figureLabel, figure, 
 export function ModeSelect() {
   const router = useRouter()
   const runActive = useSurvivalStore((s) => s.runActive)
-  const startRun = useSurvivalStore((s) => s.startRun)
   const currentFloor = useSurvivalStore((s) => s.currentFloor)
   const survivalBankroll = useSurvivalStore((s) => s.bankroll)
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
@@ -84,7 +83,6 @@ export function ModeSelect() {
   const ladderLives = useLadderStore((s) => s.lives)
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
   const ladderClimbing = hydrated && ladderStatus === 'climbing'
-  const startLadderRun = useLadderStore((s) => s.startRun)
   const survivalLive = hydrated && runActive
 
   // The home page is prerendered, so today's challenge is only known once mounted.
@@ -99,8 +97,7 @@ export function ModeSelect() {
 
   function handleSurvivalClick() {
     if (isMobile) return
-    // Difficulty picker is disabled for now — new runs always start on Normal.
-    if (!runActive) startRun('normal')
+    // The survival screen shows its intro (and the Start run button) when no run is live.
     router.push('/survival')
   }
 
@@ -167,15 +164,7 @@ export function ModeSelect() {
             figure={formatChips(ladderClimbing ? ladderPot : START_POT)}
             action={
               <Button asChild variant="outline" className="w-full lg:w-auto">
-                <Link
-                  href="/ladder"
-                  // Straight into a run — a finished run's results aren't shown again from here.
-                  onClick={() => {
-                    if (useLadderStore.getState().status !== 'climbing') startLadderRun()
-                  }}
-                >
-                  {ladderClimbing ? 'Continue climb' : 'Start climb'}
-                </Link>
+                <Link href="/ladder">{ladderClimbing ? 'Continue climb' : 'Start climb'}</Link>
               </Button>
             }
           />

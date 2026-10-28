@@ -1,15 +1,24 @@
 import { Lobby } from '@/components/lobby'
-import { PageTitle } from '@/components/ui/terminal'
+import { PageTitle, SectionTitle } from '@/components/ui/terminal'
+import { ModeColumns } from '@/components/mode-intro'
+import { FreeplaySession } from '@/components/freeplay-session'
 import { GAMES } from '@/lib/game-catalog'
 
 export default function FreeplayPage() {
   return (
-    <div className="mx-auto flex w-full max-w-[1152px] flex-1 min-h-0 flex-col gap-6 pb-12">
+    <div className="mx-auto flex w-full max-w-[1152px] flex-1 min-h-0 flex-col gap-8 pb-12">
       <PageTitle
         title="Freeplay"
         sub={`All ${GAMES.length} games with a 10K balance — no floors, no quotas, no minimum bet.`}
       />
-      <Lobby mode="freeplay" />
+      <ModeColumns rail={<FreeplaySession />}>
+        <section className="flex flex-col gap-4" aria-labelledby="freeplay-games">
+          <SectionTitle suit={3} note="Every game open">
+            <span id="freeplay-games">Pick a table</span>
+          </SectionTitle>
+          <Lobby mode="freeplay" />
+        </section>
+      </ModeColumns>
     </div>
   )
 }

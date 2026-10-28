@@ -24,6 +24,7 @@ import { FigureStrip, PageTitle, SectionTitle } from '@/components/ui/terminal'
 import { GameTile } from '@/components/game-tile'
 import { PayoutCaption } from '@/components/game-payout'
 import { ScreenSkeleton } from '@/components/screen-skeleton'
+import { HowItWorks, ModeColumns, Rail, StartPanel } from '@/components/mode-intro'
 import { ModeTutorial, useTutorial, type TutorialStep } from '@/components/mode-tutorial'
 import {
   Dialog,
@@ -49,26 +50,6 @@ function ResultNote({ tone, title, body }: { tone: keyof typeof TONE; title: str
     >
       <p className={`text-[15px] font-semibold ${TONE[tone]}`}>{title}</p>
       <p className="mt-0.5 text-[13px] leading-5 text-soft">{body}</p>
-    </div>
-  )
-}
-
-function Rules() {
-  return (
-    <div className="rise flex max-w-[64ch] flex-col gap-3 text-[13px] leading-5 text-soft [--d:60ms]">
-      <p>
-        Start with <span className="num text-ink">{formatChips(START_POT)}</span> and climb {LADDER_RUNGS} rungs. Each
-        rung, pick a game and go all-in — any round that ends in profit clears it, and your pot becomes the payout. A
-        push replays the rung.
-      </p>
-      <p>
-        Every game can be used once per run. Every {CHECKPOINT_EVERY} rungs is a checkpoint: lose a round and you fall
-        back to it, its pot is restored, and the games you used since then are free again.
-      </p>
-      <p>
-        You have {LADDER_LIVES} lives. Cash out any time between rounds, lose your last life to bank your last
-        checkpoint, or reach the top for a <span className="num text-ink">×{TOP_BONUS}</span> bonus.
-      </p>
     </div>
   )
 }
@@ -118,7 +99,7 @@ const TUTORIAL: TutorialStep[] = [
 function LadderRungs({ rung, cleared, checkpointRung }: { rung: number; cleared: { game: GameName; multiplier: number }[]; checkpointRung: number }) {
   const rows = Array.from({ length: LADDER_RUNGS }, (_, i) => LADDER_RUNGS - i)
   return (
-    <ol className="rise rounded-md bg-surface px-4 py-2 [--d:160ms]" aria-label="Ladder, top rung first">
+    <ol aria-label="Ladder, top rung first">
       {rows.map((n) => {
         const done = cleared[n - 1]
         const entry = done ? GAMES.find((g) => g.name === done.game) : undefined
@@ -159,15 +140,12 @@ export default function LadderPage() {
   const s = useLadderStore()
   const [pending, setPending] = useState<GameName | null>(null)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
-  const tutorial = useTutorial('ladder')
+  // The intro screen lays the rules out, so the dialog only opens from "How to play".
+  const tutorial = useTutorial('ladder', { auto: false })
 
   useEffect(() => {
-    const ladder = useLadderStore.getState()
     // A round left mid-way on a previous visit counts as a fall.
-    ladder.abandonOpenRound()
-    // No start screen — landing here without a run starts one straight away. Checked on entry
-    // only, so abandoning (which goes back to idle) routes home instead of restarting.
-    if (ladder.status === 'idle') ladder.startRun()
+    useLadderStore.getState().abandonOpenRound()
   }, [])
 
   const used = useMemo(() => usedGames(s.cleared), [s.cleared])
@@ -190,6 +168,23 @@ export default function LadderPage() {
   }
 
   const climbing = s.status === 'climbing'
+  const finished = s.status === 'over' ? s.history[0] : undefined
+
+  const payoutTable = (
+    <section className="rise flex flex-col gap-3 [--d:220ms]" aria-labelledby="ladder-payouts">
+      <SectionTitle suit={1} note="Safe games climb, big payouts grow the pot">
+        <span id="ladder-payouts">What each game can pay</span>
+      </SectionTitle>
+      <ul className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
+        {GAMES.map((g) => (
+          <li key={g.name} className="flex items-baseline justify-between gap-4 border-t border-rule py-2.5">
+            <span className="text-[13px] text-ink">{g.label}</span>
+            <PayoutCaption game={g.name} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
@@ -205,11 +200,11 @@ export default function LadderPage() {
                 <span className="num text-ink">{stats.tops}</span>×
               </p>
             )}
-            <Button variant="ghost" size="sm" onClick={() => tutorial.setOpen(true)}>
-              How to play
-            </Button>
             {climbing && (
               <>
+                <Button variant="ghost" size="sm" onClick={() => tutorial.setOpen(true)}>
+                  How to play
+                </Button>
                 <Button variant="destructive" onClick={() => setConfirmAbandon(true)}>
                   Abandon
                 </Button>
@@ -258,42 +253,19 @@ export default function LadderPage() {
         </DialogContent>
       </Dialog>
 
-      {!climbing ? (
-        s.status === 'over' && s.history[0] ? (
-          <div className="flex flex-col gap-4">
-            {result && <ResultNote tone={result.tone} title={`${result.title}.`} body={result.body} />}
-            <LadderResults record={s.history[0]} onNewRun={s.startRun} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
-            <div className="flex flex-col gap-10">
-              <div className="flex flex-col gap-6">
-                <Rules />
-                <Button onClick={s.startRun} size="lg" className="self-start">
-                  Start climbing
-                </Button>
-              </div>
-              <section className="rise flex flex-col gap-3 [--d:220ms]" aria-labelledby="ladder-payouts">
-                <SectionTitle suit={1} note="Safe games climb, big payouts grow the pot">
-                  <span id="ladder-payouts">What each game can pay</span>
-                </SectionTitle>
-                <ul className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
-                  {GAMES.map((g) => (
-                    <li key={g.name} className="flex items-baseline justify-between gap-4 border-t border-rule py-2.5">
-                      <span className="text-[13px] text-ink">{g.label}</span>
-                      <PayoutCaption game={g.name} />
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </div>
-            <LadderRungs rung={0} cleared={[]} checkpointRung={0} />
-          </div>
-        )
-      ) : (
-        <>
+      {climbing ? (
+        <ModeColumns
+          rail={
+            <Rail
+              title="The ladder"
+              note={`${s.lives} of ${LADDER_LIVES} lives`}
+              footer={`Lose a round and you fall to the last checkpoint with its pot restored.`}
+            >
+              <LadderRungs rung={s.rung} cleared={s.cleared} checkpointRung={s.checkpointRung} />
+            </Rail>
+          }
+        >
           {result && <ResultNote tone={result.tone} title={`${result.title}.`} body={result.body} />}
-          {s.rung === 0 && s.lives === LADDER_LIVES && !result && <Rules />}
 
           <FigureStrip
             items={[
@@ -308,41 +280,67 @@ export default function LadderPage() {
             ]}
           />
 
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-            <div className="order-2 lg:order-1">
-              <LadderRungs rung={s.rung} cleared={s.cleared} checkpointRung={s.checkpointRung} />
+          <section className="flex flex-col gap-4" aria-labelledby="ladder-games">
+            <SectionTitle suit={3} note={`${available.length} of ${GAMES.length} games left this run`}>
+              <span id="ladder-games">Pick the game for rung {s.rung + 1}</span>
+            </SectionTitle>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {GAMES.map((entry, i) => {
+                const game = entry.name
+                const usedOn = s.cleared.findIndex((c) => c.game === game)
+                const playable = usedOn === -1
+                const isLoading = pending === game
+                return (
+                  <li key={game}>
+                    <GameTile
+                      index={i}
+                      label={entry.label}
+                      sub={entry.sub}
+                      meta={<PayoutCaption game={game} />}
+                      action={usedOn !== -1 ? `Used on rung ${usedOn + 1}` : 'Play'}
+                      disabled={!playable || !!pending}
+                      faded={!playable || (!!pending && !isLoading)}
+                      loading={isLoading}
+                      onClick={() => handlePick(game)}
+                    />
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        </ModeColumns>
+      ) : (
+        <ModeColumns
+          rail={
+            <Rail title="The ladder" note={`${LADDER_RUNGS} rungs`} footer="Flags mark the checkpoints.">
+              <LadderRungs rung={0} cleared={[]} checkpointRung={0} />
+            </Rail>
+          }
+        >
+          {finished && (
+            <div className="flex flex-col gap-4">
+              {result && <ResultNote tone={result.tone} title={`${result.title}.`} body={result.body} />}
+              <LadderResults record={finished} onNewRun={s.startRun} />
             </div>
-
-            <section className="order-1 flex flex-col gap-4 lg:order-2" aria-labelledby="ladder-games">
-              <SectionTitle suit={3} note={`${available.length} of ${GAMES.length} games left this run`}>
-                <span id="ladder-games">Pick the game for rung {s.rung + 1}</span>
-              </SectionTitle>
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {GAMES.map((entry, i) => {
-                  const game = entry.name
-                  const usedOn = s.cleared.findIndex((c) => c.game === game)
-                  const playable = usedOn === -1
-                  const isLoading = pending === game
-                  return (
-                    <li key={game}>
-                      <GameTile
-                        index={i}
-                        label={entry.label}
-                        sub={entry.sub}
-                        meta={<PayoutCaption game={game} />}
-                        action={usedOn !== -1 ? `Used on rung ${usedOn + 1}` : 'Play'}
-                        disabled={!playable || !!pending}
-                        faded={!playable || (!!pending && !isLoading)}
-                        loading={isLoading}
-                        onClick={() => handlePick(game)}
-                      />
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-          </div>
-        </>
+          )}
+          {!finished && (
+            <StartPanel
+              figures={[
+                { label: 'Starting pot', value: formatChips(START_POT) },
+                { label: 'Rungs', value: LADDER_RUNGS },
+                { label: 'Lives', value: LADDER_LIVES },
+                { label: 'Top bonus', value: `×${TOP_BONUS}` },
+              ]}
+              action={
+                <Button onClick={s.startRun} size="lg">
+                  Start climbing
+                </Button>
+              }
+            />
+          )}
+          <HowItWorks steps={TUTORIAL} />
+          {payoutTable}
+        </ModeColumns>
       )}
     </div>
   )
