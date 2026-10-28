@@ -1,10 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSurvivalStore } from '@/store/survival-store'
-import { DifficultyDialog } from '@/components/difficulty-dialog'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useHydrated } from '@/hooks/use-hydrated'
@@ -39,7 +37,7 @@ const LOCK_ICON = (
 export function ModeSelect() {
   const router = useRouter()
   const runActive = useSurvivalStore((s) => s.runActive)
-  const [difficultyOpen, setDifficultyOpen] = useState(false)
+  const startRun = useSurvivalStore((s) => s.startRun)
   const isMobile = useIsMobile()
   const hydrated = useHydrated()
   const dailyDate = useDailyStore((s) => s.date)
@@ -60,11 +58,9 @@ export function ModeSelect() {
 
   function handleSurvivalClick() {
     if (isMobile) return
-    if (runActive) {
-      router.push('/survival')
-    } else {
-      setDifficultyOpen(true)
-    }
+    // Difficulty picker is disabled for now — new runs always start on Normal.
+    if (!runActive) startRun('normal')
+    router.push('/survival')
   }
 
   return (
@@ -260,10 +256,6 @@ export function ModeSelect() {
           </div>
         </Link>
       </div>
-
-      {SURVIVAL_ENABLED && (
-        <DifficultyDialog open={difficultyOpen} onClose={() => setDifficultyOpen(false)} />
-      )}
     </>
   )
 }

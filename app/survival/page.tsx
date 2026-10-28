@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { useSurvivalStore } from '@/store/survival-store'
 import { FloorPanel } from '@/components/floor-panel'
 import { Lobby } from '@/components/lobby'
@@ -10,7 +9,6 @@ import { FloorCompletePanel } from '@/components/survival/floor-complete-panel'
 import { SurvivalDefeatPanel } from '@/components/survival/survival-defeat-panel'
 import { MissionPanel } from '@/components/survival/mission-panel'
 import { SurvivalShop } from '@/components/survival/survival-shop'
-import { DifficultyDialog } from '@/components/difficulty-dialog'
 import { Button } from '@/components/ui/button'
 import { calcShopPrice } from '@/lib/survival/balance'
 import {
@@ -19,7 +17,6 @@ import {
 } from '@/lib/survival/lobby-ticket'
 
 export default function SurvivalPage() {
-  const router = useRouter()
   const runActive = useSurvivalStore((s) => s.runActive)
   const runEndedByExit = useSurvivalStore((s) => s.runEndedByExit)
   const lastRun = useSurvivalStore((s) => s.lastRun)
@@ -31,24 +28,21 @@ export default function SurvivalPage() {
   const inventory = useSurvivalStore((s) => s.inventory)
   const purchaseLobbyRerollTicket = useSurvivalStore((s) => s.purchaseLobbyRerollTicket)
 
-  const [difficultyOpen, setDifficultyOpen] = useState(!runActive)
+  const startRun = useSurvivalStore((s) => s.startRun)
   const [mobileTab, setMobileTab] = useState<'games' | 'shop'>('games')
 
-  function handleDifficultyClose() {
-    setDifficultyOpen(false)
-    if (!useSurvivalStore.getState().runActive) router.replace('/')
-  }
+  // Difficulty picker is disabled for now — landing here without a run (and
+  // without a summary to show) starts a Normal run straight away.
+  const shouldAutoStart = !runActive && !runEndedByExit && !lastRun
+  useEffect(() => {
+    if (shouldAutoStart) startRun('normal')
+  }, [shouldAutoStart, startRun])
 
   if (!runActive) {
-    // Defeat/abandon route straight home — don't flash the difficulty picker or
-    // run summary here while that navigation is in flight.
+    // Defeat/abandon route straight home — don't flash the run summary here
+    // while that navigation is in flight.
     if (runEndedByExit) return null
-    return (
-      <>
-        <DifficultyDialog open={difficultyOpen} onClose={handleDifficultyClose} />
-        {lastRun && <RunSummary lastRun={lastRun} />}
-      </>
-    )
+    return lastRun ? <RunSummary lastRun={lastRun} /> : null
   }
 
   const ticketCount = getLobbyTicketCount(inventory)
