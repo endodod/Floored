@@ -1579,6 +1579,23 @@ body > div.neon-auth-ui {
 .cb-tile-value {
   display: none;
 }
+/* Case markers: a column between the sides on tall boards (one per row, since
+   both sides open the same case), a corner tag on each tile on short boards. */
+.cb-case-row {
+  height: var(--slot-h);
+}
+.cb-case-mark {
+  width: clamp(1rem, calc(var(--slot-h) * 0.55), 1.6rem);
+  height: auto;
+}
+.cb-tag {
+  display: none;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(var(--slot-h) * 0.3);
+  height: auto;
+}
 /* The opening reel: the case's items in a row, centred cell by cell under the
    marker, decelerating from --from cells to --to cells (the result). */
 .cb-slot {
@@ -1673,6 +1690,12 @@ body > div.neon-auth-ui {
     display: none;
   }
   .cb-tile-value {
+    display: block;
+  }
+  .cb-cases {
+    display: none;
+  }
+  .cb-tag {
     display: block;
   }
 }

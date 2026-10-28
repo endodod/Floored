@@ -154,6 +154,7 @@ function ItemSlot({
         title={`${item.name} · ${item.rarity} · ${formatChips(item.value)}`}
         className={`${base} cb-slot-shown g-fade ${RARITY_CLASS[item.rarity]} ${item.rarity === 'legendary' || item.rarity === 'epic' ? 'g-gold' : ''} ${dim ? 'g-dim' : ''}`}
       >
+        <CaseArt tier={tier} className="cb-tag" />
         <ItemIcon name={item.name} className="cb-icon shrink-0" />
         <p className="cb-row-text min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight" style={{ color: 'var(--rar)' }}>
           {item.name}
@@ -177,6 +178,7 @@ function ItemSlot({
           ))}
         </div>
         <span className="cb-marker absolute inset-y-0.5 left-1/2 -translate-x-1/2 rounded-full" />
+        <CaseArt tier={tier} className="cb-tag z-[1]" />
       </div>
     )
   return (
@@ -469,9 +471,22 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
             { label: 'Bot', items: state.botItems, total: isSettled ? state.botTotal : displayBotTotal, wins: lost, loses: won, user: false },
           ]
           return (
-            <div className="cb-duel flex gap-4">
+            <div className="cb-duel flex gap-2.5 sm:gap-3">
+              {/* Which case each row opened: both sides open the same case per row. */}
+              <div className="cb-cases order-1 flex shrink-0 flex-col items-center gap-1.5" aria-label="Cases">
+                <span className="cb-head-gap block h-4" aria-hidden />
+                {state.userItems.map((oc, i) => (
+                  <span
+                    key={i}
+                    title={cases[oc.caseId]?.name}
+                    className={`cb-case-row flex items-center justify-center ${i === revealingIdx ? '' : i < revealedCount ? 'opacity-70' : 'opacity-40'}`}
+                  >
+                    <CaseArt tier={oc.caseId} className="cb-case-mark" />
+                  </span>
+                ))}
+              </div>
               {sides.map(side => (
-                <div key={side.label} className="cb-side flex min-w-0 flex-1 flex-col gap-1.5">
+                <div key={side.label} className={`cb-side ${side.user ? 'order-0' : 'order-2'} flex min-w-0 flex-1 flex-col gap-1.5`}>
                   <p className={`cb-head shrink-0 text-center text-xs font-semibold uppercase tracking-wider ${side.wins ? (side.user ? 'text-felt' : 'text-loss') : tied ? 'text-soft' : 'text-dim'}`}>
                     {side.label} {side.wins && <WinnerCrown />}
                   </p>
