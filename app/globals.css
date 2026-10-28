@@ -595,6 +595,8 @@ body > div.neon-auth-ui {
   }
   .cf-side {
     display: flex;
+  }
+}
 
 /* Dragon Tower: five floors of three wide tiles, sized from the board's
    height (and width on narrow phones). On a short, wide board the hint
