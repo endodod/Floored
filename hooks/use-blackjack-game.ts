@@ -34,6 +34,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { MatchHistoryEntry } from '@/components/game-match-history'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 export interface BlackjackResult {
   outcome: BlackjackOutcome
@@ -66,6 +67,7 @@ export function useBlackjackGame({
 
   const [round, setRound] = useState<BlackjackState>(initBlackjack())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [quoteIdx, setQuoteIdx] = useState(() => pickQuote())
   const [pendingResult, setPendingResult] = useState<GamePendingResult | null>(null)

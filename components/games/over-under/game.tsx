@@ -46,6 +46,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { OverUnderState } from '@/games/over-under/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const ROLL_ANIM_MS = 620
 
@@ -81,6 +82,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
   const [safeZone, setSafeZone] = useState(40)
   const [round, setRound] = useState<OverUnderState>(initOverUnder())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)

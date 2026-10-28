@@ -50,6 +50,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { MinesState } from '@/games/mines/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const DIFFICULTIES: MinesState['difficulty'][] = ['easy', 'medium', 'hard', 'insane']
 
@@ -94,6 +95,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
   const [lastDifficulty, setLastDifficulty] = useState<MinesState['difficulty']>('easy')
   const [round, setRound] = useState<MinesState>(initMines())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)

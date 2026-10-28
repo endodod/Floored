@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
 import { useOpeningTicketActive } from '@/hooks/use-opening-ticket'
+import { useIsLadderRoute } from '@/hooks/use-ladder-all-in'
 import { getOpeningTicketCapMultiplier } from '@/lib/survival/survival-perks'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatCurrentBetLine, formatOutcomeDisplayText } from '@/lib/game-result-labels'
@@ -305,13 +306,15 @@ export function GameDockBetRow({
   onClear: () => void
   label?: string
 }) {
+  // Ladder bets are always the whole pot — nothing to clear.
+  const ladder = useIsLadderRoute()
   return (
     <div className="flex items-center gap-2.5 flex-wrap justify-center">
-      <span className="text-zinc-500 text-base">{label}</span>
+      <span className="text-zinc-500 text-base">{ladder ? 'All-in' : label}</span>
       <span className="font-bold text-xl text-white tabular-nums">
         {currentBet > 0 ? formatChips(currentBet) : '—'}
       </span>
-      {currentBet > 0 && (
+      {currentBet > 0 && !ladder && (
         <button
           type="button"
           onClick={onClear}
@@ -366,6 +369,7 @@ export function GameDockChipRow({
   minBet?: number
 }) {
   const openingTicketActive = useOpeningTicketActive()
+  const ladder = useIsLadderRoute()
   const purchasedUpgrades = useSurvivalStore((s) => s.purchasedUpgrades)
   const openingTicketCap = minBet ? minBet * getOpeningTicketCapMultiplier(purchasedUpgrades) : 0
   const useSurvivalChips = (minBet ?? 1) > 1
@@ -384,6 +388,8 @@ export function GameDockChipRow({
     >
       {showQuote && quoteIdx !== undefined ? (
         <GameDockRandomQuote quoteIdx={quoteIdx} />
+      ) : ladder ? (
+        <p className="text-sm text-zinc-500">The whole pot rides on this round.</p>
       ) : (
         <>
           {openingTicketActive && useSurvivalChips && minBet ? (

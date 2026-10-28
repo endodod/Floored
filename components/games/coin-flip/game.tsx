@@ -33,6 +33,7 @@ import { useBless } from '@/hooks/use-bless'
 import { cashOut, flipAgain, initCoinFlip, loseFlipAgain, loseGame, startFlip, winFlipAgain, winGame } from '@/games/coin-flip/engine'
 import type { CoinFlipState, CoinSide } from '@/games/coin-flip/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const COIN_SPIN_MS = 1500
 const COIN_LAND_MS = 900
@@ -80,6 +81,7 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
 
   const [state, setState] = useState<CoinFlipState>(initCoinFlip)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])

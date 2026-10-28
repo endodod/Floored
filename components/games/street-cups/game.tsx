@@ -43,6 +43,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 /* Slot left-percent anchors (center of each slot in a 100%-wide container). */
 const SLOT_X = ['16%', '50%', '84%'] as const
@@ -193,6 +194,7 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
 
   const [round, setRound]         = useState<StreetCupsState>(initStreetCups)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet]     = useState(0)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])

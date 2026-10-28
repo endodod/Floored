@@ -46,6 +46,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { ChickenRaceState } from '@/games/chicken-race/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 interface ChickenRaceResult {
   outcome: 'win' | 'loss'
@@ -79,6 +80,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
   const [state, setState] = useState<ChickenRaceState>(initChickenRace)
   const [scoutEliminate, setScoutEliminate] = useState<number | null>(null)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [lastPicked, setLastPicked] = useState<number | null>(null)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)

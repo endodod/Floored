@@ -52,6 +52,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { RouletteBetType, RouletteState } from '@/games/roulette/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 // Standard European roulette board layout: 3 rows top-to-bottom, 12 columns left-to-right
 const BOARD_ROWS = [
@@ -137,6 +138,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
   const [round, setRound] = useState<RouletteState>(initRoulette())
   const [trackerEliminated, setTrackerEliminated] = useState<number[]>([])
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [currentTarget, setCurrentTarget] = useState<string | null>(null)
   const [lastBet, setLastBet] = useState(0)
   const [lastTarget, setLastTarget] = useState<string | null>(null)

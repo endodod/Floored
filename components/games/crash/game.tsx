@@ -33,6 +33,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { CrashState } from '@/games/crash/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 interface CrashResult {
   outcome: 'win' | 'loss' | 'push'
@@ -188,6 +189,7 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
 
   const [round, setRound]         = useState<CrashState>(initCrash())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet]     = useState(0)
   const [elapsedMs, setElapsedMs] = useState(0)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)

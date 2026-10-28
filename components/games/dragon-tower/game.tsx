@@ -44,6 +44,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { DragonTowerState, TileRow } from '@/games/dragon-tower/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 interface DragonTowerResult {
   outcome: 'win' | 'loss'
@@ -113,6 +114,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
 
   const [state, setState] = useState<DragonTowerState>(initDragonTower)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])

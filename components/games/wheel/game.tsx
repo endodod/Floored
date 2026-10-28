@@ -49,6 +49,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { WheelColor, WheelState } from '@/games/wheel/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const COLOR_STYLES: Record<WheelColor, { bg: string; border: string; text: string; ring: string }> = {
   red:   { bg: 'bg-red-600',     border: 'border-red-400',     text: 'text-red-300',     ring: 'ring-red-400'     },
@@ -162,6 +163,7 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
   const [round, setRound] = useState<WheelState>(initWheel())
   const [crossedOutColor, setCrossedOutColor] = useState<WheelColor | null>(null)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [activeBet, setActiveBet] = useState(0)
   const [spinning, setSpinning] = useState(false)

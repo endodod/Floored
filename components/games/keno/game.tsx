@@ -55,6 +55,7 @@ import {
 } from '@/games/keno/engine'
 import type { KenoState } from '@/games/keno/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const DRAW_TICK_MS = 380
 
@@ -90,6 +91,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
 
   const [round, setRound] = useState<KenoState>(initKeno())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [lastPicks, setLastPicks] = useState<number[]>([])
   const [lastUsedQuickPick, setLastUsedQuickPick] = useState(false)
