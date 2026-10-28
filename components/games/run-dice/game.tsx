@@ -14,6 +14,7 @@ import {
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -69,6 +70,37 @@ interface RunDiceGameProps {
   config?: RunDiceConfig
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<RunDiceResult>
+}
+
+type DieTone = 'neutral' | 'win' | 'loss'
+
+// Pip positions on a 3×3 grid (0 = top left, 8 = bottom right).
+const PIPS: Record<number, number[]> = {
+  1: [4],
+  2: [2, 6],
+  3: [2, 4, 6],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+}
+
+/** An ivory die with drawn pips, sized by --die. */
+function Die({ value, tone = 'neutral', className = '' }: { value: number | null | undefined; tone?: DieTone; className?: string }) {
+  const pips = PIPS[value ?? 0] ?? []
+  return (
+    <div className={`rd-die relative ${tone === 'win' ? 'g-win' : ''} ${className}`} data-tone={tone} aria-label={value ? `Die showing ${value}` : 'Die'}>
+      {Array.from({ length: 9 }, (_, i) => (
+        <span key={i} className={pips.includes(i) ? 'rd-pip' : ''} />
+      ))}
+    </div>
+  )
+}
+
+/** The total beside the dice: a figure on a tile, tinted by what it means. */
+function TotalTile({ value, tone, className = '' }: { value: number | null | undefined; tone: DieTone; className?: string }) {
+  const toneClass =
+    tone === 'win' ? 'border-felt bg-felt-tint text-felt glow-felt g-win' : tone === 'loss' ? 'border-loss bg-loss-tint text-loss' : 'border-control bg-raised text-ink'
+  return <div className={`rd-total num relative ${toneClass} ${className}`}>{value}</div>
 }
 
 export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDiceGameProps) {
@@ -254,16 +286,16 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   }
 
   function outcomeColor(val: number, cfg = gameConfig): string {
-    if (cfg.win.includes(val))  return 'bg-emerald-700/80 border-emerald-500 text-emerald-200'
-    if (cfg.loss.includes(val)) return 'bg-red-900/80 border-red-700 text-red-300'
-    return 'bg-white/10 border-white/20 text-white/50'
+    if (cfg.win.includes(val))  return 'bg-felt-tint text-felt'
+    if (cfg.loss.includes(val)) return 'bg-loss-tint text-loss'
+    return 'bg-black/25 text-dim'
   }
 
-  function dieColor(total: number): string {
+  function dieTone(total: number): DieTone {
     const rollClass = classifyRunDiceTotal(gameConfig, total)
-    if (rollClass === 'win') return 'bg-emerald-500 border-emerald-300 text-white'
-    if (rollClass === 'loss') return 'bg-red-600 border-red-400 text-white'
-    return 'bg-zinc-200 border-zinc-300 text-zinc-900'
+    if (rollClass === 'win') return 'win'
+    if (rollClass === 'loss') return 'loss'
+    return 'neutral'
   }
 
   function rollLabel(total: number, protectedLossPush = false): string {
@@ -276,8 +308,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   const lastRoll = round.rollResult
   const lastDice = round.dice
   // Outcome color is revealed only when the total appears (step 3); until then keep neutral
-  const neutralDie = 'bg-zinc-200 border-zinc-300 text-zinc-900'
-  const tColor = revealStep >= 3 && targetTotal != null ? dieColor(targetTotal) : neutralDie
+  const tTone: DieTone = revealStep >= 3 && targetTotal != null ? dieTone(targetTotal) : 'neutral'
 
   return (
     <div className={GAME_CARD_SHELL}>
@@ -304,51 +335,30 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
           visible={!isBetting && round.betAmount > 0}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 shrink-0 justify-center sm:justify-start">
-        <div className="flex items-center justify-center min-h-[100px] shrink-0">
+        <div className="rd-board flex min-h-0 flex-1 flex-col gap-[clamp(0.5rem,2.6cqh,1rem)] shrink-0 justify-center">
+        <div className="rd-dice flex items-center justify-center shrink-0">
           {isRolling ? (
             <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-3">
-
-                {/* Die 1 */}
+              <div className="flex items-center gap-[calc(var(--die)*0.2)]">
                 {revealStep === 0 ? (
-                  <div key="spin-d1" className="w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 bg-zinc-200 border-zinc-300 text-zinc-900 dice-rolling">
-                    {spinDice[0]}
-                  </div>
+                  <Die key="spin-d1" value={spinDice[0]} className="dice-rolling" />
                 ) : (
-                  <div key="land-d1" className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 ${tColor} dice-landing`}>
-                    {targetDice?.[0]}
-                  </div>
+                  <Die key="land-d1" value={targetDice?.[0]} tone={tTone} className="dice-landing" />
                 )}
-
-                <span className="text-white/30 text-xl font-bold">+</span>
-
-                {/* Die 2 */}
+                <span className="text-dim text-xl">+</span>
                 {revealStep < 2 ? (
-                  <div key="spin-d2" className="w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 bg-zinc-200 border-zinc-300 text-zinc-900 dice-rolling">
-                    {spinDice[1]}
-                  </div>
+                  <Die key="spin-d2" value={spinDice[1]} className="dice-rolling" />
                 ) : (
-                  <div key="land-d2" className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 ${tColor} dice-landing`}>
-                    {targetDice?.[1]}
-                  </div>
+                  <Die key="land-d2" value={targetDice?.[1]} tone={tTone} className="dice-landing" />
                 )}
-
-                <span className="text-white/30 text-xl font-bold">=</span>
-
-                {/* Total */}
+                <span className="text-dim text-xl">=</span>
                 {revealStep >= 3 ? (
-                  <div key="land-total" className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 ${tColor} card-reveal`}>
-                    {targetTotal}
-                  </div>
+                  <TotalTile key="land-total" value={targetTotal} tone={tTone} className={`g-pop ${tTone === 'loss' ? 'g-shake' : ''}`} />
                 ) : (
-                  <div key="spin-total" className="w-16 h-16 rounded-xl border-2 border-white/20 bg-white/5 flex items-center justify-center">
-                    <span className="text-3xl text-white/20">?</span>
-                  </div>
+                  <div key="spin-total" className="rd-total border-dashed border-control text-dim">?</div>
                 )}
-
               </div>
-              <p className="text-white/40 text-xs h-4">
+              <p className="text-dim text-[12px] h-4">
                 {revealStep < 3 ? 'Rolling…' : (
                   targetTotal != null && rollLabel(targetTotal)
                 )}
@@ -356,20 +366,14 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
             </div>
           ) : lastDice !== null && lastRoll !== null ? (
             <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-3">
-                <div className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 ${dieColor(lastRoll)}`}>
-                  {lastDice[0]}
-                </div>
-                <span className="text-white/30 text-xl font-bold">+</span>
-                <div className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 ${dieColor(lastRoll)}`}>
-                  {lastDice[1]}
-                </div>
-                <span className="text-white/30 text-xl font-bold">=</span>
-                <div className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-2xl text-3xl font-black border-2 ${dieColor(lastRoll)}`}>
-                  {lastRoll}
-                </div>
+              <div className="flex items-center gap-[calc(var(--die)*0.2)]">
+                <Die value={lastDice[0]} tone={dieTone(lastRoll)} />
+                <span className="text-dim text-xl">+</span>
+                <Die value={lastDice[1]} tone={dieTone(lastRoll)} />
+                <span className="text-dim text-xl">=</span>
+                <TotalTile value={lastRoll} tone={dieTone(lastRoll)} />
               </div>
-              <p className="text-white/40 text-xs h-4">
+              <p className="text-dim text-[12px] h-4">
                 {rollLabel(
                   lastRoll,
                   round.outcome === 'push' && round.message.includes('protected'),
@@ -377,50 +381,55 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
               </p>
             </div>
           ) : (
-            <div className="flex gap-3">
-              <div className="w-16 h-16 rounded-xl border-2 border-white/20 bg-white/5 flex items-center justify-center">
-                <span className="text-3xl text-white/20">?</span>
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex gap-[calc(var(--die)*0.2)]">
+                <div className="rd-total border-dashed border-control text-dim g-pop">?</div>
+                <div className="rd-total border-dashed border-control text-dim g-pop" style={{ '--i': 1 } as React.CSSProperties}>?</div>
               </div>
-              <div className="w-16 h-16 rounded-xl border-2 border-white/20 bg-white/5 flex items-center justify-center">
-                <span className="text-3xl text-white/20">?</span>
-              </div>
+              <p className="h-4" />
             </div>
           )}
         </div>
 
-        <div className="shrink-0">
-          <p className="text-white/30 text-xs uppercase tracking-wider mb-2">Outcome map</p>
+        <div className="rd-map shrink-0">
+          <p className="text-dim text-[11px] mb-1.5">Outcome map</p>
           <div className="grid grid-cols-11 gap-1">
-            {Array.from({ length: 11 }, (_, i) => i + 2).map((val) => (
-              <div key={val} className={`rounded-md border px-1 py-2 text-center text-xs font-bold transition-all ${outcomeColor(val)} ${
-                lastRoll === val && !isRolling ? 'ring-2 ring-yellow-400 scale-110 shadow-lg' : ''
-              }`}>
-                <p className="text-[10px] leading-none opacity-60 mb-0.5">{val}</p>
-                <p className="leading-none">
-                  {gameConfig.win.includes(val) ? 'W' : gameConfig.loss.includes(val) ? 'L' : 'N'}
-                </p>
-              </div>
-            ))}
+            {Array.from({ length: 11 }, (_, i) => i + 2).map((val) => {
+              const isLast = lastRoll === val && !isRolling
+              return (
+                <div
+                  key={isLast ? `${val}-hit` : val}
+                  className={`relative rounded-md px-0.5 py-[clamp(0.25rem,1.4cqh,0.5rem)] text-center text-[12px] font-semibold ${outcomeColor(val)} ${
+                    isLast ? 'g-pop g-gold z-10' : ''
+                  }`}
+                >
+                  <p className="num text-[10px] leading-none opacity-70 mb-0.5">{val}</p>
+                  <p className="leading-none">
+                    {gameConfig.win.includes(val) ? 'W' : gameConfig.loss.includes(val) ? 'L' : 'N'}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 shrink-0">
-          <div className="bg-white/5 rounded-lg p-3 text-center">
-            <p className="text-white/40 text-xs mb-1">Win chance</p>
-            <p className="text-white font-semibold text-sm">{(winChance * 100).toFixed(1)}%</p>
+        <div className="rd-stats grid grid-cols-3 gap-2 shrink-0">
+          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="text-dim text-[11px] mb-0.5">Win chance</p>
+            <p className="num text-ink text-[14px]">{(winChance * 100).toFixed(1)}%</p>
           </div>
-          <div className="bg-white/5 rounded-lg p-3 text-center">
-            <p className="text-white/40 text-xs mb-1">Payout</p>
-            <p className="text-white font-semibold text-sm">{formatMultiplier(round.payoutMultiplier)}</p>
+          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="text-dim text-[11px] mb-0.5">Payout</p>
+            <p className="num text-gold glow-gold text-[14px]">{formatMultiplier(round.payoutMultiplier)}</p>
           </div>
-          <div className="bg-white/5 rounded-lg p-3 text-center">
-            <p className="text-white/40 text-xs mb-1">Rolls</p>
-            <p className="text-white font-semibold text-sm">{round.rollCount} / 3</p>
+          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="text-dim text-[11px] mb-0.5">Rolls</p>
+            <p key={round.rollCount} className={`num text-ink text-[14px] ${isBetting ? '' : 'g-pop'}`}>{round.rollCount} / 3</p>
           </div>
         </div>
 
-          <div className="min-h-10 flex items-center justify-center shrink-0 px-2">
-            <p className="text-center text-xs text-zinc-500">
+          <div className="rd-hint min-h-9 flex items-center justify-center shrink-0 px-2">
+            <p className="text-center text-[13px] text-dim">
               {isBetting
                 ? 'Roll 2 dice — W wins, L loses, N re-rolls (up to 3). Three neutrals = push.'
                 : isInProgress
@@ -448,9 +457,9 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -475,7 +484,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
                   type="button"
                   onClick={handleStart}
                   disabled={!canStart}
-                  className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                  className={GAME_DOCK_PRIMARY_BTN}
                 >
                   Roll →
                 </button>
@@ -486,7 +495,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
                 type="button"
                 onClick={handleRoll}
                 disabled={isRolling}
-                className="min-w-[10.5rem] px-7 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-lg text-base transition-colors shadow-lg"
+                className={GAME_DOCK_PRIMARY_BTN}
               >
                 {isRolling ? 'Rolling…' : 'Roll'}
               </button>
