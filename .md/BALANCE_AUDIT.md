@@ -122,7 +122,7 @@ Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` 
 | blackjack | Hole Card Reader | 24 | epic |
 | hilo | Hot Streak | 20 | rare |
 | chicken-race | Slow Scout | 22 | rare |
-| crash | Crash Zone | 22 | rare |
+| crash | Crash Cushion | 22 | rare |
 | mines | Mine Sweeper | 20 | rare |
 | plinko | Golden Ball | 18 | rare |
 | over-under | Safe Opening Roll | 16 | rare |
@@ -251,15 +251,17 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 
 ### crash
 - **ID:** `crash`
-- **Rules:** Multiplier grows `e^(0.23 × t_seconds)`; crash point uniform-skewed in **[1.05, 30]** via `pow(random, 2.5)`.
+- **Rules:** Multiplier starts at **0.75×** and grows `0.75 × e^(0.23 × t_seconds)` (1× at ~1.2s, 2× at ~4.2s, 10× at ~11.2s). Crash point = `min(30, 0.95 / u)` with `u ~ U(0,1)`, rounded to 2 decimals (`generateCrashPoint` in `games/crash/engine.ts`).
+- **Crash distribution:** P(multiplier passes *m*) ≈ **0.95 / m** for *m* ≥ 0.95 — about **5%** of rounds crash below 1.0× (no profit possible), cashing out at 1.01× wins ~**94%**, 1.5× ~63%, 2× ~48%, 10× ~9.5%, 30× cap ~3%.
 - **Bet range:** min–max as above.
-- **Wins:** `payout = round(bet × cashoutMultiplier)` if cashed before crash.
+- **Wins:** `payout = round(bet × cashoutMultiplier)` if cashed before crash; cashing out below 1× returns less than the stake (`loss`).
 - **Loss:** No cashout before crash → **0**.
-- **Edge cases:** Manual cashout timing; crash at 1.05× ~200ms.
-- **Optimal EV:** **Player-dependent** (cashout strategy); uniform crash PDF on [1.05,30] is not flat — low crashes heavily weighted.
+- **Edge cases:** Manual cashout timing; a crash point below 0.75× ends the round on the first tick. Blessed rounds crash at 30×, cursed at **0.80×** (`MIN_CRASH`, only reachable via the curse).
+- **Optimal EV:** ~**0.95×** for any fixed cashout target below the 30× cap (P(pass m) × m ≈ 0.95) — the 5% house edge is uniform, so cashout strategy only trades variance.
+- **Mode differences:** None in the engine — Freeplay, Daily, Survival and Ladder share the same crash distribution. Only Survival applies Crash Cushion; curse/bless never apply in Daily or Ladder.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard game boost table.
-- **Game Perk — Crash Zone:** Shows band ±**8/7/6/5/4%** of `crashAt` by level (`CRASH_ZONE_PAD_BY_LEVEL`); informational.
+- **Game Perk — Crash Cushion:** On a crash below **3×**, recovers **25/35/45/60/75%** of the bet by level (`CRASH_CUSHION_BY_LEVEL`), settled as a push.
 - **TODO:** None.
 
 ---
@@ -537,7 +539,7 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | blackjack | Hole Card Reader | Reveal dealer hole card (no proc) |
 | hilo | Hot Streak | 25% double streak bump on correct guess |
 | chicken-race | Slow Scout | Eliminate one non-winner |
-| crash | Crash Zone | ±% band on crash point by level |
+| crash | Crash Cushion | Recover % of bet on a sub-3× crash |
 | mines | Mine Sweeper | Reveal one safe tile at start (proc) |
 | plinko | Golden Ball | 2× payout when proc + mult>1 |
 | over-under | Safe Opening Roll | First roll loss → push (proc) |
@@ -754,7 +756,7 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | PROC_LEVEL_BONUS | Constant | 0.1125 | chance/level | |
 | PROC_MAX_CHANCE | Constant | 0.75 | chance | Cap |
 | COIN_BIAS L1–L5 | Perk | 58/63/67/71/75 | % win | |
-| CRASH_ZONE_PAD L1–L5 | Perk | 8/7/6/5/4 | % band | |
+| CRASH_CUSHION L1–L5 | Perk | 25/35/45/60/75 | % of bet | Crash below 3× |
 | MISSIONS_PER_FLOOR | Constant | 3 | missions | |
 | Mission win_streak 2 base | Mission | 4 | sparks | Scales with floor |
 | Mission flawless base | Mission | 8 | sparks | |
@@ -762,7 +764,9 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Blackjack natural | Game | 2.5 | × payout | |
 | Blackjack push | Game | 1 | × payout | |
 | Crash GROWTH_RATE | Game | 0.23 | /sec | |
-| Crash MIN_CRASH | Game | 1.05 | × | |
+| Crash START_MULT | Game | 0.75 | × | Curve start |
+| Crash HOUSE_EDGE | Game | 0.95 | factor | Crash point = 0.95 / U(0,1) |
+| Crash MIN_CRASH | Game | 0.80 | × | Cursed rounds only |
 | Crash MAX_CRASH | Game | 30 | × | |
 | Plinko ROWS | Game | 12 | rows | |
 | Plinko medium slot mults | Game | 8,5,3,1.5,1,0.8,0.5,0.8,1,1.5,3,5,8 | × | |
