@@ -4,8 +4,7 @@ Status as of 2026-10-28. The site-wide redesign is merged into `main`. The
 **per-game** redesign is not merged: it started on `claude/game-redesign-wip`
 and continues on `claude/wizardly-newton-e10mfi` (which contains it). **Phase 0
 of the plan is done**: every board fits its space, the motion kit exists, and
-Blackjack, HiLo, Poker and Roulette are finished. Fourteen games remain:
-start at **Batch 1** in **The plan**.
+Blackjack, HiLo, Poker and Roulette are finished. Batches 1–3 are done: start at **Batch 4** in **The plan**.
 
 ## The ground rule
 
@@ -45,6 +44,8 @@ new chips, buttons and dock. What remains is each game's own board.
 | Over-Under | Done | Felt / loss track with a drawn handle (`ou-*`); marker moves by `transform` (same 620 ms); roll figure pops, bar glows on a win, shakes on a bust; short boards drop the hint. Reduced: marker travel 300 ms |
 | Run Dice | Done | Ivory dice with drawn pips (`Die` and `TotalTile`, local to the game: no other game rolls dice), sized by `--die` (`rd-*`); dice beside the map and figures on short boards; rolled cell pops in gold |
 | Street Cups | Done | Drawn mouth-down cups (`sc-*`) sized by `--cup` so a lifted cup stays below the badge band; slots move by `transform` (same 280 ms); drawn gold crown; picked cup glows felt or shakes red |
+| Fortune Wheel | Done | Drawn wood-and-gold wheel (`FortuneWheel`, local) with the multiplier on each slice, sized by `--wheel` (`fw-*`); colour picks moved onto the board under the wheel (a 2 × 2 block beside it on short wide boards) so the dock is the standard height; pointer ticks while spinning (`fw-tick`); landed slice stays lit, the rest fall back; win glows (gold on the gold slice), loss shakes. Reduced: spin 400 ms, no tick |
+| Slots | Done | Wooden cabinet with a gold frame, three ivory reels behind glass and a gold payline (`sl-*`, sized by `--reel-h`); drawn symbols (`SlotSymbol`, local; history names symbols in words); a real strip scrolls while a reel spins (`sl-spin`), the symbol drops in (`sl-land`); gold pay table beside the cabinet on short wide boards; hint shows only on tall boards. Reduced: strip stands still, no drop |
 | Others | See later batches | Only the shared chrome from `main` unless listed above |
 
 New shared pieces on this branch:
@@ -234,7 +235,7 @@ needs it (the tile in Batch 1), so nothing is written that no game uses yet.
 |---|---|---|---|
 | 1. Grids | Mines, Dragon Tower, Keno, Chicken Road | board tile | Restyle + tile flips, cascade in, mine shake |
 | 2. Dice & coins — DONE | Coin Flip, Over-Under, Run Dice, Street Cups | none shared (each board is its own object) | Restyle + tumble, flip, cup shuffle |
-| 3. Wheels & reels | Fortune Wheel, Slots | SVG wheel, reel strip | New design (wheel uses the Roulette approach) |
+| 3. Wheels & reels — DONE | Fortune Wheel, Slots | none shared (the Fortune Wheel copies Roulette's rim materials; the reel strip is vertical and local to Slots) | New design (wheel uses the Roulette approach) |
 | 4. Live curves | Crash, Chicken Race, Plinko | `CountUp`, felt-print grid | New design: drawn curve/track/pegboard on the felt |
 | 5. Case Battles | Case Battles | reel strip from batch 3 | New design; largest file, so it gets its own session |
 
