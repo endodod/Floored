@@ -240,10 +240,11 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="hilo-board relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,3cqh,1.5rem)] gap-[clamp(0.5rem,3cqh,1.25rem)]"
+        boardClassName="relative"
         entries={matchHistory}
         gameLabel="HiLo"
       >
+        <div className="hilo-board relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,3cqh,1.5rem)] gap-[clamp(0.5rem,3cqh,1.25rem)]">
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
         {hotStreakFlash && (
           <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
@@ -257,7 +258,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
         />
 
         {/* Streak: a gold pip per correct guess and the running multiplier */}
-        <div className={`flex h-8 items-center gap-3 ${round.multiplier === 0 ? 'invisible' : ''}`}>
+        <div className={`hilo-streak flex h-8 items-center gap-3 ${round.multiplier === 0 ? 'invisible' : ''}`}>
           {round.isTie ? (
             <span className="rounded-full bg-raised px-2.5 py-0.5 text-xs font-semibold text-ink">Push</span>
           ) : (
@@ -338,6 +339,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
                   ? 'Cash out or go again on the board.'
                   : '\u00A0'}
           </p>
+        </div>
         </div>
       </GameFieldWithHistory>
 

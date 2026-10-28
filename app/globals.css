@@ -451,28 +451,32 @@ body > div.neon-auth-ui {
   }
 }
 
-/* HiLo: on a short, wide board the guess buttons stand beside the cards. */
+/* HiLo: on a short, wide board the guess buttons stand beside the cards and
+   the streak moves up between the bet badge and History. */
 @container board (max-height: 330px) and (min-aspect-ratio: 2 / 1) {
   .hilo-board {
-    --card-h: clamp(4rem, calc(100cqh - 7.5rem), 8.75rem) !important;
+    --card-h: clamp(4rem, calc(100cqh - 8.25rem), 8.75rem) !important;
     display: grid !important;
     grid-template-columns: auto minmax(13rem, 18rem);
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: 1fr auto;
     justify-content: center;
     align-items: center;
     column-gap: 2.5rem;
+    padding-top: 4.25rem !important;
   }
-  .hilo-board > :not(.hilo-cards, .hilo-actions, .hilo-hint) {
-    grid-column: 1 / -1;
-    justify-self: center;
+  .hilo-streak {
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
   }
   .hilo-cards {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
   }
   .hilo-actions {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1;
     height: 5.75rem;
   }
   .hilo-actions > div {
