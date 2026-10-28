@@ -134,7 +134,7 @@ export function ModeSelect() {
                 Ladder
               </p>
               <p className="text-white/40 text-xs mt-1.5">
-                Go all-in rung after rung. Every game once per run — miss a target and fall to your last checkpoint.
+                Go all-in rung after rung. Profit climbs a rung, every game once per run — lose and fall to your last checkpoint.
               </p>
             </div>
 

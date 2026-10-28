@@ -7,8 +7,7 @@ import { GAME_REGISTRY } from '@/lib/game-registry'
 import { useLadderStore } from '@/store/ladder-store'
 import { useLadderGameBankroll } from '@/hooks/use-game-bankroll'
 import { useHydrated } from '@/hooks/use-hydrated'
-import { LADDER_LIVES, LADDER_RUNGS, rungTarget } from '@/lib/ladder/rules'
-import { formatMultiplier } from '@/lib/daily/share'
+import { LADDER_LIVES, LADDER_RUNGS } from '@/lib/ladder/rules'
 import { describeLadderResult } from '@/components/ladder/result-text'
 import { formatChips } from '@/utils/format'
 import type { GameName } from '@/store/types'
@@ -29,12 +28,11 @@ function LadderGame({ game }: { game: GameName }) {
   const dismissResult = useLadderStore((s) => s.dismissResult)
   const GameComponent = GAME_REGISTRY[game]
 
-  // Stake and target of the rung in play — frozen while a round is open so the pills don't jump on settle.
+  // Rung and stake in play — frozen while a round is open so the pills don't jump on settle.
   const [shown, setShown] = useState({ rung, stake: pot })
   useEffect(() => {
     if (!openRound && !lastResult) setShown({ rung, stake: pot })
   }, [openRound, lastResult, rung, pot])
-  const target = rungTarget(shown.rung)
 
   // Let the round's result animation play before covering it.
   const [showResult, setShowResult] = useState(false)
@@ -63,9 +61,8 @@ function LadderGame({ game }: { game: GameName }) {
           {formatChips(shown.stake)}
         </div>
         <div className={PILL}>
-          <span className="text-[9px] font-normal text-zinc-500 mr-1">Need</span>
-          {formatMultiplier(target)}
-          <span className="text-zinc-500"> · ≥{formatChips(Math.ceil(shown.stake * target))}</span>
+          <span className="text-[9px] font-normal text-zinc-500 mr-1">Win more than</span>
+          {formatChips(shown.stake)}
         </div>
         <div className={PILL} aria-label={`${lives} lives left`}>
           {'❤️'.repeat(lives) + '🖤'.repeat(LADDER_LIVES - lives)}

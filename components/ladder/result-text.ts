@@ -10,7 +10,6 @@ export function describeLadderResult(
 ): { title: string; body: string; tone: 'good' | 'bad' | 'neutral' } {
   const label = GAME_BY_NAME.get(result.game)?.label ?? result.game
   const got = formatMultiplier(result.multiplier)
-  const need = formatMultiplier(result.target)
 
   switch (result.kind) {
     case 'clear':
@@ -28,10 +27,10 @@ export function describeLadderResult(
     case 'fall':
       return {
         title: 'You fell',
-        body: `${got} on ${label}, needed ${need}. Back to ${state.rung === 0 ? 'the ground' : `checkpoint ${state.rung}`} with ${formatChips(state.pot)} — ${state.lives} ${state.lives === 1 ? 'life' : 'lives'} left. Games used since the checkpoint are free again.`,
+        body: `${got} on ${label} — no profit. Back to ${state.rung === 0 ? 'the ground' : `checkpoint ${state.rung}`} with ${formatChips(state.pot)} — ${state.lives} ${state.lives === 1 ? 'life' : 'lives'} left. Games used since the checkpoint are free again.`,
         tone: 'bad',
       }
     case 'out':
-      return { title: 'Out of lives', body: `${got} on ${label}, needed ${need}. You bank your last checkpoint: ${formatChips(state.finalPot)}.`, tone: 'bad' }
+      return { title: 'Out of lives', body: `${got} on ${label} — no profit. You bank your last checkpoint: ${formatChips(state.finalPot)}.`, tone: 'bad' }
   }
 }

@@ -9,7 +9,6 @@ import {
   START_POT,
   TOP_BONUS,
   isCheckpoint,
-  rungTarget,
 } from '@/lib/ladder/rules'
 
 export interface ClearedRung {
@@ -28,7 +27,6 @@ export interface LadderLastResult {
   kind: 'clear' | 'checkpoint' | 'fall' | 'push' | 'topped' | 'out'
   game: GameName
   multiplier: number
-  target: number
 }
 
 export interface LadderRecord {
@@ -70,7 +68,7 @@ interface LadderStore {
   startRun: () => void
   pickGame: (game: GameName | null) => void
   placeBet: (game: GameName, amount: number) => void
-  /** Credits a payout; `settle` closes the round and clears, falls or replays the rung. */
+  /** Credits a payout; `settle` closes the round: profit clears the rung, a loss falls, a push replays it. */
   resolve: (game: GameName, payout: number, settle: boolean) => void
   /** A round left mid-way (navigated away) counts as a fall. */
   abandonOpenRound: () => void
@@ -124,7 +122,6 @@ export const useLadderStore = create<LadderStore>()(
 
       function fall(game: GameName, multiplier: number) {
         const s = get()
-        const target = rungTarget(s.rung)
         const lives = s.lives - 1
         // Back to the checkpoint: its pot is restored and the games used since then unlock.
         set({
@@ -135,22 +132,21 @@ export const useLadderStore = create<LadderStore>()(
           openRound: null,
           lives,
           log: [...s.log, 'fall'],
-          lastResult: { kind: lives === 0 ? 'out' : 'fall', game, multiplier, target },
+          lastResult: { kind: lives === 0 ? 'out' : 'fall', game, multiplier },
         })
         if (lives === 0) end('out', s.checkpointPot)
       }
 
       function settle(round: OpenRound) {
         const s = get()
-        const target = rungTarget(s.rung)
         const multiplier = round.staked > 0 ? round.returned / round.staked : 0
 
         if (round.returned === round.staked) {
-          set({ openRound: null, lastResult: { kind: 'push', game: round.game, multiplier, target } })
+          set({ openRound: null, lastResult: { kind: 'push', game: round.game, multiplier } })
           return
         }
-        // Small epsilon so a rounded payout landing exactly on the target still clears.
-        if (multiplier < target - 1e-9) return fall(round.game, multiplier)
+        // Any profit clears the rung; getting back less than the stake is a fall.
+        if (round.returned < round.staked) return fall(round.game, multiplier)
 
         const rung = s.rung + 1
         const checkpoint = isCheckpoint(rung)
@@ -168,7 +164,6 @@ export const useLadderStore = create<LadderStore>()(
             kind: topped ? 'topped' : checkpoint ? 'checkpoint' : 'clear',
             game: round.game,
             multiplier,
-            target,
           },
         })
         if (topped) end('topped', s.pot * TOP_BONUS)

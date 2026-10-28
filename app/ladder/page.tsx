@@ -9,11 +9,8 @@ import {
   LADDER_RUNGS,
   START_POT,
   TOP_BONUS,
-  canReachTarget,
-  canReachTop,
   formatMaxMult,
   isCheckpoint,
-  rungTarget,
 } from '@/lib/ladder/rules'
 import { ladderStats } from '@/lib/ladder/share'
 import { formatMultiplier } from '@/lib/daily/share'
@@ -50,12 +47,12 @@ function Rules() {
     <div className="rounded-2xl border border-violet-900/40 bg-violet-950/20 px-4 py-3 text-sm text-violet-100/80 leading-relaxed space-y-1.5">
       <p>
         Start with <b className="text-white">{formatChips(START_POT)}</b> and climb {LADDER_RUNGS} rungs. Each rung, pick a
-        game and go <b className="text-white">all-in</b> — a round paying at least the rung&apos;s target multiplier clears it
-        and your pot becomes the payout.
+        game and go <b className="text-white">all-in</b> — any round that ends in profit clears it and your pot becomes
+        the payout. A push replays the rung.
       </p>
       <p>
         Every game can be used <b className="text-white">once per run</b>. Every {CHECKPOINT_EVERY} rungs is a checkpoint:
-        miss a target and you fall back to it, its pot is restored, and the games you used since then are free again.
+        lose a round and you fall back to it, its pot is restored, and the games you used since then are free again.
       </p>
       <p>
         You have <b className="text-white">{LADDER_LIVES} lives</b>. Cash out any time between rounds, lose your last life
@@ -87,7 +84,6 @@ function LadderRungs({ rung, cleared, checkpointRung }: { rung: number; cleared:
             ].join(' ')}
           >
             <span className="w-5 text-right font-bold">{n}</span>
-            <span className="w-11 text-white/50">{formatMultiplier(rungTarget(n - 1))}</span>
             <span className="flex-1 truncate">
               {entry ? (
                 <>
@@ -139,8 +135,6 @@ export default function LadderPage() {
     )
   }
 
-  const target = rungTarget(s.rung)
-  const topReachable = canReachTop(available, s.rung)
   const result = s.lastResult ? describeLadderResult(s.lastResult, s) : null
 
   function handlePick(game: GameName) {
@@ -202,11 +196,7 @@ export default function LadderPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Stat label="Pot" value={formatChips(s.pot)} />
-            <Stat
-              label={`Rung ${s.rung + 1} target`}
-              value={formatMultiplier(target)}
-              sub={`Pays ≥ ${formatChips(Math.ceil(s.pot * target))}`}
-            />
+            <Stat label="Rung" value={`${s.rung + 1}/${LADDER_RUNGS}`} sub="Any profit climbs" />
             <Stat
               label="Lives"
               value={'❤️'.repeat(s.lives) + '🖤'.repeat(LADDER_LIVES - s.lives)}
@@ -226,11 +216,6 @@ export default function LadderPage() {
             >
               Cash out {formatChips(s.pot)}
             </button>
-            {!topReachable && (
-              <p className="text-xs text-amber-400/90">
-                The games you have left can&apos;t reach every remaining target — a fall would free some up again.
-              </p>
-            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4 items-start">
@@ -242,10 +227,7 @@ export default function LadderPage() {
               {GAMES.map((entry) => {
                 const game = entry.name
                 const usedOn = s.cleared.findIndex((c) => c.game === game)
-                const reachable = canReachTarget(game, target)
-                const playable = usedOn === -1 && reachable
-                const risky =
-                  playable && topReachable && !canReachTop(available.filter((g) => g !== game), s.rung + 1)
+                const playable = usedOn === -1
                 const isLoading = pending === game
                 return (
                   <button
@@ -253,7 +235,6 @@ export default function LadderPage() {
                     type="button"
                     disabled={!playable || !!pending}
                     onClick={() => handlePick(game)}
-                    title={risky ? 'Using this game now leaves too few high-payout games to reach the top' : undefined}
                     className={[
                       'relative overflow-hidden rounded-xl border text-left transition-all duration-200',
                       `bg-gradient-to-br ${entry.gradient}`,
@@ -279,11 +260,7 @@ export default function LadderPage() {
                             ? 'Loading…'
                             : usedOn !== -1
                               ? `Rung ${usedOn + 1}`
-                              : !reachable
-                                ? 'Too low'
-                                : risky
-                                  ? '⚠ Risky'
-                                  : 'Play'}
+                              : 'Play'}
                         </span>
                       </div>
                     </div>

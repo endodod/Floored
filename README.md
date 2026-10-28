@@ -23,14 +23,13 @@ The challenge is generated deterministically from the UTC date (`lib/daily/chall
 Climb 18 rungs with an all-in pot — one game per rung, and every game only once per run.
 
 - Start with a **$100 pot**; each rung you pick a game and stake the whole pot
-- A round paying at least the rung's **target multiplier** clears it and the pot becomes the payout
-  (targets rise per section of three rungs: 1.5× → 2× → 2.5× → 3× → 4× → 5×)
-- **Checkpoint every 3 rungs.** Miss a target and you fall back to it: its pot is restored and the
+- **Any profit** (round multiplier above 1×) clears the rung and the pot becomes the payout —
+  bigger wins grow the pot faster
+- **Checkpoint every 3 rungs.** Lose a round and you fall back to it: its pot is restored and the
   games used since then are free again. A push replays the rung
 - **3 lives** — cash out any time between rounds, lose the last life to bank your last checkpoint,
   or reach the top for a ×2 bonus
-- Low-ceiling games (Street Cups, Blackjack, Chicken Race) have to be spent early — the picker shows
-  each game's max multiplier and warns when a pick leaves too few high-payout games to reach the top
+- The picker shows each game's max multiplier — safe games climb, high-payout games grow the pot
 
 Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`localStorage`). Toggle with
 `LADDER_ENABLED` in `lib/features.ts`.
