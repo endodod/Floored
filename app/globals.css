@@ -451,6 +451,44 @@ body > div.neon-auth-ui {
   }
 }
 
+/* HiLo: on a short, wide board the guess buttons stand beside the cards. */
+@container board (max-height: 330px) and (min-aspect-ratio: 2 / 1) {
+  .hilo-board {
+    --card-h: clamp(4rem, calc(100cqh - 7.5rem), 8.75rem) !important;
+    display: grid !important;
+    grid-template-columns: auto minmax(13rem, 18rem);
+    grid-template-rows: auto 1fr auto;
+    justify-content: center;
+    align-items: center;
+    column-gap: 2.5rem;
+  }
+  .hilo-board > :not(.hilo-cards, .hilo-actions, .hilo-hint) {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+  .hilo-cards {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .hilo-actions {
+    grid-column: 2;
+    grid-row: 2;
+    height: 5.75rem;
+  }
+  .hilo-actions > div {
+    flex-direction: column;
+  }
+  .hilo-actions > div > button {
+    flex: none;
+    height: 2.5rem;
+  }
+  .hilo-hint {
+    grid-column: 1 / -1;
+    min-height: 0;
+    justify-self: center;
+  }
+}
+
 /* Roulette: the ball rides the outer track, then drops into the pocket ring and settles. */
 @keyframes roulette-ball-drop {
   0%,

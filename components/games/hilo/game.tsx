@@ -48,7 +48,8 @@ import {
   winGame,
 } from '@/games/hilo/engine'
 
-const CARD_STYLE = { '--card-h': 'clamp(6rem, 17vh, 8.75rem)' } as React.CSSProperties
+/** Cards take what the board has left after the streak, labels, buttons and hint. */
+const CARD_STYLE = { '--card-h': 'clamp(4rem, calc(100cqh - 13rem), 8.75rem)' } as React.CSSProperties
 
 function CardView({
   card,
@@ -69,13 +70,13 @@ const GUESS_BTN =
   'm-still flex-1 h-12 rounded-full border text-[15px] font-semibold transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.97]'
 
 /** The next card: face-down while the guess is open, flipped up when it lands. */
-function NextCardReveal({ card, pending }: { card: HiLoCard | null; pending: boolean }) {
+function NextCardReveal({ card, pending, className }: { card: HiLoCard | null; pending: boolean; className?: string }) {
   const [animClass, setAnimClass] = useState('')
   const prevCard = useRef<HiLoCard | null>(null)
 
   useEffect(() => {
     if (card && card !== prevCard.current) {
-      setAnimClass('card-reveal')
+      setAnimClass('g-flip')
       prevCard.current = card
       const t = setTimeout(() => setAnimClass(''), 350)
       return () => clearTimeout(t)
@@ -84,7 +85,7 @@ function NextCardReveal({ card, pending }: { card: HiLoCard | null; pending: boo
   }, [card])
 
   if (!card) return <PlayingCard variant={pending ? 'back' : 'slot'} />
-  return <CardView card={card} animClass={animClass} />
+  return <CardView card={card} animClass={`${animClass} ${className ?? ''}`} />
 }
 
 interface HiLoResult {
@@ -146,9 +147,9 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
     setCurrentBet(0)
     setPendingResult(null)
     setQuoteIdx((prev) => pickQuote(prev))
-    setCurrentCardAnim('card-deal-in')
+    setCurrentCardAnim('g-deal')
     setRound(startHiLoRound(bet))
-    setTimeout(() => setCurrentCardAnim(''), 300)
+    setTimeout(() => setCurrentCardAnim(''), 500)
   }
 
   function handleGuess(guess: 'higher' | 'lower') {
@@ -239,7 +240,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-6 gap-5"
+        boardClassName="hilo-board relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,3cqh,1.5rem)] gap-[clamp(0.5rem,3cqh,1.25rem)]"
         entries={matchHistory}
         gameLabel="HiLo"
       >
@@ -273,7 +274,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
         </div>
 
         {/* The two cards, the guess between them */}
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="hilo-cards flex items-center gap-4 sm:gap-6">
           <div className="flex flex-col items-center gap-2">
             <p className="text-[13px] text-soft">Current</p>
             <CardView card={round.currentCard} animClass={currentCardAnim} />
@@ -288,12 +289,15 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
 
           <div className="flex flex-col items-center gap-2">
             <p className="text-[13px] text-soft">Next</p>
-            <NextCardReveal card={round.nextCard} pending={!isBetting} />
+            {/* A right guess glows, a wrong one shakes. */}
+            <div className={isSettled && round.outcome === 'loss' ? 'g-shake' : ''}>
+              <NextCardReveal card={round.nextCard} pending={!isBetting} className={isRiding ? 'g-win' : ''} />
+            </div>
           </div>
         </div>
 
         {/* Fixed-height slot shared by guess buttons and riding buttons */}
-        <div className="relative flex h-12 w-full max-w-sm items-center justify-center">
+        <div className="hilo-actions relative flex h-12 w-full max-w-sm items-center justify-center">
           <div className={`absolute inset-x-0 flex gap-3 ${!isPlaying ? 'invisible pointer-events-none' : ''}`}>
             <button
               type="button"
@@ -324,7 +328,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
           </div>
         </div>
 
-        <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
+        <div className="hilo-hint min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
           <p className="text-center text-[13px] text-dim">
             {isBetting
               ? 'Ties keep your streak alive · Ace counts high · Win streaks multiply your payout.'
