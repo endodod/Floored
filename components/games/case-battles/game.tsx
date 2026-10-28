@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_LEAVE_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -18,6 +20,7 @@ import {
 import { useRunEnd } from '@/hooks/use-run-end'
 import { PerkHint } from '@/components/survival/perk-hint'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
+import { BOARD_LABEL, CELL_OPEN, CELL_PICKED } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -62,15 +65,15 @@ interface CaseBattlesGameProps {
 type PendingResult = GamePendingResult
 
 const RARITY_TEXT: Record<CaseRarity, string> = {
-  common:    'text-zinc-300',
+  common:    'text-soft',
   uncommon:  'text-green-400',
   rare:      'text-blue-400',
   epic:      'text-purple-400',
-  legendary: 'text-yellow-400',
+  legendary: 'text-gold',
 }
 
 const RARITY_BORDER: Record<CaseRarity, string> = {
-  common:    'border-zinc-600',
+  common:    'border-control',
   uncommon:  'border-green-700',
   rare:      'border-blue-700',
   epic:      'border-purple-700',
@@ -89,13 +92,13 @@ function ItemSlot({
 }) {
   const suspense = isRevealing || isRerolling
   const borderClass = suspense
-    ? 'border-yellow-500 case-item-suspense'
+    ? 'border-gold case-item-suspense'
     : isRevealed
       ? RARITY_BORDER[item.rarity]
-      : 'border-zinc-800'
+      : 'border-line'
 
   return (
-    <div className={`rounded-xl border-2 px-3 py-2.5 min-h-[4.5rem] flex items-center ${borderClass}`}>
+    <div className={`rounded-md border bg-black/25 px-3 py-2.5 min-h-[4.5rem] flex items-center ${borderClass}`}>
       {isRevealed && !isRerolling ? (
         <div key="revealed" className="flex items-center gap-3 w-full case-item-reveal">
           <span className="text-3xl leading-none shrink-0">{item.icon}</span>
@@ -103,7 +106,7 @@ function ItemSlot({
             <p className={`font-bold text-sm leading-snug truncate ${RARITY_TEXT[item.rarity]}`}>
               {item.name}
             </p>
-            <p className="text-zinc-300 font-black tabular-nums text-sm">{formatChips(item.value)}</p>
+            <p className="text-soft font-semibold tabular-nums text-sm">{formatChips(item.value)}</p>
           </div>
         </div>
       ) : suspense ? (
@@ -328,7 +331,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         {/* Setup phase: case selector */}
         {isSetup && (
           <div className="w-full max-w-md flex flex-col gap-4">
-            <p className="text-sm text-zinc-500 text-center uppercase tracking-wider font-semibold">
+            <p className={`${BOARD_LABEL} text-center`}>
               {ladder ? 'One of each case — all five open' : `Select up to 5 cases — ${numCases}/5`}
             </p>
             <div className="grid grid-cols-5 gap-2.5">
@@ -340,7 +343,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                     <button
                       type="button"
                       onClick={() => setInfoCaseId(c.id)}
-                      className="absolute -top-1 -right-1 z-10 w-5 h-5 flex items-center justify-center text-[10px] font-black text-zinc-400 hover:text-white bg-zinc-950 rounded-full border border-zinc-700 hover:border-zinc-400 transition-colors leading-none"
+                      className="absolute -top-1 -right-1 z-10 w-5 h-5 flex items-center justify-center text-[10px] font-semibold text-soft hover:text-ink bg-ground rounded-full border border-control hover:border-dim transition-colors leading-none"
                     >
                       i
                     </button>
@@ -349,32 +352,32 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                       onClick={() => setState(prev => addCase(prev, c.id, cases))}
                       disabled={ladder || numCases >= 5}
                       className={[
-                        'w-full h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all duration-150 active:scale-95',
+                        'w-full h-20 rounded-md border flex flex-col items-center justify-center gap-1.5 transition-all duration-150 active:scale-95',
                         count > 0
-                          ? 'border-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20 shadow-lg shadow-yellow-900/20'
-                          : 'border-zinc-700 bg-zinc-800/60 hover:border-zinc-500 hover:bg-zinc-800',
+                          ? CELL_PICKED
+                          : CELL_OPEN,
                         atMax ? 'opacity-30 cursor-not-allowed' : ladder ? 'cursor-default' : 'cursor-pointer',
                       ].join(' ')}
                     >
                       <span className="text-3xl leading-none">{c.emoji}</span>
                       {count > 0 && (
-                        <span className="text-xs font-black text-yellow-400 leading-none">×{count}</span>
+                        <span className="num text-xs text-felt leading-none">×{count}</span>
                       )}
                     </button>
-                    <p className="text-xs text-center font-semibold leading-tight text-zinc-400">
+                    <p className="text-xs text-center font-semibold leading-tight text-soft">
                       {c.name.replace(' Case', '')}
                     </p>
-                    <p className="text-xs font-bold text-zinc-200 tabular-nums">{formatChips(c.price)}</p>
+                    <p className="num text-xs text-ink">{formatChips(c.price)}</p>
                     {count > 0 && !ladder ? (
                       <button
                         type="button"
                         onClick={() => setState(prev => removeCase(prev, c.id, cases))}
-                        className="w-full py-1.5 text-sm font-bold text-red-400 hover:text-white bg-red-950 hover:bg-red-700 border border-red-800 hover:border-red-600 rounded-lg transition-colors active:scale-95"
+                        className="h-7 w-full rounded-full border border-control text-xs font-medium text-dim transition-colors hover:border-loss hover:text-loss active:scale-95"
                       >
                         − Remove
                       </button>
                     ) : (
-                      <span className="w-full py-1.5 text-sm invisible select-none border rounded-lg">− Remove</span>
+                      <span className="h-7 w-full invisible select-none" aria-hidden>− Remove</span>
                     )}
                   </div>
                 )
@@ -388,7 +391,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
           <div className="w-full max-w-sm flex gap-4">
             {/* YOU column */}
             <div className="flex-1 flex flex-col gap-2">
-              <p className={`text-xs uppercase tracking-widest text-center font-black ${isSettled && state.outcome === 'win' ? 'text-emerald-400' : isSettled && state.outcome === 'push' ? 'text-zinc-300' : 'text-zinc-500'}`}>
+              <p className={`text-xs text-center font-semibold ${isSettled && state.outcome === 'win' ? 'text-felt' : isSettled && state.outcome === 'push' ? 'text-soft' : 'text-dim'}`}>
                 You {isSettled && state.outcome === 'win' ? '🏆' : isSettled && state.outcome === 'push' ? '🤝' : ''}
               </p>
               {state.userItems.map((oc, i) => (
@@ -405,15 +408,15 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                     isRerolling={i === rerollingIdx}
                   />
                   {isRerollPending && (
-                    <div className="absolute inset-0 rounded-xl border-2 border-emerald-500/70 bg-emerald-950/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-xs font-bold text-emerald-300">↺ Reroll</span>
+                    <div className="absolute inset-0 rounded-md border border-felt bg-felt-tint flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-xs font-bold text-felt">↺ Reroll</span>
                     </div>
                   )}
                 </div>
               ))}
               {(isSettled || (isOpening && revealedCount > 0)) && (
-                <div className="border-t-2 border-zinc-700 pt-1.5 mt-0.5">
-                  <p className={`text-sm font-black tabular-nums text-right ${isSettled && state.outcome === 'win' ? 'text-emerald-400' : isSettled && state.outcome === 'push' ? 'text-zinc-200' : 'text-zinc-300'}`}>
+                <div className="border-t border-white/10 pt-1.5 mt-0.5">
+                  <p className={`text-sm font-semibold tabular-nums text-right ${isSettled && state.outcome === 'win' ? 'text-felt' : isSettled && state.outcome === 'push' ? 'text-ink' : 'text-soft'}`}>
                     {formatChips(isSettled ? state.userTotal : displayUserTotal)}
                   </p>
                 </div>
@@ -422,7 +425,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
 
             {/* BOT column */}
             <div className="flex-1 flex flex-col gap-2">
-              <p className={`text-xs uppercase tracking-widest text-center font-black ${isSettled && state.outcome === 'loss' ? 'text-red-400' : isSettled && state.outcome === 'push' ? 'text-zinc-300' : 'text-zinc-500'}`}>
+              <p className={`text-xs text-center font-semibold ${isSettled && state.outcome === 'loss' ? 'text-loss' : isSettled && state.outcome === 'push' ? 'text-soft' : 'text-dim'}`}>
                 Bot {isSettled && state.outcome === 'loss' ? '🏆' : isSettled && state.outcome === 'push' ? '🤝' : ''}
               </p>
               {state.botItems.map((oc, i) => (
@@ -435,8 +438,8 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                 />
               ))}
               {(isSettled || (isOpening && revealedCount > 0)) && (
-                <div className="border-t-2 border-zinc-700 pt-1.5 mt-0.5">
-                  <p className={`text-sm font-black tabular-nums text-right ${isSettled && state.outcome === 'loss' ? 'text-red-400' : isSettled && state.outcome === 'push' ? 'text-zinc-200' : 'text-zinc-300'}`}>
+                <div className="border-t border-white/10 pt-1.5 mt-0.5">
+                  <p className={`text-sm font-semibold tabular-nums text-right ${isSettled && state.outcome === 'loss' ? 'text-loss' : isSettled && state.outcome === 'push' ? 'text-ink' : 'text-soft'}`}>
                     {formatChips(isSettled ? state.botTotal : displayBotTotal)}
                   </p>
                 </div>
@@ -466,9 +469,9 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isSetup && (
               <div className="flex items-center gap-2.5 flex-wrap justify-center">
-                <span className="text-zinc-500 text-base">Total cost</span>
+                <span className="text-[14px] text-dim">Total cost</span>
                 <span
-                  className={`font-bold text-xl tabular-nums ${state.totalCost > bankroll ? 'text-red-400' : 'text-white'}`}
+                  className={`num text-xl ${state.totalCost > bankroll ? 'text-loss' : 'text-ink'}`}
                 >
                   {state.totalCost > 0 ? formatChips(state.totalCost) : '—'}
                 </span>
@@ -476,7 +479,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                   <button
                     type="button"
                     onClick={() => setState(initCaseBattle())  /* cost resets to 0 */}
-                    className="px-2 py-0.5 text-xs font-medium rounded border border-zinc-700 hover:border-zinc-500 text-zinc-500 hover:text-white transition-colors"
+                    className="h-6 rounded-full border border-control px-2.5 text-xs text-dim transition-colors hover:border-loss hover:text-loss"
                   >
                     Clear
                   </button>
@@ -484,12 +487,12 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
               </div>
             )}
             {isOpening && !isRerollPending && (
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-dim">
                 Opening {Math.min(revealedCount + 1, numCases)} of {numCases}…
               </p>
             )}
             {isRerollPending && (
-              <p className="text-sm font-semibold text-emerald-300 animate-pulse">
+              <p className="text-sm font-semibold text-felt animate-pulse">
                 ✦ Perk active — tap one of your items to reroll
               </p>
             )}
@@ -514,13 +517,13 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                 <>
                   {isSettled && <GameDockLeaveButton mode={mode} />}
                   {isRerollPending && (
-                    <button type="button" onClick={handleSkipReroll} className="px-4 py-2 border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white font-bold rounded-lg transition-colors text-base">Skip</button>
+                    <button type="button" onClick={handleSkipReroll} className={GAME_DOCK_LEAVE_BTN}>Skip</button>
                   )}
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : handleBattle}
                     disabled={(isOpening && !isRerollPending) || (isSetup && !canBattle)}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : isRerollPending ? 'Rerolling…' : isOpening ? 'Opening…' : 'Battle →'}
                   </button>
@@ -540,21 +543,21 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
             onClick={() => setInfoCaseId(null)}
           >
             <div
-              className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 w-72 flex flex-col gap-3 shadow-2xl"
+              className="bg-surface border border-line rounded-md p-4 w-72 flex flex-col gap-3 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{infoCaseDef.emoji}</span>
                   <div>
-                    <p className="font-bold text-white text-sm">{infoCaseDef.name}</p>
-                    <p className="text-zinc-500 text-xs">{formatChips(infoCaseDef.price)}</p>
+                    <p className="font-semibold text-ink text-sm">{infoCaseDef.name}</p>
+                    <p className="text-dim text-xs">{formatChips(infoCaseDef.price)}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setInfoCaseId(null)}
-                  className="text-zinc-500 hover:text-white text-lg leading-none px-1 transition-colors"
+                  className="text-dim hover:text-ink text-lg leading-none px-1 transition-colors"
                 >
                   ✕
                 </button>
@@ -563,15 +566,15 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                 {infoCaseDef.items.map((entry, i) => {
                   const pct = Math.round((entry.weight / totalWeight) * 100)
                   return (
-                    <div key={i} className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 bg-zinc-800/60 border ${RARITY_BORDER[entry.item.rarity]}`}>
+                    <div key={i} className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 bg-black/25 border ${RARITY_BORDER[entry.item.rarity]}`}>
                       <span className="text-xl leading-none">{entry.item.icon}</span>
                       <div className="flex-1 min-w-0">
                         <p className={`text-xs font-semibold truncate ${RARITY_TEXT[entry.item.rarity]}`}>{entry.item.name}</p>
-                        <p className="text-zinc-600 text-[10px] capitalize">{entry.item.rarity}</p>
+                        <p className="text-dim text-[10px] capitalize">{entry.item.rarity}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-zinc-200 font-bold tabular-nums text-xs">{formatChips(entry.item.value)}</p>
-                        <p className="text-zinc-600 text-[10px]">{pct}%</p>
+                        <p className="text-ink font-bold tabular-nums text-xs">{formatChips(entry.item.value)}</p>
+                        <p className="text-dim text-[10px]">{pct}%</p>
                       </div>
                     </div>
                   )

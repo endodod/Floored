@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -79,7 +80,7 @@ interface CupProps {
 }
 
 function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wrong, onPick }: CupProps) {
-  const borderColor = eliminated ? '#52525b' : selected ? '#fbbf24' : wrong ? '#f87171' : CUP_BORDER
+  const borderColor = eliminated ? '#52525b' : selected ? '#4fae84' : wrong ? '#e5566f' : CUP_BORDER
 
   return (
     /* Outer anchor: absolute within the stage, slots horizontally, 170px tall */
@@ -144,7 +145,7 @@ function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wr
             borderRadius: '12px 12px 4px 4px',
             clipPath: 'polygon(6% 0%, 94% 0%, 88% 100%, 12% 100%)',
             transition: 'border-color 200ms',
-            boxShadow: selected ? '0 0 0 2px #fbbf24' : undefined,
+            boxShadow: selected ? '0 0 0 2px #4fae84, 0 0 18px -2px rgba(79,174,132,0.7)' : undefined,
           }}
         />
         {/* Cup base */}
@@ -474,9 +475,9 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isPicking && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && showNext && (
@@ -503,7 +504,7 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
                     type="button"
                     onClick={isSettled && showNext ? handleNext : handleStart}
                     disabled={actionDisabled}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {actionLabel}
                   </button>

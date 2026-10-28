@@ -11,6 +11,7 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -23,6 +24,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, BOARD_LABEL, BOARD_PANEL } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { buildPendingResult, type GamePendingResult } from '@/lib/game-result-labels'
@@ -41,11 +43,11 @@ import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const SYMBOL_DISPLAY: Record<SlotsSymbol, { glyph: string; color: string; bg: string }> = {
-  cherry:  { glyph: '🍒', color: 'text-red-400',    bg: 'bg-red-950/60' },
-  bar:     { glyph: 'BAR', color: 'text-amber-300',  bg: 'bg-amber-950/60' },
-  bell:    { glyph: '🔔', color: 'text-yellow-300',  bg: 'bg-yellow-950/60' },
+  cherry:  { glyph: '🍒', color: 'text-loss',    bg: 'bg-red-950/60' },
+  bar:     { glyph: 'BAR', color: 'text-gold',  bg: 'bg-amber-950/60' },
+  bell:    { glyph: '🔔', color: 'text-gold',  bg: 'bg-yellow-950/60' },
   diamond: { glyph: '◆',  color: 'text-cyan-300',   bg: 'bg-cyan-950/60' },
-  seven:   { glyph: '7',  color: 'text-yellow-400',  bg: 'bg-yellow-900/60' },
+  seven:   { glyph: '7',  color: 'text-gold',  bg: 'bg-yellow-900/60' },
   wild:    { glyph: '★',  color: 'text-purple-300',  bg: 'bg-purple-950/60' },
 }
 
@@ -83,23 +85,23 @@ function Reel({ symbol, spinning, landed }: { symbol: SlotsSymbol | null; spinni
 
   return (
     <div className={`
-      relative w-24 h-28 sm:w-28 sm:h-32 rounded-xl border-2 flex items-center justify-center overflow-hidden
-      ${spinning ? 'border-white/30 bg-black/40' : 'border-white/20 bg-black/30'}
+      relative w-24 h-28 sm:w-28 sm:h-32 rounded-md border flex items-center justify-center overflow-hidden shadow-[inset_0_0_24px_rgba(0,0,0,0.6)]
+      ${spinning ? 'border-white/25 bg-black/40' : 'border-white/10 bg-black/30'}
       transition-colors duration-200
     `}>
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-yellow-400/30 pointer-events-none" />
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-[rgba(217,164,65,0.35)] pointer-events-none" />
       <div className={`
         flex items-center justify-center w-full h-full
         ${spinning ? 'slot-reel-spinning' : ''}
         ${landed && !spinning ? 'slot-reel-landing' : ''}
       `}>
         {spinning || !display ? (
-          <span className="text-4xl text-white/20">·</span>
+          <span className="text-4xl text-dim">·</span>
         ) : (
           <div className={`flex flex-col items-center justify-center rounded-lg px-2 py-1 ${display.bg}`}>
             <span className={`
-              ${isBar ? 'text-2xl font-black tracking-tight' : 'text-4xl'}
-              ${isSeven ? 'text-5xl font-black' : ''}
+              ${isBar ? 'text-2xl font-semibold tracking-tight' : 'text-4xl'}
+              ${isSeven ? 'text-5xl font-semibold' : ''}
               ${display.color} leading-none select-none
             `}>
               {display.glyph}
@@ -288,8 +290,8 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
               <Reel symbol={displayedReels[0]} spinning={spinningReels[0]} landed={landedReels[0]} />
               <div className="relative">
                 <Reel symbol={displayedReels[1]} spinning={spinningReels[1]} landed={landedReels[1]} />
-                <div className="absolute -left-3 top-1/2 -translate-y-1/2 text-yellow-400/60 text-xs">▶</div>
-                <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-yellow-400/60 text-xs">◀</div>
+                <div className="absolute -left-3 top-1/2 -translate-y-1/2 text-gold opacity-60 text-xs">▶</div>
+                <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-gold opacity-60 text-xs">◀</div>
               </div>
               <Reel symbol={displayedReels[2]} spinning={spinningReels[2]} landed={landedReels[2]} />
             </div>
@@ -297,34 +299,35 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
             <div
               className="w-full min-h-[12.5rem] shrink-0"
             >
-              <p className="text-white/25 text-xs uppercase tracking-wider mb-2">Paytable</p>
+              <p className={`${BOARD_LABEL} mb-2`}>Pay table</p>
               <div className="grid grid-cols-2 gap-1">
                 {PAYTABLE.map((row) => (
-                  <div key={row.label} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white/5">
+                  <div key={row.label} className={`flex items-center justify-between px-3 py-1.5 ${BOARD_PANEL}`}>
                     <div className="flex items-center gap-1.5">
                       {row.symbols
                         .slice(0, row.label.startsWith('Two') || row.label.startsWith('Double') ? 2 : 3)
                         .map((s, i) => (
-                          <span key={i} className={`font-bold text-xs ${SYMBOL_DISPLAY[s].color}`}>
+                          <span key={i} className={`font-semibold text-xs ${SYMBOL_DISPLAY[s].color}`}>
                             {PAYTABLE_GLYPH[s]}
                           </span>
                         ))}
                     </div>
                     <span
-                      className={`font-bold text-sm ${row.multiplier >= 25 ? 'text-yellow-400' : row.multiplier >= 10 ? 'text-emerald-400' : 'text-white/60'}`}
+                      className={`num text-sm ${row.multiplier >= 25 ? 'text-gold' : row.multiplier >= 10 ? 'text-felt' : 'text-soft'}`}
                     >
                       {row.multiplier}×
                     </span>
                   </div>
                 ))}
-                <div className="flex items-center px-3 py-1.5 rounded-lg bg-purple-900/30 border border-purple-700/30">
-                  <span className="text-purple-300 text-xs font-semibold">★ Wild — any</span>
+                <div className={`flex items-center justify-between px-3 py-1.5 ${BOARD_PANEL}`}>
+                  <span className={`text-xs font-semibold ${SYMBOL_DISPLAY.wild.color}`}>★</span>
+                  <span className="text-xs text-soft">Wild — any</span>
                 </div>
               </div>
             </div>
 
             <div className="min-h-10 flex w-full items-center justify-center px-2 shrink-0">
-              <p className="text-center text-xs text-zinc-500 max-w-md">
+              <p className={BOARD_HINT}>
                 {isBetting
                   ? 'Match symbols on the center line to win.'
                   : isSpinning
@@ -375,7 +378,7 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
                     type="button"
                     onClick={isSettled ? handleNext : handleSpin}
                     disabled={!isSettled && (!canSpin || isSpinning)}
-                    className="min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : isSpinning ? 'Spinning…' : 'Spin →'}
                   </button>

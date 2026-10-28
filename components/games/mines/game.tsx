@@ -11,6 +11,8 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_CASHOUT_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -23,6 +25,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_CELL, BOARD_HINT, BOARD_PANEL, BOARD_SEGMENTED, boardSegment, CELL_IDLE, CELL_LOSS, CELL_MUTED, CELL_OPEN, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -221,33 +224,33 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
               isBetting ? 'invisible pointer-events-none' : ''
             }`}
           >
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Safe left </span>
-              <span className="font-semibold text-white">{round.remainingSafe}</span>
+            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
+              <span className="text-dim">Safe left </span>
+              <span className="num text-ink">{round.remainingSafe}</span>
             </div>
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Multiplier </span>
-              <span className="font-semibold text-white">{formatMultiplier(round.multiplier)}</span>
+            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
+              <span className="text-dim">Multiplier </span>
+              <span className="num text-ink">{formatMultiplier(round.multiplier)}</span>
             </div>
           </div>
 
           <div
-            className={`flex justify-center gap-2 h-9 items-center w-full shrink-0 ${
+            className={`flex justify-center h-9 items-center w-full shrink-0 ${
               !isBetting ? 'invisible pointer-events-none' : ''
             }`}
           >
+            <div className={BOARD_SEGMENTED}>
             {DIFFICULTIES.map((level) => (
               <button
                 key={level}
                 type="button"
                 onClick={() => setDifficulty(level)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  difficulty === level ? 'bg-white text-gray-900' : 'bg-white/10 text-white/50 hover:bg-white/15'
-                }`}
+                className={boardSegment(difficulty === level)}
               >
                 {DIFFICULTY_LABELS[level]}
               </button>
             ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full shrink-0">
@@ -262,18 +265,18 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
                     type="button"
                     onClick={() => handleTileClick(tile.id)}
                     disabled={!isInProgress || tile.revealed}
-                    className={`h-12 rounded-lg text-lg font-bold transition-all active:scale-95 sm:h-14 ${
+                    className={`h-12 ${BOARD_CELL} text-lg active:scale-95 sm:h-14 ${
                       tile.revealed && tile.hasMine
-                        ? 'border border-red-400 bg-red-600 text-white shadow-lg shadow-red-900/50'
+                        ? CELL_LOSS
                         : tile.revealed && !tile.hasMine
-                          ? 'border border-emerald-400 bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
+                          ? CELL_WIN
                           : dormantMine
-                            ? 'cursor-default border border-amber-500/70 bg-amber-950/80 text-amber-100 shadow-inner'
+                            ? `cursor-default ${CELL_LOSS} opacity-50`
                             : dormantSafe
-                              ? 'cursor-default border border-zinc-500/60 bg-zinc-800/80 text-zinc-200 shadow-inner'
+                              ? `cursor-default ${CELL_MUTED}`
                               : isInProgress
-                                ? 'cursor-pointer border border-white/20 bg-white/10 text-white/0 hover:border-white/40 hover:bg-white/20'
-                                : 'cursor-default border border-white/10 bg-white/5 text-white/0'
+                                ? `cursor-pointer ${CELL_OPEN}`
+                                : `cursor-default ${CELL_IDLE}`
                     }`}
                   >
                     {showOutcome ? (tile.hasMine ? '💣' : '✓') : ''}
@@ -282,13 +285,13 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
               })
             ) : (
               Array.from({ length: 25 }).map((_, i) => (
-                <div key={i} className="h-12 rounded-lg border border-white/10 bg-white/5 sm:h-14" />
+                <div key={i} className={`h-12 sm:h-14 ${BOARD_CELL} ${CELL_IDLE}`} />
               ))
             )}
           </div>
 
           <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className="text-xs text-zinc-500 text-center px-2 max-w-md">
+            <p className={BOARD_HINT}>
               {isBetting
                 ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
                 : isInProgress
@@ -314,9 +317,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -340,14 +343,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
                     type="button"
                     onClick={isSettled ? handleNext : isInProgress ? handleCashOut : handleStart}
                     disabled={isBetting && !canStart}
-                    className={[
-                      'min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                      isInProgress
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                        : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                    ].join(' ')}
+                    className={isInProgress ? GAME_DOCK_CASHOUT_BTN : GAME_DOCK_PRIMARY_BTN}
                   >
-                    {isSettled ? 'Next →' : isInProgress ? 'Cash Out' : 'Start →'}
+                    {isSettled ? 'Next →' : isInProgress ? 'Cash out' : 'Start →'}
                   </button>
                 </>
               )}

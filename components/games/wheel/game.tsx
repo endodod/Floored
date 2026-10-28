@@ -11,6 +11,7 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -23,6 +24,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, CELL_MUTED } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -52,10 +54,10 @@ import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const COLOR_STYLES: Record<WheelColor, { bg: string; border: string; text: string; ring: string }> = {
-  red:   { bg: 'bg-red-600',     border: 'border-red-400',     text: 'text-red-300',     ring: 'ring-red-400'     },
-  blue:  { bg: 'bg-blue-600',    border: 'border-blue-400',    text: 'text-blue-300',    ring: 'ring-blue-400'    },
-  green: { bg: 'bg-emerald-600', border: 'border-emerald-400', text: 'text-emerald-300', ring: 'ring-emerald-400' },
-  gold:  { bg: 'bg-yellow-500',  border: 'border-yellow-400',  text: 'text-yellow-300',  ring: 'ring-yellow-400'  },
+  red:   { bg: 'bg-[#b83a50]', border: 'border-[#e5566f]', text: 'text-loss',      ring: 'ring-[#e5566f]' },
+  blue:  { bg: 'bg-[#3e5f9e]', border: 'border-[#7f9bd0]', text: 'text-[#9db4e0]', ring: 'ring-[#7f9bd0]' },
+  green: { bg: 'bg-[#2f8a62]', border: 'border-felt',      text: 'text-felt',      ring: 'ring-[var(--felt)]' },
+  gold:  { bg: 'bg-[#b8862f]', border: 'border-gold',      text: 'text-gold',      ring: 'ring-[var(--gold)]' },
 }
 
 const COLOR_ICONS: Record<WheelColor, string> = {
@@ -72,16 +74,13 @@ const COLOR_ICON_OUTLINE_STYLE = {
 
 const SPIN_DURATION = 2000
 
-/** Taller than GAME_CONTROL_DOCK_M — room between color picks and chip row. */
-const WHEEL_CONTROL_DOCK = `${GAME_CONTROL_DOCK_M} min-h-[252px]`
-
 // 12 equal slices: 6 red · 3 blue · 2 green · 1 gold
 // No-adjacent layout: R B R G R B R Gold R G R B
 const TOTAL_SLICES = 12
 const SLICE_DEG = 360 / TOTAL_SLICES
 
 const HEX: Record<WheelColor, string> = {
-  red: '#dc2626', blue: '#2563eb', green: '#16a34a', gold: '#ca8a04',
+  red: '#b83a50', blue: '#3e5f9e', green: '#2f8a62', gold: '#b8862f',
 }
 
 // Separator color between slices — more visible dark divider
@@ -342,7 +341,7 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
           </div>
 
           {/* SVG wheel — 41 equal slices */}
-          <div className="w-[13.5rem] h-[13.5rem] sm:w-60 sm:h-60 rounded-full shadow-2xl border-4 border-white/20 overflow-hidden">
+          <div className="w-[13.5rem] h-[13.5rem] sm:w-60 sm:h-60 rounded-full shadow-2xl border-4 border-white/15 overflow-hidden">
             <svg
               viewBox="0 0 200 200"
               className="w-full h-full"
@@ -391,26 +390,12 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
               ))}
 
               {/* Center cap */}
-              <circle cx="100" cy="100" r="14" fill="#09090b" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+              <circle cx="100" cy="100" r="14" fill="#171719" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
             </svg>
           </div>
         </div>
 
-          <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
-            <p className="text-center text-xs text-zinc-500">
-              {isBetting
-                ? 'Pick a color multiplier, place chips, then spin.'
-                : spinning
-                  ? 'Wheel spinning…'
-                  : '\u00A0'}
-            </p>
-          </div>
-        </div>
-      </GameFieldWithHistory>
-
-      <div className={WHEEL_CONTROL_DOCK}>
-        <div className={GAME_DOCK_INNER}>
-          <div className={`flex shrink-0 justify-center min-h-10 mb-4 ${!isBetting ? 'hidden' : ''}`}>
+          <div className={`flex shrink-0 justify-center min-h-[3.25rem] ${!isBetting ? 'invisible pointer-events-none' : ''}`}>
             <div className="flex gap-2">
               {WHEEL_SEGMENTS.map((seg) => {
                 const cs = COLOR_STYLES[seg.color]
@@ -423,27 +408,41 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
                     type="button"
                     disabled={isScoutCrossed}
                     onClick={() => setColor(seg.color)}
-                    className={`relative flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl border-2 font-bold text-sm transition-all duration-100 ${
+                    className={`relative flex flex-col items-center gap-0.5 px-4 py-2 rounded-md border font-semibold text-sm transition-all duration-100 ${
                       isScoutCrossed
-                        ? 'border-zinc-700 bg-zinc-900/60 text-zinc-600 opacity-50 cursor-not-allowed'
+                        ? `${CELL_MUTED} opacity-50 cursor-not-allowed`
                         : isSelected
-                          ? `${cs.bg} ${cs.border} text-white shadow-lg scale-105`
-                          : `${cs.border} ${cs.text} opacity-40 hover:opacity-70`
+                          ? `${cs.bg} ${cs.border} text-white shadow-[0_0_18px_-4px_rgba(255,255,255,0.35)] ring-2 ring-white ring-offset-2 ring-offset-[#101a15]`
+                          : `bg-black/25 ${cs.border} ${cs.text} opacity-55 hover:opacity-90`
                     }`}
                   >
                     {isScoutCrossed && (
-                      <span className="absolute -top-2 -right-2 text-[10px] font-bold text-red-400">✕</span>
+                      <span className="absolute -top-2 -right-2 text-[10px] font-semibold text-loss">✕</span>
                     )}
                     <span className="text-base leading-none" style={COLOR_ICON_OUTLINE_STYLE}>
                       {COLOR_ICONS[seg.color]}
                     </span>
-                    <span className="text-xs leading-none">{seg.multiplier}×</span>
+                    <span className="num text-xs leading-none">{seg.multiplier}×</span>
                   </button>
                 )
               })}
             </div>
           </div>
 
+          <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
+            <p className={BOARD_HINT}>
+              {isBetting
+                ? 'Pick a color multiplier, place chips, then spin.'
+                : spinning
+                  ? 'Wheel spinning…'
+                  : '\u00A0'}
+            </p>
+          </div>
+        </div>
+      </GameFieldWithHistory>
+
+      <div className={GAME_CONTROL_DOCK_M}>
+        <div className={GAME_DOCK_INNER}>
           <GameDockChipRow
             visible={isBetting || spinning}
             bankroll={bankroll}
@@ -457,9 +456,9 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {spinning && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -486,7 +485,7 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
                     type="button"
                     onClick={isSettled ? handleNextRound : handleSpin}
                     disabled={!isSettled && (!canSpin || spinning)}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : spinning ? 'Spinning…' : 'Spin →'}
                   </button>

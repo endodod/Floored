@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -17,6 +18,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, BOARD_LABEL, CELL_IDLE, CELL_MUTED, CELL_OPEN, CELL_PICKED } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -248,7 +250,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
         <div className="flex min-h-0 flex-1 w-full flex-col items-center">
           <div className="min-h-0 flex-1 shrink" aria-hidden />
           <div className="flex w-full max-w-sm flex-col gap-2.5 shrink-0">
-            <p className="text-xs text-zinc-600 uppercase tracking-wider px-1">Pick your chicken</p>
+            <p className={`${BOARD_LABEL} px-1`}>Pick your chicken</p>
 
             {CHICKENS.map((chicken) => {
               const isSelected = state.pickedChicken === chicken.id
@@ -265,30 +267,30 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
                   disabled={!isBetting || isScoutCrossed}
                   onClick={() => selectChicken(chicken.id)}
                   className={[
-                    'w-full rounded-xl border-2 px-3 py-2.5 text-left transition-all duration-150 relative',
+                    'w-full rounded-md border px-3 py-2.5 text-left transition-all duration-150 relative',
                     isScoutCrossed
-                      ? 'bg-zinc-900/60 border-zinc-800 opacity-50 cursor-not-allowed'
+                      ? `${CELL_MUTED} opacity-50 cursor-not-allowed`
                       : isBetting
                         ? isSelected
-                          ? 'bg-yellow-400/10 border-yellow-400 cursor-pointer'
-                          : 'bg-zinc-800/60 border-zinc-700 hover:border-zinc-500 cursor-pointer'
+                          ? `${CELL_PICKED} cursor-pointer`
+                          : `${CELL_OPEN} cursor-pointer`
                         : isWinner
-                          ? 'border-2'
+                          ? 'bg-black/25'
                           : isLoser
-                            ? 'bg-zinc-900/40 border-zinc-800 opacity-40'
-                            : 'bg-zinc-800/60 border-zinc-700',
+                            ? `${CELL_MUTED} opacity-40`
+                            : CELL_IDLE,
                   ].join(' ')}
                   style={isWinner ? { borderColor: chicken.color, backgroundColor: `${chicken.color}18` } : undefined}
                 >
                   {isScoutCrossed && (
-                    <span className="absolute right-2 top-2 text-xs font-bold text-red-400/90">✕ Out</span>
+                    <span className="absolute right-2 top-2 text-xs font-semibold text-loss">✕ Out</span>
                   )}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-lg leading-none">🐔</span>
                       <span
-                        className="text-sm font-bold"
-                        style={{ color: isSelected ? '#facc15' : isWinner ? chicken.color : undefined }}
+                        className="text-sm font-semibold text-ink"
+                        style={{ color: isSelected ? 'var(--felt)' : isWinner ? chicken.color : undefined }}
                       >
                         {chicken.name}
                       </span>
@@ -302,7 +304,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
                   </div>
 
                   <div className="relative">
-                    <div className="h-2.5 rounded-full bg-zinc-700/60 overflow-hidden">
+                    <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{ width: `${prog}%`, backgroundColor: chicken.color, transition: 'none' }}
@@ -321,7 +323,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
             })}
 
             <div className="min-h-10 flex w-full items-center justify-center px-2">
-              <p className="text-center text-xs text-zinc-500 max-w-md">
+              <p className={BOARD_HINT}>
                 {isBetting
                   ? 'Pick a chicken, place chips, then race.'
                   : isRacing
@@ -349,9 +351,9 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isRacing && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -378,7 +380,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
                     type="button"
                     onClick={isSettled ? handleNext : handleRace}
                     disabled={actionDisabled}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : 'Race →'}
                   </button>

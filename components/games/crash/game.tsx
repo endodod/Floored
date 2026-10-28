@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_CASHOUT_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -17,6 +19,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, BOARD_LABEL } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -104,9 +107,9 @@ function CrashCurve({
   if (elapsedMs <= 50) {
     return (
       <svg viewBox="0 0 160 60" className="w-full h-full" preserveAspectRatio="none">
-        <line x1={LEFT} y1={BOTTOM} x2={RIGHT} y2={BOTTOM} stroke="#27272a" strokeWidth="0.5" />
-        <line x1={LEFT} y1={TOP}    x2={LEFT}  y2={BOTTOM} stroke="#27272a" strokeWidth="0.5" />
-        <circle cx={LEFT} cy={BOTTOM} r="1.5" fill="#3f3f46" />
+        <line x1={LEFT} y1={BOTTOM} x2={RIGHT} y2={BOTTOM} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+        <line x1={LEFT} y1={TOP}    x2={LEFT}  y2={BOTTOM} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+        <circle cx={LEFT} cy={BOTTOM} r="1.5" fill="#3a3a3e" />
       </svg>
     )
   }
@@ -150,17 +153,17 @@ function CrashCurve({
   const w2y   = tipY - A * (-nx * Math.sin(theta) + ny * Math.cos(theta))
 
   const color =
-    outcome === 'loss' ? '#ef4444' :
-    outcome === 'win'  ? '#22c55e' :
+    outcome === 'loss' ? '#e5566f' :
+    outcome === 'win'  ? '#4fae84' :
     curMult >= 5       ? '#f97316' :
-    curMult >= 3       ? '#eab308' :
-    curMult >= 2       ? '#4ade80' :
-    curMult >= 1       ? '#a1a1aa' : '#f87171'
+    curMult >= 3       ? '#d9a441' :
+    curMult >= 2       ? '#4fae84' :
+    curMult >= 1       ? '#bdbdc0' : '#e5566f'
 
   return (
     <svg viewBox="0 0 160 60" className="w-full h-full" preserveAspectRatio="none">
-      <line x1={LEFT} y1={BOTTOM} x2={RIGHT} y2={BOTTOM} stroke="#27272a" strokeWidth="0.5" />
-      <line x1={LEFT} y1={TOP}    x2={LEFT}  y2={BOTTOM} stroke="#27272a" strokeWidth="0.5" />
+      <line x1={LEFT} y1={BOTTOM} x2={RIGHT} y2={BOTTOM} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+      <line x1={LEFT} y1={TOP}    x2={LEFT}  y2={BOTTOM} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
       <path d={fillD} fill={color} fillOpacity={outcome ? 0.08 : 0.05} />
       <path
         d={lineD}
@@ -308,12 +311,12 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
   const displayMult = isInProgress ? computeMultiplier(elapsedMs) : round.currentMultiplier
 
   const multColor =
-    isSettled && round.outcome === 'loss' ? 'text-red-400' :
-    isSettled && round.outcome === 'win'  ? 'text-green-400' :
+    isSettled && round.outcome === 'loss' ? 'text-loss glow-loss' :
+    isSettled && round.outcome === 'win'  ? 'text-felt glow-felt' :
     displayMult >= 5  ? 'text-orange-400' :
-    displayMult >= 3  ? 'text-yellow-300' :
-    displayMult >= 2  ? 'text-green-400'  :
-    displayMult >= 1  ? 'text-zinc-200'   : 'text-red-300'
+    displayMult >= 3  ? 'text-gold glow-gold' :
+    displayMult >= 2  ? 'text-felt'  :
+    displayMult >= 1  ? 'text-ink'   : 'text-loss'
 
   return (
     <div className={GAME_CARD_SHELL}>
@@ -342,20 +345,20 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
           <div className="relative z-10 flex min-h-[7.5rem] flex-col items-center justify-center text-center pointer-events-none select-none">
             {isBetting ? (
               <>
-                <p className="text-zinc-700 text-xs uppercase tracking-widest mb-2">Ready</p>
-                <p className="text-7xl sm:text-8xl font-black text-zinc-800 tabular-nums">0.75×</p>
+                <p className={`${BOARD_LABEL} mb-2`}>Ready</p>
+                <p className="text-7xl sm:text-8xl font-semibold text-white/10 num">0.75×</p>
                 <p className="text-sm mt-2 invisible">{'\u00A0'}</p>
               </>
             ) : (
               <>
-                <p className="text-xs uppercase tracking-widest text-zinc-600 mb-2">
+                <p className={`${BOARD_LABEL} mb-2`}>
                   {isSettled
                     ? round.outcome === 'win'
-                      ? 'Cashed Out At'
-                      : 'Crashed At'
+                      ? 'Cashed out at'
+                      : 'Crashed at'
                     : 'Multiplier'}
                 </p>
-                <p className={`text-7xl sm:text-8xl font-black tabular-nums transition-colors duration-100 ${multColor}`}>
+                <p className={`text-7xl sm:text-8xl font-semibold num transition-colors duration-100 ${multColor}`}>
                   {formatMultiplier(displayMult)}
                 </p>
                 <p className="text-sm mt-2 invisible">{'\u00A0'}</p>
@@ -364,7 +367,7 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
           </div>
 
           <div className="min-h-10 flex w-full shrink-0 items-center justify-center">
-            <p className="max-w-md px-2 text-center text-xs text-zinc-500">
+            <p className={BOARD_HINT}>
               {isBetting
                 ? 'Place chips and start. Cash out before the curve crashes.'
                 : isInProgress
@@ -396,9 +399,9 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && (
-              <p className="text-sm text-zinc-400 tabular-nums">
+              <p className="text-sm text-soft tabular-nums">
                 Cashout now:{' '}
-                <span className="font-semibold text-emerald-400">
+                <span className="font-semibold text-felt">
                   {formatChips(Math.round(round.betAmount * displayMult))}
                 </span>
               </p>
@@ -427,17 +430,12 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
                     type="button"
                     onClick={isSettled ? handleNextCrash : isInProgress ? handleCashOut : handleStart}
                     disabled={isBetting && !canStart}
-                    className={[
-                      'min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                      isInProgress
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                        : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                    ].join(' ')}
+                    className={isInProgress ? GAME_DOCK_CASHOUT_BTN : GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled
                       ? 'Next →'
                       : isInProgress
-                        ? `Cash Out · ${formatMultiplier(displayMult)}`
+                        ? `Cash out · ${formatMultiplier(displayMult)}`
                         : 'Start →'}
                   </button>
                 </>

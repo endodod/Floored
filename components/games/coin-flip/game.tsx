@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
+  GAME_DOCK_CASHOUT_BTN,
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GameActiveBetBadge,
@@ -17,6 +19,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, boardChoice } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -256,7 +259,7 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
           </div>
         </div>
 
-        <div className={`flex items-center gap-2 text-sm font-bold text-yellow-300 min-h-6 ${!isRiding || isFlipping ? 'invisible' : ''}`}>
+        <div className={`flex items-center gap-2 text-sm font-semibold text-gold glow-gold min-h-6 ${!isRiding || isFlipping ? 'invisible' : ''}`}>
           <span>{'🔥'.repeat(Math.min(state.streak, 5))}</span>
           <span>{state.streak}× streak · {state.multiplier}× multiplier</span>
         </div>
@@ -269,12 +272,7 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
                 key={side}
                 type="button"
                 onClick={() => handlePickSide(side)}
-                className={[
-                  'w-24 h-14 rounded-xl border-2 font-bold text-sm uppercase tracking-wider transition-all duration-150',
-                  isActive
-                    ? 'bg-yellow-400/15 border-yellow-400 text-yellow-300'
-                    : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white',
-                ].join(' ')}
+                className={boardChoice(isActive)}
               >
                 {side === 'heads' ? 'Heads' : 'Tails'}
               </button>
@@ -283,7 +281,7 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
         </div>
 
         <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
-          <p className="text-center text-xs text-zinc-500">
+          <p className={BOARD_HINT}>
             {isBetting && !isFlipping
               ? 'Pick heads or tails, place chips, then flip.'
               : isFlipping
@@ -312,9 +310,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
               <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />
             )}
             {isRiding && !isFlipping && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(cashoutAmount)}</span>
+                <span className="font-semibold text-felt">{formatChips(cashoutAmount)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -340,14 +338,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
                   type="button"
                   onClick={isSettled ? handleNext : isRiding ? handleCashOut : handleFlip}
                   disabled={(isBetting && !canFlip) || isFlipping}
-                  className={[
-                    'min-w-[8rem] px-5 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                    isRiding
-                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50'
-                      : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                  ].join(' ')}
+                  className={isRiding ? GAME_DOCK_CASHOUT_BTN : GAME_DOCK_PRIMARY_BTN}
                 >
-                  {isSettled ? 'Next →' : isRiding ? `Cash Out — ${formatChips(cashoutAmount)}` : 'Flip →'}
+                  {isSettled ? 'Next →' : isRiding ? `Cash out — ${formatChips(cashoutAmount)}` : 'Flip →'}
                 </button>
               </>
             )}
@@ -356,9 +349,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
                 type="button"
                 onClick={handleFlipAgain}
                 disabled={!state.nextPick || isFlipping}
-                className="min-w-[8rem] px-5 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                className={GAME_DOCK_PRIMARY_BTN}
               >
-                Flip Again →
+                Flip again →
               </button>
             )}
           </div>

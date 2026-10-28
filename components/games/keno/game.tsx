@@ -11,6 +11,8 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_SECONDARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -23,6 +25,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_CELL, BOARD_HINT, BOARD_PANEL, CELL_GOLD, CELL_LOSS, CELL_MUTED, CELL_OPEN, CELL_PICKED, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -249,15 +252,15 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
               isBetting ? 'invisible pointer-events-none' : ''
             }`}
           >
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Hits </span>
-              <span className="font-semibold text-pink-300">
+            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
+              <span className="text-dim">Hits </span>
+              <span className="num text-felt">
                 {hasRevealedStats ? round.hits : '—'}
               </span>
             </div>
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Multiplier </span>
-              <span className="font-semibold text-white">
+            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
+              <span className="text-dim">Multiplier </span>
+              <span className="num text-ink">
                 {hasRevealedStats ? formatMultiplier(round.multiplier) : '—'}
               </span>
             </div>
@@ -271,14 +274,14 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
             <button
               type="button"
               onClick={handleQuickPick}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-pink-600 text-white hover:bg-pink-500 transition-colors"
+              className="h-8 rounded-full border border-felt bg-felt-tint px-3.5 text-xs font-semibold text-felt transition-shadow hover:shadow-[0_0_16px_-4px_rgba(79,174,132,0.8)]"
             >
-              Quick Pick (5)
+              Quick pick (5)
             </button>
             <button
               type="button"
               onClick={handleClearPicks}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-white/10 text-white/60 hover:bg-white/15 transition-colors"
+              className="h-8 rounded-full border border-control px-3.5 text-xs font-medium text-soft transition-colors hover:border-loss hover:text-loss"
             >
               Clear picks
             </button>
@@ -301,21 +304,21 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                   onClick={() => handleNumberClick(num)}
                   disabled={!isBetting || (!picked && round.picks.length >= MAX_PICKS)}
                   className={[
-                    'h-9 rounded-md text-xs font-bold tabular-nums transition-all sm:h-10 sm:text-sm',
+                    `h-9 sm:h-10 ${BOARD_CELL}`,
                     isHeat
-                      ? 'border border-violet-400/80 bg-violet-950/60 text-violet-200 ring-1 ring-violet-500/50'
+                      ? 'ring-1 ring-[var(--gold)]'
                       : '',
                     isHit
-                      ? 'border border-pink-300 bg-pink-500 text-zinc-900 shadow-lg shadow-pink-900/40'
+                      ? CELL_WIN
                       : isMiss
-                        ? 'border border-zinc-600 bg-zinc-800 text-zinc-400'
+                        ? CELL_LOSS
                         : isDrawOnly
-                          ? 'border border-amber-500/60 bg-amber-950/80 text-amber-100'
+                          ? CELL_GOLD
                           : picked
-                            ? 'border border-pink-500/80 bg-pink-950/60 text-pink-200'
+                            ? CELL_PICKED
                             : isBetting
-                              ? 'border border-white/15 bg-white/5 text-white/70 hover:border-pink-500/50 hover:bg-pink-950/30'
-                              : 'border border-white/10 bg-white/5 text-white/30',
+                              ? CELL_OPEN
+                              : CELL_MUTED,
                     isDrawing && picked && !drawn ? 'animate-pulse' : '',
                   ].join(' ')}
                 >
@@ -326,7 +329,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
           </div>
 
           <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className="text-xs text-zinc-500 text-center px-2 max-w-md">
+            <p className={BOARD_HINT}>
               {isBetting
                 ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
                 : isDrawing
@@ -352,11 +355,11 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isDrawing && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 {hasRevealedStats ? (
                   <>
                     Potential total winnings:{' '}
-                    <span className="font-semibold text-emerald-400">{formatChips(totalWinnings)}</span>
+                    <span className="num text-felt">{formatChips(totalWinnings)}</span>
                   </>
                 ) : (
                   <>Drawing ball {round.revealedDrawn.length} of {DRAW_COUNT}…</>
@@ -384,12 +387,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                     type="button"
                     onClick={isSettled ? handleNext : isDrawing ? handleRevealAll : handleStart}
                     disabled={isBetting && !canStart}
-                    className={[
-                      'min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                      isDrawing
-                        ? 'bg-pink-600 hover:bg-pink-500 text-white'
-                        : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                    ].join(' ')}
+                    className={isDrawing ? GAME_DOCK_SECONDARY_BTN : GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : isDrawing ? 'Reveal All' : 'Play →'}
                   </button>

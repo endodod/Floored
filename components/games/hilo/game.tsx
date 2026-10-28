@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -20,6 +21,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, BOARD_LABEL, boardChoice } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -64,11 +66,11 @@ function CardView({
   if (!card || faceDown) {
     return (
       <div
-        className="rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl flex items-center justify-center shrink-0"
+        className="rounded-xl bg-raised border border-control shadow-2xl flex items-center justify-center shrink-0"
         style={{ width: 80, height: 112 }}
       >
         {card && (
-          <div className="rounded-lg border border-zinc-700" style={{ width: 56, height: 80, background: CARD_BACK }} />
+          <div className="rounded-lg border border-control" style={{ width: 56, height: 80, background: CARD_BACK }} />
         )}
       </div>
     )
@@ -82,12 +84,12 @@ function CardView({
       style={{ width: 80, height: 112, padding: 7 }}
     >
       <div className={`flex flex-col items-start leading-none ${color}`}>
-        <span className="font-black text-lg leading-none">{card.rank}</span>
+        <span className="font-semibold text-lg leading-none">{card.rank}</span>
         <span className="text-base leading-none">{card.suit}</span>
       </div>
       <span className={`text-4xl leading-none self-center ${color}`}>{card.suit}</span>
       <div className={`flex flex-col items-start rotate-180 leading-none ${color}`}>
-        <span className="font-black text-lg leading-none">{card.rank}</span>
+        <span className="font-semibold text-lg leading-none">{card.rank}</span>
         <span className="text-base leading-none">{card.suit}</span>
       </div>
     </div>
@@ -243,10 +245,10 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
 
   /* Arrow indicator color */
   const arrowColor =
-    isRiding ? 'text-emerald-400' :
-    isSettled && round.outcome === 'win' ? 'text-emerald-400' :
-    isSettled && round.outcome === 'loss' ? 'text-red-400' :
-    'text-zinc-600'
+    isRiding ? 'text-felt' :
+    isSettled && round.outcome === 'win' ? 'text-felt' :
+    isSettled && round.outcome === 'loss' ? 'text-loss' :
+    'text-dim'
 
   const guessArrow = round.lastGuess === 'higher' ? '↑' : round.lastGuess === 'lower' ? '↓' : '↕'
 
@@ -281,9 +283,9 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
         />
 
         {/* Streak indicator — visible whenever there's an active multiplier */}
-        <div className={`flex items-center gap-2 text-sm font-bold ${round.isTie ? 'text-zinc-300' : 'text-yellow-300'} ${round.multiplier === 0 ? 'invisible' : ''}`}>
+        <div className={`flex items-center gap-2 text-sm font-semibold ${round.isTie ? 'text-soft' : 'text-gold glow-gold'} ${round.multiplier === 0 ? 'invisible' : ''}`}>
           {round.isTie ? (
-            <span className="px-2 py-0.5 rounded-md bg-zinc-700 text-zinc-200 text-xs font-bold tracking-widest uppercase">Push</span>
+            <span className="px-2 py-0.5 rounded-full bg-raised text-ink text-xs font-semibold">Push</span>
           ) : (
             <span>{flames}</span>
           )}
@@ -293,34 +295,34 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
         {/* Card display */}
         <div className="flex items-center gap-5">
           <div className="flex flex-col items-center gap-2">
-            <p className="text-xs uppercase tracking-widest text-zinc-600">Current</p>
+            <p className={BOARD_LABEL}>Current</p>
             <CardView card={round.currentCard} faceDown={!round.currentCard} animClass={currentCardAnim} />
           </div>
 
           <div className="flex flex-col items-center gap-1">
-            <span className={`text-4xl font-black transition-colors ${arrowColor}`}>{guessArrow}</span>
+            <span className={`text-4xl font-semibold transition-colors ${arrowColor}`}>{guessArrow}</span>
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <p className="text-xs uppercase tracking-widest text-zinc-600">Next</p>
+            <p className={BOARD_LABEL}>Next</p>
             <NextCardReveal card={round.nextCard} />
           </div>
         </div>
 
         {/* Fixed-height slot shared by guess buttons and riding buttons */}
-        <div className="relative h-11 w-72 flex items-center justify-center">
+        <div className="relative h-11 w-80 flex items-center justify-center">
           <div className={`absolute inset-x-0 flex gap-3 ${!isPlaying ? 'invisible pointer-events-none' : ''}`}>
             <button
               type="button"
               onClick={() => handleGuess('higher')}
-              className="flex-1 py-2.5 rounded-xl border-2 border-purple-600 bg-purple-950 hover:bg-purple-900 text-purple-200 font-bold text-sm uppercase tracking-wider transition-all duration-150 hover:scale-105 active:scale-95"
+              className={`${boardChoice()} flex-1`}
             >
               ↑ Higher
             </button>
             <button
               type="button"
               onClick={() => handleGuess('lower')}
-              className="flex-1 py-2.5 rounded-xl border-2 border-purple-600 bg-purple-950 hover:bg-purple-900 text-purple-200 font-bold text-sm uppercase tracking-wider transition-all duration-150 hover:scale-105 active:scale-95"
+              className={`${boardChoice()} flex-1`}
             >
               ↓ Lower
             </button>
@@ -329,22 +331,22 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
             <button
               type="button"
               onClick={handleCashOut}
-              className="flex-1 py-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-950 hover:bg-emerald-900 text-emerald-200 font-bold text-sm transition-all duration-150 hover:scale-105 active:scale-95"
+              className={`${boardChoice(true)} flex-1`}
             >
-              Cash Out — {formatChips(cashoutAmount)}
+              Cash out — {formatChips(cashoutAmount)}
             </button>
             <button
               type="button"
               onClick={handleGoAgain}
-              className="flex-1 py-2.5 rounded-xl border-2 border-yellow-600 bg-yellow-950 hover:bg-yellow-900 text-yellow-200 font-bold text-sm transition-all duration-150 hover:scale-105 active:scale-95"
+              className={`${boardChoice()} flex-1`}
             >
-              Go Again → {formatMultiplier(nextMult)}
+              Go again → {formatMultiplier(nextMult)}
             </button>
           </div>
         </div>
 
         <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
-          <p className="text-center text-xs text-zinc-500">
+          <p className={BOARD_HINT}>
             {isBetting
               ? 'Ties keep your streak alive · Ace counts high · Win streaks multiply your payout.'
               : isPlaying
@@ -371,11 +373,11 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isRiding && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 {round.isTie ? (
-                  <>Push — <span className="font-semibold text-zinc-200">{formatChips(cashoutAmount)} returned if you cash out</span></>
+                  <>Push — <span className="font-semibold text-ink">{formatChips(cashoutAmount)} returned if you cash out</span></>
                 ) : (
-                  <>Potential total winnings:{' '}<span className="font-semibold text-emerald-400">{formatChips(cashoutAmount)}</span></>
+                  <>Potential total winnings:{' '}<span className="font-semibold text-felt">{formatChips(cashoutAmount)}</span></>
                 )}
               </p>
             )}
@@ -401,7 +403,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
                 type="button"
                 onClick={handleDeal}
                 disabled={!canDeal}
-                className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                className={GAME_DOCK_PRIMARY_BTN}
               >
                 Deal →
               </button>
@@ -413,7 +415,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
                 onNext={handleNext}
               />
             ) : (
-              <p className="min-w-[10.5rem] px-7 py-2 invisible select-none" aria-hidden>
+              <p className="h-10 min-w-[10.5rem] invisible select-none" aria-hidden>
                 Deal →
               </p>
             )}

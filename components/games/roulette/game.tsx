@@ -10,6 +10,7 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -22,6 +23,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, boardChoice } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -50,7 +52,7 @@ import {
 } from '@/games/roulette/engine'
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
-import type { RouletteBetType, RouletteState } from '@/games/roulette/types'
+import type { RouletteState } from '@/games/roulette/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
@@ -96,31 +98,15 @@ interface RouletteGameProps {
 
 type PendingResult = GamePendingResult
 
-function betBtnStyle(type: RouletteBetType, isActive: boolean): string {
-  const base = 'rounded-lg transition-all duration-150 flex flex-col items-center'
+// Pockets wear the chip colours: the 500 red, a near-black, the 25 green.
+const POCKET_BG = { red: 'bg-[#b83a50]', black: 'bg-[#2a2930]', green: 'bg-[#2f8a62]' } as const
+const POCKET_RIM = { red: 'border-[#e5566f]', black: 'border-control', green: 'border-felt' } as const
+const POCKET_DOT = { red: 'bg-[#b83a50]', black: 'bg-[#2a2930] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)]' } as const
 
-  const activeStyle = 'bg-yellow-400 border-yellow-300 text-zinc-900'
-
-  if (type === 'red') return `${base} border-2 ${
-    isActive ? activeStyle :
-               'bg-red-950/70 border-red-700 text-red-300 hover:bg-red-900/80 hover:border-red-500 hover:text-red-100'
-  }`
-
-  if (type === 'black') return `${base} border-2 ${
-    isActive ? activeStyle :
-               'bg-black border-zinc-600 text-zinc-100 hover:bg-zinc-950 hover:border-zinc-400 hover:text-white'
-  }`
-
-  if (type === 'green') return `${base} border-2 ${
-    isActive ? activeStyle :
-               'bg-emerald-950/70 border-emerald-700 text-emerald-300 hover:bg-emerald-900/80 hover:border-emerald-500 hover:text-emerald-100'
-  }`
-
-  return `${base} border-2 ${
-    isActive ? activeStyle :
-               'bg-zinc-900 border-zinc-600 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-400 hover:text-white'
-  }`
-}
+const RING_OFFSET = 'ring-offset-1 ring-offset-[#101a15]'
+const RING_RESULT = `ring-2 ring-white ${RING_OFFSET} shadow-[0_0_16px_rgba(255,255,255,0.35)]`
+const RING_SELECTED = `ring-2 ring-[var(--felt)] ${RING_OFFSET} shadow-[0_0_14px_-2px_rgba(79,174,132,0.8)]`
+const RING_SPINNING = `ring-2 ring-white/60 ${RING_OFFSET}`
 
 export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameProps) {
   const { autoReBet } = useSettingsStore()
@@ -340,31 +326,26 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
           <div className="flex w-full flex-col items-center gap-4 shrink-0">
             <div className="relative flex h-[5.5rem] shrink-0 items-center justify-center">
               {spinning && (
-                <div className="absolute inset-0 rounded-full animate-ping border-2 border-white/20 scale-110" />
+                <div className="absolute inset-0 rounded-full animate-ping border border-white/20 scale-110" />
               )}
               <div
                 className={`
-            w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex items-center justify-center transition-colors duration-300
+            w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center transition-colors duration-300
             ${
               spinning && spinningPosition
-                ? spinningPosition === '0'
-                  ? 'bg-emerald-700 border-emerald-400'
-                  : getNumberColor(parseInt(spinningPosition, 10)) === 'red'
-                    ? 'bg-red-700 border-red-400'
-                    : 'bg-zinc-600 border-zinc-400'
+                ? (() => {
+                    const c = spinningPosition === '0' ? 'green' : getNumberColor(parseInt(spinningPosition, 10))
+                    return `${POCKET_BG[c]} ${POCKET_RIM[c]}`
+                  })()
                 : isSettled
-                  ? round.resultColor === 'red'
-                    ? 'bg-red-700 border-red-400'
-                    : round.resultColor === 'black'
-                      ? 'bg-zinc-600 border-zinc-400'
-                      : 'bg-emerald-700 border-emerald-400'
-                  : 'bg-zinc-800/50 border-zinc-700'
+                  ? `${POCKET_BG[round.resultColor ?? 'green']} ${POCKET_RIM[round.resultColor ?? 'green']}`
+                  : 'bg-black/30 border-control'
             }
           `}
               >
                 <span
-                  className={`text-2xl sm:text-3xl font-black tabular-nums transition-colors ${
-                    isSettled ? 'text-white' : spinning ? 'text-white/80' : 'text-zinc-600'
+                  className={`text-2xl sm:text-3xl font-semibold tabular-nums transition-colors ${
+                    isSettled ? 'text-ink' : spinning ? 'text-soft' : 'text-dim'
                   }`}
                 >
                   {spinning ? (spinningPosition ?? '?') : isSettled ? round.result : '?'}
@@ -384,13 +365,13 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                     type="button"
                     onClick={() => selectTarget('0')}
                     className={[
-                      'relative h-6 sm:h-7 rounded flex items-center justify-center text-[10px] sm:text-xs font-bold text-white bg-emerald-700 transition-all duration-150 select-none',
+                      `relative h-6 sm:h-7 rounded flex items-center justify-center text-[10px] sm:text-xs font-semibold tabular-nums text-white ${POCKET_BG.green} transition-all duration-150 select-none`,
                       isResult
-                        ? 'ring-2 ring-white ring-offset-1 ring-offset-zinc-950 shadow-lg shadow-white/20'
+                        ? RING_RESULT
                         : isActive
-                          ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-zinc-950'
+                          ? RING_SELECTED
                           : isSpinningTile
-                            ? 'ring-2 ring-white/60 ring-offset-1 ring-offset-zinc-950'
+                            ? RING_SPINNING
                             : '',
                       isBetting ? 'cursor-pointer hover:brightness-125 active:scale-95' : 'cursor-default',
                     ].join(' ')}
@@ -410,14 +391,13 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                     const isResult = isSettled && round.result === n
                     const isSpinningTile = spinningPosition === nStr
                     const color = getNumberColor(n)
-                    const colorBase =
-                      color === 'red' ? 'bg-red-700' : color === 'black' ? 'bg-zinc-600' : 'bg-emerald-700'
+                    const colorBase = POCKET_BG[color]
                     const ring = isResult
-                      ? 'ring-2 ring-white ring-offset-1 ring-offset-zinc-950 scale-110 z-10 shadow-lg shadow-white/20'
+                      ? `${RING_RESULT} scale-110 z-10`
                       : isActive
-                        ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-zinc-950 z-10'
+                        ? `${RING_SELECTED} z-10`
                         : isSpinningTile
-                          ? 'ring-2 ring-white/60 ring-offset-1 ring-offset-zinc-950'
+                          ? RING_SPINNING
                           : ''
                     return (
                       <button
@@ -425,7 +405,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                         type="button"
                         onClick={() => selectTarget(nStr)}
                         className={[
-                          'relative w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center text-[10px] sm:text-xs font-bold text-white transition-all duration-150 select-none',
+                          'relative w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center text-[10px] sm:text-xs font-semibold tabular-nums text-white transition-all duration-150 select-none',
                           colorBase,
                           ring,
                           isBetting ? 'cursor-pointer hover:brightness-125 active:scale-90' : 'cursor-default',
@@ -450,9 +430,12 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                       key={type}
                       type="button"
                       onClick={() => selectTarget(type)}
-                      className={`${betBtnStyle(type, isActive)} px-3 py-1.5`}
+                      className={`${boardChoice(isActive)} !h-9 !min-w-[4.5rem] !px-4 !text-[13px] inline-flex items-center justify-center gap-1.5`}
                     >
-                      <span className="text-xs font-bold">{BET_LABELS[type]}</span>
+                      {(type === 'red' || type === 'black') && (
+                        <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${POCKET_DOT[type]}`} />
+                      )}
+                      {BET_LABELS[type]}
                     </button>
                   )
                 })}
@@ -460,7 +443,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
             </div>
 
             <div className="min-h-10 flex w-full items-center justify-center px-2 shrink-0">
-              <p className="text-center text-xs text-zinc-500 max-w-md">
+              <p className={BOARD_HINT}>
                 {isBetting
                   ? 'Select a number or outside bet, add chips, then spin.'
                   : spinning
@@ -503,9 +486,9 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
               </>
             )}
             {spinning && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -532,7 +515,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                     type="button"
                     onClick={isSettled ? handleNext : handleSpin}
                     disabled={!isSettled && (!canSpin || spinning)}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : spinning ? 'Spinning…' : 'Spin →'}
                   </button>

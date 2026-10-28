@@ -10,6 +10,7 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -22,6 +23,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, BOARD_LABEL } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -224,44 +226,44 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
         <div className="flex w-full max-w-md flex-col items-center gap-4 shrink-0">
           <div className="flex h-14 shrink-0 items-center gap-8 sm:gap-14">
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-teal-600 mb-0.5">Safe</p>
-              <p className="text-2xl font-black text-teal-300 tabular-nums">{displaySafeZone}%</p>
+              <p className={`${BOARD_LABEL} mb-0.5`}>Safe</p>
+              <p className="num text-2xl text-felt glow-felt">{displaySafeZone}%</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-0.5">Payout</p>
-              <p className="text-2xl font-black text-white tabular-nums">{formatMultiplier(payoutMult)}</p>
+              <p className={`${BOARD_LABEL} mb-0.5`}>Payout</p>
+              <p className="num text-2xl text-ink">{formatMultiplier(payoutMult)}</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-red-600 mb-0.5">Danger</p>
-              <p className="text-2xl font-black text-red-300 tabular-nums">{100 - displaySafeZone}%</p>
+              <p className={`${BOARD_LABEL} mb-0.5`}>Danger</p>
+              <p className="num text-2xl text-loss glow-loss">{100 - displaySafeZone}%</p>
             </div>
           </div>
 
           <div className="w-full shrink-0">
-            <div className="relative h-14 rounded-full overflow-hidden">
-              <div className="absolute inset-0 bg-red-900/50" />
+            <div className="relative h-14 rounded-full overflow-hidden shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+              <div className="absolute inset-0 bg-loss-tint" />
               <div
-                className="absolute inset-y-0 left-0 bg-teal-700/80 transition-all duration-100"
+                className="absolute inset-y-0 left-0 bg-[#1f3a2d] transition-all duration-100"
                 style={{ width: `${displaySafeZone}%` }}
               />
               <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none select-none">
-                <span className="text-teal-100/50 text-sm font-bold">Safe</span>
-                <span className="text-red-200/50 text-sm font-bold">Danger</span>
+                <span className="text-felt text-sm font-semibold">Safe</span>
+                <span className="text-loss text-sm font-semibold">Danger</span>
               </div>
               <div
                 className="absolute inset-y-0 w-[3px] bg-white/40 overflow-visible"
                 style={{ left: `calc(${displaySafeZone}% - 1.5px)` }}
               >
-                <span className="absolute top-1/2 -translate-y-1/2 right-full pr-1.5 text-white/60 text-xs font-bold pointer-events-none select-none">←</span>
-                <span className="absolute top-1/2 -translate-y-1/2 left-full pl-1.5 text-white/60 text-xs font-bold pointer-events-none select-none">→</span>
+                <span className="absolute top-1/2 -translate-y-1/2 right-full pr-1.5 text-soft text-xs font-bold pointer-events-none select-none">←</span>
+                <span className="absolute top-1/2 -translate-y-1/2 left-full pl-1.5 text-soft text-xs font-bold pointer-events-none select-none">→</span>
               </div>
               {markerAt !== null && (
                 <div
                   className={`absolute top-[12%] bottom-[12%] w-[5px] rounded-full ${
                     markerOutcome === 'win'
-                      ? 'bg-emerald-400 shadow-lg shadow-emerald-400/60'
+                      ? 'bg-felt shadow-[0_0_14px_2px_rgba(79,174,132,0.7)]'
                       : markerOutcome === 'loss'
-                        ? 'bg-red-400 shadow-lg shadow-red-400/60'
+                        ? 'bg-loss shadow-[0_0_14px_2px_rgba(229,86,111,0.7)]'
                         : 'bg-white shadow-lg shadow-white/40'
                   }`}
                   style={{
@@ -285,13 +287,13 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default appearance-none"
               />
             </div>
-            <div className="flex justify-center mt-2 px-1 text-xs text-zinc-600">
+            <div className={`flex justify-center mt-2 px-1 ${BOARD_LABEL}`}>
               <span>{isBetting ? 'Drag to adjust' : `Rolled ${round.rollResult ?? '—'}`}</span>
             </div>
           </div>
 
           <div className="min-h-10 flex w-full shrink-0 items-center justify-center px-2">
-            <p className="text-center text-xs text-zinc-500">
+            <p className={BOARD_HINT}>
               {isBetting
                 ? `Roll 1–${displaySafeZone} wins · ${displaySafeZone + 1}–100 loses. Drag the bar to set risk.`
                 : isInProgress
@@ -317,9 +319,9 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -346,7 +348,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
                     type="button"
                     onClick={isSettled ? handleNextRound : handleRoll}
                     disabled={isBetting && !canRoll}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : 'Roll →'}
                   </button>

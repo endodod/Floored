@@ -26,11 +26,16 @@ const TOTAL_MS = ENTRY_MS + ROWS * SEGMENT_MS + LANDING_MS
 function easeIn(t: number): number { return t * t }
 function lerp(a: number, b: number, t: number): number { return a + (b - a) * t }
 
+function slotEdge(i: number, total: number): number {
+  return Math.abs(i - (total - 1) / 2) / ((total - 1) / 2)
+}
+
+// Dark at the centre, warming to the app's gold at the high-payout edges.
 function slotFill(i: number, total: number): string {
-  const edge = Math.abs(i - (total - 1) / 2) / ((total - 1) / 2)
-  const r = Math.round(36 + 23 * edge)
-  const g = Math.round(36 + 94 * edge)
-  const b = Math.round(42 + 204 * edge)
+  const edge = slotEdge(i, total)
+  const r = Math.round(33 + 184 * edge)
+  const g = Math.round(32 + 132 * edge)
+  const b = Math.round(35 + 30 * edge)
   return `rgb(${r},${g},${b})`
 }
 
@@ -155,12 +160,10 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
         </filter>
       </defs>
 
-      <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#111113" />
-
       {/* Pin grid */}
       {Array.from({ length: ROWS }, (_, row) =>
         Array.from({ length: row + 1 }, (_, col) => (
-          <circle key={`p${row}-${col}`} cx={pinX(row, col)} cy={pinY(row)} r={PIN_R} fill="#52525b" />
+          <circle key={`p${row}-${col}`} cx={pinX(row, col)} cy={pinY(row)} r={PIN_R} fill="rgba(255,255,255,0.32)" />
         ))
       )}
 
@@ -180,8 +183,8 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
             x={slotCenterX(i)}
             y={SLOT_BAND_TOP + SLOT_HEIGHT * 0.62}
             textAnchor="middle"
-            fill="white"
-            fontWeight="bold"
+            fill={slotEdge(i, SLOT_COUNT) > 0.55 ? '#171719' : '#ffffff'}
+            fontWeight="600"
             style={{ fontSize: 8 }}
           >
             {mult}x
@@ -201,8 +204,8 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
             cx={pos.x}
             cy={pos.y}
             r={BALL_R}
-            fill={isGolden ? '#fbbf24' : '#f4f4f5'}
-            stroke={isGolden ? '#f59e0b' : '#93c5fd'}
+            fill={isGolden ? '#d9a441' : '#ffffff'}
+            stroke={isGolden ? '#f0c060' : '#4fae84'}
             strokeWidth={1.5}
             filter={`url(#${glowId}${isGolden ? '-gold' : ''})`}
           />

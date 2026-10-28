@@ -64,6 +64,10 @@ export const GAME_DOCK_LEAVE_BTN =
 export const GAME_DOCK_PRIMARY_BTN =
   'btn-glow m-still min-w-[10.5rem] h-10 px-7 rounded-full bg-ink text-ground hover:bg-soft disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,box-shadow,transform] active:scale-[0.97]'
 
+/** Taking the money mid-round (Cash out): the felt pill, so the win action reads as a win. */
+export const GAME_DOCK_CASHOUT_BTN =
+  'm-still min-w-[10.5rem] h-10 px-7 rounded-full bg-felt text-ground hover:shadow-[0_0_26px_-4px_rgba(79,174,132,0.8)] disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,box-shadow,transform] active:scale-[0.97]'
+
 /** Secondary in-round action (Stand, Cash out alternatives): a raised pill. */
 export const GAME_DOCK_SECONDARY_BTN =
   'm-still min-w-[5.25rem] h-10 px-6 rounded-full bg-raised text-ink hover:bg-control font-semibold text-[14px] transition-[background-color,transform] active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed'

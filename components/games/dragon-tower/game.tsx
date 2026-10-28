@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_CASHOUT_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -18,6 +20,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, CELL_LOSS, CELL_MUTED, CELL_OPEN, CELL_PICKED, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -69,25 +72,25 @@ function tileStyle(
   blindspotSafe: boolean,
 ): string {
   const base =
-    'w-14 h-11 sm:w-16 sm:h-12 rounded-xl border-2 flex items-center justify-center text-lg font-bold transition-all duration-150 select-none'
+    'w-14 h-11 sm:w-16 sm:h-12 rounded-md border flex items-center justify-center text-lg font-semibold transition-all duration-150 select-none'
   if (row.picked === tileIdx) {
     return tileIdx === row.dragonAt
-      ? `${base} bg-red-800 border-red-500 text-white`
-      : `${base} bg-emerald-700 border-emerald-400 text-white`
+      ? `${base} ${CELL_LOSS}`
+      : `${base} ${CELL_WIN}`
   }
   if (row.revealed && tileIdx === row.dragonAt) {
-    return `${base} bg-red-950/50 border-red-800/50 text-red-700/70`
+    return `${base} ${CELL_LOSS} opacity-50`
   }
   if (row.picked !== null) {
-    return `${base} bg-zinc-800/30 border-zinc-800/30 text-transparent`
+    return `${base} ${CELL_MUTED} text-transparent`
   }
   if (blindspotSafe) {
-    return `${base} bg-emerald-950/50 border-emerald-600/70 text-emerald-300/80 ring-1 ring-emerald-500/40 cursor-pointer active:scale-95`
+    return `${base} ${CELL_PICKED} cursor-pointer active:scale-95`
   }
   if (isActive) {
-    return `${base} bg-zinc-700 border-zinc-500 text-zinc-400 hover:bg-fuchsia-900/60 hover:border-fuchsia-600 cursor-pointer active:scale-95`
+    return `${base} ${CELL_OPEN} cursor-pointer active:scale-95`
   }
-  return `${base} bg-zinc-800/50 border-zinc-700/40 text-transparent cursor-default`
+  return `${base} ${CELL_MUTED} text-transparent cursor-default`
 }
 
 function tileContent(row: TileRow, tileIdx: number): string {
@@ -216,7 +219,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
 
         <div className="flex flex-col items-center w-full max-w-xs shrink-0 gap-2">
           <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className="text-xs text-zinc-500 text-center px-2">
+            <p className={BOARD_HINT}>
               {isBetting
                 ? 'Climb floor by floor. Cash out after any safe tile, or keep going for higher multipliers.'
                 : isClimbing
@@ -238,20 +241,20 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                 <div
                   key={rowIdx}
                   className={[
-                    'flex items-center gap-2 rounded-xl px-2 py-1 transition-colors',
-                    isActive ? 'bg-fuchsia-950/30 ring-1 ring-fuchsia-800/50' : '',
-                    isCleared ? 'bg-zinc-900/40' : '',
+                    'flex items-center gap-2 rounded-md px-2 py-1 transition-colors',
+                    isActive ? 'bg-black/30 shadow-[inset_0_0_0_1px_var(--felt)]' : '',
+                    isCleared ? 'bg-black/20' : '',
                     isFuture ? 'opacity-40' : '',
                   ].join(' ')}
                 >
                   <div className="w-14 shrink-0 text-right">
                     <p
-                      className={`text-[10px] font-medium leading-none mb-0.5 ${isActive ? 'text-fuchsia-400' : isCleared ? 'text-zinc-500' : 'text-zinc-700'}`}
+                      className={`text-[10px] font-medium leading-none mb-0.5 ${isActive ? 'text-felt' : 'text-dim'}`}
                     >
                       F{floorNum}
                     </p>
                     <p
-                      className={`text-xs font-bold tabular-nums leading-none ${isActive ? 'text-white' : isCleared ? 'text-zinc-400' : 'text-zinc-600'}`}
+                      className={`num text-xs leading-none ${isActive ? 'text-ink' : isCleared ? 'text-soft' : 'text-dim'}`}
                     >
                       {mult.toFixed(2)}×
                     </p>
@@ -299,7 +302,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isClimbing && cashoutPayout === 0 && (
-              <p className="text-sm text-zinc-600">Clear a floor to unlock cash out.</p>
+              <p className="text-sm text-dim">Clear a floor to unlock cash out.</p>
             )}
             {isClimbing && cashoutPayout > 0 && <p className="text-sm invisible select-none">{'\u00A0'}</p>}
             {isSettled && pendingResult && (
@@ -323,19 +326,14 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                     type="button"
                     onClick={isSettled ? handleNext : isClimbing ? handleCashOut : handleStart}
                     disabled={(isBetting && !canStart) || (isClimbing && cashoutPayout === 0)}
-                    className={[
-                      'min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                      isClimbing && cashoutPayout > 0
-                        ? 'bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white'
-                        : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                    ].join(' ')}
+                    className={isClimbing && cashoutPayout > 0 ? GAME_DOCK_CASHOUT_BTN : GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled
                       ? 'Next →'
                       : isClimbing
                         ? cashoutPayout > 0
-                          ? `Cash Out — ${formatChips(cashoutPayout)}`
-                          : 'Cash Out'
+                          ? `Cash out — ${formatChips(cashoutPayout)}`
+                          : 'Cash out'
                         : 'Climb →'}
                   </button>
                 </>

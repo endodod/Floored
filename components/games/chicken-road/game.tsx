@@ -11,6 +11,8 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_CASHOUT_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
@@ -23,6 +25,7 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
+import { BOARD_HINT, BOARD_LABEL, BOARD_PANEL, BOARD_STAT_LABEL, BOARD_STAT_VALUE, CELL_CURRENT, CELL_IDLE, CELL_LOSS, CELL_MUTED, CELL_PICKED, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -204,10 +207,8 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
             {(() => {
               const chicken = (
                 <div
-                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-lg flex-shrink-0 ${
-                    currentStep === 0 && !isSettled
-                      ? 'border-yellow-400 bg-yellow-400/20'
-                      : 'border-white/20 bg-white/5'
+                  className={`w-8 h-8 rounded-full border flex items-center justify-center text-lg flex-shrink-0 ${
+                    currentStep === 0 && !isSettled ? CELL_CURRENT : CELL_IDLE
                   }`}
                 >
                   🐔
@@ -222,19 +223,19 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                 return (
                   <div key={i} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                     <div
-                      className={`h-0.5 w-3 sm:w-5 rounded-full transition-colors ${isPassed || isSafe ? 'bg-emerald-400' : 'bg-white/15'}`}
+                      className={`h-0.5 w-3 sm:w-5 rounded-full transition-colors ${isPassed || isSafe ? 'bg-felt' : 'bg-white/15'}`}
                     />
                     <div
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center text-xs font-semibold tabular-nums transition-all ${
                         isKilled
-                          ? 'border-red-500 bg-red-600 text-white scale-110'
+                          ? `${CELL_LOSS} scale-110`
                           : isCurrent
-                            ? 'border-yellow-400 bg-yellow-400/20 text-yellow-300 scale-110'
+                            ? `${CELL_CURRENT} scale-110`
                             : isSafe
-                              ? 'border-emerald-500 bg-emerald-600/40 text-emerald-300'
+                              ? CELL_WIN
                               : isPassed
-                                ? 'border-emerald-500 bg-emerald-600/40 text-emerald-300'
-                                : 'border-white/20 bg-white/5 text-white/30'
+                                ? CELL_PICKED
+                                : CELL_MUTED
                       }`}
                     >
                       {isKilled ? '💥' : stepNum}
@@ -264,7 +265,7 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                 </>
               )
             })()}
-            <div className="flex justify-between text-xs text-white/30 mt-2 px-1 h-4 shrink-0">
+            <div className={`flex justify-between ${BOARD_LABEL} mt-2 px-1 h-4 shrink-0`}>
               <span>Start</span>
               <span>
                 Step {currentStep} / {MAX_STEPS}
@@ -277,18 +278,18 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
               isBetting ? 'invisible pointer-events-none' : ''
             }`}
           >
-            <div className="bg-white/5 rounded-lg p-3 text-center">
-              <p className="text-white/40 text-xs mb-1">Step</p>
-              <p className="text-white font-semibold tabular-nums">{currentStep}</p>
+            <div className={`${BOARD_PANEL} p-3 text-center`}>
+              <p className={`${BOARD_STAT_LABEL} mb-1`}>Step</p>
+              <p className={BOARD_STAT_VALUE}>{currentStep}</p>
             </div>
-            <div className="bg-white/5 rounded-lg p-3 text-center">
-              <p className="text-white/40 text-xs mb-1">Multiplier</p>
-              <p className="text-white font-semibold tabular-nums">{formatMultiplier(round.multiplier)}</p>
+            <div className={`${BOARD_PANEL} p-3 text-center`}>
+              <p className={`${BOARD_STAT_LABEL} mb-1`}>Multiplier</p>
+              <p className={BOARD_STAT_VALUE}>{formatMultiplier(round.multiplier)}</p>
             </div>
           </div>
 
           <div className="min-h-10 flex w-full items-center justify-center px-2 shrink-0">
-            <p className="text-center text-xs text-zinc-500 max-w-md">
+            <p className={BOARD_HINT}>
               {isBetting
                 ? 'Advance step by step or cash out anytime. Each step raises the multiplier — and the danger.'
                 : isInProgress
@@ -316,9 +317,9 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -343,7 +344,7 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                   type="button"
                   onClick={handleStart}
                   disabled={!canStart}
-                  className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                  className={GAME_DOCK_PRIMARY_BTN}
                 >
                   Start →
                 </button>
@@ -354,16 +355,16 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                 <button
                   type="button"
                   onClick={handleAdvance}
-                  className="px-7 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors text-base shadow-lg"
+                  className={GAME_DOCK_PRIMARY_BTN}
                 >
                   Advance →
                 </button>
                 <button
                   type="button"
                   onClick={handleCashOut}
-                  className="px-7 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors text-base shadow-lg"
+                  className={GAME_DOCK_CASHOUT_BTN}
                 >
-                  Cash Out
+                  Cash out
                 </button>
               </div>
             )}

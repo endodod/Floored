@@ -47,7 +47,7 @@ export function CardFace({
   if (hidden) {
     return (
       <div
-        className={`rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl flex items-center justify-center overflow-hidden ${animCls}`}
+        className={`rounded-xl bg-raised border border-control shadow-2xl flex items-center justify-center overflow-hidden ${animCls}`}
         style={{ ...cardShell, ...dealStyle }}
       >
         <div className="rounded-lg border border-zinc-700" style={{ ...cardInner, background: CARD_BACK_PATTERN }} />
@@ -83,7 +83,7 @@ export function CardFace({
 export function CardBack() {
   return (
     <div
-      className="rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl flex items-center justify-center opacity-40"
+      className="rounded-xl bg-raised border border-control shadow-2xl flex items-center justify-center opacity-40"
       style={cardShell}
     >
       <div className="rounded-lg border border-zinc-700" style={{ ...cardInner, background: CARD_BACK_PATTERN }} />
