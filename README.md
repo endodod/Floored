@@ -71,15 +71,11 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 
 ## Survival
 
-Survival is a roguelike run mode layered on top of the same 18 games. Each run consists of 10 floors; every floor has a bankroll quota you must reach within a 5-minute timer or the run ends.
+Survival is a roguelike run mode layered on top of the same 18 games. Each run consists of 10 floors; every floor has a bankroll quota you must reach within 10 bets (`FLOOR_BET_LIMIT`) or the run ends. Clear floor 10 to win, or carry on into endless floors.
 
-**Difficulties**
+**Difficulty**
 
-| Difficulty | Quota multiplier | Shop price multiplier |
-|---|---|---|
-| Normal | ×1.0 | ×1.0 |
-| Hard | ×1.5 | ×1.5 |
-| Nightmare | ×2.5 | ×2.0 |
+Runs start on Normal. Hard (quota and shop prices ×1.5) and Nightmare (quota ×2.5, prices ×2.0) exist in `lib/survival/balance.ts` but have no picker in the UI.
 
 **Floor quotas (Normal)**
 
@@ -99,17 +95,19 @@ Sparks are the meta-currency earned by completing floors and missions. Spend the
 
 The shop appears between floors. It offers:
 - **Run upgrades** — passive boosts that apply for the rest of the run (e.g. payout multipliers)
-- **Game perks** — game-specific upgrades with tiered levels (e.g. Card Counter for Blackjack, Early Cashout for Crash)
-- **Consumables** — one-time-use items (e.g. extra lobby reroll tickets)
-- Shop inventory can be rerolled for an escalating sparks cost
+- **Game boosts and perks** — game-specific upgrades with five levels (e.g. Hole Card Reader for Blackjack, Crash Cushion for Crash)
+- **Consumables** — the Lobby Reroll Ticket (active items are designed but not built yet)
+- Each shop slot can be rerolled with a reroll ticket
 
 **Missions**
 
-Each floor has 3 randomly assigned missions (e.g. "win 3 rounds in a row", "hit a ×5 multiplier", "play Crash once"). Completing missions awards bonus sparks.
+Each floor has 3 seeded missions (e.g. "win 3 rounds in a row", "win at ×3 or more", "play Crash twice"), many requiring a multiple of the min bet. Completing missions awards bonus sparks.
 
 **Run end**
 
-A run ends when your bankroll hits $0 before the quota, time runs out, or you clear all 10 floors. A run summary is shown at the end.
+A run ends when your bankroll drops below the floor's minimum bet, when a floor's 10 bets are used without meeting the quota, or when you clear all 10 floors. A run summary is shown at the end.
+
+All survival numbers are listed in [.md/BALANCE_AUDIT.md](.md/BALANCE_AUDIT.md).
 
 ## Stack
 
@@ -137,12 +135,19 @@ Open http://localhost:3000 to run locally.
 ```
 app/
   daily/           # Daily challenge hub + game routes
-  freeplay/        # Freeplay game routes
-  survival/        # Survival game routes
+  ladder/          # Ladder hub + game routes
+  survival/        # Survival hub + game routes
+  freeplay/        # Freeplay lobby + game routes
+  how-to-play/     # Rules page per game
 components/        # React components and shared UI
+  games/           # One component per game
 games/             # Pure game engines and logic (TS)
-store/             # Zustand stores (daily, freeplay, survival, settings)
+store/             # Zustand stores (daily, ladder, freeplay, survival, settings)
 lib/
   daily/           # Daily challenge generation and sharing
+  ladder/          # Ladder rules and sharing
   survival/        # Survival logic (balance, floors, missions, perks, shop)
+.md/               # Project docs — start with ARCHITECTURE.md
 ```
+
+See [CLAUDE.md](CLAUDE.md) for the full list of project docs.

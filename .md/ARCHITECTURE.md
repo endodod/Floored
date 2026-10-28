@@ -1,0 +1,157 @@
+# Floored — Architecture & Conventions
+
+How the code is laid out and the rules that aren't obvious from reading it. For
+what the modes are and how they play, see the [README](../README.md).
+
+Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zustand
+(persisted to `localStorage`) · optional accounts via Neon Auth + Prisma/Postgres
+(only used to sync survival runs).
+
+---
+
+## Layout
+
+| Path | What lives there |
+|---|---|
+| `app/` | Routes. Each mode has a hub (`app/<mode>/page.tsx`) and one dynamic game route (`app/<mode>/[game]/page.tsx`) — there are no per-game page files. |
+| `app/how-to-play/[game]/` | Static rules page per game (content in `lib/game-tutorials.ts`). |
+| `app/account/` | Local settings, motion preference, dev mode, sign-in. |
+| `app/api/run/` | Survival run sync for signed-in players (`lib/survival/run-sync.ts`). |
+| `games/<name>/` | `types.ts` + `engine.ts` — pure game logic, no React. |
+| `components/games/<name>/game.tsx` | One React component per game, plus sub-components in the same folder. |
+| `components/` | Shared UI: navbar, lobby, game tiles, game chrome, mode intros, tutorials. |
+| `components/ui/` | Primitives: shadcn-style `button`, `dialog`, … and `terminal.tsx` (page title, section title, figure strip, unit tracks, suits). |
+| `lib/game-catalog.ts` | `GAMES[]` — label, subtitle and mode availability for every game. |
+| `lib/game-registry.tsx` | `GAME_REGISTRY` — the only file that imports all 18 game components. |
+| `lib/daily/`, `lib/ladder/`, `lib/survival/` | Mode rules. `lib/ladder/rules.ts` also holds `GAME_MAX_MULT` (the "up to …×" captions). |
+| `lib/features.ts` | `SURVIVAL_ENABLED`, `LADDER_ENABLED` — turning one off hides its entry points and 404s its routes. |
+| `store/` | Zustand stores: `freeplay`, `daily`, `ladder`, `survival`, `settings`; shared types in `store/types.ts`. |
+| `hooks/use-game-bankroll.ts` | `use{Freeplay,Survival,Daily,Ladder}GameBankroll` — each mode's bankroll math for the `[game]` pages. |
+| `utils/format.ts` | `formatChips`, `formatMultiplier` — always use these for money and multipliers. |
+| `utils/rng.ts` | Seeded RNG (`createRng`, `seedFromString`) for anything that must be reproducible (daily challenge, survival floors and missions). |
+
+---
+
+## Game architecture
+
+### Engine purity
+`games/<name>/engine.ts` is pure functions: no React, no side effects. All
+randomness lives in the engine; the component calls engine functions and holds
+UI state. Typical shape: `init<Game>()`, `start<Game>(bet)`, `<action>(state, …)`,
+`settle<Game>(state)`.
+
+### onResolve contract
+A game component never touches a bankroll store. It receives `bankroll`, `onBet`
+and `onResolve` from its `[game]` page and reports each round through
+`resolveGame(onResolve, { outcome, betAmount, payout, multiplier })`. The page's
+bankroll hook does the math (`bankroll - betAmount + payout`) and the mode's
+bookkeeping. A push returns the stake (`payout === betAmount`).
+
+### Modes inside a game
+Components take `mode: GameMode` (`freeplay | daily | ladder | survival`).
+Survival perks are read with `useSurvivalPerks(game)`; the minimum bet comes from
+`useGameMinBet`; run endings (bust, floor done, rung lost) from `useRunEnd`; the
+Ladder's all-in pot from `useLadderAllIn`. Dev curse/bless/force-tie toggles only
+apply in Freeplay and Survival, never in Daily or Ladder.
+
+### Match history
+The settled round's entry is staged in `pendingResult` and pushed into
+`matchHistory` on the **next** round (`handleNext`), so the player sees the
+result in the dock before it scrolls into history:
+`setMatchHistory((h) => [entry, ...h].slice(0, 80))`.
+
+### autoReBet
+`useSettingsStore().autoReBet` restores the last bet (and the last pick where a
+game has one — Chicken Race's chicken, Keno's numbers or quick pick) on Next.
+
+---
+
+## Game UI conventions
+
+Every game is built from the same shell, so the 18 tables look and behave alike.
+`components/games/mines/game.tsx` is a good reference.
+
+**Shell** (`components/game-layout.ts`): `GAME_CARD_SHELL` › `GAME_STATUS_BAR`
+(name left, message right) › `GameFieldWithHistory` with `GAME_BOARD_ARENA` (the
+felt table, with the history drawer) › `GAME_CONTROL_DOCK_M`.
+
+**Board** (`components/game-board-ui.ts`) — use these, don't hand-roll styles:
+- `BOARD_LABEL` for labels over board elements, `BOARD_HINT` for the one-line
+  hint under the board.
+- `BOARD_PANEL` (+ `BOARD_STAT_LABEL` / `BOARD_STAT_VALUE`) for pay tables and
+  stat boxes.
+- `BOARD_SEGMENTED` + `boardSegment(active)` for option toggles (risk, difficulty).
+- `boardChoice(active)` for big choices (Heads/Tails, Higher/Lower, Red/Black).
+- `BOARD_CELL` + one `CELL_*` state for grid cells: `IDLE`, `OPEN` (clickable),
+  `MUTED`, `PICKED`, `CURRENT`, `WIN`, `LOSS`, `GOLD`.
+
+**Dock** (`components/game-dock-parts.tsx`): `GAME_DOCK_INNER` with three rows —
+`GameDockChipRow` (chips, ¼, ½, All in; a quote while a round plays),
+`GAME_DOCK_SETTLED_SLOT` (`GameDockBetRow` while betting, `GameDockSettledRow`
+when settled), and `GAME_DOCK_ACTIONS`. Buttons: `GAME_DOCK_PRIMARY_BTN` (start /
+next / in-round action), `GAME_DOCK_CASHOUT_BTN` (taking money mid-round),
+`GAME_DOCK_SECONDARY_BTN`, `GameDockLeaveButton`, `GameDockSettledActions`,
+`GameDockGameOverButton`. `GameDockBackButton` shows the hub link and the
+**How to play** link top-left between rounds; `GameActiveBetBadge` shows the
+live bet there during a round.
+
+**Colour rules.** Felt green = selected or won, loss red = lost, gold = special
+(jackpots, the All-in pill). Greys come from the tokens (`ink`, `soft`, `dim`,
+`line`, `control`, …) in `app/globals.css` / `tailwind.config.ts` — no raw
+`zinc-*` or per-game accent colours. A game keeps its own colours only for the
+scene itself (cards, roulette pockets, wheel slices, the coin, case rarities),
+tuned to the palette (pockets and slices wear the chip colours). Tailwind's
+`/opacity` modifier does not work on the token colours (they are CSS variables
+holding hex) — use an arbitrary `rgba()` value instead.
+
+**Layout stability.** Nothing on the board or in the dock may move or resize
+between betting, playing and settled. Keep elements mounted and hide them with
+`invisible pointer-events-none`; use fixed-height slots (`min-h-10`, `h-9`)
+whose content swaps; prefer one adaptive button over several conditional ones.
+
+**Tailwind JIT.** Class names must appear literally in source. Never build them
+from data (`bg-${color}-500`); store colours as hex and apply them via `style`.
+
+---
+
+## Survival internals
+
+Constants and formulas live in `lib/survival/balance.ts`; the full numbers are in
+[BALANCE_AUDIT.md](BALANCE_AUDIT.md).
+
+- A floor ends after `FLOOR_BET_LIMIT` bets (no timer). Quota met → floor
+  complete panel → shop → `advanceFloor`; floor 10 cleared → victory or endless.
+- Runs always start on Normal. Hard/Nightmare exist in the balance tables
+  (`DIFFICULTY_QUOTA_MULT`, `DIFFICULTY_SHOP_PRICE_MULT`) but have no UI;
+  `components/difficulty-dialog.tsx` is not mounted.
+- Floors, missions and shop offers are seeded from the run seed
+  (`floor-generator.ts`, `missions.ts`, `shop-offers.ts`).
+- Upgrades: `upgrades-catalog.ts` (what exists), `upgrade-levels.ts` (per-level
+  values and costs), `survival-perks.ts` (reading them; the combined payout
+  multiplier is capped by `RAW_PAYOUT_MULT_CAP`).
+- Active items are designed but not built — see
+  [ACTIVE_ITEMS_SPEC.md](ACTIVE_ITEMS_SPEC.md).
+
+---
+
+## Dev mode
+
+Unlocked with a password in Account → Dev mode (`app/account/page.tsx`). Toggles:
+cursed / normal / blessed outcomes, force a HiLo tie, show all games in the
+survival lobby, infinite bets per floor, plus bankroll / sparks setters and
+grant / clear upgrades. Stored in `store/settings-store.ts`.
+
+---
+
+## Adding a new game
+
+1. `games/<name>/types.ts` and a pure `games/<name>/engine.ts`.
+2. Add `'<name>'` to `GameName` in `store/types.ts`.
+3. Add its entry to `GAMES[]` in `lib/game-catalog.ts` and its maximum
+   multiplier to `GAME_MAX_MULT` in `lib/ladder/rules.ts`.
+4. `components/games/<name>/game.tsx`, built from the shell, board and dock
+   pieces above.
+5. Register it in `GAME_REGISTRY` (`lib/game-registry.tsx`).
+6. Write its rules in `GAME_TUTORIALS` (`lib/game-tutorials.ts`).
+7. Survival: add it to `SURVIVAL_GAME_POOL` and give it a boost / perk track in
+   `upgrades-catalog.ts` if it should have one.
