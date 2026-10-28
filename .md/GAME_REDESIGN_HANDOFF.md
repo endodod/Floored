@@ -41,6 +41,10 @@ new chips, buttons and dock. What remains is each game's own board.
 | Dragon Tower | Done | Five floors of wide tiles (`dt-*`); active floor ringed in felt, cleared multipliers in gold; tower rebuilds on start; dragon row shakes; perk hint is a felt ring + dot |
 | Keno | Done | Same 5×5 layout as Mines; pick = white, hit = gold + glow, drawn-only = outlined, missed pick = dashed; picks breathe while the draw runs (`btile-wait`) |
 | Chicken Road | Done | Start curb + ten lane tiles (`cr-*`), two rows on portrait boards; drawn chicken token hops lane to lane (`cr-hop`); crash shows a burst and the road shakes |
+| Coin Flip | Done | Coin sized from the board (`cf-*`), picks and streak beside it on short boards; streak as gold pips; win = gold glow, loss = shake then dim. Reduced motion: the coin swaps to its result at the same moment (`coin-swap`) instead of spinning |
+| Over-Under | Done | Felt / loss track with a drawn handle (`ou-*`); marker moves by `transform` (same 620 ms); roll figure pops, bar glows on a win, shakes on a bust; short boards drop the hint. Reduced: marker travel 300 ms |
+| Run Dice | Done | Ivory dice with drawn pips (`Die` and `TotalTile`, local to the game: no other game rolls dice), sized by `--die` (`rd-*`); dice beside the map and figures on short boards; rolled cell pops in gold |
+| Street Cups | Done | Drawn mouth-down cups (`sc-*`) sized by `--cup` so a lifted cup stays below the badge band; slots move by `transform` (same 280 ms); drawn gold crown; picked cup glows felt or shakes red |
 | Others | See later batches | Only the shared chrome from `main` unless listed above |
 
 New shared pieces on this branch:
@@ -49,7 +53,7 @@ New shared pieces on this branch:
 - `app/globals.css` — `.board-fit` (every board is a size container named `board`), the **game motion kit** (`g-*` classes, read its comment block), `.pcard*` (cards), `.felt-print` (gold text printed on the felt), and per-game `@container board` blocks (`bj-*`, `hilo-*`, `poker-*`, `rl-*`) — copy their pattern.
 - `GameDockChipPicker`, `dockChips()`, `useOpeningTicketChip()` in `components/game-dock-parts.tsx` — the chip rack for games where chips are placed on a table (Roulette now; Keno may want it). Its chips are radios: in check scripts click them with `click:css=[aria-label="100 chip"]`.
 - `components/games/board-tile.tsx` — `BoardTile` (states hidden / idle / selected / safe / bad / hit / dormant, sized by `--tile`, cascades in with `g-pop`, turns up with `g-flip`) and `TileMark` (drawn gem / mine / flame). Styles: `.btile*` in `globals.css`. Modifiers: `btile-bad`, `btile-hint`, `btile-drawn`, `btile-miss`, `btile-wait`. Mines is the reference example.
-- `scripts/design-check/motion-check.cjs` — prints each element's animation under Motion = full and reduced.
+- `scripts/design-check/motion-check.cjs` — prints each element's animation under Motion = full and reduced. Steps take `click:css=<selector>` like `play-game.cjs`.
 
 ### Lessons from Phase 0 (read before the next game)
 
@@ -229,7 +233,7 @@ needs it (the tile in Batch 1), so nothing is written that no game uses yet.
 | Batch | Games | Shared piece | Kind of work |
 |---|---|---|---|
 | 1. Grids | Mines, Dragon Tower, Keno, Chicken Road | board tile | Restyle + tile flips, cascade in, mine shake |
-| 2. Dice & coins | Coin Flip, Over-Under, Run Dice, Street Cups | die / coin | Restyle + tumble, flip, cup shuffle |
+| 2. Dice & coins — DONE | Coin Flip, Over-Under, Run Dice, Street Cups | none shared (each board is its own object) | Restyle + tumble, flip, cup shuffle |
 | 3. Wheels & reels | Fortune Wheel, Slots | SVG wheel, reel strip | New design (wheel uses the Roulette approach) |
 | 4. Live curves | Crash, Chicken Race, Plinko | `CountUp`, felt-print grid | New design: drawn curve/track/pegboard on the felt |
 | 5. Case Battles | Case Battles | reel strip from batch 3 | New design; largest file, so it gets its own session |
