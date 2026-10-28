@@ -918,6 +918,54 @@ body > div.neon-auth-ui {
   }
 }
 
+/* Fortune Wheel sizing: the wheel takes the height left after the colour
+   picks and the hint line, and never more than the width. On short boards the
+   hint steps aside (the status bar already says the same); on short wide ones
+   the picks stand beside the wheel in a 2 x 2 block. */
+.fw-layout {
+  --wheel: clamp(7rem, min(calc(100cqh - 9.5rem), calc(100cqw - 2rem)), 20rem);
+}
+.fw-wheel {
+  width: var(--wheel);
+}
+@container board (max-height: 420px) {
+  .fw-layout {
+    --wheel: clamp(5.5rem, min(calc(100cqh - 6.25rem), calc(100cqw - 2rem)), 20rem);
+  }
+  .fw-hint {
+    display: none;
+  }
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 3 / 2) {
+  .fw-layout {
+    --wheel: clamp(5.5rem, calc(100cqh - 2.5rem), 20rem);
+    flex-direction: row;
+    gap: 2rem;
+  }
+  .fw-picks {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+  }
+}
+.fw-slice {
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+/* The pointer flicks against the studs while the wheel turns. */
+@keyframes fw-tick {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-9deg);
+  }
+}
+.fw-tick {
+  transform-box: fill-box;
+  transform-origin: 50% 85%;
+  animation: fw-tick 140ms ease-out infinite;
+}
+
 /* Roulette: the ball rides the outer track, then drops into the pocket ring and settles. */
 @keyframes roulette-ball-drop {
   0%,
@@ -1257,7 +1305,8 @@ body > div.neon-auth-ui {
   transition: none;
 }
 /* The wheel still lands on the result, just without the long spin. */
-:root[data-motion='reduced'] .roulette-anim {
+:root[data-motion='reduced'] .roulette-anim,
+:root[data-motion='reduced'] .fw-anim {
   transition-duration: 400ms !important;
 }
 :root[data-motion='reduced'] .rise,
@@ -1272,6 +1321,7 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .sheet-in li,
 :root[data-motion='reduced'] .quote-in,
 :root[data-motion='reduced'] .roulette-ball-drop,
+:root[data-motion='reduced'] .fw-tick,
 :root[data-motion='reduced'] .animate-in,
 :root[data-motion='reduced'] .g-deal,
 :root[data-motion='reduced'] .g-pop,
