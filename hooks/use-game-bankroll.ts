@@ -95,8 +95,12 @@ export function useSurvivalGameBankroll(game: GameName) {
     [bankroll, openingBetFree, openingTicketFreeCap],
   )
 
+  // Payout already credited by partial resolves (Plinko balls) in the current drop.
+  const roundCreditedRef = useRef(0)
+
   const handleBet = useCallback(
     (amount: number) => {
+      roundCreditedRef.current = 0
       const before = useSurvivalStore.getState()
       const isFirstBetThisFloor = before.history.filter((h) => h.floor === currentFloor).length === 0
       const isFree =
@@ -134,6 +138,7 @@ export function useSurvivalGameBankroll(game: GameName) {
           },
           { settleFloorBet: false },
         )
+        roundCreditedRef.current += result.payout
         return result as R & ResolvedGamePayload
       }
 
@@ -154,8 +159,9 @@ export function useSurvivalGameBankroll(game: GameName) {
       )
 
       const bankrollDelta = result.payoutAlreadyCredited
-        ? adjusted.payout - result.payout
+        ? adjusted.payout - roundCreditedRef.current
         : adjusted.payout
+      roundCreditedRef.current = 0
 
       recordResultPayout(
         {
