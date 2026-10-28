@@ -1954,6 +1954,20 @@ body > div.neon-auth-ui {
   }
 }
 
+/* Plinko: brass pegs and payout buckets drawn on the felt (components/
+   plinko-board.tsx). The bucket a ball lands in flashes in its own colour. */
+.pl-hit {
+  animation: pl-hit 520ms var(--ease-out) both;
+}
+@keyframes pl-hit {
+  from {
+    opacity: 0.75;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 /* Run Dice: ivory dice with drawn pips, sized by --die from the board. On a
    short, wide board the dice stand beside the outcome map and figures. */
 .rd-board {

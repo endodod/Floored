@@ -4,7 +4,7 @@ Status as of 2026-10-28. The site-wide redesign is merged into `main`. The
 **per-game** redesign is not merged: it started on `claude/game-redesign-wip`
 and continues on `claude/wizardly-newton-e10mfi` (which contains it). **Phase 0
 of the plan is done**: every board fits its space, the motion kit exists, and
-Blackjack, HiLo, Poker and Roulette are finished. Batches 1–3 and 5 are done: **Batch 4** in **The plan** is in progress (Crash done; Chicken Race and Plinko left).
+Blackjack, HiLo, Poker and Roulette are finished. Batches 1–5 are done: every game in **The plan** is redesigned.
 
 ## The ground rule
 
@@ -49,6 +49,7 @@ new chips, buttons and dock. What remains is each game's own board.
 | Case Battles | Done | Drawn cases, one metal per tier (`CaseArt`, local); every one of the 30 items has its own drawn icon (`item-icons.tsx`, keyed by item name; no shape reused across cases) in its rarity colour (`cb-r-*` sets `--rar`: common dim, uncommon soft, rare felt, epic/legendary gold with a glow); the name stays in the row (and in the tile title on short boards). Each case opens with a reel of that case's items (drawn by their odds) that slows to a stop on the real result under a gold marker (`cb-roll`). **Owner-approved timing change:** each case now takes 1.3 s to open (was 0.6 s for the first, 0.8 s after) so the reel can play out; a reroll rolls its new item up front and lands its reel the same way (same engine call, same odds). Losing side dims, winner gets a gold crown. Tall boards: You / Bot columns of rows sized by `--slot-h`; boards under 360px: two lanes of square tiles. Reduced: the reel lands in 400 ms. **Not checked in a browser: the reroll perk, Ladder** |
 | Crash | Done | Curve drawn on a felt-print grid (`cx-*`) that fills the board under the multiplier; gold gridlines with mono labels on the right, dashed 1× break-even; curve and figure are loss under 1×, felt to 3×, gold past 3× and on a cash-out; lit tip dot rides the curve (pulses while ready), crash leaves a burst and shakes the chart; figure sits below the badge band on portrait boards, hint dropped on short ones. Reduced: no pulse, no burst pop, no shake |
 | Chicken Race | Done | Four lanes on the felt (`crc-*`), height `--lane` from the board: gate with a numbered bib in the chicken's colour and its name, then a track with a faint lane mark and a chequered finish; drawn chicken (`ChickenRunner`, local, bib in its colour) moves by `transform` on the game's own 90 ms tick and bobs while running (`crc-run`); picked lane in felt, winner glows (gold if it was your pick) with a gold "1st", the rest dim; scout-crossed lane dashed with "Out". Short boards drop the label and hint. Reduced: no bob (travel kept, it carries the race) |
+| Plinko | Done | Board drawn on the felt (`components/plinko-board.tsx`): brass pegs with a drop shadow, a peg lights as a ball leaves it; buckets tinted by what they pay (loss under 1×, neutral at 1×, felt above, gold from 5×) with mono labels sized by length; the bucket a ball lands in flashes once (`pl-hit`, opacity only, kept under reduced); ivory balls, gold for the Golden Ball. Risk is a pill radio group (Mines' style), hidden while balls are in flight (the bet badge names the risk). Dock: stepper and Drop on the dock styles; fixed a pre-existing 360px clip of the chip row (its wrapper is now a column). On a ~195px board the pyramid is small but whole; bucket labels get small there |
 | Others | See later batches | Only the shared chrome from `main` unless listed above |
 
 New shared pieces on this branch:
@@ -239,7 +240,7 @@ needs it (the tile in Batch 1), so nothing is written that no game uses yet.
 | 1. Grids | Mines, Dragon Tower, Keno, Chicken Road | board tile | Restyle + tile flips, cascade in, mine shake |
 | 2. Dice & coins — DONE | Coin Flip, Over-Under, Run Dice, Street Cups | none shared (each board is its own object) | Restyle + tumble, flip, cup shuffle |
 | 3. Wheels & reels — DONE | Fortune Wheel, Slots | none shared (the Fortune Wheel copies Roulette's rim materials; the reel strip is vertical and local to Slots) | New design (wheel uses the Roulette approach) |
-| 4. Live curves | Crash, Chicken Race, Plinko | `CountUp`, felt-print grid | New design: drawn curve/track/pegboard on the felt |
+| 4. Live curves — DONE | Crash, Chicken Race, Plinko | none shared: the live figures already tick with the game, so no `CountUp` was needed; the grid is local to Crash | New design: drawn curve/track/pegboard on the felt |
 | 5. Case Battles — DONE | Case Battles | reel strip from batch 3 | New design; largest file, so it gets its own session |
 
 Batch order goes from cheapest to most expensive. The first two batches are

@@ -12,6 +12,7 @@ import {
 } from '@/components/game-layout'
 import {
   GAME_DOCK_INNER,
+  GAME_DOCK_PRIMARY_BTN,
   GameCurrentBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -283,7 +284,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex flex-col w-full h-full bg-[#111113]"
+        boardClassName="relative flex flex-col w-full h-full"
         entries={matchHistory}
         gameLabel="Plinko"
         emptyHint="No drops yet — results appear after each ball lands."
@@ -302,27 +303,26 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
         />
 
         <div className="flex-1 min-h-0 w-full flex flex-col">
-          <div className="flex flex-col items-center gap-1 pt-10 pb-1.5 sm:py-1.5">
-            <span className="text-xs text-zinc-600 font-semibold uppercase tracking-widest">Risk</span>
-            <div className="flex gap-2">
+          <div className="pl-top flex shrink-0 flex-col items-center gap-1 pt-12 pb-1 sm:pt-2.5">
+            <div className={`flex rounded-full bg-black/25 p-1 transition-opacity ${isDropping ? 'invisible opacity-0' : ''}`} role="radiogroup" aria-label="Risk">
               {(['low', 'medium', 'high'] as PlinkoRisk[]).map((r) => (
                 <button
                   key={r}
                   type="button"
+                  role="radio"
+                  aria-checked={risk === r}
                   disabled={isDropping}
                   onClick={() => setRisk(r)}
-                  className={`px-3 py-0.5 rounded text-xs font-semibold transition-colors capitalize
-                    ${risk === r
-                      ? 'bg-white text-zinc-900'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 disabled:hover:bg-zinc-800'
-                    } disabled:opacity-50`}
+                  className={`m-still h-7 rounded-full px-3 text-[12px] font-semibold transition-colors disabled:opacity-50 ${
+                    risk === r ? 'bg-ink text-ground' : 'text-dim hover:text-ink disabled:hover:text-dim'
+                  }`}
                 >
-                  {r}
+                  {r[0]!.toUpperCase() + r.slice(1)} risk
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 px-2 pb-2">
             <PlinkoBoard
               balls={balls}
               onBallComplete={handleBallComplete}
@@ -335,10 +335,10 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
       <div className={GAME_CONTROL_DOCK_M}>
         <div className={`${GAME_DOCK_INNER} min-h-0`}>
-          <div className="flex flex-1 min-h-0 w-full items-center justify-center">
+          <div className="flex flex-1 min-h-0 w-full flex-col items-center justify-center">
             {showGameOver && runStatus && (
               <p
-                className={`text-base font-bold text-center ${runStatus.tone === 'win' ? 'text-emerald-400' : runStatus.tone === 'loss' ? 'text-red-400' : 'text-zinc-300'}`}
+                className={`text-base font-bold text-center ${runStatus.tone === 'win' ? 'text-felt' : runStatus.tone === 'loss' ? 'text-loss' : 'text-soft'}`}
               >
                 {runStatus.text}
               </p>
@@ -366,24 +366,24 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
           <div className="flex flex-1 min-h-0 w-full items-center justify-center">
             <div className="flex h-7 items-center gap-1.5 flex-wrap justify-center">
-              <span className="text-zinc-500 text-xs">Balls</span>
+              <span className="text-[13px] text-dim">Balls</span>
               <button
                 type="button"
                 disabled={isDropping || ballCount <= MIN_BALLS}
                 onClick={() => setBallCount((c) => Math.max(MIN_BALLS, c - 1))}
-                className="w-7 h-7 rounded-md border border-zinc-700 hover:border-zinc-500 disabled:opacity-40 disabled:hover:border-zinc-700 text-zinc-300 hover:text-white font-bold text-sm leading-none transition-colors"
+                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
                 aria-label="Fewer balls"
               >
                 −
               </button>
-              <span className="font-bold text-sm text-white tabular-nums min-w-[1.25rem] text-center">
+              <span className="num min-w-[1.5rem] text-center text-[14px] font-semibold text-ink">
                 {ballCount}
               </span>
               <button
                 type="button"
                 disabled={isDropping || ballCount >= maxBalls}
                 onClick={() => setBallCount((c) => Math.min(maxBalls, c + 1))}
-                className="w-7 h-7 rounded-md border border-zinc-700 hover:border-zinc-500 disabled:opacity-40 disabled:hover:border-zinc-700 text-zinc-300 hover:text-white font-bold text-sm leading-none transition-colors"
+                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
                 aria-label="More balls"
               >
                 +
@@ -399,7 +399,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
                 type="button"
                 onClick={handleDrop}
                 disabled={!canDrop}
-                className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                className={GAME_DOCK_PRIMARY_BTN}
               >
                 Drop →
               </button>
