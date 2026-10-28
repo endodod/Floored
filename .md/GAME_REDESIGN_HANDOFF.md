@@ -1,9 +1,11 @@
 # Game redesign — handoff
 
-Status as of 2026-10-28. The site-wide redesign is merged into `main`. This
-branch (`claude/game-redesign-wip`) carries the **per-game** redesign, which is
-**work in progress and not merged**. Three games are done, Roulette is written
-but unverified, and fourteen games are untouched.
+Status as of 2026-10-28. The site-wide redesign is merged into `main`. The
+**per-game** redesign is not merged: it started on `claude/game-redesign-wip`
+and continues on `claude/wizardly-newton-e10mfi` (which contains it). **Phase 0
+of the plan is done**: every board fits its space, the motion kit exists, and
+Blackjack, HiLo, Poker and Roulette are finished. Fourteen games remain:
+start at **Batch 1** in **The plan**.
 
 ## The ground rule
 
@@ -31,38 +33,45 @@ new chips, buttons and dock. What remains is each game's own board.
 
 | Game | State | Notes |
 |---|---|---|
-| Blackjack | Done, checked at all sizes | Shared playing card, rules printed on an arc on the felt, dashed card spots, hand-total pills |
-| HiLo | Done, checked | Shared cards, gold streak pips (no 🔥), lit guess arrow, Higher/Lower and Cash out/Go again pills |
-| 1-Player Poker | Done, checked (phones included) | Gold printed pay table, held cards lift with a gold edge, winners glow; card size capped by screen width so five fit on a 360px phone |
-| Roulette | **Written, never seen in a browser** | Real SVG European wheel (37 pockets in true order) that spins to the pre-decided result while the ball orbits and drops; printed betting table with a chip on the bet; tracker-eliminated numbers dimmed |
+| Blackjack | Done | Shared card, rules on an arc, overlapping hands; side by side on short wide boards; deal, hole-card flip, winner glows, loser dims |
+| HiLo | Done | Card sized from the board; on short wide boards the guesses stand beside the cards and the streak moves up; right guess glows, wrong one shakes |
+| 1-Player Poker | Done | Gold pay table (in columns on short boards); five cards fit by board width and height; staggered deal, spring hold, scoring cards glow, dead hand dims |
+| Roulette | Done, verified in the browser | SVG wheel lands the settled number under the marker at every size; logic diffed against `main` (unchanged). Stacked / side by side / readout beside the wheel by board shape. **Not checked: the tracker perk in Survival** |
 | 14 others | Not started | Only the shared chrome from `main` |
 
 New shared pieces on this branch:
 
 - `components/games/playing-card.tsx` — one card for all card games (face, back, slot). Sized by the `--card-h` CSS variable.
-- `app/globals.css` — `.pcard*` classes (cards), `.felt-print` (gold text printed on the felt), roulette ball keyframes and wheel transform origin, reduced-motion rules for the wheel.
+- `app/globals.css` — `.board-fit` (every board is a size container named `board`), the **game motion kit** (`g-*` classes, read its comment block), `.pcard*` (cards), `.felt-print` (gold text printed on the felt), and per-game `@container board` blocks (`bj-*`, `hilo-*`, `poker-*`, `rl-*`) — copy their pattern.
+- `scripts/design-check/motion-check.cjs` — prints each element's animation under Motion = full and reduced.
 
-### Roulette: before you commit it
+### Lessons from Phase 0 (read before the next game)
 
-1. Play several rounds in a browser. Check that the wheel stops with the
-   winning number under the gold marker, that the settled result, payout and
-   history match the old version, and that the tracker perk still works in Survival.
-2. Pending fix that was not applied: the ball's resting position. In
-   `RouletteWheel` set the inner ball group's static `translateY(-60px)` to
-   `-61px`, and in `globals.css` change the `roulette-ball-drop` keyframes'
-   80% / 88% / 100% stops to `-58px` / `-64px` / `-61px`, so the ball rests in
-   the pocket ring instead of on the numbers.
-3. The spin logic was restructured: the old tick-based `spinningPosition`
-   animation was removed and replaced by CSS rotation (`wheelRotation`,
-   `ballRotation`). Result calculation, the 4600 ms settle, `resolveGame` and
-   `buildPendingResult` are unchanged, but diff it against `main` carefully.
+- **The board is the container, so it can't be styled by its own container
+  query.** Put layout classes on an inner wrapper (HiLo wraps its board
+  content in `.hilo-board`).
+- `--card-h` and friends may be set anywhere (cq units resolve where they are
+  used), but to override them in an `@container board` rule they must be set
+  on an element *inside* the board (Poker sets it on `.poker-hand`).
+- The top ~4rem of every board is taken by absolute badges: back button / bet
+  badge top-left, History top-right. Short layouts must leave that band clear.
+- The pattern that works for short screens: a **side-by-side layout** under
+  `@container board (max-height: …) and (min-aspect-ratio: …)`, plus sizes
+  written as "board height minus the fixed rows" (`calc(100cqh - Xrem)`)
+  with `clamp()` floors.
+- On short boards a hint line that only repeats something already on screen
+  may be hidden. Nothing a player needs may be hidden.
+- Reduced motion works through the `g-*` classes. A game that adds its own
+  animation must add it to the reduced-motion block.
+- The design checks skip shapes inside an SVG (an SVG clips its own content on purpose).
 
-## Known open issue: boards clip on short screens
+## Short screens: boards must fit, never scroll
 
-On a 1280×720 screen and at 150–200% browser zoom on a 1440×900 laptop, some
-boards clip their content vertically (up to ~78px) inside the arena's
-`overflow-hidden`, with no scroll. Seen on Blackjack, HiLo and Poker; probably
-others. Phones, tablets, 1080p and 1440p are clean.
+On a 1280×720 screen and at 150–200% browser zoom on a 1440×900 laptop (a
+board only ~195px tall), boards used to clip. The frame is fixed for every
+game: the arena drops its minimum height and the page trims its padding on
+short viewports, and the board is a size container. The four done games are
+fixed; **each remaining game must pass all eight views**, short ones included.
 
 **Never fix this with scrolling.** No game page, arena or board may scroll
 (no `overflow-auto`/`overflow-y-scroll`, no scrollable wrappers, no
@@ -182,7 +191,12 @@ code or redoing the same work in every game. Shared work comes first, then the
 games go in batches that share a board type, so each batch reuses the pieces
 the one before it built.
 
-### Phase 0: shared foundations (one session, before any more games)
+### Phase 0: shared foundations — DONE
+
+Items 1, 2 and 4 are done. Item 3's pieces (tile, die/coin, SVG wheel,
+`CountUp`) were **not** built up front: build each in the batch that first
+needs it (the tile in Batch 1), so nothing is written that no game uses yet.
+
 
 1. **Fit-to-space board.** Make the board wrapper in
    `components/game-match-history.tsx` a size container and add the
