@@ -102,7 +102,7 @@ export function GameFieldWithHistory({
 
   return (
     <div className={cn('relative min-h-0 w-full flex-1 overflow-hidden', className)}>
-      <div className={cn('relative min-h-0 min-w-0 h-full w-full overflow-hidden', boardClassName)}>
+      <div className={cn('board-fit relative min-h-0 min-w-0 h-full w-full overflow-hidden', boardClassName)}>
         {children}
 
         {showOutcomeLastBet ? (

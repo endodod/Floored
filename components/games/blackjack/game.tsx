@@ -21,9 +21,16 @@ import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { GAME_DOCK_PRIMARY_BTN, GAME_DOCK_SECONDARY_BTN } from '@/components/game-dock-parts'
 import { type BlackjackResult, useBlackjackGame } from '@/hooks/use-blackjack-game'
 
+/** Cards fill the board: stacked hands split its height, side-by-side hands (short, wide boards) take most of it. */
 const CARD_CSS: React.CSSProperties = {
-  '--card-h': 'clamp(4.25rem, 14vh, 8.5rem)',
+  '--card-h': 'clamp(3.5rem, calc((100cqh - 12.5rem) / 2), 8.5rem)',
 } as React.CSSProperties
+
+/** Cards in a hand overlap like a real deal, more so in long hands so they never wrap. */
+function fan(i: number, len: number): React.CSSProperties | undefined {
+  if (i === 0) return undefined
+  return { marginLeft: `calc(var(--card-h) * ${len > 4 ? -0.5 : -0.3})` }
+}
 
 /** A hand's label with its total as a mono pill; the pill lights up on 21. */
 function HandLabel({ who, total }: { who: string; total: number | null }) {
@@ -80,8 +87,13 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
     handleNextHand,
   } = useBlackjackGame({ mode, bankroll, onBet, onResolve })
 
+  // The outcome on the felt: the winning hand glows, the losing one falls back.
+  const outcome = round.stage === 'settled' ? round.outcome : null
+  const playerFx = outcome === 'win' ? 'g-win' : outcome === 'loss' ? 'g-dim' : ''
+  const dealerFx = outcome === 'loss' ? 'g-win' : outcome === 'win' ? 'g-dim' : ''
+
   return (
-    <div className={GAME_CARD_SHELL} style={CARD_CSS}>
+    <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Blackjack</span>
         <span className="text-[13px] text-dim">{round.message}</span>
@@ -99,9 +111,9 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
         )}
         <GameCurrentBetBadge betAmount={round.betAmount} visible={!isBetting && round.betAmount > 0} />
 
-        <div className="flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center gap-2">
+        <div className="bj-table flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center gap-2" style={CARD_CSS}>
           {/* Dealer zone */}
-          <div className="flex min-h-[calc(var(--card-h)+2rem)] flex-col items-center justify-end">
+          <div className="bj-hand flex min-h-[calc(var(--card-h)+2rem)] flex-col items-center justify-end">
             <HandLabel
               who="Dealer"
               total={
@@ -110,9 +122,9 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
                   : null
               }
             />
-            <div className="flex gap-2.5 flex-wrap items-end justify-center">
+            <div className="flex items-end justify-center">
               {displayedDealerHand.length === 0 ? (
-                <><CardBack /><CardBack /></>
+                <><CardBack /><CardBack style={fan(1, 2)} /></>
               ) : (
                 displayedDealerHand.map((card, i) => (
                   <CardFace
@@ -123,7 +135,9 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
                       !showDealerHole &&
                       (isInProgress || (isBetting && peekDealerLevel < 2))
                     }
-                    animDelay={i * 100}
+                    index={i}
+                    style={fan(i, displayedDealerHand.length)}
+                    className={dealerFx}
                   />
                 ))
               )}
@@ -131,8 +145,8 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
           </div>
 
           {/* The table print: payouts on an arc, the house rules beneath it */}
-          <div className="relative w-full max-w-md shrink-0 select-none" aria-label="Blackjack pays 3 to 2. Dealer hits 16 and below.">
-            <svg viewBox="0 0 400 54" className="w-full" aria-hidden>
+          <div className="bj-print relative w-full max-w-md shrink-0 select-none" aria-label="Blackjack pays 3 to 2. Dealer hits 16 and below.">
+            <svg viewBox="0 0 400 54" className="bj-arc w-full" aria-hidden>
               <defs>
                 <path id="bj-arc" d="M 24 44 Q 200 -6 376 44" />
               </defs>
@@ -143,29 +157,40 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
                 </textPath>
               </text>
             </svg>
+            <p className="bj-print-pays felt-print hidden text-center text-[11px] leading-relaxed" aria-hidden>
+              Blackjack pays 3 to 2
+              <br />
+              Win pays 1 to 1
+            </p>
             <p className="felt-print -mt-1 text-center text-[9.5px] opacity-80">
               Dealer hits 16 and below · Double on two cards · No split
             </p>
           </div>
 
           {/* Player zone */}
-          <div className="flex min-h-[calc(var(--card-h)+2rem)] flex-col items-center justify-start">
+          <div className="bj-hand bj-hand-you flex min-h-[calc(var(--card-h)+2rem)] flex-col items-center justify-start">
             <HandLabel
               who="You"
               total={playerVisibleLen > 0 ? calculateHandValue(round.playerHand.slice(0, playerVisibleLen)) : null}
             />
-            <div className="flex gap-2.5 flex-wrap items-end justify-center">
+            <div className="flex items-end justify-center">
               {round.playerHand.length === 0 ? (
-                <><CardBack /><CardBack /></>
+                <><CardBack /><CardBack style={fan(1, 2)} /></>
               ) : (
                 round.playerHand.map((card, i) => (
-                  <CardFace key={`p-${i}`} card={card} animDelay={i * 100} />
+                  <CardFace
+                    key={`p-${i}`}
+                    card={card}
+                    index={i}
+                    style={fan(i, round.playerHand.length)}
+                    className={playerFx}
+                  />
                 ))
               )}
             </div>
           </div>
 
-          <div className="min-h-10 flex w-full shrink-0 items-center justify-center">
+          <div className="bj-hint min-h-10 flex w-full shrink-0 items-center justify-center">
             <p className="max-w-md px-2 text-center text-[13px] text-dim">
               {isBetting
                 ? 'Place chips and deal. Blackjack pays 3:2; push returns your bet.'

@@ -414,6 +414,43 @@ body > div.neon-auth-ui {
   font-weight: 600;
 }
 
+/* Blackjack: on a short, wide board the hands sit side by side with the
+   table print between them, so the cards stay large instead of shrinking. */
+@container board (max-height: 430px) and (min-aspect-ratio: 9 / 5) {
+  .bj-table {
+    --card-h: clamp(3.5rem, calc(100cqh - 7rem), 8.5rem) !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 1fr auto;
+    align-items: center;
+    max-width: 56rem;
+    column-gap: 1.5rem;
+  }
+  .bj-table > .bj-hand {
+    justify-content: center;
+  }
+  .bj-table > .bj-print {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: 11rem;
+  }
+  .bj-table > .bj-hand-you {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .bj-table > .bj-hint {
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+  .bj-arc {
+    display: none;
+  }
+  .bj-print-pays {
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+}
+
 /* Roulette: the ball rides the outer track, then drops into the pocket ring and settles. */
 @keyframes roulette-ball-drop {
   0%,
@@ -590,6 +627,157 @@ body > div.neon-auth-ui {
   animation: quote-in 600ms ease both;
 }
 
+/* ── Board fit ──
+   Every game board (components/game-match-history.tsx) is a size container
+   named "board". Size cards, wheels, grids and gaps in cqh / cqw / cqmin with
+   clamp() floors so the board shrinks with the space it gets. Never scroll. */
+.board-fit {
+  container: board / size;
+}
+
+/* ── Game motion kit ──
+   One vocabulary for how every game board moves. Stagger with style --i (0, 1, 2…).
+   Each class is handled in the reduced-motion block below.
+   g-deal   arrives from the shoe/above with a slight arc          (decorative: off)
+   g-pop    pops into place                                          (decorative: off)
+   g-flip   turns face up                                            (result: quick fade)
+   g-win    felt glow pulses around a winner (needs position)        (pulse off, glow stays)
+   g-gold   the same in gold, for money and premium wins             (pulse off, glow stays)
+   g-dim    losers fall back instead of vanishing                    (kept, opacity only)
+   g-shake  a bust, a mine, a crash                                  (decorative: off)
+   g-lift   held/selected things rise with a spring (transition)     (no travel)
+   g-clear  leaves the table before the next round                   (decorative: off)
+   g-fade   generic fade in                                          (kept, opacity only) */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur-med: 280ms;
+  --dur-slow: 480ms;
+  --stagger: 80ms;
+}
+@keyframes g-deal {
+  from {
+    opacity: 0;
+    transform: translate(18px, -34px) rotate(6deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes g-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes g-flip {
+  from {
+    transform: perspective(700px) rotateY(90deg);
+  }
+  to {
+    transform: perspective(700px) rotateY(0deg);
+  }
+}
+@keyframes g-glow {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes g-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-6px) rotate(-1deg);
+  }
+  40% {
+    transform: translateX(5px) rotate(1deg);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+@keyframes g-clear {
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+@keyframes g-fade {
+  from {
+    opacity: 0;
+  }
+}
+.g-deal {
+  animation: g-deal var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+.g-pop {
+  animation: g-pop var(--dur-med) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+.g-flip {
+  animation: g-flip var(--dur-med) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+  backface-visibility: hidden;
+}
+.g-win::after,
+.g-gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 2px var(--felt),
+    0 0 28px -2px rgba(79, 174, 132, 0.9);
+  animation: g-glow 900ms var(--ease-out) both;
+}
+.g-gold::after {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 26px -4px rgba(217, 164, 65, 0.9);
+}
+.g-dim {
+  opacity: 0.4;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.g-shake {
+  animation: g-shake 420ms var(--ease-out) both;
+}
+.g-lift {
+  transition: transform var(--dur-med) var(--ease-spring);
+}
+.g-clear {
+  animation: g-clear var(--dur-med) ease-in both;
+}
+.g-fade {
+  animation: g-fade var(--dur-med) ease both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
 /* Reduced motion. <html data-motion> is set before first paint from the
    player's setting (Account → Settings → Motion), which defaults to the OS
    preference. Entrances, pulses and travel stop; colours and static glows stay.
@@ -618,13 +806,24 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .quote-in,
 :root[data-motion='reduced'] .roulette-ball-drop,
 :root[data-motion='reduced'] .animate-in,
+:root[data-motion='reduced'] .g-deal,
+:root[data-motion='reduced'] .g-pop,
+:root[data-motion='reduced'] .g-win::after,
+:root[data-motion='reduced'] .g-gold::after,
+:root[data-motion='reduced'] .g-shake,
+:root[data-motion='reduced'] .g-clear,
 :root[data-motion='reduced'] .animate-out {
   animation: none;
+}
+/* A result still has to read: flips become a quick fade. */
+:root[data-motion='reduced'] .g-flip {
+  animation: g-fade 150ms ease both;
 }
 /* Things that travel on hover or press stay put. */
 :root[data-motion='reduced'] .tile:not(:disabled):hover,
 :root[data-motion='reduced'] .tile:not(:disabled):active,
 :root[data-motion='reduced'] .m-still,
+:root[data-motion='reduced'] .g-lift,
 :root[data-motion='reduced'] .chip:not(:disabled):hover,
 :root[data-motion='reduced'] .chip:not(:disabled):active,
 :root[data-motion='reduced'] .m-still:hover,
