@@ -1,6 +1,6 @@
 export type PlinkoRisk = 'low' | 'medium' | 'high'
 
-export type PlinkoOutcome = 'win' | 'loss'
+export type PlinkoOutcome = 'win' | 'loss' | 'push'
 
 export interface PlinkoPath {
   /** One entry per row: true = ball goes right, false = left. */
