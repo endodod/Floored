@@ -62,10 +62,74 @@ New shared pieces on this branch:
 On a 1280×720 screen and at 150–200% browser zoom on a 1440×900 laptop, some
 boards clip their content vertically (up to ~78px) inside the arena's
 `overflow-hidden`, with no scroll. Seen on Blackjack, HiLo and Poker; probably
-others. Phones, tablets, 1080p and 1440p are clean. Likely fix: let the board
-scale with height (e.g. card and wheel sizes in `min(vh, vw)` terms, tighter
-gaps under `@media (max-height: 720px)`), or allow the arena to scroll
-vertically when its content is taller than it.
+others. Phones, tablets, 1080p and 1440p are clean.
+
+**Never fix this with scrolling.** No game page, arena or board may scroll
+(no `overflow-auto`/`overflow-y-scroll`, no scrollable wrappers, no
+"scroll to see more"). The whole board must always fit the space it is given.
+Fix clipping by making the board scale instead:
+
+- Make the board wrapper in `components/game-match-history.tsx` (the
+  `overflow-hidden` div at the board) a size container
+  (`container-type: size`), and size cards, wheels, grids and gaps in `cqh` /
+  `cqw` / `cqmin` units with `clamp()` floors (e.g.
+  `--card-h: clamp(4.5rem, 22cqh, 9rem)`), so every board shrinks with the
+  space it actually has rather than with the window.
+- Tighten gaps, padding and secondary labels under short heights
+  (`@container (max-height: …)` or `@media (max-height: 720px)`).
+- Move secondary info (pay tables, rules on the felt, history) into the
+  existing history drawer or a toggle only when it truly cannot fit.
+
+If the only fix that works would noticeably hurt the experience (cards too
+small to read, a pay table or rule hidden that players need, controls moved
+off the board, taps getting cramped on phones), **stop and ask the user before
+implementing it**, with a screenshot of the problem and the options.
+
+## Motion: every game gets fluent animations
+
+Each game should feel alive and smooth to play, not just look right when
+still. Every redesigned game (including the three done ones and Roulette) gets
+a pass of fluent animations, and **every one of them sits under the motion
+rule so it can be turned off** (Account → Settings → Motion; `<html
+data-motion="reduced">`, see `components/motion-preference.tsx`).
+
+What to animate (pick what fits the board; do not overdo it):
+
+- **Arrival:** cards dealt in from the shoe with a slight arc and stagger,
+  tiles/grids cascading in, wheel or reels settling into place.
+- **Feedback on input:** chips sliding onto a bet spot, selected tiles
+  pressing in, held cards lifting, the bet amount ticking.
+- **The reveal:** card flips (3D `rotateY`), tile flips, dice tumble and
+  land, coin flip, multiplier counting up, a short build of suspense before a
+  result where the game already waits for one.
+- **The outcome:** win glow/pulse on the winning cards, cells or pocket, a
+  payout count-up in the outcome strip, losing items dimming instead of
+  vanishing, a short shake or dull flash for a bust/mine.
+- **Leaving:** cards and chips clearing off the table before the next round
+  instead of disappearing.
+
+Rules:
+
+- Feel only. Animations must never change timing that the game logic relies
+  on (settle times, `resolveGame`, payout moments) and never delay input
+  longer than the current flow already does. If a nice animation would need a
+  longer wait or a logic change, ask first.
+- Use `transform` and `opacity` only (no layout-shifting properties), run at
+  60 fps on a phone, 150–450 ms for UI feedback, longer only for reveals.
+- One shared vocabulary in `app/globals.css` instead of per-game keyframes:
+  shared easing/duration variables (`--ease-out`, `--ease-spring`,
+  `--dur-fast`/`--dur-med`/`--dur-slow`) and reusable classes (`g-deal`,
+  `g-flip`, `g-pop`, `g-win`, `g-dim`, `g-shake`, `g-count`, stagger via
+  `--i`). Reuse the existing keyframes (`card-deal-in`, `card-reveal`,
+  `coin-*`, `dice-*`, `slot-*`, `case-item-*`) where they already fit.
+- **Every new animation class is added to the `:root[data-motion='reduced']`
+  block** in `globals.css`. Decorative motion (deal arcs, cascades, pulses,
+  shakes, hover lifts) is turned off; motion that *carries the result* (a
+  wheel landing, a reel stopping, a card turning face up) is shortened to a
+  quick fade or ≤ 400 ms move so the result still reads, as Roulette does.
+  Moving-on-hover elements get `m-still`.
+- Check each game twice: once with Motion = full and once with Motion =
+  reduced.
 
 ## How each game was approached
 
@@ -83,12 +147,10 @@ vertically when its content is taller than it.
 6. Respect reduced motion: new animations need a
    `:root[data-motion='reduced']` rule in `globals.css`; elements that move on
    hover/press get the `m-still` class.
-7. Check every size (below), then commit one game at a time.
+7. Add the fluent animations (see **Motion** above) with their reduced-motion rules.
+8. Check every size and both motion settings (below), then commit one game at a time.
 
-Suggested order for the rest, by how much each board needs:
-
-- Probably a new design: Fortune Wheel (pair it with the roulette wheel's SVG approach), Plinko, Slots, Crash, Case Battles, Chicken Race.
-- Probably a restyle: Mines, Dragon Tower, Chicken Road, Keno, Coin Flip, Over-Under, Run Dice, Street Cups.
+The order for the rest is in **The plan** at the end of this file.
 
 ## Checking a game
 
@@ -112,3 +174,71 @@ node scripts/design-check/play-game.cjs ./out/end.png /freeplay/roulette "click:
 `FAIL` names the view and what overflowed or was clipped; look at the
 screenshot in `./out` for that view. The checks catch overflow and clipping,
 not taste — always look at the screenshots too.
+
+## The plan: rework all games efficiently
+
+The aim is to spend tokens on design decisions and checking, not on re-reading
+code or redoing the same work in every game. Shared work comes first, then the
+games go in batches that share a board type, so each batch reuses the pieces
+the one before it built.
+
+### Phase 0: shared foundations (one session, before any more games)
+
+1. **Fit-to-space board.** Make the board wrapper in
+   `components/game-match-history.tsx` a size container and add the
+   `cq*`-based sizing variables (`--card-h`, `--tile`, `--wheel`,
+   `--board-gap`) to `globals.css`. Move Blackjack, HiLo and Poker onto them.
+   This fixes the clipping on short screens for every game at once, without scrolling.
+2. **Motion kit.** Add the shared easing/duration variables, the `g-*`
+   animation classes and their reduced-motion rules to `globals.css` (see
+   **Motion**). Write it once and give it a short comment block listing each
+   class, so later sessions read that block instead of the whole stylesheet.
+3. **Shared board pieces**, extracted only where two or more games need them:
+   - `components/games/playing-card.tsx` (exists): add deal and flip animation props.
+   - A board tile for grid games (Mines, Dragon Tower, Keno, Chicken Road):
+     hidden / revealed-safe / revealed-bad / selected states, flip animation, sized by `--tile`.
+   - A die and a coin for Run Dice, Over-Under, Coin Flip and Street Cups, if their faces overlap.
+   - An SVG wheel taken out of the Roulette wheel, so Fortune Wheel can reuse it.
+   - A `CountUp` figure for multipliers and payouts.
+4. **Finish Roulette** (play it, apply the ball fix, diff the spin logic) and
+   give Blackjack, HiLo, Poker and Roulette their animation pass with the kit.
+   They become the reference examples for the batches.
+
+### Phase 1–5: batches (one session per batch, one commit per game)
+
+| Batch | Games | Shared piece | Kind of work |
+|---|---|---|---|
+| 1. Grids | Mines, Dragon Tower, Keno, Chicken Road | board tile | Restyle + tile flips, cascade in, mine shake |
+| 2. Dice & coins | Coin Flip, Over-Under, Run Dice, Street Cups | die / coin | Restyle + tumble, flip, cup shuffle |
+| 3. Wheels & reels | Fortune Wheel, Slots | SVG wheel, reel strip | New design (wheel uses the Roulette approach) |
+| 4. Live curves | Crash, Chicken Race, Plinko | `CountUp`, felt-print grid | New design: drawn curve/track/pegboard on the felt |
+| 5. Case Battles | Case Battles | reel strip from batch 3 | New design; largest file, so it gets its own session |
+
+Batch order goes from cheapest to most expensive. The first two batches are
+restyles on top of the Phase 0 pieces, and by batch 3 the kit is proven.
+
+### Keeping token use low without cutting quality
+
+- **Start every session by reading only this file** and the `globals.css`
+  motion-kit comment, never the whole repo. Do not re-read games already done,
+  except the one reference example for the current batch.
+- **Read only the render part of a game.** Find the JSX return and the
+  class names with `grep` (`grep -n "className\|zinc-\|emerald-\|purple-"`),
+  and leave `engine.ts` and the hooks unread. The ground rule says they don't change.
+- **Make edits by hand, not by rewriting files.** Use small targeted edits
+  instead of rewriting a whole `game.tsx`, so the logic stays
+  untouched and the diff stays reviewable.
+- **Check in a fixed, minimal way.** Run `responsive-check` and
+  `play-responsive-check` once per game, read only the `FAIL` lines, and look
+  at three screenshots: phone, 720p and 1440p (plus one with
+  Motion = reduced). Open more only for a view that failed.
+- **Stop after each batch with a commit and a handoff update.** Tick the
+  game in the status table above and note any new shared piece. Then the next
+  session starts from this file, not from the conversation.
+- **Ask early, once per batch,** about anything that would hurt the
+  experience (see the no-scroll rule) or touch logic, rather than finding out after building it.
+
+Quality bar per game, unchanged by any of the above: tokens only (no stray
+palette colours), `num` on figures, dock buttons, no emoji, fits every size
+with no scroll and no clipping, fluent animations with full and reduced motion
+both checked, and gameplay identical to `main`.
