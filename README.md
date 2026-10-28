@@ -42,6 +42,10 @@ Choose any game, start with a healthy balance, and play without pressure or mini
 - No accounts or real-money transactions
 - Instant sessions, local state persisted for convenience
 
+### How to play
+
+Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutorials.ts`), linked from the game list on the home page and from the **How to play** button on each game board. It ends in a **Play in Freeplay** button.
+
 ### Games
 
 18 games, available in Freeplay, Survival and the Ladder, and drawn from for the Daily:

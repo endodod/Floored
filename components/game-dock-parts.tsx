@@ -2,7 +2,8 @@
 import type { GameMode } from '@/store/types'
 
 import type { CSSProperties, ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
 import { useOpeningTicketActive } from '@/hooks/use-opening-ticket'
 import { useIsLadderRoute } from '@/hooks/use-ladder-all-in'
@@ -72,6 +73,10 @@ export const GAME_DOCK_CASHOUT_BTN =
 export const GAME_DOCK_SECONDARY_BTN =
   'm-still min-w-[5.25rem] h-10 px-6 rounded-full bg-raised text-ink hover:bg-control font-semibold text-[14px] transition-[background-color,transform] active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed'
 
+const BOARD_CORNER_BTN =
+  'h-8 rounded-full border border-control bg-ground px-3.5 text-[13px] font-medium text-soft transition-colors hover:border-dim hover:text-ink'
+
+/** Top-left of the board between rounds: back to the mode's hub, and this game's How to play page. */
 export function GameDockBackButton({
   mode,
   visible,
@@ -80,15 +85,25 @@ export function GameDockBackButton({
   visible: boolean
 }) {
   const router = useRouter()
+  const game = useParams<{ game?: string }>()?.game
   if (!visible) return null
   return (
-    <button
-      type="button"
-      onClick={() => router.push(`/${mode}`)}
-      className="absolute left-3 top-3 z-10 h-8 rounded-full border border-control bg-ground px-3.5 text-[13px] font-medium text-soft transition-colors hover:border-dim hover:text-ink"
-    >
-      {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily' : mode === 'ladder' ? '← Ladder' : '← All games'}
-    </button>
+    <div className="absolute left-3 top-3 z-10 flex gap-2">
+      <button type="button" onClick={() => router.push(`/${mode}`)} className={BOARD_CORNER_BTN}>
+        {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily' : mode === 'ladder' ? '← Ladder' : '← All games'}
+      </button>
+      {game && (
+        <Link href={`/how-to-play/${game}`} className={`${BOARD_CORNER_BTN} inline-flex items-center gap-1.5`}>
+          <span
+            aria-hidden
+            className="flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] leading-none"
+          >
+            ?
+          </span>
+          How to play
+        </Link>
+      )}
+    </div>
   )
 }
 

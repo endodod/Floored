@@ -224,14 +224,14 @@ export function ModeSelect() {
       </ul>
 
       <section className="rise flex flex-col gap-4 [--d:420ms]" aria-labelledby="all-games">
-        <SectionTitle note="Opens in Freeplay">
+        <SectionTitle note="Tap a game to learn how it plays">
           <span id="all-games">All {GAMES.length} games</span>
         </SectionTitle>
         <ul className="grid grid-cols-1 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
           {GAMES.map((g) => (
             <li key={g.name} className="border-t border-rule">
               <Link
-                href={`/freeplay/${g.name}`}
+                href={`/how-to-play/${g.name}`}
                 className="m-instant group flex items-baseline justify-between gap-4 py-3 transition-[padding] duration-200 hover:pl-1.5"
               >
                 <span className="min-w-0">
