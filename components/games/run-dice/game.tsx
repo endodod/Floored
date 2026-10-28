@@ -286,9 +286,9 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   }
 
   function outcomeColor(val: number, cfg = gameConfig): string {
-    if (cfg.win.includes(val))  return 'bg-felt-tint text-felt'
-    if (cfg.loss.includes(val)) return 'bg-loss-tint text-loss'
-    return 'bg-black/25 text-dim'
+    if (cfg.win.includes(val))  return 'bg-[rgba(79,174,132,0.3)] border-black text-ink'
+    if (cfg.loss.includes(val)) return 'bg-loss-tint border-transparent text-loss'
+    return 'bg-black/25 border-transparent text-dim'
   }
 
   function dieTone(total: number): DieTone {
@@ -399,7 +399,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
               return (
                 <div
                   key={isLast ? `${val}-hit` : val}
-                  className={`relative rounded-md px-0.5 py-[clamp(0.25rem,1.4cqh,0.5rem)] text-center text-[12px] font-semibold ${outcomeColor(val)} ${
+                  className={`relative rounded-md border-2 px-0.5 py-[clamp(0.25rem,1.4cqh,0.5rem)] text-center text-[12px] font-semibold ${outcomeColor(val)} ${
                     isLast ? 'g-pop g-gold z-10' : ''
                   }`}
                 >

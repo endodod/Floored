@@ -245,11 +245,11 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
             >
               <div className="absolute inset-0 overflow-hidden rounded-full bg-loss-tint">
                 <div
-                  className="absolute inset-0 origin-left bg-felt-tint"
+                  className="absolute inset-0 origin-left bg-[rgba(79,174,132,0.3)]"
                   style={{ transform: `scaleX(${displaySafeZone / 100})` }}
                 />
                 {/* Thick outline drawn over both zones so the fill never covers it. */}
-                <div className="absolute inset-0 rounded-full border-4 border-control" />
+                <div className="absolute inset-0 rounded-full border-4 border-black" />
                 <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none select-none text-[12px] font-semibold">
                   <span className="text-felt opacity-70">Safe</span>
                   <span className="text-loss opacity-70">Danger</span>
