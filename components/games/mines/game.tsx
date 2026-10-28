@@ -11,11 +11,10 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
-  GAME_DOCK_CASHOUT_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -25,7 +24,6 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
-import { BOARD_CELL, BOARD_HINT, BOARD_PANEL, BOARD_SEGMENTED, boardSegment, CELL_IDLE, CELL_LOSS, CELL_MUTED, CELL_OPEN, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -54,6 +52,7 @@ import { useBless } from '@/hooks/use-bless'
 import type { MinesState } from '@/games/mines/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+import { BoardTile, TileMark, type BoardTileState } from '@/components/games/board-tile'
 
 const DIFFICULTIES: MinesState['difficulty'][] = ['easy', 'medium', 'hard', 'insane']
 
@@ -204,7 +203,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
       </div>
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative min-h-0 flex flex-col items-center justify-start pt-4 pb-4 px-4 md:px-6"
+        boardClassName="relative min-h-0"
         entries={matchHistory}
         gameLabel="Mines"
       >
@@ -218,87 +217,86 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
           visible={!isBetting}
         />
 
-        <div className="flex flex-col items-center w-full max-w-sm shrink-0 gap-2">
-          <div
-            className={`flex flex-wrap justify-center gap-3 h-10 items-center w-full shrink-0 ${
-              isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
-              <span className="text-dim">Safe left </span>
-              <span className="num text-ink">{round.remainingSafe}</span>
-            </div>
-            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
-              <span className="text-dim">Multiplier </span>
-              <span className="num text-ink">{formatMultiplier(round.multiplier)}</span>
-            </div>
-          </div>
-
-          <div
-            className={`flex justify-center h-9 items-center w-full shrink-0 ${
-              !isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            <div className={BOARD_SEGMENTED}>
-            {DIFFICULTIES.map((level) => (
-              <button
-                key={level}
-                type="button"
-                onClick={() => setDifficulty(level)}
-                className={boardSegment(difficulty === level)}
-              >
-                {DIFFICULTY_LABELS[level]}
-              </button>
-            ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full shrink-0">
-            {round.tiles.length > 0 ? (
-              round.tiles.map((tile) => {
-                const showOutcome = tile.revealed || isSettled
-                const dormantMine = isSettled && !tile.revealed && tile.hasMine
-                const dormantSafe = isSettled && !tile.revealed && !tile.hasMine
-                return (
+        <div className="grid5-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
+          {/* One slot: difficulty while betting, the round's figures after. */}
+          <div className="grid5-top flex h-9 shrink-0 items-center justify-center gap-2">
+            {isBetting ? (
+              <div className="flex rounded-full bg-black/25 p-1" role="radiogroup" aria-label="Difficulty">
+                {DIFFICULTIES.map((level) => (
                   <button
-                    key={tile.id}
+                    key={level}
                     type="button"
-                    onClick={() => handleTileClick(tile.id)}
-                    disabled={!isInProgress || tile.revealed}
-                    className={`h-12 ${BOARD_CELL} text-lg active:scale-95 sm:h-14 ${
-                      tile.revealed && tile.hasMine
-                        ? CELL_LOSS
-                        : tile.revealed && !tile.hasMine
-                          ? CELL_WIN
-                          : dormantMine
-                            ? `cursor-default ${CELL_LOSS} opacity-50`
-                            : dormantSafe
-                              ? `cursor-default ${CELL_MUTED}`
-                              : isInProgress
-                                ? `cursor-pointer ${CELL_OPEN}`
-                                : `cursor-default ${CELL_IDLE}`
+                    role="radio"
+                    aria-checked={difficulty === level}
+                    onClick={() => setDifficulty(level)}
+                    className={`m-still h-7 rounded-full px-3 text-[12px] font-semibold transition-colors ${
+                      difficulty === level ? 'bg-ink text-ground' : 'text-dim hover:text-ink'
                     }`}
                   >
-                    {showOutcome ? (tile.hasMine ? '💣' : '✓') : ''}
+                    {DIFFICULTY_LABELS[level]}
                   </button>
-                )
-              })
+                ))}
+              </div>
             ) : (
-              Array.from({ length: 25 }).map((_, i) => (
-                <div key={i} className={`h-12 sm:h-14 ${BOARD_CELL} ${CELL_IDLE}`} />
-              ))
+              <>
+                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
+                  <span className="text-dim">Safe left</span>
+                  <span className="num text-ink">{round.remainingSafe}</span>
+                </span>
+                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
+                  <span className="text-dim">Multiplier</span>
+                  <span key={round.multiplier} className={`num g-pop ${isSettled && round.outcome === 'loss' ? 'text-loss' : 'text-gold glow-gold'}`}>
+                    {formatMultiplier(round.multiplier)}
+                  </span>
+                </span>
+              </>
             )}
           </div>
 
-          <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className={BOARD_HINT}>
-              {isBetting
-                ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
-                : isInProgress
-                  ? 'Tap a tile to reveal it. Cash out to lock in your potential total winnings.'
-                  : '\u00A0'}
-            </p>
+          {/* The minefield: tiles cascade in, turn up with a flip, the board shakes on a mine. */}
+          <div
+            className={`grid5-grid grid shrink-0 grid-cols-5 [--stagger:40ms] gap-[calc(var(--tile)*0.14)] ${
+              isSettled && round.outcome === 'loss' ? 'g-shake' : ''
+            }`}
+          >
+            {round.tiles.length > 0
+              ? round.tiles.map((tile) => {
+                  const state: BoardTileState = tile.revealed
+                    ? tile.hasMine
+                      ? 'bad'
+                      : 'safe'
+                    : isSettled
+                      ? 'dormant'
+                      : isInProgress
+                        ? 'hidden'
+                        : 'idle'
+                  const mark = tile.revealed || isSettled ? (tile.hasMine ? 'mine' : 'gem') : null
+                  return (
+                    <BoardTile
+                      key={tile.id}
+                      state={state}
+                      index={(tile.id % 5) + Math.floor(tile.id / 5)}
+                      onClick={() => handleTileClick(tile.id)}
+                      disabled={!isInProgress || tile.revealed}
+                      label={mark ? (mark === 'mine' ? 'Mine' : 'Safe') : `Tile ${tile.id + 1}`}
+                      className={state === 'dormant' && tile.hasMine ? 'btile-bad' : ''}
+                    >
+                      {mark && <TileMark kind={mark} />}
+                    </BoardTile>
+                  )
+                })
+              : Array.from({ length: 25 }).map((_, i) => (
+                  <BoardTile key={`p${i}`} state="idle" index={(i % 5) + Math.floor(i / 5)} disabled label={`Tile ${i + 1}`} />
+                ))}
           </div>
+
+          <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
+            {isBetting
+              ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
+              : isInProgress
+                ? 'Tap a tile to reveal it. Cash out to lock in your potential total winnings.'
+                : '\u00A0'}
+          </p>
         </div>
       </GameFieldWithHistory>
 
@@ -317,9 +315,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && (
-              <p className="text-sm text-soft">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -343,9 +341,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
                     type="button"
                     onClick={isSettled ? handleNext : isInProgress ? handleCashOut : handleStart}
                     disabled={isBetting && !canStart}
-                    className={isInProgress ? GAME_DOCK_CASHOUT_BTN : GAME_DOCK_PRIMARY_BTN}
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
-                    {isSettled ? 'Next →' : isInProgress ? 'Cash out' : 'Start →'}
+                    {isSettled ? 'Next →' : isInProgress ? 'Cash Out' : 'Start →'}
                   </button>
                 </>
               )}

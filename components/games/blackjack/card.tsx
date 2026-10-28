@@ -1,40 +1,30 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { BlackjackCard } from '@/games/blackjack/types'
+import { PlayingCard } from '@/components/games/playing-card'
 
-export const CARD_BACK_PATTERN = 'repeating-linear-gradient(45deg, #27272a, #27272a 4px, #1f1f23 4px, #1f1f23 8px)'
-
-export const cardShell: React.CSSProperties = {
-  width:      'calc(var(--card-h) * 5 / 7)',
-  height:     'var(--card-h)',
-  flexShrink: 0,
-}
-
-export const cardInner: React.CSSProperties = {
-  width:  '70%',
-  height: '71%',
-}
-
-function isRedSuit(suit: string) {
-  return suit === '♥' || suit === '♦'
-}
-
+/** A dealt card: deals in from the shoe, turns face up when the dealer's hole card is revealed. */
 export function CardFace({
   card,
   hidden = false,
-  animDelay = 0,
+  index = 0,
+  className,
+  style,
 }: {
   card: BlackjackCard
   hidden?: boolean
-  animDelay?: number
+  /** Position in the hand: staggers the deal. */
+  index?: number
+  className?: string
+  style?: CSSProperties
 }) {
   const prevHidden = useRef(hidden)
-  const [animCls, setAnimCls] = useState<'card-deal-in' | 'card-reveal' | ''>('card-deal-in')
+  const [animCls, setAnimCls] = useState<'g-deal' | 'g-flip' | ''>('g-deal')
 
   useEffect(() => {
     if (prevHidden.current && !hidden) {
-      setAnimCls('card-reveal')
+      setAnimCls('g-flip')
       prevHidden.current = false
       const t = setTimeout(() => setAnimCls(''), 350)
       return () => clearTimeout(t)
@@ -42,51 +32,18 @@ export function CardFace({
     prevHidden.current = hidden
   }, [hidden])
 
-  const dealStyle = animCls === 'card-deal-in' ? { animationDelay: `${animDelay}ms` } : {}
-
-  if (hidden) {
-    return (
-      <div
-        className={`rounded-xl bg-raised border border-control shadow-2xl flex items-center justify-center overflow-hidden ${animCls}`}
-        style={{ ...cardShell, ...dealStyle }}
-      >
-        <div className="rounded-lg border border-zinc-700" style={{ ...cardInner, background: CARD_BACK_PATTERN }} />
-      </div>
-    )
-  }
-
-  const color = isRedSuit(card.suit) ? 'text-red-600' : 'text-zinc-900'
-
   return (
-    <div
-      className={`rounded-xl bg-white shadow-2xl flex flex-col justify-between border border-zinc-200 select-none overflow-hidden ${animCls}`}
-      style={{ ...cardShell, ...dealStyle, padding: 'calc(var(--card-h) * 0.07)' }}
-    >
-      <div className={`flex flex-col items-start leading-none ${color}`}>
-        <span className="font-black leading-none" style={{ fontSize: 'calc(var(--card-h) * 0.13)' }}>{card.rank}</span>
-        <span className="leading-none"            style={{ fontSize: 'calc(var(--card-h) * 0.11)' }}>{card.suit}</span>
-      </div>
-      <span
-        className={`leading-none self-center ${color}`}
-        style={{ fontSize: 'calc(var(--card-h) * 0.35)' }}
-      >
-        {card.suit}
-      </span>
-      <div className={`flex flex-col items-start rotate-180 leading-none ${color}`}>
-        <span className="font-black leading-none" style={{ fontSize: 'calc(var(--card-h) * 0.13)' }}>{card.rank}</span>
-        <span className="leading-none"            style={{ fontSize: 'calc(var(--card-h) * 0.11)' }}>{card.suit}</span>
-      </div>
-    </div>
+    <PlayingCard
+      variant={hidden ? 'back' : 'face'}
+      rank={card.rank}
+      suit={card.suit}
+      className={`${animCls} ${className ?? ''}`}
+      style={{ ...(animCls === 'g-deal' ? { '--i': index } : {}), ...style } as CSSProperties}
+    />
   )
 }
 
-export function CardBack() {
-  return (
-    <div
-      className="rounded-xl bg-raised border border-control shadow-2xl flex items-center justify-center opacity-40"
-      style={cardShell}
-    >
-      <div className="rounded-lg border border-zinc-700" style={{ ...cardInner, background: CARD_BACK_PATTERN }} />
-    </div>
-  )
+/** Where a card will land, before the deal: a dashed spot on the felt. */
+export function CardBack({ style }: { style?: CSSProperties }) {
+  return <PlayingCard variant="slot" style={style} />
 }

@@ -6,11 +6,10 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
-  GAME_DOCK_CASHOUT_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -20,7 +19,6 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
-import { BOARD_HINT, CELL_LOSS, CELL_MUTED, CELL_OPEN, CELL_PICKED, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -48,6 +46,7 @@ import { useBless } from '@/hooks/use-bless'
 import type { DragonTowerState, TileRow } from '@/games/dragon-tower/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+import { BoardTile, TileMark, type BoardTileState } from '@/components/games/board-tile'
 
 interface DragonTowerResult {
   outcome: 'win' | 'loss'
@@ -65,40 +64,10 @@ interface DragonTowerGameProps {
 
 type PendingResult = GamePendingResult
 
-function tileStyle(
-  row: TileRow,
-  tileIdx: number,
-  isActive: boolean,
-  blindspotSafe: boolean,
-): string {
-  const base =
-    'w-14 h-11 sm:w-16 sm:h-12 rounded-md border flex items-center justify-center text-lg font-semibold transition-all duration-150 select-none'
-  if (row.picked === tileIdx) {
-    return tileIdx === row.dragonAt
-      ? `${base} ${CELL_LOSS}`
-      : `${base} ${CELL_WIN}`
-  }
-  if (row.revealed && tileIdx === row.dragonAt) {
-    return `${base} ${CELL_LOSS} opacity-50`
-  }
-  if (row.picked !== null) {
-    return `${base} ${CELL_MUTED} text-transparent`
-  }
-  if (blindspotSafe) {
-    return `${base} ${CELL_PICKED} cursor-pointer active:scale-95`
-  }
-  if (isActive) {
-    return `${base} ${CELL_OPEN} cursor-pointer active:scale-95`
-  }
-  return `${base} ${CELL_MUTED} text-transparent cursor-default`
-}
-
-function tileContent(row: TileRow, tileIdx: number): string {
-  if (row.picked === tileIdx) {
-    return tileIdx === row.dragonAt ? '🐉' : '✓'
-  }
-  if (row.revealed && tileIdx === row.dragonAt) return '🐉'
-  return ''
+function tileState(row: TileRow, tileIdx: number, isActive: boolean): BoardTileState {
+  if (row.picked === tileIdx) return tileIdx === row.dragonAt ? 'bad' : 'safe'
+  if (row.revealed && tileIdx === row.dragonAt) return 'dormant'
+  return isActive ? 'hidden' : 'idle'
 }
 
 export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowerGameProps) {
@@ -203,7 +172,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 flex-col items-center justify-center px-4 py-4"
+        boardClassName="relative min-h-0"
         entries={matchHistory}
         gameLabel="Dragon Tower"
       >
@@ -217,49 +186,44 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
           visible={!isBetting && state.betAmount > 0}
         />
 
-        <div className="flex flex-col items-center w-full max-w-xs shrink-0 gap-2">
-          <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className={BOARD_HINT}>
-              {isBetting
-                ? 'Climb floor by floor. Cash out after any safe tile, or keep going for higher multipliers.'
-                : isClimbing
-                  ? 'Pick a safe tile on the active row. Hit the dragon and you lose your bet.'
-                  : '\u00A0'}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-1.5 w-full shrink-0">
+        <div className="dt-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
+          {/* The tower, top floor first. It rebuilds floor by floor when a climb starts. */}
+          <div
+            key={isBetting ? 'bet' : 'climb'}
+            className="dt-tower flex shrink-0 flex-col gap-[calc(var(--tile)*0.16)] [--stagger:45ms]"
+          >
             {Array.from({ length: NUM_ROWS }, (_, i) => NUM_ROWS - 1 - i).map((rowIdx) => {
               const row = state.rows[rowIdx]!
               const floorNum = rowIdx + 1
               const mult = FLOOR_MULTIPLIERS[rowIdx]!
               const isActive = isClimbing && rowIdx === state.activeRow
               const isCleared = rowIdx < state.activeRow
-              const isFuture = !isActive && !isCleared && !(isSettled && row.picked !== null)
+              const isFuture = !isSettled && !isActive && !isCleared
+              const hitDragon = row.picked !== null && row.picked === row.dragonAt
 
               return (
                 <div
                   key={rowIdx}
                   className={[
-                    'flex items-center gap-2 rounded-md px-2 py-1 transition-colors',
-                    isActive ? 'bg-black/30 shadow-[inset_0_0_0_1px_var(--felt)]' : '',
-                    isCleared ? 'bg-black/20' : '',
-                    isFuture ? 'opacity-40' : '',
+                    'flex items-center gap-[calc(var(--tile)*0.2)] rounded-[calc(var(--tile)*0.3)] px-[calc(var(--tile)*0.16)] py-[calc(var(--tile)*0.08)] transition-[background-color,box-shadow,opacity] duration-300',
+                    isActive ? 'bg-black/25 shadow-[inset_0_0_0_1px_rgba(79,174,132,0.55),0_0_24px_-10px_rgba(79,174,132,0.8)]' : '',
+                    isFuture ? 'opacity-45' : '',
+                    hitDragon && isSettled ? 'g-shake' : '',
                   ].join(' ')}
                 >
-                  <div className="w-14 shrink-0 text-right">
-                    <p
-                      className={`text-[10px] font-medium leading-none mb-0.5 ${isActive ? 'text-felt' : 'text-dim'}`}
-                    >
+                  <div className="w-[calc(var(--tile)*1.05)] shrink-0 text-right leading-none">
+                    <p className={`mb-1 text-[10px] font-semibold tracking-[0.12em] ${isActive ? 'text-felt' : 'text-dim'}`}>
                       F{floorNum}
                     </p>
                     <p
-                      className={`num text-xs leading-none ${isActive ? 'text-ink' : isCleared ? 'text-soft' : 'text-dim'}`}
+                      className={`num text-[max(10px,calc(var(--tile)*0.27))] ${
+                        isActive ? 'text-ink' : isCleared || (isSettled && row.picked !== null && !hitDragon) ? 'text-gold' : 'text-dim'
+                      }`}
                     >
                       {mult.toFixed(2)}×
                     </p>
                   </div>
-                  <div className="flex gap-1.5 flex-1 justify-center">
+                  <div className="flex gap-[calc(var(--tile)*0.16)]">
                     {Array.from({ length: TILES_PER_ROW }, (_, ti) => {
                       const safeHintTile = [0, 1, 2].find((t) => t !== row.dragonAt) ?? 0
                       const blindspotSafe =
@@ -268,22 +232,39 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                         state.activeRow < 2 &&
                         row.picked === null &&
                         ti === safeHintTile
+                      const tState = tileState(row, ti, isActive)
+                      const mark = tState === 'safe' ? 'gem' : tState === 'bad' || tState === 'dormant' ? 'flame' : null
                       return (
-                      <button
-                        key={ti}
-                        type="button"
-                        disabled={!isActive}
-                        onClick={() => isActive && handlePickTile(ti)}
-                        className={tileStyle(row, ti, isActive, blindspotSafe)}
-                      >
-                        {blindspotSafe ? '·' : tileContent(row, ti)}
-                      </button>
-                    )})}
+                        <BoardTile
+                          key={ti}
+                          state={tState}
+                          index={NUM_ROWS - 1 - rowIdx + ti}
+                          disabled={!isActive}
+                          onClick={() => isActive && handlePickTile(ti)}
+                          label={mark === 'flame' ? 'Dragon' : mark === 'gem' ? 'Safe' : `Floor ${floorNum}, tile ${ti + 1}`}
+                          className={`dt-tile ${tState === 'dormant' ? 'btile-bad' : ''} ${blindspotSafe ? 'btile-hint' : ''}`}
+                        >
+                          {mark ? (
+                            <TileMark kind={mark} />
+                          ) : blindspotSafe ? (
+                            <span className="h-1.5 w-1.5 rounded-full bg-felt shadow-[0_0_8px_rgba(79,174,132,0.9)]" />
+                          ) : null}
+                        </BoardTile>
+                      )
+                    })}
                   </div>
                 </div>
               )
             })}
           </div>
+
+          <p className="dt-hint flex min-h-9 max-w-xs shrink-0 items-center px-2 text-center text-[13px] text-dim">
+            {isBetting
+              ? 'Climb floor by floor. Cash out after any safe tile, or keep going for higher multipliers.'
+              : isClimbing
+                ? 'Pick a safe tile on the active row. Hit the dragon and you lose your bet.'
+                : '\u00A0'}
+          </p>
         </div>
       </GameFieldWithHistory>
 
@@ -302,7 +283,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isClimbing && cashoutPayout === 0 && (
-              <p className="text-sm text-dim">Clear a floor to unlock cash out.</p>
+              <p className="text-[13px] text-dim">Clear a floor to unlock cash out.</p>
             )}
             {isClimbing && cashoutPayout > 0 && <p className="text-sm invisible select-none">{'\u00A0'}</p>}
             {isSettled && pendingResult && (
@@ -326,14 +307,14 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                     type="button"
                     onClick={isSettled ? handleNext : isClimbing ? handleCashOut : handleStart}
                     disabled={(isBetting && !canStart) || (isClimbing && cashoutPayout === 0)}
-                    className={isClimbing && cashoutPayout > 0 ? GAME_DOCK_CASHOUT_BTN : GAME_DOCK_PRIMARY_BTN}
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled
                       ? 'Next →'
                       : isClimbing
                         ? cashoutPayout > 0
-                          ? `Cash out — ${formatChips(cashoutPayout)}`
-                          : 'Cash out'
+                          ? <>Cash Out <span className="num ml-1">{formatChips(cashoutPayout)}</span></>
+                          : 'Cash Out'
                         : 'Climb →'}
                   </button>
                 </>

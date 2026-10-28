@@ -5,10 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -18,7 +18,6 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
-import { BOARD_HINT, BOARD_LABEL, CELL_IDLE, CELL_MUTED, CELL_OPEN, CELL_PICKED } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -49,6 +48,19 @@ import { useBless } from '@/hooks/use-bless'
 import type { ChickenRaceState } from '@/games/chicken-race/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+
+/** A racing chicken, drawn (no emoji), wearing its lane colour as a bib. */
+function ChickenRunner({ color, running }: { color: string; running: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`crc-chicken h-full w-full ${running ? 'crc-run' : ''}`} aria-hidden>
+      <path d="M10.2 4.6c.4-1.5 2-1.9 2.6-.8.7-1.1 2.4-.6 2.2.9" fill="var(--loss)" />
+      <circle cx="12" cy="13" r="7.2" fill="var(--ink)" />
+      <path d="M5.4 15.6a7.2 7.2 0 0 0 13.2 0z" fill={color} />
+      <path d="M18.7 12.2 22 13.4l-3.3 1.2z" fill="var(--gold)" />
+      <circle cx="14.6" cy="11.2" r="1.15" fill="var(--ground)" />
+    </svg>
+  )
+}
 
 interface ChickenRaceResult {
   outcome: 'win' | 'loss'
@@ -226,7 +238,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center px-4 py-4"
+        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center px-3 pt-14 pb-2"
         entries={matchHistory}
         gameLabel="Chicken Race"
       >
@@ -247,11 +259,10 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
           visible={activeBet > 0 && !isBetting}
         />
 
-        <div className="flex min-h-0 flex-1 w-full flex-col items-center">
-          <div className="min-h-0 flex-1 shrink" aria-hidden />
-          <div className="flex w-full max-w-sm flex-col gap-2.5 shrink-0">
-            <p className={`${BOARD_LABEL} px-1`}>Pick your chicken</p>
+        <div className="crc-board flex w-full max-w-2xl min-h-0 flex-1 flex-col justify-center gap-[clamp(0.3rem,2cqh,0.75rem)]">
+          <p className="crc-label felt-print px-1">{isBetting ? 'Pick your chicken' : 'Race'}</p>
 
+          <div className="flex flex-col gap-[clamp(0.25rem,1.6cqh,0.6rem)]">
             {CHICKENS.map((chicken) => {
               const isSelected = state.pickedChicken === chicken.id
               const isWinner = isSettled && state.winner === chicken.id
@@ -266,73 +277,60 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
                   type="button"
                   disabled={!isBetting || isScoutCrossed}
                   onClick={() => selectChicken(chicken.id)}
+                  aria-pressed={isSelected}
+                  style={{ '--i': chicken.id } as React.CSSProperties}
                   className={[
-                    'w-full rounded-md border px-3 py-2.5 text-left transition-all duration-150 relative',
+                    'crc-lane g-fade m-still relative flex w-full items-stretch rounded-[10px] border text-left transition-[border-color,background-color,opacity] duration-150',
                     isScoutCrossed
-                      ? `${CELL_MUTED} opacity-50 cursor-not-allowed`
-                      : isBetting
-                        ? isSelected
-                          ? `${CELL_PICKED} cursor-pointer`
-                          : `${CELL_OPEN} cursor-pointer`
-                        : isWinner
-                          ? 'bg-black/25'
-                          : isLoser
-                            ? `${CELL_MUTED} opacity-40`
-                            : CELL_IDLE,
+                      ? 'border-dashed border-loss/50 bg-ground/30 opacity-50 cursor-not-allowed'
+                      : isSelected
+                        ? 'border-felt bg-felt-tint/80'
+                        : 'border-line bg-ground/40',
+                    isBetting && !isScoutCrossed ? 'cursor-pointer hover:border-dim' : '',
+                    isWinner ? (isSelected ? 'g-gold' : 'g-win') : '',
+                    isLoser ? 'g-dim' : '',
                   ].join(' ')}
-                  style={isWinner ? { borderColor: chicken.color, backgroundColor: `${chicken.color}18` } : undefined}
                 >
-                  {isScoutCrossed && (
-                    <span className="absolute right-2 top-2 text-xs font-semibold text-loss">✕ Out</span>
-                  )}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg leading-none">🐔</span>
-                      <span
-                        className="text-sm font-semibold text-ink"
-                        style={{ color: isSelected ? 'var(--felt)' : isWinner ? chicken.color : undefined }}
-                      >
-                        {chicken.name}
-                      </span>
-                    </div>
+                  <span className="crc-gate flex shrink-0 items-center gap-2 border-r border-black/40 px-2">
                     <span
-                      className={`text-xs font-semibold ${isWinner ? '' : 'invisible'}`}
-                      style={{ color: chicken.color }}
+                      className="crc-bib num grid shrink-0 place-items-center rounded-full font-semibold text-ground"
+                      style={{ backgroundColor: chicken.color }}
                     >
-                      Winner!
+                      {chicken.id + 1}
                     </span>
-                  </div>
+                    <span className={`min-w-0 truncate text-[13px] font-semibold ${isSelected ? 'text-felt' : 'text-ink'}`}>
+                      {chicken.name}
+                    </span>
+                    {isScoutCrossed && <span className="ml-auto text-[12px] font-semibold text-loss">Out</span>}
+                  </span>
 
-                  <div className="relative">
-                    <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${prog}%`, backgroundColor: chicken.color, transition: 'none' }}
-                      />
-                    </div>
-                    <div
-                      className={`absolute -top-1 text-base leading-none pointer-events-none ${isBetting ? 'invisible' : ''}`}
-                      style={{ left: `calc(${prog}% - 10px)`, transition: 'none' }}
+                  <span className="crc-track relative min-w-0 flex-1 overflow-hidden rounded-r-[9px]">
+                    <span className="crc-lanemark absolute inset-x-0 top-1/2" aria-hidden />
+                    <span className="crc-finish absolute inset-y-0 right-0" aria-hidden />
+                    {isWinner && (
+                      <span className="num g-pop absolute left-2 top-1/2 -mt-[0.6em] text-[12px] font-semibold leading-[1.2] text-gold">1st</span>
+                    )}
+                    <span
+                      className="crc-runner absolute inset-y-0 left-1"
+                      style={{ transform: `translateX(${prog}%)` }}
                     >
-                      🐔
-                    </div>
-                  </div>
-                  <div className="h-4" />
+                      <span className="crc-token block">
+                        <ChickenRunner color={chicken.color} running={isRacing} />
+                      </span>
+                    </span>
+                  </span>
                 </button>
               )
             })}
-
-            <div className="min-h-10 flex w-full items-center justify-center px-2">
-              <p className={BOARD_HINT}>
-                {isBetting
-                  ? 'Pick a chicken, place chips, then race.'
-                  : isRacing
-                    ? 'Race in progress…'
-                    : '\u00A0'}
-              </p>
-            </div>
           </div>
-          <div className="min-h-0 flex-1 shrink" aria-hidden />
+
+          <p className="crc-hint px-2 text-center text-[13px] text-dim">
+            {isBetting
+              ? 'Pick a chicken, place chips, then race.'
+              : isRacing
+                ? 'Race in progress…'
+                : '\u00A0'}
+          </p>
         </div>
       </GameFieldWithHistory>
 
@@ -351,9 +349,9 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isRacing && potentialWinnings > 0 && (
-              <p className="text-sm text-soft">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (

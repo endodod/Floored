@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Ambience />
         <AuthProvider>
           <Navbar />
-          <main className="relative z-10 container mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 min-h-0 flex flex-col overflow-y-auto">
+          <main className="relative z-10 container mx-auto px-4 sm:px-6 py-4 sm:py-6 [@media(max-height:640px)]:py-2 flex-1 min-h-0 flex flex-col overflow-y-auto">
             {children}
           </main>
         </AuthProvider>

@@ -75,32 +75,31 @@ Every game is built from the same shell, so the 18 tables look and behave alike.
 (name left, message right) › `GameFieldWithHistory` with `GAME_BOARD_ARENA` (the
 felt table, with the history drawer) › `GAME_CONTROL_DOCK_M`.
 
-**Board** (`components/game-board-ui.ts`) — use these, don't hand-roll styles:
-- `BOARD_LABEL` for labels over board elements, `BOARD_HINT` for the one-line
-  hint under the board.
-- `BOARD_PANEL` (+ `BOARD_STAT_LABEL` / `BOARD_STAT_VALUE`) for pay tables and
-  stat boxes.
-- `BOARD_SEGMENTED` + `boardSegment(active)` for option toggles (risk, difficulty).
-- `boardChoice(active)` for big choices (Heads/Tails, Higher/Lower, Red/Black).
-- `BOARD_CELL` + one `CELL_*` state for grid cells: `IDLE`, `OPEN` (clickable),
-  `MUTED`, `PICKED`, `CURRENT`, `WIN`, `LOSS`, `GOLD`.
+**Board.** Each game draws its own board on the felt; the per-game redesign and
+its rules are in [GAME_REDESIGN_HANDOFF.md](GAME_REDESIGN_HANDOFF.md) — read it
+before changing a board. Shared pieces:
+- `components/games/board-tile.tsx` — `BoardTile` / `TileMark` for grid games
+  (Mines is the reference; Keno, Dragon Tower and Chicken Road use it too).
+- `components/games/playing-card.tsx` — the one card for every card game.
+- `app/globals.css` — `.board-fit` (every board is a size container named
+  `board`, so sizes use `cqh`/`cqw` with `clamp()` floors), the motion kit
+  (`g-*` classes), `.felt-print`, and per-game `@container board` blocks.
+- Boards must fit their space at every size and never scroll.
 
 **Dock** (`components/game-dock-parts.tsx`): `GAME_DOCK_INNER` with three rows —
 `GameDockChipRow` (chips, ¼, ½, All in; a quote while a round plays),
 `GAME_DOCK_SETTLED_SLOT` (`GameDockBetRow` while betting, `GameDockSettledRow`
 when settled), and `GAME_DOCK_ACTIONS`. Buttons: `GAME_DOCK_PRIMARY_BTN` (start /
-next / in-round action), `GAME_DOCK_CASHOUT_BTN` (taking money mid-round),
-`GAME_DOCK_SECONDARY_BTN`, `GameDockLeaveButton`, `GameDockSettledActions`,
-`GameDockGameOverButton`. `GameDockBackButton` shows the hub link and the
+next / in-round action), `GAME_DOCK_SECONDARY_BTN`, `GameDockLeaveButton`, `GameDockSettledActions`,
+`GameDockGameOverButton`; `GameDockChipPicker` for games where chips are placed
+on a table (Roulette). `GameDockBackButton` shows the hub link and the
 **How to play** link top-left between rounds; `GameActiveBetBadge` shows the
 live bet there during a round.
 
 **Colour rules.** Felt green = selected or won, loss red = lost, gold = special
-(jackpots, the All-in pill). Greys come from the tokens (`ink`, `soft`, `dim`,
-`line`, `control`, …) in `app/globals.css` / `tailwind.config.ts` — no raw
-`zinc-*` or per-game accent colours. A game keeps its own colours only for the
-scene itself (cards, roulette pockets, wheel slices, the coin, case rarities),
-tuned to the palette (pockets and slices wear the chip colours). Tailwind's
+(jackpots, cash-outs, the All-in pill). Greys come from the tokens (`ink`,
+`soft`, `dim`, `line`, `control`, …) in `app/globals.css` / `tailwind.config.ts`
+— no raw `zinc-*` or per-game accent colours. Tailwind's
 `/opacity` modifier does not work on the token colours (they are CSS variables
 holding hex) — use an arbitrary `rgba()` value instead.
 
@@ -150,7 +149,7 @@ grant / clear upgrades. Stored in `store/settings-store.ts`.
 3. Add its entry to `GAMES[]` in `lib/game-catalog.ts` and its maximum
    multiplier to `GAME_MAX_MULT` in `lib/ladder/rules.ts`.
 4. `components/games/<name>/game.tsx`, built from the shell, board and dock
-   pieces above.
+   pieces above, following `GAME_REDESIGN_HANDOFF.md` (fit, motion, reduced motion).
 5. Register it in `GAME_REGISTRY` (`lib/game-registry.tsx`).
 6. Write its rules in `GAME_TUTORIALS` (`lib/game-tutorials.ts`).
 7. Survival: add it to `SURVIVAL_GAME_POOL` and give it a boost / perk track in

@@ -11,11 +11,10 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
-  GAME_DOCK_SECONDARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -25,7 +24,6 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
-import { BOARD_CELL, BOARD_HINT, BOARD_PANEL, CELL_GOLD, CELL_LOSS, CELL_MUTED, CELL_OPEN, CELL_PICKED, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -61,6 +59,7 @@ import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const DRAW_TICK_MS = 380
+import { BoardTile, type BoardTileState } from '@/components/games/board-tile'
 
 interface KenoResult {
   outcome: 'win' | 'loss'
@@ -234,7 +233,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative min-h-0 flex flex-col items-center justify-start pt-4 pb-4 px-3 md:px-5"
+        boardClassName="relative min-h-0"
         entries={matchHistory}
         gameLabel="Keno"
       >
@@ -246,48 +245,44 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
         )}
         <GameActiveBetBadge betAmount={round.betAmount} visible={!isBetting} />
 
-        <div className="flex flex-col items-center w-full max-w-sm shrink-0 gap-2">
-          <div
-            className={`flex flex-wrap justify-center gap-2 h-10 items-center w-full shrink-0 ${
-              isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
-              <span className="text-dim">Hits </span>
-              <span className="num text-felt">
-                {hasRevealedStats ? round.hits : '—'}
-              </span>
-            </div>
-            <div className={`${BOARD_PANEL} px-3 py-1.5 text-sm`}>
-              <span className="text-dim">Multiplier </span>
-              <span className="num text-ink">
-                {hasRevealedStats ? formatMultiplier(round.multiplier) : '—'}
-              </span>
-            </div>
+        <div className="grid5-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
+          {/* One slot: quick pick while betting, the draw's figures after. */}
+          <div className="grid5-top flex h-9 shrink-0 items-center justify-center gap-2">
+            {isBetting ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleQuickPick}
+                  className="m-still h-8 rounded-full border border-gold/60 px-3.5 text-[12px] font-semibold text-gold transition-colors hover:bg-gold-tint"
+                >
+                  Quick Pick (5)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearPicks}
+                  className="m-still h-8 rounded-full bg-black/25 px-3.5 text-[12px] font-semibold text-dim transition-colors hover:text-ink"
+                >
+                  Clear picks
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
+                  <span className="text-dim">Hits</span>
+                  <span key={round.hits} className="num g-pop text-gold">{hasRevealedStats ? round.hits : '—'}</span>
+                </span>
+                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
+                  <span className="text-dim">Multiplier</span>
+                  <span key={round.multiplier} className="num g-pop text-ink">
+                    {hasRevealedStats ? formatMultiplier(round.multiplier) : '—'}
+                  </span>
+                </span>
+              </>
+            )}
           </div>
 
-          <div
-            className={`flex justify-center gap-2 h-9 items-center w-full shrink-0 ${
-              !isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            <button
-              type="button"
-              onClick={handleQuickPick}
-              className="h-8 rounded-full border border-felt bg-felt-tint px-3.5 text-xs font-semibold text-felt transition-shadow hover:shadow-[0_0_16px_-4px_rgba(79,174,132,0.8)]"
-            >
-              Quick pick (5)
-            </button>
-            <button
-              type="button"
-              onClick={handleClearPicks}
-              className="h-8 rounded-full border border-control px-3.5 text-xs font-medium text-soft transition-colors hover:border-loss hover:text-loss"
-            >
-              Clear picks
-            </button>
-          </div>
-
-          <div className="grid grid-cols-5 gap-1.5 w-full shrink-0">
+          {/* The board: picks turn white, each drawn ball flips its number up, hits glow gold. */}
+          <div className="grid5-grid grid shrink-0 grid-cols-5 gap-[calc(var(--tile)*0.14)] [--stagger:40ms]">
             {Array.from({ length: BOARD_SIZE }, (_, i) => {
               const num = i + 1
               const picked = pickSet.has(num)
@@ -296,47 +291,46 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
               const isMiss = picked && isSettled && !drawn
               const isDrawOnly = drawn && !picked
               const isHeat = heatSet.has(num) && !picked
+              const state: BoardTileState = isHit
+                ? 'hit'
+                : isDrawOnly
+                  ? 'dormant'
+                  : isMiss
+                    ? 'idle'
+                    : picked
+                      ? 'selected'
+                      : isBetting
+                        ? 'hidden'
+                        : 'idle'
 
               return (
-                <button
+                <BoardTile
                   key={num}
-                  type="button"
+                  state={state}
+                  index={(i % 5) + Math.floor(i / 5)}
                   onClick={() => handleNumberClick(num)}
                   disabled={!isBetting || (!picked && round.picks.length >= MAX_PICKS)}
                   className={[
-                    `h-9 sm:h-10 ${BOARD_CELL}`,
-                    isHeat
-                      ? 'ring-1 ring-[var(--gold)]'
-                      : '',
-                    isHit
-                      ? CELL_WIN
-                      : isMiss
-                        ? CELL_LOSS
-                        : isDrawOnly
-                          ? CELL_GOLD
-                          : picked
-                            ? CELL_PICKED
-                            : isBetting
-                              ? CELL_OPEN
-                              : CELL_MUTED,
-                    isDrawing && picked && !drawn ? 'animate-pulse' : '',
+                    isHit ? 'g-gold' : '',
+                    isDrawOnly ? 'btile-drawn' : '',
+                    isMiss ? 'btile-miss' : '',
+                    isHeat ? 'btile-hint' : '',
+                    isDrawing && picked && !drawn ? 'btile-wait' : '',
                   ].join(' ')}
                 >
                   {num}
-                </button>
+                </BoardTile>
               )
             })}
           </div>
 
-          <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className={BOARD_HINT}>
-              {isBetting
-                ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
-                : isDrawing
-                  ? 'Numbers reveal one by one. Use Reveal All to skip the draw.'
-                  : '\u00A0'}
-            </p>
-          </div>
+          <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
+            {isBetting
+              ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
+              : isDrawing
+                ? 'Numbers reveal one by one. Use Reveal All to skip the draw.'
+                : '\u00A0'}
+          </p>
         </div>
       </GameFieldWithHistory>
 
@@ -355,14 +349,14 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isDrawing && (
-              <p className="text-sm text-soft">
+              <p className="text-[13px] text-soft">
                 {hasRevealedStats ? (
                   <>
                     Potential total winnings:{' '}
-                    <span className="num text-felt">{formatChips(totalWinnings)}</span>
+                    <span className="num text-felt glow-felt">{formatChips(totalWinnings)}</span>
                   </>
                 ) : (
-                  <>Drawing ball {round.revealedDrawn.length} of {DRAW_COUNT}…</>
+                  <>Drawing ball <span className="num text-ink">{round.revealedDrawn.length}</span> of {DRAW_COUNT}…</>
                 )}
               </p>
             )}
@@ -387,7 +381,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                     type="button"
                     onClick={isSettled ? handleNext : isDrawing ? handleRevealAll : handleStart}
                     disabled={isBetting && !canStart}
-                    className={isDrawing ? GAME_DOCK_SECONDARY_BTN : GAME_DOCK_PRIMARY_BTN}
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : isDrawing ? 'Reveal All' : 'Play →'}
                   </button>

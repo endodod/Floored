@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
-  GAME_DOCK_LEAVE_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_SECONDARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockGameOverButton,
@@ -20,7 +20,6 @@ import {
 import { useRunEnd } from '@/hooks/use-run-end'
 import { PerkHint } from '@/components/survival/perk-hint'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
-import { BOARD_LABEL, CELL_OPEN, CELL_PICKED } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -45,7 +44,8 @@ import {
 } from '@/games/case-battles/engine'
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
-import type { CaseBattleState, CaseRarity } from '@/games/case-battles/types'
+import type { CaseBattleState, CaseDef, CaseItem, CaseRarity } from '@/games/case-battles/types'
+import { ItemIcon } from './item-icons'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 interface CaseBattlesResult {
@@ -64,60 +64,126 @@ interface CaseBattlesGameProps {
 
 type PendingResult = GamePendingResult
 
-const RARITY_TEXT: Record<CaseRarity, string> = {
-  common:    'text-soft',
-  uncommon:  'text-green-400',
-  rare:      'text-blue-400',
-  epic:      'text-purple-400',
-  legendary: 'text-gold',
+// Rarity colours come from the cb-r-* classes in globals.css (--rar).
+const RARITY_CLASS: Record<CaseRarity, string> = {
+  common:    'cb-r-common',
+  uncommon:  'cb-r-uncommon',
+  rare:      'cb-r-rare',
+  epic:      'cb-r-epic',
+  legendary: 'cb-r-legendary',
 }
 
-const RARITY_BORDER: Record<CaseRarity, string> = {
-  common:    'border-control',
-  uncommon:  'border-green-700',
-  rare:      'border-blue-700',
-  epic:      'border-purple-700',
-  legendary: 'border-yellow-500',
+// The opening reel: a run of the case's own items (drawn by their odds) that
+// slows down and stops with the real result under the marker.
+const OPEN_MS = 1300
+const REEL_LEN = 34
+const REEL_TARGET = 29
+
+function reelFor(pool: CaseDef['items'], result: CaseItem, seed: number): CaseItem[] {
+  let h = seed * 2654435761 >>> 0
+  for (const ch of result.name) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0
+  const rand = () => {
+    h = (Math.imul(h, 1664525) + 1013904223) >>> 0
+    return h / 4294967296
+  }
+  const total = pool.reduce((s, e) => s + e.weight, 0)
+  return Array.from({ length: REEL_LEN }, (_, k) => {
+    if (k === REEL_TARGET) return result
+    let r = rand() * total
+    for (const e of pool) if ((r -= e.weight) < 0) return e.item
+    return pool[0]!.item
+  })
 }
 
-// Slot rendering for opening/settled columns
+// One metal per case tier: Bronze, Silver, Gold, Diamond, Crown.
+const CASE_METAL = [
+  { body: '#8a5426', dark: '#4a2a10', trim: '#d39557' },
+  { body: '#8d9099', dark: '#45474e', trim: '#dadce2' },
+  { body: '#b0812c', dark: '#5e4313', trim: '#f2d48f' },
+  { body: '#3f7f95', dark: '#1d4252', trim: '#bfe6f2' },
+  { body: '#2c2433', dark: '#120e16', trim: '#d9a441' },
+]
+
+function CaseArt({ tier, className = '' }: { tier: number; className?: string }) {
+  const m = CASE_METAL[tier % CASE_METAL.length] ?? CASE_METAL[0]!
+  return (
+    <svg viewBox="0 0 40 32" className={className} aria-hidden>
+      <path d="M15 6.5V4a1.6 1.6 0 0 1 1.6-1.6h6.8A1.6 1.6 0 0 1 25 4v2.5" fill="none" stroke={m.dark} strokeWidth="2.2" />
+      <rect x="2" y="6" width="36" height="24" rx="3.5" fill={m.body} stroke={m.dark} strokeWidth="1.2" />
+      <path d="M2.6 13.5h34.8" stroke={m.dark} strokeWidth="1.2" />
+      <path d="M5.5 7.5h29" stroke={m.trim} strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+      <rect x="8.5" y="6.6" width="2.6" height="22.8" fill={m.trim} opacity="0.5" />
+      <rect x="28.9" y="6.6" width="2.6" height="22.8" fill={m.trim} opacity="0.5" />
+      <rect x="16.8" y="10.8" width="6.4" height="5.6" rx="1.2" fill={m.trim} stroke={m.dark} strokeWidth="0.8" />
+      <circle cx="20" cy="13.6" r="1" fill={m.dark} />
+      {tier === 3 && <path d="M20 19.5l3 3.5-3 3.8-3-3.8z" fill={m.trim} />}
+      {tier === 4 && <path d="M15.5 26.5v-6l2.3 2.3L20 19.5l2.2 3.3 2.3-2.3v6z" fill={m.trim} />}
+    </svg>
+  )
+}
+
+function WinnerCrown() {
+  return (
+    <svg viewBox="0 0 20 14" className="inline-block h-3 w-4 align-[-1px] text-gold" aria-label="winner">
+      <path d="M2 12.5V3.5l4.2 4L10 1.5l3.8 6 4.2-4v9z" fill="currentColor" />
+    </svg>
+  )
+}
+
+// One opened case on a side: the closed case, then the reel, then the item.
 function ItemSlot({
-  caseEmoji, item, isRevealing, isRevealed, isRerolling = false,
+  tier, pool, seed, item, isRevealing, isRevealed, isRerolling = false, dim = false,
 }: {
-  caseEmoji: string
-  item: { name: string; icon: string; value: number; rarity: CaseRarity }
+  tier: number
+  pool: CaseDef['items']
+  seed: number
+  item: CaseItem
   isRevealing: boolean
   isRevealed: boolean
   isRerolling?: boolean
+  dim?: boolean
 }) {
-  const suspense = isRevealing || isRerolling
-  const borderClass = suspense
-    ? 'border-gold case-item-suspense'
-    : isRevealed
-      ? RARITY_BORDER[item.rarity]
-      : 'border-line'
+  const open = isRevealing || isRerolling
+  const shown = isRevealed && !isRerolling
+  const base = 'cb-slot relative flex items-center gap-2 overflow-hidden rounded-lg border-2 px-2'
 
+  if (shown)
+    return (
+      <div
+        key="shown"
+        title={`${item.name} · ${item.rarity} · ${formatChips(item.value)}`}
+        className={`${base} cb-slot-shown g-fade ${RARITY_CLASS[item.rarity]} ${item.rarity === 'legendary' || item.rarity === 'epic' ? 'g-gold' : ''} ${dim ? 'g-dim' : ''}`}
+      >
+        <CaseArt tier={tier} className="cb-tag" />
+        <ItemIcon name={item.name} className="cb-icon shrink-0" />
+        <p className="cb-row-text min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight" style={{ color: 'var(--rar)' }}>
+          {item.name}
+        </p>
+        <span className="cb-row-text num shrink-0 text-[13px] text-ink">{formatChips(item.value)}</span>
+        <span className="cb-tile-value num text-[10px] leading-none text-ink">{formatChips(item.value)}</span>
+      </div>
+    )
+  if (open)
+    return (
+      <div key={isRerolling ? 'reroll' : 'open'} className={`${base} cb-slot-open`} aria-label="Opening">
+        <div
+          className="cb-roll"
+          style={{ '--from': '-5.5', '--to': `-${REEL_TARGET + 0.5}`, '--roll': `${OPEN_MS - 150}ms` } as React.CSSProperties}
+          aria-hidden
+        >
+          {reelFor(pool, item, seed).map((it, k) => (
+            <span key={k} className={`cb-cell ${RARITY_CLASS[it.rarity]}`}>
+              <ItemIcon name={it.name} className="cb-icon" />
+            </span>
+          ))}
+        </div>
+        <span className="cb-marker absolute inset-y-0.5 left-1/2 -translate-x-1/2 rounded-full" />
+        <CaseArt tier={tier} className="cb-tag z-[1]" />
+      </div>
+    )
   return (
-    <div className={`rounded-md border bg-black/25 px-3 py-2.5 min-h-[4.5rem] flex items-center ${borderClass}`}>
-      {isRevealed && !isRerolling ? (
-        <div key="revealed" className="flex items-center gap-3 w-full case-item-reveal">
-          <span className="text-3xl leading-none shrink-0">{item.icon}</span>
-          <div className="flex-1 min-w-0">
-            <p className={`font-bold text-sm leading-snug truncate ${RARITY_TEXT[item.rarity]}`}>
-              {item.name}
-            </p>
-            <p className="text-soft font-semibold tabular-nums text-sm">{formatChips(item.value)}</p>
-          </div>
-        </div>
-      ) : suspense ? (
-        <div key="revealing" className="flex items-center justify-center w-full">
-          <span className="text-4xl">❓</span>
-        </div>
-      ) : (
-        <div key="locked" className="flex items-center justify-center w-full opacity-30">
-          <span className="text-3xl">{caseEmoji}</span>
-        </div>
-      )}
+    <div key="closed" className={`${base} justify-center`}>
+      <CaseArt tier={tier} className="cb-icon opacity-40" />
     </div>
   )
 }
@@ -166,7 +232,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
   const canBattle = state.selectedCases.length > 0 && state.totalCost <= bankroll && state.totalCost >= minBet
   const numCases  = state.selectedCases.length
 
-  const displayUserTotal = state.userItems.slice(0, revealedCount).reduce((s, oc) => s + oc.item.value, 0)
+  const displayUserTotal = state.userItems.slice(0, revealedCount).reduce((s, oc, i) => s + (i === rerollingIdx ? 0 : oc.item.value), 0)
   const displayBotTotal  = state.botItems.slice(0, revealedCount).reduce((s, oc) => s + oc.item.value, 0)
 
   function clearTimeouts() {
@@ -186,7 +252,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         setRevealedCount(i + 1)
         if (i + 1 < total) setRevealingIdx(i + 1)
         else setRevealingIdx(-1)
-      }, i * 800 + 600)
+      }, (i + 1) * OPEN_MS)
       timeoutsRef.current.push(t)
     }
 
@@ -199,7 +265,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         settleCaseBattle(settled)
         setState(settled)
       }
-    }, (total - 1) * 800 + 600 + 500)
+    }, total * OPEN_MS + 500)
     timeoutsRef.current.push(tSettle)
 
     return clearTimeouts
@@ -252,14 +318,16 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
 
   function handleReroll(slotIndex: number) {
     setRerollPending(false)
+    // Rolled up front so the reel can stop on the new item; it settles once the reel lands.
+    const withReroll = rerollUserItem(stateRef.current, slotIndex, cases)
+    setState(withReroll)
     setRerollingIdx(slotIndex)
     setTimeout(() => {
       setRerollingIdx(-1)
-      const withReroll = rerollUserItem(stateRef.current, slotIndex, cases)
       const settled = settleBattle(withReroll)
       settleCaseBattle(settled)
       setState(settled)
-    }, 700)
+    }, OPEN_MS)
   }
 
   function handleSkipReroll() {
@@ -330,20 +398,21 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
 
         {/* Setup phase: case selector */}
         {isSetup && (
-          <div className="w-full max-w-md flex flex-col gap-4">
-            <p className={`${BOARD_LABEL} text-center`}>
-              {ladder ? 'One of each case — all five open' : `Select up to 5 cases — ${numCases}/5`}
+          <div className="cb-pick flex flex-col gap-3">
+            <p className="cb-pick-title text-center text-xs font-semibold uppercase tracking-wider text-dim">
+              {ladder ? 'One of each case — all five open' : <>Select up to 5 cases — <span className="num">{numCases}/5</span></>}
             </p>
-            <div className="grid grid-cols-5 gap-2.5">
-              {cases.map(c => {
+            <div className="grid grid-cols-5 gap-2 sm:gap-3">
+              {cases.map((c, idx) => {
                 const count = caseCounts[c.id] ?? 0
                 const atMax = numCases >= 5 && count === 0
                 return (
-                  <div key={c.id} className="relative flex flex-col items-center gap-2">
+                  <div key={c.id} className="g-pop relative flex min-w-0 flex-col items-center gap-1" style={{ '--i': idx } as React.CSSProperties}>
                     <button
                       type="button"
                       onClick={() => setInfoCaseId(c.id)}
-                      className="absolute -top-1 -right-1 z-10 w-5 h-5 flex items-center justify-center text-[10px] font-semibold text-soft hover:text-ink bg-ground rounded-full border border-control hover:border-dim transition-colors leading-none"
+                      aria-label={`${c.name} contents`}
+                      className="absolute -right-1 -top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-control bg-surface text-[10px] font-semibold leading-none text-soft transition-colors hover:border-dim hover:text-ink"
                     >
                       i
                     </button>
@@ -351,34 +420,39 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                       type="button"
                       onClick={() => setState(prev => addCase(prev, c.id, cases))}
                       disabled={ladder || numCases >= 5}
+                      aria-label={`Add ${c.name}`}
                       className={[
-                        'w-full h-20 rounded-md border flex flex-col items-center justify-center gap-1.5 transition-all duration-150 active:scale-95',
+                        'g-lift m-still relative flex w-full items-center justify-center rounded-xl border py-1.5 transition-[border-color,background-color,box-shadow,transform] duration-150 active:scale-95',
                         count > 0
-                          ? CELL_PICKED
-                          : CELL_OPEN,
+                          ? 'border-felt bg-felt-tint -translate-y-1 shadow-[0_0_18px_-6px_rgba(79,174,132,0.7)]'
+                          : 'border-line bg-surface/60 hover:border-control',
                         atMax ? 'opacity-30 cursor-not-allowed' : ladder ? 'cursor-default' : 'cursor-pointer',
                       ].join(' ')}
                     >
-                      <span className="text-3xl leading-none">{c.emoji}</span>
+                      <CaseArt tier={c.id} className="cb-case" />
                       {count > 0 && (
-                        <span className="num text-xs text-felt leading-none">×{count}</span>
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                          <span key={count} className="g-pop num block rounded-full bg-gold px-1.5 text-[11px] font-semibold leading-4 text-ground">
+                            ×{count}
+                          </span>
+                        </span>
                       )}
                     </button>
-                    <p className="text-xs text-center font-semibold leading-tight text-soft">
+                    <p className="mt-1 w-full truncate text-center text-[11px] font-semibold leading-tight text-soft">
                       {c.name.replace(' Case', '')}
                     </p>
-                    <p className="num text-xs text-ink">{formatChips(c.price)}</p>
-                    {count > 0 && !ladder ? (
+                    <p className="num text-[11px] leading-tight text-ink">{formatChips(c.price)}</p>
+                    {!ladder && (count > 0 ? (
                       <button
                         type="button"
                         onClick={() => setState(prev => removeCase(prev, c.id, cases))}
-                        className="h-7 w-full rounded-full border border-control text-xs font-medium text-dim transition-colors hover:border-loss hover:text-loss active:scale-95"
+                        className="m-still h-6 w-full rounded-full border border-loss/60 text-[11px] font-semibold text-loss transition-colors hover:bg-loss-tint active:scale-95"
                       >
-                        − Remove
+                        Remove
                       </button>
                     ) : (
-                      <span className="h-7 w-full invisible select-none" aria-hidden>− Remove</span>
-                    )}
+                      <span className="invisible h-6 w-full" aria-hidden />
+                    ))}
                   </div>
                 )
               })}
@@ -386,67 +460,80 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
           </div>
         )}
 
-        {/* Opening / settled phase: two columns */}
-        {(isOpening || isSettled) && (
-          <div className="w-full max-w-sm flex gap-4">
-            {/* YOU column */}
-            <div className="flex-1 flex flex-col gap-2">
-              <p className={`text-xs text-center font-semibold ${isSettled && state.outcome === 'win' ? 'text-felt' : isSettled && state.outcome === 'push' ? 'text-soft' : 'text-dim'}`}>
-                You {isSettled && state.outcome === 'win' ? '🏆' : isSettled && state.outcome === 'push' ? '🤝' : ''}
-              </p>
-              {state.userItems.map((oc, i) => (
-                <div
-                  key={i}
-                  className={isRerollPending ? 'relative cursor-pointer group' : ''}
-                  onClick={isRerollPending ? () => handleReroll(i) : undefined}
-                >
-                  <ItemSlot
-                    caseEmoji={cases[oc.caseId]?.emoji ?? '📦'}
-                    item={oc.item}
-                    isRevealing={i === revealingIdx}
-                    isRevealed={i < revealedCount}
-                    isRerolling={i === rerollingIdx}
-                  />
-                  {isRerollPending && (
-                    <div className="absolute inset-0 rounded-md border border-felt bg-felt-tint flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-xs font-bold text-felt">↺ Reroll</span>
-                    </div>
+        {/* Opening / settled phase: the duel */}
+        {(isOpening || isSettled) && (() => {
+          const won = isSettled && state.outcome === 'win'
+          const lost = isSettled && state.outcome === 'loss'
+          const tied = isSettled && state.outcome === 'push'
+          const showTotals = isSettled || (isOpening && revealedCount > 0)
+          const sides = [
+            { label: 'You', items: state.userItems, total: isSettled ? state.userTotal : displayUserTotal, wins: won, loses: lost, user: true },
+            { label: 'Bot', items: state.botItems, total: isSettled ? state.botTotal : displayBotTotal, wins: lost, loses: won, user: false },
+          ]
+          return (
+            <div className="cb-duel flex gap-2.5 sm:gap-3">
+              {/* Which case each row opened: both sides open the same case per row. */}
+              <div className="cb-cases order-1 flex shrink-0 flex-col items-center gap-1.5" aria-label="Cases">
+                <span className="cb-head-gap block h-4" aria-hidden />
+                {state.userItems.map((oc, i) => (
+                  <span
+                    key={i}
+                    title={cases[oc.caseId]?.name}
+                    className={`cb-case-row flex items-center justify-center ${i === revealingIdx ? '' : i < revealedCount ? 'opacity-70' : 'opacity-40'}`}
+                  >
+                    <CaseArt tier={oc.caseId} className="cb-case-mark" />
+                  </span>
+                ))}
+              </div>
+              {sides.map(side => (
+                <div key={side.label} className={`cb-side ${side.user ? 'order-0' : 'order-2'} flex min-w-0 flex-1 flex-col gap-1.5`}>
+                  <p className={`cb-head shrink-0 text-center text-xs font-semibold uppercase tracking-wider ${side.wins ? (side.user ? 'text-felt' : 'text-loss') : tied ? 'text-soft' : 'text-dim'}`}>
+                    {side.label} {side.wins && <WinnerCrown />}
+                  </p>
+                  <div className="cb-items flex flex-col gap-1.5">
+                    {side.items.map((oc, i) => {
+                      const slot = (
+                        <ItemSlot
+                          tier={oc.caseId}
+                          pool={cases[oc.caseId]?.items ?? []}
+                          seed={i * 2 + (side.user ? 0 : 1) + (side.user && i === rerollingIdx ? 7 : 0)}
+                          item={oc.item}
+                          isRevealing={i === revealingIdx}
+                          isRevealed={i < revealedCount}
+                          isRerolling={side.user && i === rerollingIdx}
+                          dim={side.loses}
+                        />
+                      )
+                      if (!side.user || !isRerollPending) return <div key={i} className="relative">{slot}</div>
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => handleReroll(i)}
+                          aria-label={`Reroll ${oc.item.name}`}
+                          className="group relative block rounded-lg text-left ring-1 ring-felt/70"
+                        >
+                          {slot}
+                          <span className="absolute inset-0 flex items-center justify-center rounded-lg border-2 border-felt bg-felt-tint/90 text-xs font-semibold text-felt opacity-0 transition-opacity group-hover:opacity-100">
+                            Reroll
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {showTotals && (
+                    <p
+                      key={isSettled ? 'final' : 'live'}
+                      className={`cb-total g-fade num mt-0.5 shrink-0 border-t-2 border-line pt-1.5 text-right text-sm font-semibold ${side.wins ? (side.user ? 'text-felt glow-felt' : 'text-loss') : tied ? 'text-soft' : 'text-ink'}`}
+                    >
+                      {formatChips(side.total)}
+                    </p>
                   )}
                 </div>
               ))}
-              {(isSettled || (isOpening && revealedCount > 0)) && (
-                <div className="border-t border-white/10 pt-1.5 mt-0.5">
-                  <p className={`text-sm font-semibold tabular-nums text-right ${isSettled && state.outcome === 'win' ? 'text-felt' : isSettled && state.outcome === 'push' ? 'text-ink' : 'text-soft'}`}>
-                    {formatChips(isSettled ? state.userTotal : displayUserTotal)}
-                  </p>
-                </div>
-              )}
             </div>
-
-            {/* BOT column */}
-            <div className="flex-1 flex flex-col gap-2">
-              <p className={`text-xs text-center font-semibold ${isSettled && state.outcome === 'loss' ? 'text-loss' : isSettled && state.outcome === 'push' ? 'text-soft' : 'text-dim'}`}>
-                Bot {isSettled && state.outcome === 'loss' ? '🏆' : isSettled && state.outcome === 'push' ? '🤝' : ''}
-              </p>
-              {state.botItems.map((oc, i) => (
-                <ItemSlot
-                  key={i}
-                  caseEmoji={cases[oc.caseId]?.emoji ?? '📦'}
-                  item={oc.item}
-                  isRevealing={i === revealingIdx}
-                  isRevealed={i < revealedCount}
-                />
-              ))}
-              {(isSettled || (isOpening && revealedCount > 0)) && (
-                <div className="border-t border-white/10 pt-1.5 mt-0.5">
-                  <p className={`text-sm font-semibold tabular-nums text-right ${isSettled && state.outcome === 'loss' ? 'text-loss' : isSettled && state.outcome === 'push' ? 'text-ink' : 'text-soft'}`}>
-                    {formatChips(isSettled ? state.botTotal : displayBotTotal)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+          )
+        })()}
       </GameFieldWithHistory>
 
       <div className={GAME_CONTROL_DOCK_M}>
@@ -469,9 +556,9 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isSetup && (
               <div className="flex items-center gap-2.5 flex-wrap justify-center">
-                <span className="text-[14px] text-dim">Total cost</span>
+                <span className="text-base text-dim">Total cost</span>
                 <span
-                  className={`num text-xl ${state.totalCost > bankroll ? 'text-loss' : 'text-ink'}`}
+                  className={`num text-xl font-semibold ${state.totalCost > bankroll ? 'text-loss' : 'text-ink'}`}
                 >
                   {state.totalCost > 0 ? formatChips(state.totalCost) : '—'}
                 </span>
@@ -479,7 +566,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                   <button
                     type="button"
                     onClick={() => setState(initCaseBattle())  /* cost resets to 0 */}
-                    className="h-6 rounded-full border border-control px-2.5 text-xs text-dim transition-colors hover:border-loss hover:text-loss"
+                    className="m-still rounded-full border border-control px-2.5 py-0.5 text-xs font-medium text-soft transition-colors hover:border-dim hover:text-ink"
                   >
                     Clear
                   </button>
@@ -488,12 +575,12 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
             )}
             {isOpening && !isRerollPending && (
               <p className="text-sm text-dim">
-                Opening {Math.min(revealedCount + 1, numCases)} of {numCases}…
+                Opening <span className="num text-soft">{Math.min(revealedCount + 1, numCases)}</span> of <span className="num">{numCases}</span>…
               </p>
             )}
             {isRerollPending && (
-              <p className="text-sm font-semibold text-felt animate-pulse">
-                ✦ Perk active — tap one of your items to reroll
+              <p className="cb-wait text-sm font-semibold text-felt">
+                Perk active — tap one of your items to reroll
               </p>
             )}
             {isSettled && pendingResult && (
@@ -517,7 +604,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                 <>
                   {isSettled && <GameDockLeaveButton mode={mode} />}
                   {isRerollPending && (
-                    <button type="button" onClick={handleSkipReroll} className={GAME_DOCK_LEAVE_BTN}>Skip</button>
+                    <button type="button" onClick={handleSkipReroll} className={GAME_DOCK_SECONDARY_BTN}>Skip</button>
                   )}
                   <button
                     type="button"
@@ -543,38 +630,41 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
             onClick={() => setInfoCaseId(null)}
           >
             <div
-              className="bg-surface border border-line rounded-md p-4 w-72 flex flex-col gap-3 shadow-2xl"
+              className="g-pop flex w-72 flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{infoCaseDef.emoji}</span>
+                <div className="flex items-center gap-2.5">
+                  <CaseArt tier={infoCaseDef.id} className="h-8 w-10" />
                   <div>
-                    <p className="font-semibold text-ink text-sm">{infoCaseDef.name}</p>
-                    <p className="text-dim text-xs">{formatChips(infoCaseDef.price)}</p>
+                    <p className="text-sm font-semibold text-ink">{infoCaseDef.name}</p>
+                    <p className="num text-xs text-dim">{formatChips(infoCaseDef.price)}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setInfoCaseId(null)}
-                  className="text-dim hover:text-ink text-lg leading-none px-1 transition-colors"
+                  aria-label="Close"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-dim transition-colors hover:bg-raised hover:text-ink"
                 >
-                  ✕
+                  <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
+                    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
                 </button>
               </div>
               <div className="flex flex-col gap-1.5">
                 {infoCaseDef.items.map((entry, i) => {
                   const pct = Math.round((entry.weight / totalWeight) * 100)
                   return (
-                    <div key={i} className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 bg-black/25 border ${RARITY_BORDER[entry.item.rarity]}`}>
-                      <span className="text-xl leading-none">{entry.item.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold truncate ${RARITY_TEXT[entry.item.rarity]}`}>{entry.item.name}</p>
-                        <p className="text-dim text-[10px] capitalize">{entry.item.rarity}</p>
+                    <div key={i} className={`flex items-center gap-2.5 rounded-lg border border-line bg-raised/50 px-2.5 py-2 ${RARITY_CLASS[entry.item.rarity]}`}>
+                      <ItemIcon name={entry.item.name} className="h-6 w-6 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold" style={{ color: 'var(--rar)' }}>{entry.item.name}</p>
+                        <p className="text-[10px] capitalize text-dim">{entry.item.rarity}</p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-ink font-bold tabular-nums text-xs">{formatChips(entry.item.value)}</p>
-                        <p className="text-dim text-[10px]">{pct}%</p>
+                      <div className="shrink-0 text-right">
+                        <p className="num text-xs text-ink">{formatChips(entry.item.value)}</p>
+                        <p className="num text-[10px] text-dim">{pct}%</p>
                       </div>
                     </div>
                   )

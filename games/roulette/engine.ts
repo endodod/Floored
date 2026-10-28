@@ -95,7 +95,7 @@ export const EUROPEAN_WHEEL_ORDER: readonly number[] = [
   0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
 ]
 
-/** One target, one stake per round (no split/stacked map in the UI). */
+/** One target, one stake. */
 export function spinRoulette(target: string, amount: number): RouletteState {
   if (!target || amount <= 0) return spinRouletteMulti({})
   return spinRouletteMulti({ [target]: amount })
@@ -138,30 +138,45 @@ export function spinRouletteMulti(bets: BetMap): RouletteState {
   return settleRouletteSpin(bets, Math.floor(Math.random() * 37))
 }
 
-/** Same as spinRoulette but uses a pre-rolled pocket (survival Ball Tracker during betting). */
-export function spinRouletteWithResult(target: string, amount: number, result: number): RouletteState {
-  if (!target || amount <= 0) return settleRouletteSpin({}, result)
-  return settleRouletteSpin({ [target]: amount }, result)
+/** What a pocket pays across every bet on the table. */
+export function payoutForPocket(bets: BetMap, n: number): number {
+  let total = 0
+  for (const [target, amount] of Object.entries(bets)) {
+    if (amount > 0 && isNumberCoveredByTarget(n, target)) total += amount * getPayoutForTarget(target)
+  }
+  return total
 }
 
-/** Blessed spin: always lands on a pocket covered by the player's bet. */
-export function winGame(target: string, amount: number): RouletteState {
-  const winners: number[] = []
-  for (let n = 0; n <= 36; n++) {
-    if (isNumberCoveredByTarget(n, target)) winners.push(n)
-  }
-  const result = winners[Math.floor(Math.random() * winners.length)] ?? 1
-  return settleRouletteSpin({ [target]: amount }, result)
+/** The most any single pocket can pay for these bets. */
+export function bestPayout(bets: BetMap): number {
+  let best = 0
+  for (let n = 0; n <= 36; n++) best = Math.max(best, payoutForPocket(bets, n))
+  return best
 }
 
-/** Cursed spin: always lands on a pocket not covered by the player's bet. */
-export function loseGame(target: string, amount: number): RouletteState {
-  const losers: number[] = []
-  for (let n = 0; n <= 36; n++) {
-    if (!isNumberCoveredByTarget(n, target)) losers.push(n)
-  }
-  const result = losers[Math.floor(Math.random() * losers.length)] ?? 1
-  return settleRouletteSpin({ [target]: amount }, result)
+/** Same as spinRouletteMulti but uses a pre-rolled pocket (survival Ball Tracker during betting). */
+export function spinRouletteWithResult(bets: BetMap, result: number): RouletteState {
+  return settleRouletteSpin(bets, result)
+}
+
+function pickPocket(bets: BetMap, keep: (payout: number, staked: number) => boolean, fallback: 'max' | 'min'): number {
+  const staked = Object.values(bets).reduce((a, b) => a + (b > 0 ? b : 0), 0)
+  const pockets = Array.from({ length: 37 }, (_, n) => n)
+  const pool = pockets.filter((n) => keep(payoutForPocket(bets, n), staked))
+  if (pool.length) return pool[Math.floor(Math.random() * pool.length)]!
+  // Bets that cover every pocket: land on the best (blessed) or worst (cursed) one.
+  const sorted = pockets.sort((a, b) => payoutForPocket(bets, a) - payoutForPocket(bets, b))
+  return fallback === 'max' ? sorted[sorted.length - 1]! : sorted[0]!
+}
+
+/** Blessed spin: lands on a pocket that pays more than was staked. */
+export function winGame(bets: BetMap): RouletteState {
+  return settleRouletteSpin(bets, pickPocket(bets, (payout, staked) => payout > staked, 'max'))
+}
+
+/** Cursed spin: lands on a pocket that pays nothing. */
+export function loseGame(bets: BetMap): RouletteState {
+  return settleRouletteSpin(bets, pickPocket(bets, (payout) => payout === 0, 'min'))
 }
 
 export function rouletteEliminatedNumbers(winningNumber: number, count = 3): number[] {

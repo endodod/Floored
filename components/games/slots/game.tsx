@@ -1,7 +1,7 @@
 'use client'
 import type { GameMode } from '@/store/types'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import {
@@ -11,10 +11,10 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -24,7 +24,6 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
-import { BOARD_HINT, BOARD_LABEL, BOARD_PANEL } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { buildPendingResult, type GamePendingResult } from '@/lib/game-result-labels'
@@ -42,18 +41,60 @@ import type { SlotsState, SlotsSymbol } from '@/games/slots/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
-const SYMBOL_DISPLAY: Record<SlotsSymbol, { glyph: string; color: string; bg: string }> = {
-  cherry:  { glyph: '🍒', color: 'text-loss',    bg: 'bg-red-950/60' },
-  bar:     { glyph: 'BAR', color: 'text-gold',  bg: 'bg-amber-950/60' },
-  bell:    { glyph: '🔔', color: 'text-gold',  bg: 'bg-yellow-950/60' },
-  diamond: { glyph: '◆',  color: 'text-cyan-300',   bg: 'bg-cyan-950/60' },
-  seven:   { glyph: '7',  color: 'text-gold',  bg: 'bg-yellow-900/60' },
-  wild:    { glyph: '★',  color: 'text-purple-300',  bg: 'bg-purple-950/60' },
+/** Each symbol drawn on the ivory reel face (viewBox 0 0 40 40). */
+function SlotSymbol({ symbol, className = '' }: { symbol: SlotsSymbol; className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" className={className} aria-label={symbol} role="img">
+      {symbol === 'cherry' && (
+        <>
+          <path d="M14 26 C15 17 20 11 27 7 M26 25 C25 18 25 12 27 7" fill="none" stroke="#2a7a57" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M27 7 C31 6 34 8 35 11 C31 12 28 10 27 7 Z" fill="#2a7a57" />
+          <circle cx="13" cy="28" r="7" fill="#b8263d" />
+          <circle cx="26" cy="27" r="7" fill="#c8283f" />
+          <circle cx="10.5" cy="25.5" r="1.8" fill="#fff" opacity="0.55" />
+          <circle cx="23.5" cy="24.5" r="1.8" fill="#fff" opacity="0.55" />
+        </>
+      )}
+      {symbol === 'bar' && (
+        <>
+          <rect x="4" y="12" width="32" height="16" rx="3" fill="#17161a" stroke="#d9a441" strokeWidth="1.4" />
+          <text x="20" y="20.8" textAnchor="middle" dominantBaseline="middle" fill="#f4f1ea" style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, fontFamily: 'var(--font-floored-sans), sans-serif' }}>BAR</text>
+        </>
+      )}
+      {symbol === 'bell' && (
+        <>
+          <path d="M20 6 C12 6 11 14 11 20 C11 25 9 27 7 29 L33 29 C31 27 29 25 29 20 C29 14 28 6 20 6 Z" fill="#d9a441" stroke="#8a6420" strokeWidth="1.2" strokeLinejoin="round" />
+          <path d="M15 11 C14 14 14 18 14 22" fill="none" stroke="#f2d48f" strokeWidth="1.6" strokeLinecap="round" />
+          <circle cx="20" cy="31.5" r="3" fill="#8a6420" />
+          <rect x="18.5" y="3" width="3" height="4" rx="1.2" fill="#8a6420" />
+        </>
+      )}
+      {symbol === 'diamond' && (
+        <>
+          <path d="M20 35 L5 15 L11 7 L29 7 L35 15 Z" fill="#2f6fd1" stroke="#1b3f7a" strokeWidth="1.2" strokeLinejoin="round" />
+          <path d="M5 15 L35 15 M11 7 L15 15 L20 35 L25 15 L29 7 M15 15 L20 7 L25 15" fill="none" stroke="#9cc0f5" strokeWidth="0.9" strokeLinejoin="round" opacity="0.8" />
+        </>
+      )}
+      {symbol === 'seven' && (
+        <text x="20" y="22" textAnchor="middle" dominantBaseline="middle" fill="#c8283f" stroke="#8a6420" strokeWidth="1.2" paintOrder="stroke" style={{ fontSize: 34, fontWeight: 900, fontFamily: 'Georgia, serif' }}>7</text>
+      )}
+      {symbol === 'wild' && (
+        <>
+          <path d="M20 4 L24.4 14.6 L35.8 15.5 L27.1 22.9 L29.8 34 L20 28 L10.2 34 L12.9 22.9 L4.2 15.5 L15.6 14.6 Z" fill="#d9a441" stroke="#8a6420" strokeWidth="1.2" strokeLinejoin="round" />
+          <text x="20" y="21.5" textAnchor="middle" dominantBaseline="middle" fill="#2a1a0f" style={{ fontSize: 6.5, fontWeight: 800, letterSpacing: 0.4, fontFamily: 'var(--font-floored-sans), sans-serif' }}>WILD</text>
+        </>
+      )}
+    </svg>
+  )
 }
 
-const PAYTABLE_GLYPH: Record<SlotsSymbol, string> = {
-  cherry: '🍒', bar: 'BAR', bell: '🔔', diamond: '◆', seven: '7', wild: '★',
+/** Symbol names for the outcome line and history. */
+const SYMBOL_NAME: Record<SlotsSymbol, string> = {
+  cherry: 'Cherry', bar: 'BAR', bell: 'Bell', diamond: 'Diamond', seven: '7', wild: 'Wild',
 }
+
+/** The order symbols pass the window while a reel spins (drawn twice so the loop is seamless). */
+const STRIP: SlotsSymbol[] = ['seven', 'cherry', 'bar', 'bell', 'diamond', 'wild', 'cherry', 'bell']
 
 const SPIN_DURATION = 700   // all reels spinning
 const STAGGER       = 250   // delay between each reel landing
@@ -78,37 +119,33 @@ type PendingResult = GamePendingResult
 type ReelTuple = [SlotsSymbol | null, SlotsSymbol | null, SlotsSymbol | null]
 type BoolTuple  = [boolean, boolean, boolean]
 
-function Reel({ symbol, spinning, landed }: { symbol: SlotsSymbol | null; spinning: boolean; landed: boolean }) {
-  const display = symbol ? SYMBOL_DISPLAY[symbol] : null
-  const isBar   = symbol === 'bar'
-  const isSeven = symbol === 'seven'
-
+/**
+ * One reel window: an ivory drum behind glass. While it spins a strip of
+ * symbols runs down past the payline; when it stops the symbol drops in and
+ * settles. After the round, a losing line falls back.
+ */
+function Reel({ symbol, spinning, landed, dim, index }: { symbol: SlotsSymbol | null; spinning: boolean; landed: boolean; dim: boolean; index: number }) {
   return (
-    <div className={`
-      relative w-24 h-28 sm:w-28 sm:h-32 rounded-md border flex items-center justify-center overflow-hidden shadow-[inset_0_0_24px_rgba(0,0,0,0.6)]
-      ${spinning ? 'border-white/25 bg-black/40' : 'border-white/10 bg-black/30'}
-      transition-colors duration-200
-    `}>
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-[rgba(217,164,65,0.35)] pointer-events-none" />
-      <div className={`
-        flex items-center justify-center w-full h-full
-        ${spinning ? 'slot-reel-spinning' : ''}
-        ${landed && !spinning ? 'slot-reel-landing' : ''}
-      `}>
-        {spinning || !display ? (
-          <span className="text-4xl text-dim">·</span>
-        ) : (
-          <div className={`flex flex-col items-center justify-center rounded-lg px-2 py-1 ${display.bg}`}>
-            <span className={`
-              ${isBar ? 'text-2xl font-semibold tracking-tight' : 'text-4xl'}
-              ${isSeven ? 'text-5xl font-semibold' : ''}
-              ${display.color} leading-none select-none
-            `}>
-              {display.glyph}
-            </span>
-          </div>
-        )}
-      </div>
+    <div className="sl-reel relative overflow-hidden rounded-md">
+      {spinning ? (
+        <div className="sl-strip" style={{ '--i': index } as CSSProperties}>
+          {[...STRIP, ...STRIP].map((s, i) => (
+            <div key={i} className="sl-cell flex items-center justify-center">
+              <SlotSymbol symbol={s} className="h-[62%] w-[62%] opacity-70" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={`sl-cell flex items-center justify-center ${landed ? 'sl-land' : ''} ${dim ? 'g-dim' : ''}`}>
+          {symbol ? (
+            <SlotSymbol symbol={symbol} className="h-[72%] w-[72%]" />
+          ) : (
+            <SlotSymbol symbol="seven" className="h-[72%] w-[72%] opacity-20" />
+          )}
+        </div>
+      )}
+      {/* the drum's curve and the glass */}
+      <div className="sl-glass pointer-events-none absolute inset-0" aria-hidden />
     </div>
   )
 }
@@ -224,7 +261,7 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
       })
 
       const r = result.reels!
-      const line = `${PAYTABLE_GLYPH[r[0]]} ${PAYTABLE_GLYPH[r[1]]} ${PAYTABLE_GLYPH[r[2]]}`
+      const line = r.map((x) => SYMBOL_NAME[x]).join(' · ')
       const isWin = finalOutcome === 'win'
       const built = buildPendingResult(
         { outcome: finalOutcome, betAmount: result.betAmount, payout: resolved.payout },
@@ -268,7 +305,7 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
       </div>
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center px-4 py-4 md:px-6"
+        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-4 md:px-6"
         entries={matchHistory}
         gameLabel="Slots"
       >
@@ -283,60 +320,66 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
           visible={!isBetting && (round.betAmount > 0 || lastBet > 0)}
         />
 
-        <div className="flex min-h-0 flex-1 w-full max-w-sm flex-col">
-          <div className="min-h-0 flex-1 shrink" aria-hidden />
-          <div className="flex w-full flex-col items-center gap-4 shrink-0">
-            <div className="flex h-[8.5rem] shrink-0 items-center justify-center gap-3">
-              <Reel symbol={displayedReels[0]} spinning={spinningReels[0]} landed={landedReels[0]} />
-              <div className="relative">
-                <Reel symbol={displayedReels[1]} spinning={spinningReels[1]} landed={landedReels[1]} />
-                <div className="absolute -left-3 top-1/2 -translate-y-1/2 text-gold opacity-60 text-xs">▶</div>
-                <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-gold opacity-60 text-xs">◀</div>
-              </div>
-              <Reel symbol={displayedReels[2]} spinning={spinningReels[2]} landed={landedReels[2]} />
-            </div>
+        <div className="sl-layout flex w-full flex-col items-center shrink-0">
+          {/* the cabinet: three reels behind a gold frame, the payline across the middle */}
+          <div
+            key={isSettled ? `settled-${round.reels?.join('-')}` : 'live'}
+            className={`sl-cabinet relative flex shrink-0 items-center rounded-xl ${
+              isSettled && round.outcome === 'win' && round.payoutMultiplier >= 1
+                ? round.payoutMultiplier >= 10 ? 'g-gold' : 'g-win'
+                : ''
+            }`}
+          >
+            {[0, 1, 2].map((i) => (
+              <Reel
+                key={i}
+                index={i}
+                symbol={displayedReels[i as 0 | 1 | 2]}
+                spinning={spinningReels[i as 0 | 1 | 2]}
+                landed={landedReels[i as 0 | 1 | 2]}
+                dim={isSettled && round.outcome !== 'win'}
+              />
+            ))}
+            <div className="sl-payline pointer-events-none absolute inset-x-1.5 top-1/2" aria-hidden />
+            <span className="sl-marker sl-marker-l" aria-hidden />
+            <span className="sl-marker sl-marker-r" aria-hidden />
+          </div>
 
-            <div
-              className="w-full min-h-[12.5rem] shrink-0"
-            >
-              <p className={`${BOARD_LABEL} mb-2`}>Pay table</p>
-              <div className="grid grid-cols-2 gap-1">
-                {PAYTABLE.map((row) => (
-                  <div key={row.label} className={`flex items-center justify-between px-3 py-1.5 ${BOARD_PANEL}`}>
-                    <div className="flex items-center gap-1.5">
+          <div className="sl-pays w-full shrink-0 rounded-md border border-[rgba(217,164,65,0.3)] bg-black/20 px-4 py-2.5" aria-label="Pay table">
+            <p className="sl-pays-title felt-print mb-1.5 text-center">Center line · pays</p>
+            <dl className="grid grid-cols-2 gap-x-5">
+              {PAYTABLE.map((row) => {
+                const top = row.multiplier >= 25
+                return (
+                  <div key={row.label} className="flex items-center gap-2 py-[3px]">
+                    <dt className="flex shrink-0 items-center gap-0.5" aria-label={row.label}>
                       {row.symbols
                         .slice(0, row.label.startsWith('Two') || row.label.startsWith('Double') ? 2 : 3)
-                        .map((s, i) => (
-                          <span key={i} className={`font-semibold text-xs ${SYMBOL_DISPLAY[s].color}`}>
-                            {PAYTABLE_GLYPH[s]}
-                          </span>
+                        .map((sym, k) => (
+                          <SlotSymbol key={k} symbol={sym} className="h-5 w-5" />
                         ))}
-                    </div>
-                    <span
-                      className={`num text-sm ${row.multiplier >= 25 ? 'text-gold' : row.multiplier >= 10 ? 'text-felt' : 'text-soft'}`}
-                    >
-                      {row.multiplier}×
-                    </span>
+                    </dt>
+                    <span className="flex-1 border-b border-dotted border-[rgba(217,164,65,0.25)]" aria-hidden />
+                    <dd className={`num text-[13px] ${top ? 'text-gold glow-gold' : 'text-ink'}`}>{row.multiplier}×</dd>
                   </div>
-                ))}
-                <div className={`flex items-center justify-between px-3 py-1.5 ${BOARD_PANEL}`}>
-                  <span className={`text-xs font-semibold ${SYMBOL_DISPLAY.wild.color}`}>★</span>
-                  <span className="text-xs text-soft">Wild — any</span>
-                </div>
+                )
+              })}
+              <div className="flex items-center gap-2 py-[3px]">
+                <SlotSymbol symbol="wild" className="h-5 w-5 shrink-0" />
+                <span className="whitespace-nowrap text-[12px] text-soft">Wild = any</span>
               </div>
-            </div>
-
-            <div className="min-h-10 flex w-full items-center justify-center px-2 shrink-0">
-              <p className={BOARD_HINT}>
-                {isBetting
-                  ? 'Match symbols on the center line to win.'
-                  : isSpinning
-                    ? 'Reels spinning…'
-                    : '\u00A0'}
-              </p>
-            </div>
+            </dl>
           </div>
-          <div className="min-h-0 flex-1 shrink" aria-hidden />
+
+          <div className="sl-hint min-h-9 flex w-full items-center justify-center px-2 shrink-0">
+            <p className="text-center text-[13px] text-dim max-w-md">
+              {isBetting
+                ? 'Match symbols on the center line to win.'
+                : isSpinning
+                  ? 'Reels spinning…'
+                  : '\u00A0'}
+            </p>
+          </div>
         </div>
       </GameFieldWithHistory>
 

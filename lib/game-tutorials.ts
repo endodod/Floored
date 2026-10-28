@@ -117,12 +117,12 @@ export const GAME_TUTORIALS: Record<GameName, GameTutorial> = {
   roulette: {
     intro: 'Bet on where the ball lands on a European wheel of 0–36.',
     steps: [
-      { title: 'Pick a bet', body: 'Tap a single number, or an outside bet: red, black, odd or even.' },
-      { title: 'Place your chips', body: 'Add chips to the selected bet, then spin.' },
+      { title: 'Pick a chip', body: 'Choose a chip value from the rack.' },
+      { title: 'Place chips', body: 'Tap numbers or the outside spots — red, black, odd, even — to put chips on them. Stack chips and cover as many spots as you like.' },
       { title: 'Spin', body: 'The wheel lands on one pocket from 0 to 36.' },
-      { title: 'Collect', body: 'A single number pays 36×, red / black / odd / even pay 2×.' },
+      { title: 'Collect', body: 'Every winning spot pays: a single number 36×, red / black / odd / even 2×.' },
     ],
-    notes: ['0 is green — it loses every outside bet.'],
+    notes: ['0 is green — it loses every outside bet.', 'Undo takes back your last chip, Clear empties the table.'],
   },
   'dragon-tower': {
     intro: 'Climb five floors by picking the tile without the dragon.',

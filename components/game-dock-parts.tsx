@@ -65,10 +65,6 @@ export const GAME_DOCK_LEAVE_BTN =
 export const GAME_DOCK_PRIMARY_BTN =
   'btn-glow m-still min-w-[10.5rem] h-10 px-7 rounded-full bg-ink text-ground hover:bg-soft disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,box-shadow,transform] active:scale-[0.97]'
 
-/** Taking the money mid-round (Cash out): the felt pill, so the win action reads as a win. */
-export const GAME_DOCK_CASHOUT_BTN =
-  'm-still min-w-[10.5rem] h-10 px-7 rounded-full bg-felt text-ground hover:shadow-[0_0_26px_-4px_rgba(79,174,132,0.8)] disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,box-shadow,transform] active:scale-[0.97]'
-
 /** Secondary in-round action (Stand, Cash out alternatives): a raised pill. */
 export const GAME_DOCK_SECONDARY_BTN =
   'm-still min-w-[5.25rem] h-10 px-6 rounded-full bg-raised text-ink hover:bg-control font-semibold text-[14px] transition-[background-color,transform] active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed'
@@ -515,6 +511,75 @@ export function GameDockChipRow({
     </div>
   )
 }
+
+export type DockChip = { value: number; label: string; chip: string; ink: string }
+
+/** The chips a game offers: the standard four, or four scaled to the survival floor's minimum bet. */
+export function dockChips(minBet?: number): DockChip[] {
+  if ((minBet ?? 1) <= 1) return GAME_CHIPS.map((c) => ({ ...c }))
+  return [1, 2.5, 10, 50].map((m, i) => {
+    const value = Math.round(minBet! * m)
+    return { value, label: formatChips(value), ...SURVIVAL_CHIP_COLOURS[i]! }
+  })
+}
+
+/** The survival opening ticket as a single chip worth its cap, or null when no ticket is active. */
+export function useOpeningTicketChip(minBet?: number): DockChip | null {
+  const active = useOpeningTicketActive()
+  const purchasedUpgrades = useSurvivalStore((s) => s.purchasedUpgrades)
+  if (!active || (minBet ?? 1) <= 1) return null
+  const value = minBet! * getOpeningTicketCapMultiplier(purchasedUpgrades)
+  return { value, label: 'Ticket', chip: '#2f8a62', ink: '#f4f1ea' }
+}
+
+/**
+ * Chip rack for games where chips are placed on a table (Roulette): pick a value,
+ * then each tap on the table places one chip of it. The picked chip sits raised
+ * with a gold ring. `children` go after the chips (Undo and the like).
+ */
+export function GameDockChipPicker({
+  chips,
+  selected,
+  onSelect,
+  remaining,
+  children,
+}: {
+  chips: DockChip[]
+  selected: number
+  onSelect: (value: number) => void
+  /** What is left to bet; chips worth more are disabled. */
+  remaining: number
+  children?: ReactNode
+}) {
+  return (
+    <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-center gap-1.5 sm:gap-2" role="radiogroup" aria-label="Chip value">
+      {chips.map((chip) => {
+        const on = chip.value === selected
+        return (
+          <button
+            key={chip.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onSelect(chip.value)}
+            disabled={chip.value > remaining}
+            aria-label={`${chip.label} chip`}
+            className={`${CHIP_BTN} m-still g-lift ${chip.label.length > 3 ? 'w-auto min-w-11 px-2 sm:min-w-12' : ''} ${
+              on ? '-translate-y-1 ring-2 ring-gold ring-offset-2 ring-offset-ground' : ''
+            }`}
+            style={chipStyle(chip.chip, chip.ink)}
+          >
+            <span>{chip.label}</span>
+          </button>
+        )
+      })}
+      {children}
+    </div>
+  )
+}
+
+/** A small outlined pill beside the chip rack (Undo, Rebet). */
+export const GAME_DOCK_RACK_BTN = FRAC_BTN
 
 export function GameBoardHint({ children }: { children: ReactNode }) {
   return <p className="max-w-md px-2 text-center text-[13px] text-dim">{children}</p>

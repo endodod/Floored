@@ -11,11 +11,11 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
-  GAME_DOCK_CASHOUT_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_SECONDARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -25,7 +25,6 @@ import {
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
-import { BOARD_HINT, BOARD_LABEL, BOARD_PANEL, BOARD_STAT_LABEL, BOARD_STAT_VALUE, CELL_CURRENT, CELL_IDLE, CELL_LOSS, CELL_MUTED, CELL_PICKED, CELL_WIN } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -52,8 +51,22 @@ import { useBless } from '@/hooks/use-bless'
 import type { ChickenState } from '@/games/chicken-road/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+import { BoardTile, TileMark, type BoardTileState } from '@/components/games/board-tile'
 
 const MAX_STEPS = 10
+
+/** The chicken, drawn (no emoji): it hops in each time it lands on a lane. */
+function ChickenToken() {
+  return (
+    <svg viewBox="0 0 24 24" className="cr-hop h-[62%] w-[62%]" aria-hidden>
+      <path d="M10.2 4.6c.4-1.5 2-1.9 2.6-.8.7-1.1 2.4-.6 2.2.9" fill="var(--loss)" />
+      <circle cx="12" cy="13" r="7.2" fill="var(--ink)" />
+      <path d="M18.7 12.2 22 13.4l-3.3 1.2z" fill="var(--gold)" />
+      <circle cx="14.6" cy="11.2" r="1.15" fill="var(--ground)" />
+      <path d="M6.4 13.6c1.6 2.4 4.4 2.6 6 1" stroke="var(--dim)" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 interface ChickenResult {
   outcome: 'win' | 'loss'
@@ -184,7 +197,7 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
       </div>
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center px-4 py-4 md:px-6"
+        boardClassName="relative min-h-0"
         entries={matchHistory}
         gameLabel="Chicken"
       >
@@ -200,105 +213,80 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
           visible={!isBetting && round.betAmount > 0}
         />
 
-        <div className="flex min-h-0 flex-1 w-full max-w-lg flex-col">
-          <div className="min-h-0 flex-1 shrink" aria-hidden />
-          <div className="flex w-full flex-col items-center gap-3 shrink-0">
-          <div className="w-full shrink-0 flex flex-col justify-center min-h-[4.75rem] sm:h-[4.75rem]">
-            {(() => {
-              const chicken = (
-                <div
-                  className={`w-8 h-8 rounded-full border flex items-center justify-center text-lg flex-shrink-0 ${
-                    currentStep === 0 && !isSettled ? CELL_CURRENT : CELL_IDLE
-                  }`}
-                >
-                  🐔
-                </div>
-              )
-              const renderStep = (i: number) => {
-                const stepNum = i + 1
-                const isPassed = currentStep >= stepNum && !isSettled
-                const isCurrent = currentStep === stepNum && isInProgress
-                const isKilled = isSettled && round.outcome === 'loss' && currentStep === stepNum
-                const isSafe = isSettled && round.outcome === 'win' && currentStep >= stepNum
-                return (
-                  <div key={i} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                    <div
-                      className={`h-0.5 w-3 sm:w-5 rounded-full transition-colors ${isPassed || isSafe ? 'bg-felt' : 'bg-white/15'}`}
-                    />
-                    <div
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center text-xs font-semibold tabular-nums transition-all ${
-                        isKilled
-                          ? `${CELL_LOSS} scale-110`
-                          : isCurrent
-                            ? `${CELL_CURRENT} scale-110`
-                            : isSafe
-                              ? CELL_WIN
-                              : isPassed
-                                ? CELL_PICKED
-                                : CELL_MUTED
-                      }`}
-                    >
-                      {isKilled ? '💥' : stepNum}
-                    </div>
-                  </div>
-                )
-              }
-              const half = MAX_STEPS / 2
-              return (
-                <>
-                  {/* sm and up: single row */}
-                  <div className="hidden sm:flex items-center gap-1 sm:gap-2 justify-center">
-                    {chicken}
-                    {Array.from({ length: MAX_STEPS }, (_, i) => renderStep(i))}
-                  </div>
-
-                  {/* Mobile: split into 2 rows so the road fits the screen width */}
-                  <div className="flex sm:hidden flex-col items-center gap-1.5">
-                    <div className="flex items-center gap-1 justify-center">
-                      {chicken}
-                      {Array.from({ length: half }, (_, i) => renderStep(i))}
-                    </div>
-                    <div className="flex items-center gap-1 justify-center">
-                      {Array.from({ length: MAX_STEPS - half }, (_, i) => renderStep(i + half))}
-                    </div>
-                  </div>
-                </>
-              )
-            })()}
-            <div className={`flex justify-between ${BOARD_LABEL} mt-2 px-1 h-4 shrink-0`}>
-              <span>Start</span>
-              <span>
-                Step {currentStep} / {MAX_STEPS}
+        <div className="cr-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
+          <div className={`cr-stats flex h-9 shrink-0 items-center justify-center gap-2 ${isBetting ? 'invisible' : ''}`}>
+            <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
+              <span className="text-dim">Step</span>
+              <span className="num text-ink">{currentStep}</span>
+            </span>
+            <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
+              <span className="text-dim">Multiplier</span>
+              <span
+                key={round.multiplier}
+                className={`num g-pop ${isSettled && round.outcome === 'loss' ? 'text-loss' : 'text-gold glow-gold'}`}
+              >
+                {formatMultiplier(round.multiplier)}
               </span>
-            </div>
+            </span>
           </div>
 
+          {/* The road: the chicken hops lane to lane; a crash shakes the road. */}
           <div
-            className={`grid grid-cols-2 gap-2 w-full max-w-sm h-[4.25rem] shrink-0 ${
-              isBetting ? 'invisible pointer-events-none' : ''
+            className={`cr-road flex shrink-0 flex-wrap items-center justify-center gap-[calc(var(--tile)*0.14)] ${
+              isSettled && round.outcome === 'loss' ? 'g-shake' : ''
             }`}
           >
-            <div className={`${BOARD_PANEL} p-3 text-center`}>
-              <p className={`${BOARD_STAT_LABEL} mb-1`}>Step</p>
-              <p className={BOARD_STAT_VALUE}>{currentStep}</p>
-            </div>
-            <div className={`${BOARD_PANEL} p-3 text-center`}>
-              <p className={`${BOARD_STAT_LABEL} mb-1`}>Multiplier</p>
-              <p className={BOARD_STAT_VALUE}>{formatMultiplier(round.multiplier)}</p>
-            </div>
+            <BoardTile
+              state={currentStep === 0 && !isSettled ? 'safe' : 'idle'}
+              disabled
+              label="Start"
+              className="cr-curb"
+            >
+              {currentStep === 0 && !isSettled && <ChickenToken key="start" />}
+            </BoardTile>
+            {Array.from({ length: MAX_STEPS }, (_, i) => {
+              const stepNum = i + 1
+              const isPassed = currentStep >= stepNum && !isSettled
+              const isCurrent = currentStep === stepNum && !isSettled
+              const isKilled = isSettled && round.outcome === 'loss' && currentStep === stepNum
+              const isSafe = isSettled && round.outcome === 'win' && currentStep >= stepNum
+              const isLanded = isSettled && round.outcome === 'win' && currentStep === stepNum
+              const state: BoardTileState = isKilled ? 'bad' : isPassed || isSafe ? 'safe' : 'idle'
+              return (
+                <BoardTile
+                  key={stepNum}
+                  state={state}
+                  index={stepNum}
+                  disabled
+                  label={isKilled ? `Lane ${stepNum}: hit` : `Lane ${stepNum}`}
+                  className={isLanded ? 'g-win' : ''}
+                >
+                  {isKilled ? (
+                    <TileMark kind="mine" />
+                  ) : isCurrent || isLanded ? (
+                    <ChickenToken key={stepNum} />
+                  ) : (
+                    stepNum
+                  )}
+                </BoardTile>
+              )
+            })}
           </div>
 
-          <div className="min-h-10 flex w-full items-center justify-center px-2 shrink-0">
-            <p className={BOARD_HINT}>
-              {isBetting
-                ? 'Advance step by step or cash out anytime. Each step raises the multiplier — and the danger.'
-                : isInProgress
-                  ? 'Advance for a higher multiplier, or cash out to lock in winnings.'
-                  : '\u00A0'}
-            </p>
+          <div className="cr-labels flex h-4 w-[var(--road-w)] max-w-full shrink-0 justify-between px-1 text-[12px] text-dim">
+            <span>Start</span>
+            <span>
+              Step <span className="num text-soft">{currentStep}</span> / {MAX_STEPS}
+            </span>
           </div>
-          </div>
-          <div className="min-h-0 flex-1 shrink" aria-hidden />
+
+          <p className="cr-hint flex min-h-9 max-w-md shrink-0 items-center px-2 text-center text-[13px] text-dim">
+            {isBetting
+              ? 'Advance step by step or cash out anytime. Each step raises the multiplier — and the danger.'
+              : isInProgress
+                ? 'Advance for a higher multiplier, or cash out to lock in winnings.'
+                : '\u00A0'}
+          </p>
         </div>
       </GameFieldWithHistory>
 
@@ -317,9 +305,9 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && potentialWinnings > 0 && (
-              <p className="text-sm text-soft">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -362,9 +350,9 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                 <button
                   type="button"
                   onClick={handleCashOut}
-                  className={GAME_DOCK_CASHOUT_BTN}
+                  className={GAME_DOCK_SECONDARY_BTN}
                 >
-                  Cash out
+                  Cash Out
                 </button>
               </div>
             )}

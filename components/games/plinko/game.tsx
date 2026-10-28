@@ -11,8 +11,8 @@ import {
   GAME_STATUS_BAR,
 } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_INNER,
+  GAME_DOCK_PRIMARY_BTN,
   GameCurrentBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -20,7 +20,6 @@ import {
   GameDockGameOverButton,
 } from '@/components/game-dock-parts'
 import { useRunEnd } from '@/hooks/use-run-end'
-import { BOARD_LABEL, BOARD_SEGMENTED, boardSegment } from '@/components/game-board-ui'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { buildPendingResult, formatPlinkoRiskLabel } from '@/lib/game-result-labels'
@@ -76,10 +75,6 @@ interface PlinkoGameProps {
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<PlinkoResult>
 }
-
-/** The ball-count − / + buttons. */
-const STEPPER_BTN =
-  'h-7 w-7 rounded-full border border-control text-sm font-semibold leading-none text-soft transition-colors hover:border-felt hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft'
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -308,23 +303,26 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
         />
 
         <div className="flex-1 min-h-0 w-full flex flex-col">
-          <div className="flex flex-col items-center gap-1 pt-10 pb-1.5 sm:py-1.5">
-            <span className={BOARD_LABEL}>Risk</span>
-            <div className={BOARD_SEGMENTED}>
+          <div className="pl-top flex shrink-0 flex-col items-center gap-1 pt-12 pb-1 sm:pt-2.5">
+            <div className={`flex rounded-full bg-black/25 p-1 transition-opacity ${isDropping ? 'invisible opacity-0' : ''}`} role="radiogroup" aria-label="Risk">
               {(['low', 'medium', 'high'] as PlinkoRisk[]).map((r) => (
                 <button
                   key={r}
                   type="button"
+                  role="radio"
+                  aria-checked={risk === r}
                   disabled={isDropping}
                   onClick={() => setRisk(r)}
-                  className={`${boardSegment(risk === r)} capitalize`}
+                  className={`m-still h-7 rounded-full px-3 text-[12px] font-semibold transition-colors disabled:opacity-50 ${
+                    risk === r ? 'bg-ink text-ground' : 'text-dim hover:text-ink disabled:hover:text-dim'
+                  }`}
                 >
-                  {r}
+                  {r[0]!.toUpperCase() + r.slice(1)} risk
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 px-2 pb-2">
             <PlinkoBoard
               balls={balls}
               onBallComplete={handleBallComplete}
@@ -337,10 +335,10 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
       <div className={GAME_CONTROL_DOCK_M}>
         <div className={`${GAME_DOCK_INNER} min-h-0`}>
-          <div className="flex flex-1 min-h-0 w-full items-center justify-center">
+          <div className="flex flex-1 min-h-0 w-full flex-col items-center justify-center">
             {showGameOver && runStatus && (
               <p
-                className={`text-base font-semibold text-center ${runStatus.tone === 'win' ? 'text-felt glow-felt' : runStatus.tone === 'loss' ? 'text-loss glow-loss' : 'text-soft'}`}
+                className={`text-base font-bold text-center ${runStatus.tone === 'win' ? 'text-felt' : runStatus.tone === 'loss' ? 'text-loss' : 'text-soft'}`}
               >
                 {runStatus.text}
               </p>
@@ -358,7 +356,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
           <div className="flex flex-1 min-h-0 w-full items-center justify-center">
             <GameDockBetRow
-              label="Bet per ball"
+              label="Bet per Ball"
               currentBet={currentBet > 0 ? currentBet : isDropping ? lastBet : 0}
               onClear={() => {
                 if (!isDropping) setCurrentBet(0)
@@ -373,19 +371,19 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
                 type="button"
                 disabled={isDropping || ballCount <= MIN_BALLS}
                 onClick={() => setBallCount((c) => Math.max(MIN_BALLS, c - 1))}
-                className={STEPPER_BTN}
+                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
                 aria-label="Fewer balls"
               >
                 −
               </button>
-              <span className="num text-[15px] text-ink min-w-[1.25rem] text-center">
+              <span className="num min-w-[1.5rem] text-center text-[14px] font-semibold text-ink">
                 {ballCount}
               </span>
               <button
                 type="button"
                 disabled={isDropping || ballCount >= maxBalls}
                 onClick={() => setBallCount((c) => Math.min(maxBalls, c + 1))}
-                className={STEPPER_BTN}
+                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
                 aria-label="More balls"
               >
                 +

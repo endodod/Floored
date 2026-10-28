@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
-  GAME_DOCK_PRIMARY_BTN,
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -46,12 +46,8 @@ import { useBless } from '@/hooks/use-bless'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
-/* Slot left-percent anchors (center of each slot in a 100%-wide container). */
+/* Slot anchors (centre of each slot, as a share of the stage width). */
 const SLOT_X = ['16%', '50%', '84%'] as const
-
-/* Cup colours (stone/neutral palette per lobby entry). */
-const CUP_COLOR    = '#44403c'   // stone-700
-const CUP_BORDER   = '#78716c'   // stone-500
 
 /** Visual slot positions for each cup id. cupSlots[id] = slot index (0|1|2). */
 type CupSlots = [number, number, number]
@@ -79,85 +75,38 @@ interface CupProps {
   onPick: (id: number) => void
 }
 
-function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wrong, onPick }: CupProps) {
-  const borderColor = eliminated ? '#52525b' : selected ? '#4fae84' : wrong ? '#e5566f' : CUP_BORDER
-
+function Crown() {
   return (
-    /* Outer anchor: absolute within the stage, slots horizontally, 170px tall */
-    <div
-      style={{
-        position: 'absolute',
-        left: SLOT_X[slot],
-        transform: 'translateX(-50%)',
-        bottom: 0,
-        width: 84,
-        height: 170,
-        transition: 'left 280ms ease-in-out',
-        cursor: pickable && !eliminated ? 'pointer' : 'default',
-        userSelect: 'none',
-        opacity: eliminated ? 0.35 : 1,
-      }}
-      onClick={() => pickable && !eliminated && onPick(cupId)}
-    >
-      {/* Crown — absolutely pinned at the bottom (table level).
-          The cup body sits on top and lifts away to reveal it. */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 12,
-          left: 0,
-          right: 0,
-          textAlign: 'center',
-          fontSize: 28,
-          lineHeight: 1,
-          opacity: lifted ? 1 : 0,
-          transform: lifted ? 'scale(1) translateY(0)' : 'scale(0.5) translateY(8px)',
-          transition: 'opacity 220ms ease 140ms, transform 260ms ease 140ms',
-          pointerEvents: 'none',
-        }}
-        aria-hidden
-      >
-        {hasCrown ? '👑' : '✗'}
-      </div>
+    <svg viewBox="0 0 32 24" className="h-full w-full" aria-hidden>
+      <path d="M3 8l6.5 6L16 3l6.5 11L29 8l-2.5 12h-21z" fill="var(--gold)" stroke="#f3d48a" strokeWidth="1" strokeLinejoin="round" />
+      <rect x="5.5" y="19.5" width="21" height="3" rx="1" fill="#b9852c" />
+    </svg>
+  )
+}
 
-      {/* Cup body — sits at table bottom, animated upward when lifted */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 2,
-          transform: lifted ? 'translateY(-58px)' : 'translateY(0)',
-          transition: 'transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
+function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wrong, onPick }: CupProps) {
+  const tone = eliminated ? 'out' : wrong ? 'wrong' : selected ? 'won' : pickable ? 'pickable' : 'idle'
+  return (
+    /* The slot moves the whole cup across the stage (transform only). */
+    <div className="sc-slot" style={{ transform: `translateX(${SLOT_X[slot]})` }}>
+      <button
+        type="button"
+        className={`sc-cup m-still ${eliminated ? 'g-dim' : ''} ${wrong ? 'g-shake' : ''}`}
+        data-lifted={lifted}
+        data-tone={tone}
+        disabled={!pickable || eliminated}
+        aria-label={`Cup ${slot + 1}`}
+        onClick={() => pickable && !eliminated && onPick(cupId)}
       >
-        {/* Cup trapezoid */}
-        <div
-          style={{
-            width: 72,
-            height: 90,
-            background: CUP_COLOR,
-            border: `2px solid ${borderColor}`,
-            borderRadius: '12px 12px 4px 4px',
-            clipPath: 'polygon(6% 0%, 94% 0%, 88% 100%, 12% 100%)',
-            transition: 'border-color 200ms',
-            boxShadow: selected ? '0 0 0 2px #4fae84, 0 0 18px -2px rgba(79,174,132,0.7)' : undefined,
-          }}
-        />
-        {/* Cup base */}
-        <div
-          style={{
-            width: 48,
-            height: 8,
-            background: CUP_BORDER,
-            borderRadius: 4,
-          }}
-        />
-      </div>
+        {/* What is under the cup, on the table; the cup lifts away to show it. */}
+        <span className={`sc-prize ${hasCrown ? 'g-gold' : ''}`} aria-hidden>
+          {hasCrown ? <Crown /> : <span className="sc-empty" />}
+        </span>
+        <span className="sc-body">
+          <span className="sc-knob" />
+          <span className="sc-shell" />
+        </span>
+      </button>
     </div>
   )
 }
@@ -416,7 +365,7 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 flex-col items-center justify-end px-4 py-4"
+        boardClassName="relative flex min-h-0 flex-col items-center justify-center px-4 py-4"
         entries={matchHistory}
         gameLabel="Street Cups"
       >
@@ -432,7 +381,7 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
         />
 
         {/* Cup stage */}
-        <div className="relative w-full" style={{ height: 180 }}>
+        <div className="sc-stage relative w-full max-w-xl">
           {([0, 1, 2] as const).map(cupId => {
             const slot      = cupSlots[cupId]
             const isLifted  = liftedSlots.has(slot)
@@ -475,9 +424,9 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isPicking && potentialWinnings > 0 && (
-              <p className="text-sm text-soft">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-felt">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && showNext && (

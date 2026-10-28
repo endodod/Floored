@@ -9,11 +9,11 @@ export const GAME_CARD_FRAME =
 export const GAME_CARD_SHELL = `${GAME_CARD_FRAME} bg-surface`
 
 export const GAME_STATUS_BAR =
-  'shrink-0 px-4 sm:px-5 h-10 gap-4 bg-ground flex items-center justify-between border-b border-line [&>*:first-child]:shrink-0 [&>*:first-child]:whitespace-nowrap [&>*:last-child]:min-w-0 [&>*:last-child]:truncate'
+  'shrink-0 px-4 sm:px-5 h-10 [@media(max-height:640px)]:h-8 gap-4 bg-ground flex items-center justify-between border-b border-line [&>*:first-child]:shrink-0 [&>*:first-child]:whitespace-nowrap [&>*:last-child]:min-w-0 [&>*:last-child]:truncate'
 
 /** Flex arena: grows like Crash / Plinko; add your own flex direction / padding inside. */
 export const GAME_BOARD_ARENA =
-  'table-felt flex-1 min-h-0 w-full min-h-[min(360px,52vh)] relative overflow-hidden'
+  'table-felt flex-1 min-h-0 w-full min-h-[min(360px,52vh)] [@media(max-height:640px)]:min-h-0 relative overflow-hidden'
 
 /** Centered curve / SVG field (Crash baseline). */
 export const GAME_BOARD_ARENA_CENTER = `${GAME_BOARD_ARENA} flex items-center justify-center`
