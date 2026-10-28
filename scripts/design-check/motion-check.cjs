@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
     await p.goto((process.env.BASE_URL || 'http://localhost:3000') + route, { waitUntil: 'networkidle' });
     for (const st of steps) {
       const [k, ...rest] = st.split(':'); const v = rest.join(':');
-      if (k === 'click') await p.getByRole('button', { name: v }).first().click({ timeout: 5000 }).catch(() => console.log('  click failed', v));
+      if (k === 'click') await (v.startsWith('css=') ? p.locator(v.slice(4)) : p.getByRole('button', { name: v })).first().click({ timeout: 5000 }).catch(() => console.log('  click failed', v));
       else if (k === 'wait') await p.waitForTimeout(+v);
     }
     const r = await p.evaluate((sel) => [...document.querySelectorAll(sel)].map((el) => {

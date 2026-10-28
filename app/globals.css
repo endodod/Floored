@@ -545,6 +545,59 @@ body > div.neon-auth-ui {
   }
 }
 
+/* Coin Flip: the coin is sized from the board (height minus the streak, pick
+   and hint rows). On a short, wide board the rows stand beside the coin. */
+.cf-coin {
+  --coin: clamp(4.5rem, min(60cqw, calc(100cqh - 12.5rem)), 13rem);
+  width: var(--coin);
+  height: var(--coin);
+}
+.cf-coin .coin-face {
+  border-width: calc(var(--coin) * 0.045);
+  gap: calc(var(--coin) * 0.03);
+}
+.cf-coin .coin-mark {
+  font-size: calc(var(--coin) * 0.42);
+}
+.cf-coin .coin-name {
+  font-size: clamp(9px, calc(var(--coin) * 0.065), 12px);
+}
+.cf-side {
+  display: contents;
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 5 / 4) {
+  .cf-board {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: clamp(1rem, 5cqw, 3rem);
+    /* keep the badge band (back / bet badge, History) clear */
+    padding-top: 3.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .cf-coin {
+    grid-column: 2;
+  }
+  .cf-side {
+    grid-column: 3;
+    justify-self: start;
+    align-items: flex-start;
+  }
+  .cf-side .cf-hint {
+    justify-content: flex-start;
+    max-width: 13rem;
+  }
+  .cf-side .cf-hint p {
+    text-align: left;
+  }
+  .cf-coin {
+    --coin: clamp(4.5rem, calc(100cqh - 4.5rem), 13rem);
+  }
+  .cf-side {
+    display: flex;
+  }
+}
+
 /* Blackjack: on a short, wide board the hands sit side by side with the
    table print between them, so the cards stay large instead of shrinking. */
 @container board (max-height: 430px) and (min-aspect-ratio: 9 / 5) {
@@ -1086,6 +1139,28 @@ body > div.neon-auth-ui {
   animation: none;
 }
 /* A result still has to read: flips become a quick fade. */
+:root[data-motion='reduced'] .coin-landing {
+  animation: none;
+}
+/* The coin still turns to its result at the same moment, as a quick swap. */
+:root[data-motion='reduced'] .coin-spinning {
+  animation: coin-swap 400ms linear 1100ms both;
+}
+@keyframes coin-swap {
+  0%,
+  50% {
+    opacity: 1;
+    transform: perspective(560px) rotateY(var(--coin-spin-from, 0deg));
+  }
+  50.01% {
+    opacity: 0.2;
+    transform: perspective(560px) rotateY(var(--coin-spin-end, 0deg));
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(560px) rotateY(var(--coin-spin-end, 0deg));
+  }
+}
 :root[data-motion='reduced'] .g-flip {
   animation: g-fade 150ms ease both;
 }
