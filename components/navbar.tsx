@@ -29,7 +29,7 @@ export function Navbar() {
   const inFreeplay = pathname?.startsWith('/freeplay')
   const inDaily = pathname?.startsWith('/daily')
   const inLadder = pathname?.startsWith('/ladder')
-  const inSettings = pathname?.startsWith('/settings')
+  const inAccount = pathname?.startsWith('/account')
   const inSurvival = pathname?.startsWith('/survival')
   const inSurvivalGame = pathname?.startsWith('/survival/') ?? false
 
@@ -73,7 +73,7 @@ export function Navbar() {
                     href="/daily"
                     className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                       inDaily
-                        ? 'bg-amber-900/40 text-amber-300'
+                        ? 'bg-emerald-900/40 text-emerald-300'
                         : 'text-white/60 hover:text-white hover:bg-white/8'
                     }`}
                   >
@@ -142,7 +142,7 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Right: bankroll + settings */}
+            {/* Right: bankroll + account */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 z-10">
               {inDaily && hydrated && (
                 <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10">
@@ -154,7 +154,7 @@ export function Navbar() {
                       {formatChips(dailyBankroll)}
                     </p>
                   </div>
-                  <div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50 flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 flex-shrink-0" />
                 </div>
               )}
 
@@ -187,14 +187,14 @@ export function Navbar() {
               )}
 
               <Link
-                href="/settings"
+                href="/account"
                 className={`flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 transition-colors ${
-                  inSettings ? 'bg-white/15 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                  inAccount ? 'bg-white/15 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                 }`}
-                aria-label="Settings"
+                aria-label="Account"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
-                  <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.04.31-.07.63-.07.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" />
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               </Link>
             </div>

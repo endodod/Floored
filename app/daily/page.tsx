@@ -92,7 +92,7 @@ export default function DailyPage() {
     <div className="flex flex-col gap-4 max-w-4xl w-full mx-auto">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-amber-400/80">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-400/80">
             {new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
           <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-none mt-1">
@@ -109,7 +109,7 @@ export default function DailyPage() {
       ) : (
         <>
           {!started && (
-            <div className="rounded-2xl border border-amber-900/40 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/80 leading-relaxed">
+            <div className="rounded-2xl border border-emerald-900/40 bg-emerald-950/20 px-4 py-3 text-sm text-emerald-100/80 leading-relaxed">
               You get <b className="text-white">{formatChips(challenge.bankroll)}</b> for all three games and must place
               every bet — each at least <b className="text-white">{formatChips(challenge.minBet)}</b>. Split your bankroll
               to finish with as much as possible. Drop below the min bet and today&apos;s challenge is failed.
