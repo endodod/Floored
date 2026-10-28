@@ -84,6 +84,7 @@ export function ModeSelect() {
   const ladderLives = useLadderStore((s) => s.lives)
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
   const ladderClimbing = hydrated && ladderStatus === 'climbing'
+  const startLadderRun = useLadderStore((s) => s.startRun)
   const survivalLive = hydrated && runActive
 
   // The home page is prerendered, so today's challenge is only known once mounted.
@@ -166,7 +167,15 @@ export function ModeSelect() {
             figure={formatChips(ladderClimbing ? ladderPot : START_POT)}
             action={
               <Button asChild variant="outline" className="w-full lg:w-auto">
-                <Link href="/ladder">{ladderClimbing ? 'Continue climb' : 'Start climb'}</Link>
+                <Link
+                  href="/ladder"
+                  // Straight into a run — a finished run's results aren't shown again from here.
+                  onClick={() => {
+                    if (useLadderStore.getState().status !== 'climbing') startLadderRun()
+                  }}
+                >
+                  {ladderClimbing ? 'Continue climb' : 'Start climb'}
+                </Link>
               </Button>
             }
           />

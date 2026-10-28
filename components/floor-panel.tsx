@@ -17,7 +17,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 
-export function FloorPanel() {
+export function FloorPanel({ onHowToPlay }: { onHowToPlay?: () => void } = {}) {
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const { currentFloor, floorMinBet, bankroll, quotaTarget, floorStartBankroll, floorComplete, runDefeated, runActive, floorBetsPlaced, endlessMode, endRun, finishQuotaEarly } = useSurvivalStore()
@@ -61,6 +61,11 @@ export function FloorPanel() {
         sub={`Reach ${formatChips(quotaTarget)} within ${FLOOR_BET_LIMIT} bets, each at least ${formatChips(floorMinBet)}.`}
         aside={
           <>
+            {onHowToPlay && (
+              <Button variant="ghost" size="sm" onClick={onHowToPlay}>
+                How to play
+              </Button>
+            )}
             <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
               Abandon
             </Button>
