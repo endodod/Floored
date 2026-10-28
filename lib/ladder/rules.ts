@@ -28,7 +28,7 @@ export const GAME_MAX_MULT: Record<GameName, number | null> = {
   'dragon-tower': 5.38,
   'chicken-race': 3.6,
   'street-cups':  2,
-  'case-battles': 6,
+  'case-battles': 12,
   'poker-1p':     800,
   'hilo':         Infinity,
   'keno':         10,

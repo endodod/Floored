@@ -30,6 +30,7 @@ import { pickQuote } from '@/lib/gambling-quotes'
 import { useBetGuard } from '@/hooks/use-bet-guard'
 import {
   getCases,
+  getLadderCases,
   addCase,
   initCaseBattle,
   loseGame,
@@ -119,6 +120,7 @@ function ItemSlot({
 }
 
 const FREEPLAY_BASE = 10
+const CASE_COUNT = 5
 
 export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattlesGameProps) {
   const router = useRouter()
@@ -129,11 +131,14 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
   const { caseXray, caseXrayLevel } = useSurvivalPerks('case-battles')
   const xrayProc = usePerkProc(mode === 'survival' && caseXray, 'perk_case_xray', caseXrayLevel)
   const minBet = useGameMinBet(mode, FREEPLAY_BASE)
-  const cases = getCases(minBet)
-
   const [state, setState] = useState<CaseBattleState>(initCaseBattle)
   const stateRef = useRef(state)
   stateRef.current = state
+  // Ladder: one of each case for the whole pot — priced off the stake once a battle starts, since the pot is then spent.
+  const ladder = mode === 'ladder'
+  const cases = ladder
+    ? getLadderCases(state.stage === 'setup' ? minBet : state.totalCost)
+    : getCases(minBet)
   const [rerollPending, setRerollPending] = useState(false)
   const [rerollingIdx, setRerollingIdx] = useState(-1)
   const [infoCaseId, setInfoCaseId] = useState<number | null>(null)
@@ -198,6 +203,19 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
   }, [state.stage])
 
   useEffect(() => () => clearTimeouts(), [])
+
+  // Ladder: every case is always selected, so the battle opens all five for exactly the pot.
+  const ladderCost = ladder ? cases.reduce((s, c) => s + c.price, 0) : 0
+  useEffect(() => {
+    if (!ladder || state.stage !== 'setup') return
+    if (state.selectedCases.length === CASE_COUNT && state.totalCost === ladderCost) return
+    setState((prev) => ({
+      ...prev,
+      selectedCases: Array.from({ length: CASE_COUNT }, (_, i) => i),
+      totalCost: ladderCost,
+      message: 'One of each case — all five open.',
+    }))
+  }, [ladder, ladderCost, state.stage, state.selectedCases.length, state.totalCost])
 
   function settleCaseBattle(s: CaseBattleState) {
     const pushPayout = Math.round((s.userTotal + s.botTotal) / 2)
@@ -311,7 +329,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         {isSetup && (
           <div className="w-full max-w-md flex flex-col gap-4">
             <p className="text-sm text-zinc-500 text-center uppercase tracking-wider font-semibold">
-              Select up to 5 cases — {numCases}/5
+              {ladder ? 'One of each case — all five open' : `Select up to 5 cases — ${numCases}/5`}
             </p>
             <div className="grid grid-cols-5 gap-2.5">
               {cases.map(c => {
@@ -329,13 +347,13 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                     <button
                       type="button"
                       onClick={() => setState(prev => addCase(prev, c.id, cases))}
-                      disabled={numCases >= 5}
+                      disabled={ladder || numCases >= 5}
                       className={[
                         'w-full h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all duration-150 active:scale-95',
                         count > 0
                           ? 'border-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20 shadow-lg shadow-yellow-900/20'
                           : 'border-zinc-700 bg-zinc-800/60 hover:border-zinc-500 hover:bg-zinc-800',
-                        atMax ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer',
+                        atMax ? 'opacity-30 cursor-not-allowed' : ladder ? 'cursor-default' : 'cursor-pointer',
                       ].join(' ')}
                     >
                       <span className="text-3xl leading-none">{c.emoji}</span>
@@ -347,7 +365,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                       {c.name.replace(' Case', '')}
                     </p>
                     <p className="text-xs font-bold text-zinc-200 tabular-nums">{formatChips(c.price)}</p>
-                    {count > 0 ? (
+                    {count > 0 && !ladder ? (
                       <button
                         type="button"
                         onClick={() => setState(prev => removeCase(prev, c.id, cases))}
@@ -454,7 +472,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                 >
                   {state.totalCost > 0 ? formatChips(state.totalCost) : '—'}
                 </span>
-                {numCases > 0 && (
+                {numCases > 0 && !ladder && (
                   <button
                     type="button"
                     onClick={() => setState(initCaseBattle())  /* cost resets to 0 */}
