@@ -8,7 +8,9 @@ import { DifficultyDialog } from '@/components/difficulty-dialog'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useHydrated } from '@/hooks/use-hydrated'
-import { SURVIVAL_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
+import { useLadderStore } from '@/store/ladder-store'
+import { LADDER_RUNGS, START_POT } from '@/lib/ladder/rules'
 import { dailyDateKey, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
 import { dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
 import { useDailyStore } from '@/store/daily-store'
@@ -43,6 +45,10 @@ export function ModeSelect() {
   const dailyDate = useDailyStore((s) => s.date)
   const dailyHistory = useDailyStore((s) => s.history)
   const dailyProgress = useDailyStore((s) => s.progress)
+  const ladderStatus = useLadderStore((s) => s.status)
+  const ladderRung = useLadderStore((s) => s.rung)
+  const ladderPot = useLadderStore((s) => s.pot)
+  const ladderClimbing = hydrated && ladderStatus === 'climbing'
 
   // The home page is prerendered, so today's challenge is only known once mounted.
   const today = hydrated ? dailyDateKey() : null
@@ -64,7 +70,7 @@ export function ModeSelect() {
   return (
     <>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 w-full ${LADDER_ENABLED ? 'lg:grid-cols-3 max-w-2xl lg:max-w-5xl' : 'max-w-2xl'}`}>
         {/* ── Daily ── */}
         <Link
           href="/daily"
@@ -114,6 +120,49 @@ export function ModeSelect() {
             </div>
           </div>
         </Link>
+
+        {/* ── Ladder ── */}
+        {LADDER_ENABLED && (
+        <Link
+          href="/ladder"
+          className="relative overflow-hidden rounded-2xl border border-violet-900/60 hover:border-violet-500 bg-gradient-to-br from-violet-950 to-fuchsia-950 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] group transition-all duration-200 text-left"
+        >
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={FELT} />
+          <div className="relative p-6 flex flex-col gap-5">
+            <div>
+              <p className="text-white font-black text-3xl tracking-tight group-hover:scale-[1.04] origin-left transition-transform duration-200">
+                Ladder
+              </p>
+              <p className="text-white/40 text-xs mt-1.5">
+                Go all-in rung after rung. Every game once per run — miss a target and fall to your last checkpoint.
+              </p>
+            </div>
+
+            <ul className="space-y-1.5">
+              {[
+                `${formatChips(START_POT)} pot, ${LADDER_RUNGS} rungs`,
+                'Checkpoint every 3 rungs',
+                '3 lives · cash out any time',
+                ladderClimbing ? `Current: rung ${ladderRung} · ${formatChips(ladderPot)}` : 'Each game usable once',
+              ].map((text) => (
+                <li key={text} className="flex items-center gap-2 text-white/50 text-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-400/60 flex-shrink-0" />
+                  {text}
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
+                {PLAY_ICON}
+              </div>
+              <span className="text-white/50 text-xs font-medium group-hover:text-white/80 transition-colors">
+                {ladderClimbing ? 'Continue climb' : 'Play now'}
+              </span>
+            </div>
+          </div>
+        </Link>
+        )}
 
         {/* ── Survival (parked — see lib/features.ts) ── */}
         {SURVIVAL_ENABLED && (

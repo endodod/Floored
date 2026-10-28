@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { useDailyStore } from '@/store/daily-store'
+import { useLadderStore } from '@/store/ladder-store'
 import type { GameName } from '@/store/types'
 import { applyResolveModifiers } from '@/lib/survival/apply-modifiers'
 import { evaluateMissionsOnGame } from '@/lib/survival/mission-evaluator'
@@ -245,4 +246,43 @@ export function useDailyGameBankroll(game: GameName, bets: number) {
   )
 
   return { bankroll, wagerCap, betsRemaining, roundOpen, finished, handleBet, handleResolve }
+}
+
+export function useLadderGameBankroll(game: GameName) {
+  const pot = useLadderStore((s) => s.pot)
+  const status = useLadderStore((s) => s.status)
+  const currentGame = useLadderStore((s) => s.currentGame)
+  const openRound = useLadderStore((s) => s.openRound)
+  const placeBet = useLadderStore((s) => s.placeBet)
+  const resolve = useLadderStore((s) => s.resolve)
+
+  const roundOpen = openRound?.game === game
+  // Only the picked game gets the pot; once its round settles the wallet is empty until the next pick.
+  const wagerCap = status === 'climbing' && currentGame === game ? Math.max(0, pot) : 0
+
+  // Payout already credited by partial resolves (Plinko balls) in the current round.
+  const roundCreditedRef = useRef(0)
+
+  const handleBet = useCallback(
+    (amount: number) => {
+      if (useLadderStore.getState().openRound?.game !== game) roundCreditedRef.current = 0
+      placeBet(game, amount)
+    },
+    [game, placeBet],
+  )
+
+  const handleResolve = useCallback(
+    <R extends GameResolvePayload>(result: R): R => {
+      const settle = result.settleFloorBet !== false
+      const credit = result.payoutAlreadyCredited
+        ? result.payout - roundCreditedRef.current
+        : result.payout
+      roundCreditedRef.current = settle ? 0 : roundCreditedRef.current + result.payout
+      resolve(game, credit, settle)
+      return result
+    },
+    [game, resolve],
+  )
+
+  return { pot, wagerCap, roundOpen, handleBet, handleResolve }
 }

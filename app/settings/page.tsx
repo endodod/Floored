@@ -2,7 +2,9 @@
 
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
-import { SURVIVAL_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
+import { useLadderStore } from '@/store/ladder-store'
+import { ladderStats } from '@/lib/ladder/share'
 import { useDailyStore } from '@/store/daily-store'
 import { bestMultiplier, currentStreak, formatMultiplier } from '@/lib/daily/share'
 import { dailyDateKey } from '@/lib/daily/challenge'
@@ -50,6 +52,7 @@ export default function SettingsPage() {
   const dailyHistory = useDailyStore((s) => s.history)
   const dailyRecords = Object.values(dailyHistory)
   const bestDaily = bestMultiplier(dailyHistory)
+  const ladder = ladderStats(useLadderStore((s) => s.history))
   const freeplayPeakBankroll = useFreeplayStore((s) => s.peakBankroll)
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
   const {
@@ -114,6 +117,12 @@ export default function SettingsPage() {
           <Stat label="Dailies Played" value={hydrated ? String(dailyRecords.length) : '–'} />
           <Stat label="Daily Streak" value={hydrated ? String(currentStreak(dailyHistory, dailyDateKey())) : '–'} />
           <Stat label="Best Daily" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '–'} />
+          {LADDER_ENABLED && (
+            <>
+              <Stat label="Best Ladder Pot" value={hydrated && ladder.runs > 0 ? formatChips(ladder.bestPot) : '–'} />
+              <Stat label="Highest Rung · Tops" value={hydrated ? `${ladder.bestRung} · ${ladder.tops}` : '–'} />
+            </>
+          )}
           <Stat label="Peak Freeplay Bankroll" value={formatChips(freeplayPeakBankroll)} />
           <Stat label="Freeplay Resets" value={String(freeplayResetCount)} />
           {SURVIVAL_ENABLED && (

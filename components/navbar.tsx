@@ -7,7 +7,8 @@ import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
-import { SURVIVAL_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
+import { useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
 
 const HUD_PILL =
@@ -17,6 +18,8 @@ export function Navbar() {
   const pathname = usePathname()
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
   const dailyBankroll = useDailyStore((s) => s.bankroll)
+  const ladderPot = useLadderStore((s) => s.pot)
+  const ladderStatus = useLadderStore((s) => s.status)
   const runActive = useSurvivalStore((s) => s.runActive)
   const bankroll = useSurvivalStore((s) => s.bankroll)
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
@@ -25,6 +28,7 @@ export function Navbar() {
   const isHome = pathname === '/'
   const inFreeplay = pathname?.startsWith('/freeplay')
   const inDaily = pathname?.startsWith('/daily')
+  const inLadder = pathname?.startsWith('/ladder')
   const inSettings = pathname?.startsWith('/settings')
   const inSurvival = pathname?.startsWith('/survival')
   const inSurvivalGame = pathname?.startsWith('/survival/') ?? false
@@ -75,6 +79,19 @@ export function Navbar() {
                   >
                     Daily
                   </Link>
+
+                  {LADDER_ENABLED && (
+                    <Link
+                      href="/ladder"
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                        inLadder
+                          ? 'bg-violet-900/40 text-violet-300'
+                          : 'text-white/60 hover:text-white hover:bg-white/8'
+                      }`}
+                    >
+                      Ladder
+                    </Link>
+                  )}
 
                   {SURVIVAL_ENABLED && survivalDesktop}
 
@@ -138,6 +155,20 @@ export function Navbar() {
                     </p>
                   </div>
                   <div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50 flex-shrink-0" />
+                </div>
+              )}
+
+              {inLadder && hydrated && ladderStatus === 'climbing' && (
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                  <div className="text-right">
+                    <p className="text-white/40 text-[10px] uppercase tracking-wider leading-none mb-0.5">
+                      Pot
+                    </p>
+                    <p className="text-white font-bold text-sm leading-none tabular-nums">
+                      {formatChips(ladderPot)}
+                    </p>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-violet-400 shadow-sm shadow-violet-400/50 flex-shrink-0" />
                 </div>
               )}
 
