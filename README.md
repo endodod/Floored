@@ -1,10 +1,10 @@
 # Floored
 
-Browser-based casino simulation — no real money, no accounts required
+Browser-based casino simulation — no real money. Accounts are optional (sign in to sync survival runs).
 
 Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
-## Daily (main mode)
+## Daily
 
 A new challenge every day at 00:00 UTC — the same for every player, and you get one attempt.
 
@@ -16,7 +16,7 @@ A new challenge every day at 00:00 UTC — the same for every player, and you ge
 - Leaving a game mid-round forfeits that round's stake (the bet still counts)
 - Results are shareable as a spoiler-free emoji grid; streaks and best result are kept locally
 
-The challenge is generated deterministically from the UTC date (`lib/daily/challenge.ts`), so no server or database is needed. Progress lives in `localStorage`.
+The challenge is generated deterministically from the UTC date (`lib/daily/challenge.ts`). Daily progress and stats live in `localStorage`.
 
 ## Freeplay
 
@@ -28,7 +28,7 @@ Choose any game, start with a healthy balance, and play without pressure or mini
 
 ### Games
 
-18 games, available in Freeplay and drawn from for the Daily:
+18 games, available in Freeplay and Survival and drawn from for the Daily:
 
 - Blackjack
 - Case Battles
@@ -49,9 +49,47 @@ Choose any game, start with a healthy balance, and play without pressure or mini
 - Street Cups
 - Wheel
 
-## Survival (parked)
+## Survival
 
-The roguelike floor mode (floors, shop, items, missions) is still in the codebase but hidden: its routes return 404 and its entry points are not shown. Flip `SURVIVAL_ENABLED` in `lib/features.ts` to bring it back.
+Survival is a roguelike run mode layered on top of the same 18 games. Each run consists of 10 floors; every floor has a bankroll quota you must reach within a 5-minute timer or the run ends.
+
+**Difficulties**
+
+| Difficulty | Quota multiplier | Shop price multiplier |
+|---|---|---|
+| Normal | ×1.0 | ×1.0 |
+| Hard | ×1.5 | ×1.5 |
+| Nightmare | ×2.5 | ×2.0 |
+
+**Floor quotas (Normal)**
+
+| Floor | Target bankroll |
+|---|---|
+| 1 | $2,000 |
+| 5 | ~$60,000 |
+| 10 | $1,000,000 |
+
+Quota scales exponentially: `$2,000 × 500^((floor−1)/9)`.
+
+**Sparks**
+
+Sparks are the meta-currency earned by completing floors and missions. Spend them in the between-floor shop.
+
+**Shop**
+
+The shop appears between floors. It offers:
+- **Run upgrades** — passive boosts that apply for the rest of the run (e.g. payout multipliers)
+- **Game perks** — game-specific upgrades with tiered levels (e.g. Card Counter for Blackjack, Early Cashout for Crash)
+- **Consumables** — one-time-use items (e.g. extra lobby reroll tickets)
+- Shop inventory can be rerolled for an escalating sparks cost
+
+**Missions**
+
+Each floor has 3 randomly assigned missions (e.g. "win 3 rounds in a row", "hit a ×5 multiplier", "play Crash once"). Completing missions awards bonus sparks.
+
+**Run end**
+
+A run ends when your bankroll hits $0 before the quota, time runs out, or you clear all 10 floors. A run summary is shown at the end.
 
 ## Stack
 
@@ -61,8 +99,11 @@ The roguelike floor mode (floors, shop, items, missions) is still in the codebas
 - Zustand (client-side state)
 - Radix UI (primitives)
 - Framer Motion (animations)
+- Neon Postgres + Prisma, Neon Auth (optional accounts; survival runs sync to your account)
 
 ## Development
+
+Copy `.env.example` to `.env` and fill in the Neon database and Neon Auth values, then:
 
 ```bash
 pnpm install
@@ -77,7 +118,7 @@ Open http://localhost:3000 to run locally.
 app/
   daily/           # Daily challenge hub + game routes
   freeplay/        # Freeplay game routes
-  survival/        # Survival game routes (parked)
+  survival/        # Survival game routes
 components/        # React components and shared UI
 games/             # Pure game engines and logic (TS)
 store/             # Zustand stores (daily, freeplay, survival, settings)

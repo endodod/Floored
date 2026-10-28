@@ -1,17 +1,26 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { SURVIVAL_ENABLED } from '@/lib/features'
-import { useDailyStore } from '@/store/daily-store'
-import { bestMultiplier, currentStreak, formatMultiplier } from '@/lib/daily/share'
-import { dailyDateKey } from '@/lib/daily/challenge'
-import { useHydrated } from '@/hooks/use-hydrated'
+import { authClient } from '@/lib/auth/client'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips, parseChips } from '@/utils/format'
 import { allPurchasedUpgradesForDev } from '@/lib/survival/upgrades-catalog'
+import { useDailyStore } from '@/store/daily-store'
+import { bestMultiplier, currentStreak, formatMultiplier } from '@/lib/daily/share'
+import { dailyDateKey } from '@/lib/daily/challenge'
+import { useHydrated } from '@/hooks/use-hydrated'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
 
 const SECTION_TITLE = 'text-[10px] font-semibold uppercase tracking-wider mb-3'
 
@@ -45,13 +54,35 @@ function Stat({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function SettingsPage() {
-  const hydrated = useHydrated()
-  const dailyHistory = useDailyStore((s) => s.history)
-  const dailyRecords = Object.values(dailyHistory)
-  const bestDaily = bestMultiplier(dailyHistory)
+interface ServerRunStats {
+  highscore: number
+  wins: number
+  totalRuns: number
+}
+
+export default function AccountPage() {
+  const session = authClient.useSession()
+  const [serverStats, setServerStats] = useState<ServerRunStats | null>(null)
+
+  useEffect(() => {
+    if (!session.data?.user) {
+      setServerStats(null)
+      return
+    }
+    let cancelled = false
+    fetch('/api/run')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: ServerRunStats | null) => { if (!cancelled) setServerStats(data) })
+      .catch(() => { if (!cancelled) setServerStats(null) })
+    return () => { cancelled = true }
+  }, [session.data?.user])
+
   const freeplayPeakBankroll = useFreeplayStore((s) => s.peakBankroll)
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
+  const hydrated = useHydrated()
+  const dailyHistory = useDailyStore((s) => s.history)
+  const dailiesPlayed = Object.keys(dailyHistory).length
+  const bestDaily = bestMultiplier(dailyHistory)
   const {
     autoReBet, setAutoReBet,
     forceTie, setForceTie,
@@ -76,6 +107,7 @@ export default function SettingsPage() {
   const [devPasswordError, setDevPasswordError] = useState(false)
   const [devBankroll, setDevBankroll] = useState('')
   const [devSparks, setDevSparks] = useState('')
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false)
 
   const handleDevUnlock = useCallback(() => {
     if (devPassword.toLowerCase() === 'geek') {
@@ -101,28 +133,77 @@ export default function SettingsPage() {
           Home
         </Link>
         <h1 className="text-4xl sm:text-5xl font-black tracking-[0.06em] uppercase text-white leading-none">
-          Settings
+          Account
         </h1>
         <p className="text-white/30 text-[10px] tracking-[0.25em] uppercase mt-2">
-          Stats &middot; Settings
+          Profile &middot; Stats &middot; Settings
         </p>
       </div>
 
+      <Section border="border-violet-900/50">
+        <p className={`${SECTION_TITLE} text-violet-300/70`}>Account</p>
+        {session.isPending ? (
+          <p className="text-sm text-white/50">Loading…</p>
+        ) : session.data ? (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">
+                {session.data.user.name || session.data.user.email}
+              </p>
+              <p className="text-xs text-white/40 truncate">{session.data.user.email}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSignOutConfirmOpen(true)}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/auth/sign-in"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/auth/sign-up"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-900 hover:bg-white/90 transition-colors"
+            >
+              Sign Up
+            </Link>
+          </div>
+        )}
+      </Section>
+
       <Section border="border-emerald-900/50">
         <p className={`${SECTION_TITLE} text-emerald-300/70`}>Stats</p>
-        <div className="grid grid-cols-2 gap-3">
-          <Stat label="Dailies Played" value={hydrated ? String(dailyRecords.length) : '–'} />
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          <Stat label="Dailies Played" value={hydrated ? String(dailiesPlayed) : '–'} />
           <Stat label="Daily Streak" value={hydrated ? String(currentStreak(dailyHistory, dailyDateKey())) : '–'} />
           <Stat label="Best Daily" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '–'} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
           <Stat label="Peak Freeplay Bankroll" value={formatChips(freeplayPeakBankroll)} />
           <Stat label="Freeplay Resets" value={String(freeplayResetCount)} />
-          {SURVIVAL_ENABLED && (
-            <>
-              <Stat label="Survival Highscore" value={`Floor ${survivalHighscore}`} />
-              <Stat label="Survival Wins" value={String(survivalWinCount)} />
-            </>
-          )}
+          <Stat
+            label="Survival Highscore"
+            value={`Floor ${serverStats ? serverStats.highscore : survivalHighscore}`}
+          />
+          <Stat
+            label="Survival Wins"
+            value={String(serverStats ? serverStats.wins : survivalWinCount)}
+          />
         </div>
+        {session.data?.user && (
+          <p className="text-[10px] text-emerald-500/50 mt-3">
+            {serverStats
+              ? `Synced from your account · ${serverStats.totalRuns} run${serverStats.totalRuns === 1 ? '' : 's'} recorded`
+              : 'Loading synced stats…'}
+          </p>
+        )}
       </Section>
 
       <Section border="border-indigo-900/50">
@@ -163,7 +244,6 @@ export default function SettingsPage() {
               <span className="text-sm text-white/80">Force tie <span className="text-white/30 text-xs">(HiLo, not in Daily)</span></span>
               <div className={toggleTrack(forceTie)}><div className={toggleDot(forceTie)} /></div>
             </button>
-            {SURVIVAL_ENABLED && (<>
             <button
               type="button"
               onClick={() => setShowAllGames(!showAllGames)}
@@ -180,7 +260,6 @@ export default function SettingsPage() {
               <span className="text-sm text-white/80">Infinite bets <span className="text-white/30 text-xs">(survival)</span></span>
               <div className={toggleTrack(devInfiniteBets)}><div className={toggleDot(devInfiniteBets)} /></div>
             </button>
-            </>)}
 
             <div className="flex w-full items-center justify-between gap-3 py-2">
               <span className="text-sm text-white/80">Game mode <span className="text-white/30 text-xs">(not in Daily)</span></span>
@@ -198,7 +277,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {SURVIVAL_ENABLED && (<>
             <div className="flex items-center gap-1.5 py-2">
               <span className="text-sm text-white/80 shrink-0">Bankroll</span>
               <input
@@ -246,7 +324,6 @@ export default function SettingsPage() {
                 className="flex-1 py-1 text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 rounded transition-colors"
               >Clear</button>
             </div>
-            </>)}
           </div>
         ) : (
           <div className="flex gap-1.5">
@@ -269,6 +346,30 @@ export default function SettingsPage() {
         )}
       </Section>
 
+      <Dialog open={signOutConfirmOpen} onOpenChange={setSignOutConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sign out?</DialogTitle>
+            <DialogDescription>You&apos;ll need to sign in again to access your account.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <DialogClose asChild>
+              <button className="text-sm px-4 py-2 rounded border border-zinc-700 text-muted-foreground hover:bg-zinc-800 transition-colors">
+                Cancel
+              </button>
+            </DialogClose>
+            <button
+              onClick={() => {
+                setSignOutConfirmOpen(false)
+                authClient.signOut()
+              }}
+              className="text-sm px-4 py-2 rounded bg-red-900/60 border border-red-800 text-red-300 hover:bg-red-900 transition-colors"
+            >
+              Sign out
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

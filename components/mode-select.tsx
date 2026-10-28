@@ -64,11 +64,11 @@ export function ModeSelect() {
   return (
     <>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
         {/* ── Daily ── */}
         <Link
           href="/daily"
-          className="relative overflow-hidden rounded-2xl border border-amber-900/50 hover:border-amber-600 bg-gradient-to-br from-amber-950 to-red-950 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] group transition-all duration-200 text-left"
+          className="relative overflow-hidden rounded-2xl border border-emerald-900/50 hover:border-emerald-600 bg-gradient-to-br from-emerald-950 to-teal-950 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] group transition-all duration-200 text-left"
         >
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={FELT} />
           <div className="relative p-6 flex flex-col gap-5">
@@ -94,12 +94,12 @@ export function ModeSelect() {
                     : 'One try per day',
               ].map((text) => (
                 <li key={text} className="flex items-center gap-2 text-white/50 text-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 flex-shrink-0" />
                   {text}
                 </li>
               ))}
               <li className="flex items-center gap-2 text-white/50 text-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 flex-shrink-0" />
                 New daily in&nbsp;<DailyCountdown />
               </li>
             </ul>
@@ -115,7 +115,7 @@ export function ModeSelect() {
           </div>
         </Link>
 
-        {/* ── Survival (parked — see lib/features.ts) ── */}
+        {/* ── Survival (toggle in lib/features.ts) ── */}
         {SURVIVAL_ENABLED && (
         <button
           type="button"
