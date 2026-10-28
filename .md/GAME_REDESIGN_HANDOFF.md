@@ -4,7 +4,7 @@ Status as of 2026-10-28. The site-wide redesign is merged into `main`. The
 **per-game** redesign is not merged: it started on `claude/game-redesign-wip`
 and continues on `claude/wizardly-newton-e10mfi` (which contains it). **Phase 0
 of the plan is done**: every board fits its space, the motion kit exists, and
-Blackjack, HiLo, Poker and Roulette are finished. Batches 1–3 are done: start at **Batch 4** in **The plan**.
+Blackjack, HiLo, Poker and Roulette are finished. Batches 1–3 and 5 are done: **Batch 4** in **The plan** is what remains.
 
 ## The ground rule
 
@@ -46,6 +46,7 @@ new chips, buttons and dock. What remains is each game's own board.
 | Street Cups | Done | Drawn mouth-down cups (`sc-*`) sized by `--cup` so a lifted cup stays below the badge band; slots move by `transform` (same 280 ms); drawn gold crown; picked cup glows felt or shakes red |
 | Fortune Wheel | Done | Drawn wood-and-gold wheel (`FortuneWheel`, local) with the multiplier on each slice, sized by `--wheel` (`fw-*`); colour picks moved onto the board under the wheel (a 2 × 2 block beside it on short wide boards) so the dock is the standard height; pointer ticks while spinning (`fw-tick`); landed slice stays lit, the rest fall back; win glows (gold on the gold slice), loss shakes. Reduced: spin 400 ms, no tick |
 | Slots | Done | Wooden cabinet with a gold frame, three ivory reels behind glass and a gold payline (`sl-*`, sized by `--reel-h`); drawn symbols (`SlotSymbol`, local; history names symbols in words); a real strip scrolls while a reel spins (`sl-spin`), the symbol drops in (`sl-land`); gold pay table beside the cabinet on short wide boards; hint shows only on tall boards. Reduced: strip stands still, no drop |
+| Case Battles | Done | Drawn cases, one metal per tier (`CaseArt`, local); items are a drawn gem in their rarity colour (`cb-r-*` sets `--rar`: common dim, uncommon soft, rare felt, epic/legendary gold, legendary on a gold tint with a glow) instead of emoji; the name stays in the row (and in the tile title on short boards). While an item opens a strip of gems runs under a gold marker (`cb-strip`), then the item flips in. Losing side dims, winner gets a gold crown. Tall boards: You / Bot columns of rows sized by `--slot-h`; boards under 360px: two lanes of square tiles. Reduced: strip stands still, flip becomes a fade. **Not checked in a browser: the reroll perk, Ladder** |
 | Others | See later batches | Only the shared chrome from `main` unless listed above |
 
 New shared pieces on this branch:
@@ -237,7 +238,7 @@ needs it (the tile in Batch 1), so nothing is written that no game uses yet.
 | 2. Dice & coins — DONE | Coin Flip, Over-Under, Run Dice, Street Cups | none shared (each board is its own object) | Restyle + tumble, flip, cup shuffle |
 | 3. Wheels & reels — DONE | Fortune Wheel, Slots | none shared (the Fortune Wheel copies Roulette's rim materials; the reel strip is vertical and local to Slots) | New design (wheel uses the Roulette approach) |
 | 4. Live curves | Crash, Chicken Race, Plinko | `CountUp`, felt-print grid | New design: drawn curve/track/pegboard on the felt |
-| 5. Case Battles | Case Battles | reel strip from batch 3 | New design; largest file, so it gets its own session |
+| 5. Case Battles — DONE | Case Battles | reel strip from batch 3 | New design; largest file, so it gets its own session |
 
 Batch order goes from cheapest to most expensive. The first two batches are
 restyles on top of the Phase 0 pieces, and by batch 3 the kit is proven.
