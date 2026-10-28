@@ -22,7 +22,7 @@ import {
   GameDockSettledActions,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -94,7 +94,7 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
   const isBetting = round.stage === 'betting'
   const isInProgress = round.stage === 'inProgress'
   const isSettled = round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: isBetting || (isSettled && pendingResult != null),
   })
   const canStart = currentBet >= minBet && currentBet <= bankroll

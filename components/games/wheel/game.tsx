@@ -22,7 +22,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -178,7 +178,7 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
 
   const isBetting    = round.stage === 'betting' && !spinning
   const isSettled    = round.stage === 'settled' && !spinning
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: !spinning })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: !spinning })
   const selectedColor: WheelColor = round.betColor ?? 'red'
   const canSpin = currentBet >= minBet && currentBet <= bankroll
   const potentialWinnings =

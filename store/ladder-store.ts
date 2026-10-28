@@ -190,6 +190,8 @@ export const useLadderStore = create<LadderStore>()(
           set({
             pot: s.pot - amount,
             openRound: { ...round, staked: round.staked + amount },
+            // A new round replaces the last result (a push replays the rung in place).
+            lastResult: null,
           })
         },
 

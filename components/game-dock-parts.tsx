@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
 import { useOpeningTicketActive } from '@/hooks/use-opening-ticket'
 import { useIsLadderRoute } from '@/hooks/use-ladder-all-in'
+import { useRouteMode, useRunEndStatus, type RunEndStatus } from '@/hooks/use-run-end'
 import { getOpeningTicketCapMultiplier } from '@/lib/survival/survival-perks'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatCurrentBetLine, formatOutcomeDisplayText } from '@/lib/game-result-labels'
@@ -44,6 +45,12 @@ const OUTCOME_COL_LABEL =
 export const GAME_DOCK_GAME_OVER_BTN =
   'min-w-[10.5rem] px-7 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors text-base shadow-lg'
 
+const RUN_STATUS_TONE: Record<RunEndStatus['tone'], string> = {
+  win: 'text-emerald-400',
+  loss: 'text-red-400',
+  neutral: 'text-zinc-300',
+}
+
 export const GAME_DOCK_LEAVE_BTN =
   'px-4 py-2 border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white font-bold rounded-lg transition-colors text-base'
 
@@ -70,10 +77,16 @@ export function GameDockBackButton({
   )
 }
 
+/** Run-ending action (End run / Continue / Back to ladder / Refill chips) — label and style follow the run status. */
 export function GameDockGameOverButton({ onClick }: { onClick: () => void }) {
+  const action = useRunEndStatus(useRouteMode())?.action
   return (
-    <button type="button" onClick={onClick} className={GAME_DOCK_GAME_OVER_BTN}>
-      Game Over
+    <button
+      type="button"
+      onClick={onClick}
+      className={action?.tone === 'primary' ? GAME_DOCK_PRIMARY_BTN : GAME_DOCK_GAME_OVER_BTN}
+    >
+      {action?.label ?? 'Game Over'}
     </button>
   )
 }
@@ -93,7 +106,7 @@ export function GameDockLeaveButton({
   )
 }
 
-/** Settled row: Leave + Next in freeplay; Game Over when survival run is lost. */
+/** Settled row: Leave + Next, or the run-ending action once the run is over (or a floor / rung is done). */
 export function GameDockSettledActions({
   mode,
   showGameOver,
@@ -140,12 +153,15 @@ export function GameOutcomeColumns({
   profitLabel,
   profitTone,
   size = 'dock',
+  runStatus,
 }: {
   betSummary: string
   resultSummary: string
   profitLabel: string
   profitTone: 'win' | 'loss'
   size?: GameOutcomeColumnsSize
+  /** Dock only: what the round meant for the run, shown under the round's result. */
+  runStatus?: RunEndStatus | null
 }) {
   const profitColor = profitTone === 'win' ? 'text-emerald-400' : 'text-red-400'
   const bet = formatOutcomeDisplayText(betSummary)
@@ -167,6 +183,13 @@ export function GameOutcomeColumns({
           <p className="text-xs sm:text-base font-semibold text-zinc-100 leading-tight truncate" title={result}>
             {result}
           </p>
+          {runStatus && (
+            <p
+              className={`text-[11px] sm:text-sm font-bold leading-tight line-clamp-2 mt-0.5 ${RUN_STATUS_TONE[runStatus.tone]}`}
+            >
+              {runStatus.text}
+            </p>
+          )}
         </div>
         <div className={dockBoxCls}>
           <p className={dockLabelCls}>Profit</p>
@@ -338,6 +361,7 @@ export function GameDockSettledRow({
   profitLabel: string
   tone: 'win' | 'loss'
 }) {
+  const runStatus = useRunEndStatus(useRouteMode())
   return (
     <div className="flex w-full max-w-lg items-center justify-center px-1">
       <GameOutcomeColumns
@@ -346,6 +370,7 @@ export function GameDockSettledRow({
         profitLabel={profitLabel}
         profitTone={tone}
         size="dock"
+        runStatus={runStatus}
       />
     </div>
   )

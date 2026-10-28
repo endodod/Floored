@@ -22,7 +22,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { buildPendingResult, type GamePendingResult } from '@/lib/game-result-labels'
@@ -143,7 +143,7 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
 
   const isBetting = !isSpinning && round.stage === 'betting'
   const isSettled = !isSpinning && round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: !isSpinning })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: !isSpinning })
   const canSpin   = currentBet >= minBet && currentBet <= bankroll
 
   useEffect(() => {

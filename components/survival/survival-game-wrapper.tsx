@@ -9,8 +9,6 @@ import { formatChips } from '@/utils/format'
 import { useOpeningTicketActive } from '@/hooks/use-opening-ticket'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
 import type { GameName } from '@/store/types'
-import { FloorCompleteModal } from '@/components/survival/floor-complete-modal'
-import { SurvivalDefeatModal } from '@/components/survival/survival-defeat-modal'
 import { MissionPanel } from '@/components/survival/mission-panel'
 import { OwnedUpgradesList } from '@/components/survival/survival-shop'
 import { ActiveItemsPanel } from '@/components/survival/active-items-panel'
@@ -124,8 +122,6 @@ export function SurvivalGameWrapper({
 
   return (
     <>
-      <FloorCompleteModal />
-      <SurvivalDefeatModal />
       <div className="flex flex-1 min-h-0 gap-3">
         {/* Left sidebar — active items + upgrades */}
         <div className="hidden lg:flex flex-col gap-2 w-44 shrink-0 min-h-0">

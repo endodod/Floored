@@ -15,7 +15,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { PerkHint } from '@/components/survival/perk-hint'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
@@ -154,7 +154,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
   const isSetup = state.stage === 'setup'
   const isOpening = state.stage === 'opening'
   const isSettled = state.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: !isOpening && (isSetup || isSettled),
   })
   const isRerollPending = isOpening && rerollPending

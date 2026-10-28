@@ -17,7 +17,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -153,7 +153,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
   const isBetting = state.stage === 'betting'
   const isSelecting = state.stage === 'selecting'
   const isSettled = state.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: isBetting || isSettled })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: isBetting || isSettled })
   const canDeal = currentBet >= minBet && currentBet <= bankroll
   const showQuoteUntilNext = !isBetting && !isSettled
   const potentialWinnings =

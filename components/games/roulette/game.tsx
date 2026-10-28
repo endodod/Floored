@@ -21,7 +21,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -154,7 +154,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
 
   const isBetting = round.stage === 'betting' && !spinning
   const isSettled = round.stage === 'settled' && !spinning
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: !spinning })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: !spinning })
 
   // Ball Tracker: proc + eliminated numbers during betting (before spin).
   useEffect(() => {

@@ -18,7 +18,7 @@ import {
   GameDockChipRow,
   GameDockGameOverButton,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { buildPendingResult, formatPlinkoRiskLabel } from '@/lib/game-result-labels'
@@ -123,7 +123,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
   const dropAccumulatorRef = useRef<PlinkoDropAccumulator | null>(null)
 
   const isDropping = sessions.length > 0
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: !isDropping })
+  const { status: runStatus, showGameOver, handleGameOver } = useRunEnd(mode, { idle: !isDropping })
   const commitBet = currentBet >= minBet ? currentBet : lastBet >= minBet ? lastBet : 0
   const perBallBet = commitBet >= minBet ? commitBet : minBet
   const maxAffordableBalls = Math.max(
@@ -336,8 +336,15 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
       <div className={GAME_CONTROL_DOCK_M}>
         <div className={`${GAME_DOCK_INNER} min-h-0`}>
           <div className="flex flex-1 min-h-0 w-full items-center justify-center">
+            {showGameOver && runStatus && (
+              <p
+                className={`text-base font-bold text-center ${runStatus.tone === 'win' ? 'text-emerald-400' : runStatus.tone === 'loss' ? 'text-red-400' : 'text-zinc-300'}`}
+              >
+                {runStatus.text}
+              </p>
+            )}
             <GameDockChipRow
-              visible={!isDropping}
+              visible={!isDropping && !showGameOver}
               bankroll={bankroll}
               currentBet={currentBet}
               onAddChip={addChip}

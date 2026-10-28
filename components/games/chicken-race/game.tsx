@@ -16,7 +16,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -95,7 +95,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
   const isBetting = state.stage === 'betting'
   const isRacing = state.stage === 'racing'
   const isSettled = state.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: !isRacing })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: !isRacing })
   const canRace = state.pickedChicken !== null && currentBet >= minBet && currentBet <= bankroll
   const activeBet = isRacing || isSettled ? state.betAmount : 0
   const potentialWinnings =

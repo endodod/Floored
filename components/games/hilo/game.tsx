@@ -19,7 +19,7 @@ import {
   GameDockSettledActions,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -151,7 +151,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   const isPlaying = round.stage === 'playing'
   const isRiding = round.stage === 'riding'
   const isSettled = round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: isBetting || (isSettled && pendingResult != null),
   })
   const canDeal = currentBet >= minBet && currentBet <= bankroll

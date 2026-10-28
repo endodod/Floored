@@ -10,7 +10,7 @@ import { useBetGuard } from '@/hooks/use-bet-guard'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { resolveGame } from '@/lib/survival/game-resolve'
 import { useSurvivalPerks } from '@/hooks/use-survival-perks'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import type { BlackjackCard, BlackjackOutcome, BlackjackState } from '@/games/blackjack/types'
 import {
   calculateHandValue,
@@ -101,7 +101,7 @@ export function useBlackjackGame({
   const isInProgress = round.stage === 'inProgress'
   const playerCanAct = isInProgress && !settling
 
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: isBetting || (round.stage === 'settled' && pendingResult != null),
   })
 

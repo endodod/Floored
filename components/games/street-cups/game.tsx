@@ -17,7 +17,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -229,7 +229,7 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
   const isShuffling = round.stage === 'shuffling'
   const isPicking   = round.stage === 'picking'
   const isSettled   = round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: !isPicking && !isRevealing && !isShuffling && (isBetting || (isSettled && showNext)),
   })
 
