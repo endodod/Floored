@@ -217,9 +217,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
           visible={!isBetting}
         />
 
-        <div className="mines-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
+        <div className="grid5-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
           {/* One slot: difficulty while betting, the round's figures after. */}
-          <div className="mines-top flex h-9 shrink-0 items-center justify-center gap-2">
+          <div className="grid5-top flex h-9 shrink-0 items-center justify-center gap-2">
             {isBetting ? (
               <div className="flex rounded-full bg-black/25 p-1" role="radiogroup" aria-label="Difficulty">
                 {DIFFICULTIES.map((level) => (
@@ -255,7 +255,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
 
           {/* The minefield: tiles cascade in, turn up with a flip, the board shakes on a mine. */}
           <div
-            className={`mines-grid grid shrink-0 grid-cols-5 [--stagger:40ms] gap-[calc(var(--tile)*0.14)] ${
+            className={`grid5-grid grid shrink-0 grid-cols-5 [--stagger:40ms] gap-[calc(var(--tile)*0.14)] ${
               isSettled && round.outcome === 'loss' ? 'g-shake' : ''
             }`}
           >
@@ -290,7 +290,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
                 ))}
           </div>
 
-          <p className="mines-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
+          <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
             {isBetting
               ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
               : isInProgress
