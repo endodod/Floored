@@ -87,7 +87,7 @@ export function MissionPanel({ compact = false }: MissionPanelProps) {
             <span className="text-[13px]">
               <span className="num text-gold">+{m.rewardSparks}</span>
               <span className="text-dim"> sparks</span>
-              {m.completed && <span className="text-felt"> · done</span>}
+              {m.completed && <span className="text-felt glow-felt"> · done</span>}
               {failed && !m.completed && <span className="text-loss"> · failed</span>}
             </span>
           </div>
@@ -104,7 +104,7 @@ export function MissionPanel({ compact = false }: MissionPanelProps) {
         </div>
         {!m.completed && !failed && (
           <div className={`${compact ? 'mt-1.5 h-1' : 'mt-2 h-1.5'} overflow-hidden rounded-full bg-raised`}>
-            <div className="h-full rounded-full bg-felt transition-[width]" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full bg-felt shadow-[0_0_8px_rgba(79,174,132,0.7)] transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
           </div>
         )}
       </li>

@@ -124,11 +124,11 @@ export function FloorCompletePanel() {
   return (
     <section
       aria-labelledby="floor-complete-title"
-      className="grid grid-cols-1 gap-6 rounded-md bg-surface p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10"
+      className="rise grid grid-cols-1 gap-6 rounded-md bg-surface p-5 shadow-[inset_0_0_0_1px_rgba(79,174,132,0.3),0_0_60px_-20px_rgba(79,174,132,0.5)] sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10"
     >
       <div className="flex flex-col gap-4">
         <div>
-          <h2 id="floor-complete-title" className="text-xl font-semibold text-ink">
+          <h2 id="floor-complete-title" className="glow-felt text-xl font-semibold text-felt">
             {title}
           </h2>
           <p className="mt-1 text-[13px] leading-5 text-soft">{body}</p>

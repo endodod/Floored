@@ -34,6 +34,9 @@ export function FloorPanel() {
   const showFinishQuota = runActive && !floorComplete && !runDefeated
   const finishQuotaEnabled = bankroll >= quotaTarget && bankroll >= floorMinBet
   const betsLeft = Math.max(0, FLOOR_BET_LIMIT - floorBetsPlaced)
+  // Close to failing: few bets left and still short of the quota.
+  const danger = !quotaReached && !floorComplete && !runDefeated && betsLeft <= 2
+  const barMotion = quotaReached ? 'bar-glow' : danger ? 'bar-danger' : ''
 
   const status = runDefeated
     ? { text: 'Run over — continue to return home.', tone: 'text-loss' }
@@ -43,7 +46,7 @@ export function FloorPanel() {
         ? { text: 'Quota met. Finish the floor now, or keep betting to build your bankroll.', tone: 'text-felt' }
         : {
             text: `${formatChips(quotaTarget - bankroll)} to go with ${betsLeft} bet${betsLeft === 1 ? '' : 's'} left.`,
-            tone: 'text-soft',
+            tone: danger ? 'text-loss' : 'text-soft',
           }
 
   return (
@@ -70,10 +73,10 @@ export function FloorPanel() {
         }
       />
 
-      <div className="rounded-md bg-surface px-4 py-4 sm:px-5">
+      <div className="rise rounded-md bg-surface px-4 py-4 [--d:80ms] sm:px-5">
         <div className="flex items-baseline justify-between gap-4">
           <p className="text-[13px]">
-            <span className="num text-xl text-ink">{formatChips(bankroll)}</span>
+            <span className={`num text-xl ${quotaReached ? 'text-felt glow-felt' : 'text-ink'}`}>{formatChips(bankroll)}</span>
             <span className="text-dim"> of </span>
             <span className="num text-soft">{formatChips(quotaTarget)}</span>
             <span className="text-dim"> quota</span>
@@ -88,7 +91,7 @@ export function FloorPanel() {
           aria-valuemax={100}
           aria-valuenow={Math.round(progressPct)}
         >
-          <div className={`h-full rounded-full transition-[width] duration-500 ${barTone}`} style={{ width: `${progressPct}%` }} />
+          <div className={`h-full rounded-full transition-[width] duration-700 ease-out ${barTone} ${barMotion}`} style={{ width: `${Math.max(progressPct, 1.5)}%` }} />
         </div>
         <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-md bg-line">
           {[

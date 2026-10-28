@@ -61,7 +61,7 @@ export function Lobby({ mode }: Props) {
 
   return (
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {displayGames.map((g) => {
+      {displayGames.map((g, i) => {
         const available = isAvailable(g)
         const isLoading = pendingGame === g.name
         const slotIndex = floorGames.indexOf(g.name)
@@ -77,6 +77,7 @@ export function Lobby({ mode }: Props) {
         return (
           <li key={g.name}>
             <GameTile
+              index={i}
               label={g.label}
               sub={g.sub}
               meta={<PayoutCaption game={g.name} />}

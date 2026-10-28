@@ -106,11 +106,11 @@ export default function DailyPage() {
       )}
 
       <section className="flex flex-col gap-4" aria-labelledby="daily-games">
-        <SectionTitle note={`${totalBets} bets across ${challenge.games.length} games, in any order`}>
+        <SectionTitle suit={1} note={`${totalBets} bets across ${challenge.games.length} games, in any order`}>
           <span id="daily-games">Today&apos;s games</span>
         </SectionTitle>
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {challenge.games.map(({ game, bets }) => {
+          {challenge.games.map(({ game, bets }, i) => {
             const entry = GAME_BY_NAME.get(game)
             if (!entry) return null
             const p = progress[game]
@@ -122,6 +122,7 @@ export default function DailyPage() {
             return (
               <li key={game}>
                 <GameTile
+                  index={i}
                   label={entry.label}
                   sub={entry.sub}
                   disabled={!playable || !!pending}
@@ -157,7 +158,7 @@ export default function DailyPage() {
 
       {(
         <section className="flex flex-col gap-4" aria-labelledby="daily-record">
-          <SectionTitle note="Kept in this browser">
+          <SectionTitle suit={0} note="Kept in this browser">
             <span id="daily-record">Your record</span>
           </SectionTitle>
           <FigureStrip

@@ -40,7 +40,7 @@ function Toggle({ on, label, note, onToggle }: { on: boolean; label: string; not
         {label}
         {note && <span className="ml-1.5 text-dim">{note}</span>}
       </span>
-      <span className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${on ? 'bg-felt' : 'bg-control'}`}>
+      <span className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${on ? 'bg-felt shadow-[0_0_12px_rgba(79,174,132,0.7)]' : 'bg-control'}`}>
         <span
           className={`absolute top-0.5 h-3 w-3 rounded-full bg-ink transition-transform duration-200 ${on ? 'translate-x-[13px]' : 'translate-x-0.5'}`}
         />

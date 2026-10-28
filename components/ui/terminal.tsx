@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
@@ -30,7 +30,7 @@ export function PageTitle({
   className?: string
 }) {
   return (
-    <header className={cn('flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
+    <header className={cn('rise flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
         <h1 className="text-[22px] sm:text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">{title}</h1>
         {sub && <p className="mt-1 text-[13px] leading-5 text-dim">{sub}</p>}
@@ -40,11 +40,28 @@ export function PageTitle({
   )
 }
 
-/** A section heading outside the cards: 16/600 with an optional count or note on the right. */
-export function SectionTitle({ children, note }: { children: ReactNode; note?: ReactNode }) {
+export const SUITS = ['\u2660\uFE0E', '\u2665\uFE0E', '\u2666\uFE0E', '\u2663\uFE0E'] as const
+
+/** A card suit as a small glyph; hearts and diamonds in the loss red, spades and clubs in ink. */
+export function Suit({ index, className }: { index: number; className?: string }) {
+  const i = ((index % 4) + 4) % 4
+  const suit = SUITS[i]
+  const red = i === 1 || i === 2
+  return (
+    <span aria-hidden className={cn('select-none', red ? 'text-loss' : 'text-ink', className)}>
+      {suit}
+    </span>
+  )
+}
+
+/** A section heading outside the cards: 16/600 with a suit pip, and an optional count or note on the right. */
+export function SectionTitle({ children, note, suit = 2 }: { children: ReactNode; note?: ReactNode; suit?: number }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <h2 className="text-base font-semibold text-ink">{children}</h2>
+      <h2 className="flex items-baseline gap-2 text-base font-semibold text-ink">
+        <Suit index={suit} className="text-[11px] opacity-80" />
+        <span>{children}</span>
+      </h2>
       {note && <p className="text-xs text-dim">{note}</p>}
     </div>
   )
@@ -53,9 +70,9 @@ export function SectionTitle({ children, note }: { children: ReactNode; note?: R
 export type FigureTone = 'win' | 'loss' | 'gold' | 'dim'
 
 const FIGURE_TONE: Record<FigureTone, string> = {
-  win: 'text-felt',
-  loss: 'text-loss',
-  gold: 'text-gold',
+  win: 'text-felt glow-felt',
+  loss: 'text-loss glow-loss',
+  gold: 'text-gold glow-gold',
   dim: 'text-dim',
 }
 
@@ -73,14 +90,14 @@ export function FigureStrip({ items, className }: { items: Figure[]; className?:
   return (
     <dl
       className={cn(
-        'grid grid-cols-2 gap-px overflow-hidden rounded-md bg-line',
+        'rise grid grid-cols-2 gap-px overflow-hidden rounded-md bg-line [--d:80ms]',
         items.length >= 4 ? 'sm:grid-cols-4' : items.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2',
         items.length % 2 === 1 && '[&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1',
         className,
       )}
     >
       {items.map((f) => (
-        <div key={f.label} className="bg-surface px-4 py-3 sm:px-5 sm:py-4">
+        <div key={f.label} className="bg-surface px-4 py-3 transition-colors hover:bg-[#18171c] sm:px-5 sm:py-4">
           <dt className="text-xs text-dim">{f.label}</dt>
           <dd className={cn('num mt-1 text-xl leading-7 text-ink', f.tone && FIGURE_TONE[f.tone])}>
             {f.value}
@@ -122,10 +139,11 @@ export function UnitTrack({
         return (
           <span
             key={i}
+            style={{ '--d': `${i * 22}ms` } as CSSProperties}
             className={cn(
               'w-full min-w-[4px] max-w-[18px] rounded-[1px]',
               checkpoint ? 'h-[14px]' : 'h-[9px]',
-              isCurrent ? 'bg-felt' : i < done ? 'bg-soft' : 'bg-control',
+              isCurrent ? 'unit-current bg-felt' : cn('unit', i < done ? 'bg-soft' : 'bg-control'),
             )}
           />
         )

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Menu, User, X } from 'lucide-react'
 import { useFreeplayStore } from '@/store/freeplay-store'
@@ -20,13 +20,29 @@ const MODES = [
   { href: '/freeplay', label: 'Freeplay', enabled: true },
 ].filter((m) => m.enabled)
 
-/** The mode's money, always in the same place: grey label, mono figure. */
-function BarFigure({ label, value, unit }: { label: string; value: string; unit?: string }) {
+/** Remembers the last value and returns a class that flashes the direction it just moved. */
+function useTick(value: number): string {
+  const prev = useRef(value)
+  const [tick, setTick] = useState<{ cls: string; n: number }>({ cls: '', n: 0 })
+  useEffect(() => {
+    if (value !== prev.current) {
+      setTick((t) => ({ cls: value > prev.current ? 'tick-up' : 'tick-down', n: t.n + 1 }))
+      prev.current = value
+    }
+  }, [value])
+  return tick.cls ? `${tick.cls} k${tick.n % 2}` : ''
+}
+
+/** The mode's money, always in the same place: grey label, mono figure that flashes when it moves. */
+function BarFigure({ label, value }: { label: string; value: number }) {
+  const tick = useTick(value)
   return (
     <p className="flex items-baseline gap-1.5 whitespace-nowrap">
       <span className="hidden text-xs text-dim md:inline">{label}</span>
-      <span className="num text-sm text-ink">{value}</span>
-      {unit && <span className="num text-xs text-dim">{unit}</span>}
+      {/* key re-mounts the span so the flash replays on every change */}
+      <span key={tick} className={`num text-sm text-ink ${tick}`}>
+        {formatChips(value)}
+      </span>
     </p>
   )
 }
@@ -59,16 +75,16 @@ export function Navbar() {
   const current = MODES.find((m) => pathname.startsWith(m.href))?.label ?? (inAccount ? 'Account' : null)
 
   let figure: React.ReactNode = null
-  if (hydrated && inDaily) figure = <BarFigure label="Daily bankroll" value={formatChips(dailyBankroll)} />
-  else if (hydrated && inLadder && ladderStatus === 'climbing') figure = <BarFigure label="Pot" value={formatChips(ladderPot)} />
-  else if (hydrated && inFreeplay) figure = <BarFigure label="Balance" value={formatChips(freeplayBankroll)} />
+  if (hydrated && inDaily) figure = <BarFigure label="Daily bankroll" value={dailyBankroll} />
+  else if (hydrated && inLadder && ladderStatus === 'climbing') figure = <BarFigure label="Pot" value={ladderPot} />
+  else if (hydrated && inFreeplay) figure = <BarFigure label="Balance" value={freeplayBankroll} />
 
   return (
     <>
-      <nav className="sticky top-0 z-50 shrink-0 border-b border-line bg-ground">
+      <nav className="sticky top-0 z-50 shrink-0 border-b border-line bg-[rgba(23,23,25,0.78)] backdrop-blur-md">
         <div className="container mx-auto flex h-12 items-center gap-6 px-4 sm:px-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2 text-ink" aria-label="Floored, home">
-            <FlooredMark />
+          <Link href="/" className="group flex shrink-0 items-center gap-2 text-ink" aria-label="Floored, home">
+            <FlooredMark className="transition-transform duration-300 group-hover:-rotate-6" />
             <span className="text-[15px] font-semibold tracking-[-0.01em]">Floored</span>
           </Link>
 
@@ -98,7 +114,7 @@ export function Navbar() {
             {showSurvivalHud && (
               <p className="num flex items-baseline gap-3 whitespace-nowrap text-[13px]">
                 <span>
-                  <span className={bankroll >= quotaTarget ? 'text-ink' : 'text-loss'}>{formatChips(bankroll)}</span>
+                  <span className={bankroll >= quotaTarget ? 'text-felt glow-felt' : 'text-loss'}>{formatChips(bankroll)}</span>
                   <span className="text-dim"> / {formatChips(quotaTarget)}</span>
                 </span>
                 <span>
@@ -135,7 +151,7 @@ export function Navbar() {
       </nav>
 
       {menuOpen && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-ground sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+        <div className="sheet-in fixed inset-0 z-[60] flex flex-col bg-ground sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="flex h-12 items-center justify-between border-b border-line px-4">
             <Link href="/" className="flex items-center gap-2 text-ink">
               <FlooredMark />

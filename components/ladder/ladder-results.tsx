@@ -27,12 +27,12 @@ export function LadderResults({ record, onNewRun }: { record: LadderRecord; onNe
   }
 
   return (
-    <section className="flex flex-col gap-5 rounded-md bg-surface p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6" aria-labelledby="ladder-result">
+    <section className="rise flex flex-col gap-5 rounded-md bg-surface p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6" aria-labelledby="ladder-result">
       <div>
         <h2 id="ladder-result" className={`text-[13px] ${out ? 'text-loss' : 'text-dim'}`}>
           {END_LABEL[record.endReason]}
         </h2>
-        <p className="num mt-1 text-[32px] leading-tight text-ink">{formatChips(record.finalPot)}</p>
+        <p className={`num mt-1 text-[32px] leading-tight ${out ? 'text-ink' : 'text-gold glow-gold'}`}>{formatChips(record.finalPot)}</p>
         <p className="mt-1 text-[13px] text-dim">
           Reached rung {record.peakRung}/{LADDER_RUNGS} · {record.falls} fall{record.falls === 1 ? '' : 's'} · started
           with {formatChips(START_POT)}

@@ -176,7 +176,7 @@ export function SurvivalShop({ embedded = false }: SurvivalShopProps) {
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="text-base font-semibold text-ink">Shop</h3>
           <p className="text-[13px] text-dim">
-            <span className="num text-gold">{formatChips(sparks)}</span> sparks
+            <span className="num text-gold glow-gold">✦ {formatChips(sparks)}</span> sparks
           </p>
         </div>
       )}
@@ -238,7 +238,7 @@ function OfferCard({
     .join(' · ')
 
   return (
-    <div className={`relative flex flex-col gap-2 rounded-md bg-raised p-4 ${CARD_HEIGHT}`}>
+    <div className={`relative flex flex-col gap-2 rounded-md bg-raised p-4 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.35),0_10px_30px_-14px_rgba(217,164,65,0.5)] ${CARD_HEIGHT}`}>
       {canReroll && (
         <button
           type="button"

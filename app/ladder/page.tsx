@@ -26,14 +26,17 @@ import { PayoutCaption } from '@/components/game-payout'
 import { ScreenSkeleton } from '@/components/screen-skeleton'
 
 const TONE = {
-  good: 'text-felt',
-  bad: 'text-loss',
+  good: 'text-felt glow-felt',
+  bad: 'text-loss glow-loss',
   neutral: 'text-ink',
 }
 
 function ResultNote({ tone, title, body }: { tone: keyof typeof TONE; title: string; body: string }) {
   return (
-    <div className="rounded-md bg-surface px-5 py-4" role="status">
+    <div
+      className={`rise relative overflow-hidden rounded-md bg-surface px-5 py-4 ${tone === 'good' ? 'shadow-[inset_2px_0_0_var(--felt)]' : tone === 'bad' ? 'shadow-[inset_2px_0_0_var(--loss)]' : ''}`}
+      role="status"
+    >
       <p className={`text-[15px] font-semibold ${TONE[tone]}`}>{title}</p>
       <p className="mt-0.5 text-[13px] leading-5 text-soft">{body}</p>
     </div>
@@ -42,7 +45,7 @@ function ResultNote({ tone, title, body }: { tone: keyof typeof TONE; title: str
 
 function Rules() {
   return (
-    <div className="flex max-w-[64ch] flex-col gap-3 text-[13px] leading-5 text-soft">
+    <div className="rise flex max-w-[64ch] flex-col gap-3 text-[13px] leading-5 text-soft [--d:60ms]">
       <p>
         Start with <span className="num text-ink">{formatChips(START_POT)}</span> and climb {LADDER_RUNGS} rungs. Each
         rung, pick a game and go all-in — any round that ends in profit clears it, and your pot becomes the payout. A
@@ -63,7 +66,7 @@ function Rules() {
 function LadderRungs({ rung, cleared, checkpointRung }: { rung: number; cleared: { game: GameName; multiplier: number }[]; checkpointRung: number }) {
   const rows = Array.from({ length: LADDER_RUNGS }, (_, i) => LADDER_RUNGS - i)
   return (
-    <ol className="rounded-md bg-surface px-4 py-2" aria-label="Ladder, top rung first">
+    <ol className="rise rounded-md bg-surface px-4 py-2 [--d:160ms]" aria-label="Ladder, top rung first">
       {rows.map((n) => {
         const done = cleared[n - 1]
         const entry = done ? GAMES.find((g) => g.name === done.game) : undefined
@@ -73,9 +76,9 @@ function LadderRungs({ rung, cleared, checkpointRung }: { rung: number; cleared:
           <li
             key={n}
             aria-current={current ? 'step' : undefined}
-            className={`flex h-8 items-center gap-3 text-[13px] ${checkpoint ? 'border-b border-line' : ''}`}
+            className={`relative flex h-8 items-center gap-3 text-[13px] transition-colors ${checkpoint ? 'border-b border-line' : ''} ${current ? '-mx-4 bg-felt-tint px-4 shadow-[inset_2px_0_0_var(--felt)]' : ''}`}
           >
-            <span className={`num w-5 text-right text-xs ${current ? 'text-felt' : 'text-dim'}`}>{n}</span>
+            <span className={`num w-5 text-right text-xs ${current ? 'text-felt glow-felt' : done ? 'text-soft' : 'text-dim'}`}>{n}</span>
             <span className="min-w-0 flex-1 truncate">
               {entry ? (
                 <span className="text-soft">{entry.label}</span>
@@ -87,7 +90,9 @@ function LadderRungs({ rung, cleared, checkpointRung }: { rung: number; cleared:
             </span>
             {done && <span className="num text-xs text-felt">{formatMultiplier(done.multiplier)}</span>}
             {checkpoint && !done && (
-              <span className={`text-[11px] ${n <= checkpointRung ? 'text-felt' : 'text-dim'}`}>checkpoint</span>
+              <span className={`text-[11px] ${n <= checkpointRung ? 'text-felt' : 'text-dim'}`}>
+                <span aria-hidden className="mr-1">⚑&#xFE0E;</span>checkpoint
+              </span>
             )}
           </li>
         )
@@ -166,8 +171,8 @@ export default function LadderPage() {
                   Start climbing
                 </Button>
               </div>
-              <section className="flex flex-col gap-3" aria-labelledby="ladder-payouts">
-                <SectionTitle note="Safe games climb, big payouts grow the pot">
+              <section className="rise flex flex-col gap-3 [--d:220ms]" aria-labelledby="ladder-payouts">
+                <SectionTitle suit={1} note="Safe games climb, big payouts grow the pot">
                   <span id="ladder-payouts">What each game can pay</span>
                 </SectionTitle>
                 <ul className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
@@ -207,11 +212,11 @@ export default function LadderPage() {
             </div>
 
             <section className="order-1 flex flex-col gap-4 lg:order-2" aria-labelledby="ladder-games">
-              <SectionTitle note={`${available.length} of ${GAMES.length} games left this run`}>
+              <SectionTitle suit={3} note={`${available.length} of ${GAMES.length} games left this run`}>
                 <span id="ladder-games">Pick the game for rung {s.rung + 1}</span>
               </SectionTitle>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {GAMES.map((entry) => {
+                {GAMES.map((entry, i) => {
                   const game = entry.name
                   const usedOn = s.cleared.findIndex((c) => c.game === game)
                   const playable = usedOn === -1
@@ -219,6 +224,7 @@ export default function LadderPage() {
                   return (
                     <li key={game}>
                       <GameTile
+                        index={i}
                         label={entry.label}
                         sub={entry.sub}
                         meta={<PayoutCaption game={game} />}

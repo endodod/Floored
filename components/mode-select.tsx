@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -17,7 +17,7 @@ import { useFreeplayStore } from '@/store/freeplay-store'
 import { GAMES } from '@/lib/game-catalog'
 import { formatChips } from '@/utils/format'
 import { Button } from '@/components/ui/button'
-import { SectionTitle, UnitTrack } from '@/components/ui/terminal'
+import { SectionTitle, Suit, UnitTrack } from '@/components/ui/terminal'
 import { PayoutCaption } from '@/components/game-payout'
 
 interface ModeRowProps {
@@ -29,14 +29,26 @@ interface ModeRowProps {
   figure: ReactNode
   figureSub?: ReactNode
   action: ReactNode
+  index: number
 }
 
 /** One mode as a ledger row: what it is, where you are on its track, its money, the way in. */
-function ModeRow({ name, description, track, trackCaption, figureLabel, figure, figureSub, action }: ModeRowProps) {
+function ModeRow({ name, description, track, trackCaption, figureLabel, figure, figureSub, action, index }: ModeRowProps) {
   return (
-    <li className="grid grid-cols-1 gap-4 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_220px_168px_148px] lg:items-center lg:gap-8">
+    <li
+      className="rise group relative grid grid-cols-1 gap-4 px-4 py-5 transition-colors duration-300 hover:bg-[#17161c] sm:px-6 lg:grid-cols-[minmax(0,1fr)_220px_168px_148px] lg:items-center lg:gap-8"
+      style={{ '--d': `${120 + index * 70}ms` } as CSSProperties}
+    >
+      {/* the felt edge that lights up on the row you are about to pick */}
+      <span
+        aria-hidden
+        className="absolute bottom-4 left-0 top-4 w-[2px] origin-center scale-y-0 bg-felt shadow-[0_0_12px_rgba(79,174,132,0.9)] transition-transform duration-300 group-hover:scale-y-100"
+      />
       <div className="min-w-0">
-        <h2 className="text-[17px] font-semibold leading-snug text-ink">{name}</h2>
+        <h2 className="flex items-baseline gap-2 text-[17px] font-semibold leading-snug text-ink">
+          <Suit index={index} className="text-[13px] opacity-70 transition-opacity group-hover:opacity-100" />
+          {name}
+        </h2>
         <p className="mt-1 max-w-[52ch] text-[13px] leading-5 text-dim">{description}</p>
       </div>
       <div className="flex flex-col gap-2">
@@ -93,9 +105,10 @@ export function ModeSelect() {
 
   return (
     <div className="flex flex-col gap-12">
-      <ul className="divide-y divide-rule rounded-md bg-surface">
+      <ul className="divide-y divide-rule overflow-hidden rounded-md bg-surface shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
         {/* ── Daily ── */}
         <ModeRow
+          index={0}
           name={challenge ? `Daily #${challenge.number}` : 'Daily'}
           description="The same challenge for everyone, one attempt. Place every bet across three games and finish with as much as you can."
           track={
@@ -132,6 +145,7 @@ export function ModeSelect() {
         {/* ── Ladder ── */}
         {LADDER_ENABLED && (
           <ModeRow
+            index={1}
             name="Ladder"
             description="Go all-in rung after rung. Any profit climbs, every game once per run; lose and you fall to the last checkpoint."
             track={
@@ -161,6 +175,7 @@ export function ModeSelect() {
         {/* ── Survival (toggle in lib/features.ts) ── */}
         {SURVIVAL_ENABLED && (
           <ModeRow
+            index={2}
             name="Survival"
             description={`Reach each floor's bankroll quota within ${FLOOR_BET_LIMIT} bets or the run ends. Sparks from each floor buy upgrades.`}
             track={
@@ -195,6 +210,7 @@ export function ModeSelect() {
 
         {/* ── Freeplay ── */}
         <ModeRow
+          index={3}
           name="Freeplay"
           description="Every game, no floors and no quotas. Practise anything and reset your balance whenever you like."
           track={<UnitTrack total={GAMES.length} done={GAMES.length} label={`${GAMES.length} games open`} />}
@@ -209,7 +225,7 @@ export function ModeSelect() {
         />
       </ul>
 
-      <section className="flex flex-col gap-4" aria-labelledby="all-games">
+      <section className="rise flex flex-col gap-4 [--d:420ms]" aria-labelledby="all-games">
         <SectionTitle note="Opens in Freeplay">
           <span id="all-games">All {GAMES.length} games</span>
         </SectionTitle>
@@ -218,7 +234,7 @@ export function ModeSelect() {
             <li key={g.name} className="border-t border-rule">
               <Link
                 href={`/freeplay/${g.name}`}
-                className="group flex items-baseline justify-between gap-4 py-3"
+                className="group flex items-baseline justify-between gap-4 py-3 transition-[padding] duration-200 hover:pl-1.5"
               >
                 <span className="min-w-0">
                   <span className="mark-line text-[14px] font-medium text-ink">{g.label}</span>

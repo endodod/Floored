@@ -10,6 +10,7 @@ import { SurvivalDefeatPanel } from '@/components/survival/survival-defeat-panel
 import { MissionPanel } from '@/components/survival/mission-panel'
 import { SurvivalShop } from '@/components/survival/survival-shop'
 import { Button } from '@/components/ui/button'
+import { SectionTitle } from '@/components/ui/terminal'
 import { calcShopPrice } from '@/lib/survival/balance'
 import { getLobbyTicketCount, LOBBY_REROLL_TICKET } from '@/lib/survival/lobby-ticket'
 
@@ -75,9 +76,9 @@ export default function SurvivalPage() {
       {showHubPanels && (
         <section className={`${mobileTab === 'games' ? 'flex' : 'hidden'} flex-col gap-4 sm:flex`} aria-labelledby="floor-games">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="floor-games" className="text-base font-semibold text-ink">
-              This floor&apos;s games
-            </h2>
+            <SectionTitle suit={0}>
+              <span id="floor-games">This floor&apos;s games</span>
+            </SectionTitle>
             <div className="flex items-center gap-3">
               <p className="text-[13px] text-dim">
                 <span className="num text-ink">{ticketCount}</span> reroll ticket{ticketCount === 1 ? '' : 's'}
@@ -92,7 +93,7 @@ export default function SurvivalPage() {
       )}
 
       {showHubPanels && (
-        <div className={`${mobileTab === 'shop' ? 'grid' : 'hidden'} grid-cols-1 items-start gap-3 sm:grid lg:grid-cols-3`}>
+        <div className={`${mobileTab === 'shop' ? 'grid' : 'hidden'} grid-cols-1 items-start gap-3 sm:grid lg:grid-cols-3 rise [--d:500ms]`}>
           <div className="lg:col-span-2">
             <SurvivalShop />
           </div>

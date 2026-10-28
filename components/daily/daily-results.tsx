@@ -31,17 +31,17 @@ export function DailyResults({ record }: { record: DailyRecord }) {
   }
 
   return (
-    <section className="grid grid-cols-1 gap-6 rounded-md bg-surface p-5 sm:p-6 lg:grid-cols-2 lg:gap-10" aria-labelledby="daily-result">
+    <section className="rise grid grid-cols-1 gap-6 rounded-md bg-surface p-5 sm:p-6 lg:grid-cols-2 lg:gap-10" aria-labelledby="daily-result">
       <div className="flex flex-col gap-4">
         <div>
           <h2 id="daily-result" className={`text-[13px] ${failed ? 'text-loss' : 'text-dim'}`}>
             {failed ? 'Challenge failed' : 'Challenge complete'}
           </h2>
           {failed ? (
-            <p className="num mt-1 text-[32px] leading-tight text-loss">{formatChips(record.endBankroll)}</p>
+            <p className="num glow-loss mt-1 text-[32px] leading-tight text-loss">{formatChips(record.endBankroll)}</p>
           ) : (
             <p className="mt-1 flex items-baseline gap-3">
-              <span className="num text-[32px] leading-tight text-ink">{formatChips(record.endBankroll)}</span>
+              <span className={`num text-[32px] leading-tight ${up ? 'text-felt glow-felt' : 'text-ink'}`}>{formatChips(record.endBankroll)}</span>
               <span className={`num text-lg ${up ? 'text-felt' : 'text-loss'}`}>{formatMultiplier(m)}</span>
             </p>
           )}

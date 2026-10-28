@@ -45,11 +45,11 @@ export function SurvivalDefeatPanel() {
   return (
     <section
       aria-labelledby="survival-defeat-title"
-      className="grid grid-cols-1 gap-6 rounded-md bg-surface p-5 sm:p-6 lg:grid-cols-2 lg:gap-10"
+      className="rise grid grid-cols-1 gap-6 rounded-md bg-surface p-5 shadow-[inset_0_0_0_1px_rgba(229,86,111,0.3),0_0_60px_-20px_rgba(229,86,111,0.5)] sm:p-6 lg:grid-cols-2 lg:gap-10"
     >
       <div className="flex flex-col gap-4">
         <div>
-          <h2 id="survival-defeat-title" className="text-xl font-semibold text-loss">
+          <h2 id="survival-defeat-title" className="glow-loss text-xl font-semibold text-loss">
             {title}
           </h2>
           <p className="mt-1 text-[13px] leading-5 text-soft">{description}</p>

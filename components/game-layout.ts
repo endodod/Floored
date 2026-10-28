@@ -4,7 +4,7 @@
  */
 /** Frame without background — use with inline gradient for legacy games. */
 export const GAME_CARD_FRAME =
-  'flex-1 min-h-0 w-full max-w-4xl mx-auto rounded-md overflow-hidden flex flex-col border border-line'
+  'flex-1 min-h-0 w-full max-w-4xl mx-auto rounded-md overflow-hidden flex flex-col border border-line shadow-[0_40px_100px_-40px_rgba(0,0,0,0.95)]'
 
 export const GAME_CARD_SHELL = `${GAME_CARD_FRAME} bg-surface`
 
