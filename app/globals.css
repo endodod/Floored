@@ -1333,6 +1333,8 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .g-clear,
 :root[data-motion='reduced'] .btile-wait,
 :root[data-motion='reduced'] .cr-hop,
+:root[data-motion='reduced'] .cx-ready,
+:root[data-motion='reduced'] .cx-burst,
 :root[data-motion='reduced'] .animate-out {
   animation: none;
 }
@@ -1680,6 +1682,57 @@ body > div.neon-auth-ui {
   }
   .ou-hint {
     display: none !important;
+  }
+}
+
+/* Crash: the curve is drawn on a felt-print grid that fills the board below
+   the multiplier. The tip is a lit dot riding the curve; a crash leaves a
+   burst and shakes the chart. On a short board the hint goes (the figure and
+   the dock already say it) and the figure shrinks. */
+.cx-mult {
+  font-size: clamp(2.25rem, 17cqh, 5.5rem);
+}
+.cx-figure {
+  min-height: clamp(3.5rem, 24cqh, 7.5rem);
+}
+.cx-tip {
+  box-shadow:
+    0 0 0 3px rgba(0, 0, 0, 0.35),
+    0 0 14px 2px currentColor;
+}
+.cx-ready {
+  animation: cx-ready 1.6s ease-in-out infinite;
+}
+@keyframes cx-ready {
+  50% {
+    opacity: 0.35;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+}
+.cx-burst {
+  animation: cx-burst var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes cx-burst {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(-30deg);
+  }
+}
+.cx-line {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+@container board (max-aspect-ratio: 1/1) {
+  .cx-board {
+    padding-top: 3.4rem;
+  }
+}
+@container board (max-height: 360px) {
+  .cx-hint {
+    display: none;
+  }
+  .cx-figure {
+    min-height: 0;
+    padding-bottom: 0.25rem;
   }
 }
 
