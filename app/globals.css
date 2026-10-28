@@ -1337,6 +1337,7 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .cr-hop,
 :root[data-motion='reduced'] .cx-ready,
 :root[data-motion='reduced'] .cx-burst,
+:root[data-motion='reduced'] .crc-run,
 :root[data-motion='reduced'] .animate-out {
   animation: none;
 }
@@ -1878,6 +1879,60 @@ body > div.neon-auth-ui {
   .cx-figure {
     min-height: 0;
     padding-bottom: 0.25rem;
+  }
+}
+
+/* Chicken Race: four lanes on the felt, sized from the board (--lane). A gate
+   with the bib and name, then the track: a faint lane mark and a chequered
+   finish. The runner layer is the track minus one token, moved by transform
+   on the game's own 90 ms tick; the chicken bobs while it runs. */
+.crc-board {
+  --lane: clamp(1.75rem, calc((100cqh - 9rem) / 4.4), 4.25rem);
+}
+.crc-lane {
+  height: var(--lane);
+}
+.crc-gate {
+  width: clamp(7rem, 30cqw, 10rem);
+}
+.crc-bib {
+  width: min(calc(var(--lane) * 0.5), 1.6rem);
+  height: min(calc(var(--lane) * 0.5), 1.6rem);
+  font-size: min(calc(var(--lane) * 0.27), 0.85rem);
+}
+.crc-lanemark {
+  border-top: 1px dashed rgba(217, 164, 65, 0.16);
+}
+.crc-finish {
+  width: 8px;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.55) 0 25%, rgba(0, 0, 0, 0.55) 0 50%) 0 0 / 8px 8px;
+  opacity: 0.7;
+}
+.crc-runner {
+  right: calc(var(--lane) * 0.85 + 8px);
+  transition: transform 90ms linear;
+}
+.crc-token {
+  width: calc(var(--lane) * 0.85);
+  height: 100%;
+  padding: calc(var(--lane) * 0.06) 0;
+}
+.crc-run {
+  animation: crc-run 220ms ease-in-out infinite alternate;
+}
+@keyframes crc-run {
+  to {
+    transform: translateY(-9%) rotate(-5deg);
+  }
+}
+@container board (max-height: 380px) {
+  .crc-board {
+    --lane: clamp(1.6rem, calc((100cqh - 4.9rem) / 4.4), 3.6rem);
+    margin-top: 0.5rem;
+  }
+  .crc-label,
+  .crc-hint {
+    display: none;
   }
 }
 
