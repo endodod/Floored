@@ -37,13 +37,18 @@ new chips, buttons and dock. What remains is each game's own board.
 | HiLo | Done | Card sized from the board; on short wide boards the guesses stand beside the cards and the streak moves up; right guess glows, wrong one shakes |
 | 1-Player Poker | Done | Gold pay table (in columns on short boards); five cards fit by board width and height; staggered deal, spring hold, scoring cards glow, dead hand dims |
 | Roulette | Done, verified in the browser | **Real table betting** (asked for by the owner, so a deliberate logic change): pick a chip value, tap spots to place chips, stack them and cover several spots per spin; Undo / Clear. Chips sit on a layer over the mat (`ChipLayer`), centred on their spot. Ladder: a tap puts the whole pot on one spot. Survival opening ticket: one Ticket chip worth its cap. Blessed/cursed spins work on the whole bet set. **Not checked in a browser: the tracker perk, the ticket chip, Ladder** |
-| 14 others | Not started | Only the shared chrome from `main` |
+| Mines | Done | Shared board tile; one slot for difficulty / figures; field sized from the board (`grid5-*`, shared with Keno), side by side on short boards, below the badge band on portrait; cascade in, flip, board shakes on a mine, the rest turns up |
+| Dragon Tower | Done | Five floors of wide tiles (`dt-*`); active floor ringed in felt, cleared multipliers in gold; tower rebuilds on start; dragon row shakes; perk hint is a felt ring + dot |
+| Keno | Done | Same 5×5 layout as Mines; pick = white, hit = gold + glow, drawn-only = outlined, missed pick = dashed; picks breathe while the draw runs (`btile-wait`) |
+| Chicken Road | Done | Start curb + ten lane tiles (`cr-*`), two rows on portrait boards; drawn chicken token hops lane to lane (`cr-hop`); crash shows a burst and the road shakes |
+| Others | See later batches | Only the shared chrome from `main` unless listed above |
 
 New shared pieces on this branch:
 
 - `components/games/playing-card.tsx` — one card for all card games (face, back, slot). Sized by the `--card-h` CSS variable.
 - `app/globals.css` — `.board-fit` (every board is a size container named `board`), the **game motion kit** (`g-*` classes, read its comment block), `.pcard*` (cards), `.felt-print` (gold text printed on the felt), and per-game `@container board` blocks (`bj-*`, `hilo-*`, `poker-*`, `rl-*`) — copy their pattern.
 - `GameDockChipPicker`, `dockChips()`, `useOpeningTicketChip()` in `components/game-dock-parts.tsx` — the chip rack for games where chips are placed on a table (Roulette now; Keno may want it). Its chips are radios: in check scripts click them with `click:css=[aria-label="100 chip"]`.
+- `components/games/board-tile.tsx` — `BoardTile` (states hidden / idle / selected / safe / bad / hit / dormant, sized by `--tile`, cascades in with `g-pop`, turns up with `g-flip`) and `TileMark` (drawn gem / mine / flame). Styles: `.btile*` in `globals.css`. Modifiers: `btile-bad`, `btile-hint`, `btile-drawn`, `btile-miss`, `btile-wait`. Mines is the reference example.
 - `scripts/design-check/motion-check.cjs` — prints each element's animation under Motion = full and reduced.
 
 ### Lessons from Phase 0 (read before the next game)

@@ -668,6 +668,80 @@ body > div.neon-auth-ui {
   }
 }
 
+/* Chicken Road: the start curb and ten lanes in one row, sized from the
+   board's width; on a portrait board they wrap into two rows. On a short,
+   wide board the figures and the hint share a row under the road, and the
+   road starts below the badge band. */
+.cr-board {
+  --tile: clamp(1.6rem, min(calc((100cqw - 2.5rem) / 12.5), calc((100cqh - 9rem) / 1.2)), 4.25rem);
+  --road-w: calc(var(--tile) * 12.4);
+}
+.cr-road {
+  max-width: var(--road-w);
+}
+.btile.cr-curb {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px rgba(217, 164, 65, 0.35);
+}
+@keyframes cr-hop {
+  0% {
+    opacity: 0;
+    transform: translate(-90%, -10%) scale(0.85);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(-25%, -38%) scale(1.04);
+  }
+  100% {
+    transform: none;
+  }
+}
+.cr-hop {
+  animation: cr-hop var(--dur-med) var(--ease-out) both;
+}
+@container board (max-aspect-ratio: 1 / 1) {
+  .cr-board {
+    --tile: clamp(1.75rem, min(calc((100cqw - 2.5rem) / 6.8), calc((100cqh - 10rem) / 2.4)), 4.25rem);
+    --road-w: calc(var(--tile) * 6.7);
+    padding-top: 4.25rem !important;
+  }
+}
+@container board (max-height: 460px) and (min-aspect-ratio: 1 / 1) {
+  .cr-board {
+    --tile: clamp(1.6rem, min(calc((100cqw - 2.5rem) / 12.5), calc(100cqh - 9.75rem)), 4.25rem) !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    align-content: center;
+    column-gap: 1.25rem;
+    padding-top: 4.25rem !important;
+  }
+  .cr-road,
+  .cr-labels {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+  .cr-road {
+    grid-row: 1;
+  }
+  .cr-labels {
+    grid-row: 2;
+  }
+  .cr-stats {
+    grid-row: 3;
+    grid-column: 1;
+    justify-self: end;
+  }
+  .cr-hint {
+    grid-row: 3;
+    grid-column: 2;
+    justify-self: start;
+    max-width: 16rem;
+    text-align: left;
+    font-size: 12px;
+    min-height: 0;
+  }
+}
+
 /* Blackjack: on a short, wide board the hands sit side by side with the
    table print between them, so the cards stay large instead of shrinking. */
 @container board (max-height: 430px) and (min-aspect-ratio: 9 / 5) {
@@ -1206,6 +1280,7 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .g-shake,
 :root[data-motion='reduced'] .g-clear,
 :root[data-motion='reduced'] .btile-wait,
+:root[data-motion='reduced'] .cr-hop,
 :root[data-motion='reduced'] .animate-out {
   animation: none;
 }
