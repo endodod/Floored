@@ -1322,6 +1322,8 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .quote-in,
 :root[data-motion='reduced'] .roulette-ball-drop,
 :root[data-motion='reduced'] .fw-tick,
+:root[data-motion='reduced'] .sl-strip,
+:root[data-motion='reduced'] .sl-land,
 :root[data-motion='reduced'] .animate-in,
 :root[data-motion='reduced'] .g-deal,
 :root[data-motion='reduced'] .g-pop,
@@ -1391,30 +1393,122 @@ body > div.neon-auth-ui {
   transform: rotate(-12deg);
 }
 
-@keyframes slot-spin {
-  0%,
+/* Slots: a wooden cabinet with a gold frame, three ivory reels behind glass and
+   a gold payline. Reels take the height left after the pay table; the hint
+   (the status bar says the same) shows only on tall boards, and on short wide ones the pay table
+   stands beside the cabinet. */
+.sl-layout {
+  --reel-h: clamp(4.5rem, min(calc(100cqh - 14rem), calc((100cqw - 4rem) / 3 / 0.82)), 9.5rem);
+  max-width: 26rem;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.sl-cabinet {
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  background: linear-gradient(#3a2617, #22160d);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.55),
+    inset 0 0 0 4px #22160d,
+    inset 0 0 0 5px rgba(217, 164, 65, 0.3),
+    0 18px 36px -12px rgba(0, 0, 0, 0.7);
+}
+.sl-reel {
+  width: calc(var(--reel-h) * 0.82);
+  height: var(--reel-h);
+  background: #efe9dc;
+}
+.sl-cell {
+  width: 100%;
+  height: var(--reel-h);
+}
+.sl-glass {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 26%, transparent 74%, rgba(0, 0, 0, 0.55));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.sl-payline {
+  height: 2px;
+  transform: translateY(-50%);
+  background: rgba(217, 164, 65, 0.7);
+  box-shadow: 0 0 8px rgba(217, 164, 65, 0.5);
+}
+.sl-marker {
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translateY(-50%);
+  border-block: 6px solid transparent;
+}
+.sl-marker-l {
+  left: 0.15rem;
+  border-left: 8px solid var(--gold);
+}
+.sl-marker-r {
+  right: 0.15rem;
+  border-right: 8px solid var(--gold);
+}
+/* The strip runs down past the window; reels are out of step with each other. */
+@keyframes sl-spin {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.sl-strip {
+  animation: sl-spin 880ms linear infinite;
+  animation-delay: calc(var(--i, 0) * -290ms);
+}
+@keyframes sl-land {
+  0% {
+    transform: translateY(-22%);
+  }
+  65% {
+    transform: translateY(5%);
+  }
   100% {
-    opacity: 1;
-    filter: blur(0px);
-  }
-  50% {
-    opacity: 0.45;
-    filter: blur(3px);
+    transform: none;
   }
 }
-
-.slot-reel-spinning {
-  animation: slot-spin 0.12s linear infinite;
+.sl-land {
+  animation: sl-land 360ms var(--ease-spring) both;
 }
-
-@keyframes slot-land {
-  0%   { transform: translateY(-6px) scale(1.08); }
-  60%  { transform: translateY(2px)  scale(0.96); }
-  100% { transform: translateY(0)    scale(1);    }
+.sl-hint {
+  display: none;
 }
-
-.slot-reel-landing {
-  animation: slot-land 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+@container board (min-height: 620px) {
+  .sl-layout {
+    --reel-h: clamp(4.5rem, min(calc(100cqh - 17rem), calc((100cqw - 4rem) / 3 / 0.82)), 9.5rem);
+  }
+  .sl-hint {
+    display: flex;
+  }
+}
+@container board (max-height: 520px) {
+  .sl-layout {
+    --reel-h: clamp(3.75rem, min(calc(100cqh - 13.5rem), calc((100cqw - 4rem) / 3 / 0.82)), 9.5rem);
+  }
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 3 / 2) {
+  .sl-layout {
+    --reel-h: clamp(3.75rem, calc(100cqh - 6.5rem), 9rem);
+    flex-direction: row;
+    align-items: center;
+    max-width: none;
+    width: auto;
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .sl-pays {
+    width: 19rem;
+  }
+}
+@container board (max-height: 260px) {
+  .sl-pays-title {
+    display: none;
+  }
 }
 
 @keyframes dice-shake {
