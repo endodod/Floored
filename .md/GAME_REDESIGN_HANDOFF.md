@@ -4,7 +4,7 @@ Status as of 2026-10-28. The site-wide redesign is merged into `main`. The
 **per-game** redesign is not merged: it started on `claude/game-redesign-wip`
 and continues on `claude/wizardly-newton-e10mfi` (which contains it). **Phase 0
 of the plan is done**: every board fits its space, the motion kit exists, and
-Blackjack, HiLo, Poker and Roulette are finished. Batches 1–3 and 5 are done: **Batch 4** in **The plan** is in progress (Crash done; Chicken Race and Plinko left).
+Blackjack, HiLo, Poker and Roulette are finished. Batches 1–5 are done: every game in **The plan** is redesigned.
 
 ## The ground rule
 
