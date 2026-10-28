@@ -320,8 +320,8 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
 
       {/* Status bar */}
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Crash</span>
-        <span className="text-sm text-zinc-600">{round.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Crash</span>
+        <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
       <GameFieldWithHistory

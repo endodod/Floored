@@ -1,7 +1,7 @@
 'use client'
 import type { GameMode } from '@/store/types'
 
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
 import { useOpeningTicketActive } from '@/hooks/use-opening-ticket'
@@ -14,11 +14,18 @@ import { formatChips } from '@/utils/format'
 
 /** Standard chip denominations — copy across games via import. */
 export const GAME_CHIPS = [
-  { value: 10, label: '$10', cls: 'bg-blue-950 hover:bg-blue-900 border-blue-800 text-blue-300' },
-  { value: 25, label: '$25', cls: 'bg-blue-900 hover:bg-blue-800 border-blue-700 text-blue-200' },
-  { value: 100, label: '$100', cls: 'bg-blue-600 hover:bg-blue-500 border-blue-400 text-white' },
-  { value: 500, label: '$500', cls: 'bg-blue-200 hover:bg-blue-100 border-blue-300 text-blue-900' },
+  { value: 10, label: '10', chip: '#e9e6df', ink: '#1d1c21' },
+  { value: 25, label: '25', chip: '#2f8a62', ink: '#f4f1ea' },
+  { value: 100, label: '100', chip: '#1b1a1f', ink: '#d9a441' },
+  { value: 500, label: '500', chip: '#b83a50', ink: '#f4f1ea' },
 ] as const
+
+/** Survival's chips scale with the floor's min bet; they wear the floor's colours in the same order. */
+const SURVIVAL_CHIP_COLOURS = GAME_CHIPS.map(({ chip, ink }) => ({ chip, ink }))
+
+function chipStyle(chip: string, ink: string): CSSProperties {
+  return { '--chip': chip, '--chip-ink': ink } as CSSProperties
+}
 
 /** Inner wrapper for GAME_CONTROL_DOCK_M — fills dock; middle row grows above actions. */
 export const GAME_DOCK_INNER = 'flex flex-1 min-h-0 w-full flex-col py-3'
@@ -30,32 +37,36 @@ export const GAME_DOCK_SETTLED_SLOT =
 /** Bottom dock row — primary / leave buttons (shrink-0 so middle row keeps flex space). */
 export const GAME_DOCK_ACTIONS = 'shrink-0 w-full flex flex-col items-center gap-1'
 
+/** A chip: a 44–48px disc, the value on its face in mono. */
 const CHIP_BTN =
-  'w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full border-2 font-bold text-xs sm:text-sm shadow-lg transition-all duration-100 active:scale-90 hover:scale-105 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100'
+  'chip num flex h-11 w-11 shrink-0 items-center justify-center text-[12px] font-semibold sm:h-12 sm:w-12 sm:text-[13px]'
 
+/** Bet-size shortcuts beside the chips: outlined pills at chip height. */
 const FRAC_BTN =
-  'h-11 sm:h-12 px-2.5 sm:px-3 shrink-0 whitespace-nowrap rounded-full border-2 font-bold text-xs sm:text-sm shadow-lg transition-all duration-100 active:scale-90 hover:scale-105 disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:scale-100'
+  'm-still h-11 shrink-0 whitespace-nowrap rounded-full border border-control px-3 text-[13px] font-semibold text-ink transition-[border-color,background-color,transform,box-shadow] duration-150 hover:border-felt hover:bg-felt-tint hover:shadow-[0_0_18px_-6px_rgba(79,174,132,0.7)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-25 sm:h-12 sm:px-3.5'
 
-const BET_SECTION_TITLE =
-  'text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-400 leading-tight'
+const BET_SECTION_TITLE = 'text-xs leading-tight text-dim'
 
-const OUTCOME_COL_LABEL =
-  'text-[11px] font-semibold uppercase tracking-wider text-zinc-500 leading-tight'
+const OUTCOME_COL_LABEL = 'text-xs leading-tight text-dim'
 
 export const GAME_DOCK_GAME_OVER_BTN =
-  'min-w-[10.5rem] px-7 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors text-base shadow-lg'
+  'm-still min-w-[10.5rem] h-10 px-7 rounded-full border border-loss bg-loss-tint text-loss font-semibold text-[14px] transition-[background-color,box-shadow,transform] hover:shadow-[0_0_24px_-6px_rgba(229,86,111,0.7)] active:scale-[0.97]'
 
 const RUN_STATUS_TONE: Record<RunEndStatus['tone'], string> = {
-  win: 'text-emerald-400',
-  loss: 'text-red-400',
-  neutral: 'text-zinc-300',
+  win: 'text-felt glow-felt',
+  loss: 'text-loss glow-loss',
+  neutral: 'text-soft',
 }
 
 export const GAME_DOCK_LEAVE_BTN =
-  'px-4 py-2 border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white font-bold rounded-lg transition-colors text-base'
+  'm-still h-10 px-5 rounded-full border border-control text-soft hover:border-dim hover:text-ink font-medium text-[14px] transition-colors active:scale-[0.97]'
 
 export const GAME_DOCK_PRIMARY_BTN =
-  'min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg'
+  'btn-glow m-still min-w-[10.5rem] h-10 px-7 rounded-full bg-ink text-ground hover:bg-soft disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,box-shadow,transform] active:scale-[0.97]'
+
+/** Secondary in-round action (Stand, Cash out alternatives): a raised pill. */
+export const GAME_DOCK_SECONDARY_BTN =
+  'm-still min-w-[5.25rem] h-10 px-6 rounded-full bg-raised text-ink hover:bg-control font-semibold text-[14px] transition-[background-color,transform] active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed'
 
 export function GameDockBackButton({
   mode,
@@ -163,29 +174,28 @@ export function GameOutcomeColumns({
   /** Dock only: what the round meant for the run, shown under the round's result. */
   runStatus?: RunEndStatus | null
 }) {
-  const profitColor = profitTone === 'win' ? 'text-emerald-400' : 'text-red-400'
+  const profitColor = profitTone === 'win' ? 'text-felt glow-felt' : 'text-loss glow-loss'
   const bet = formatOutcomeDisplayText(betSummary)
   const result = formatOutcomeDisplayText(resultSummary)
 
   if (size === 'dock') {
-    const dockLabelCls =
-      'text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-zinc-500 leading-tight mb-0.5 sm:mb-1 shrink-0'
+    const dockLabelCls = 'text-[11px] sm:text-xs text-dim leading-tight mb-0.5 sm:mb-1 shrink-0'
     const dockBoxCls =
-      'flex min-h-[3.25rem] sm:min-h-[4.25rem] flex-col justify-center rounded-lg border border-zinc-800 bg-zinc-900/70 px-1.5 py-1.5 sm:px-2.5 sm:py-2 text-center'
+      'flex min-h-[3.25rem] sm:min-h-[4.25rem] flex-col justify-center bg-surface px-1.5 py-1.5 sm:px-3 sm:py-2 text-center'
     return (
-      <div className="grid w-full grid-cols-3 gap-1.5 sm:gap-2">
+      <div className="rise grid w-full grid-cols-3 gap-px overflow-hidden rounded-md bg-line">
         <div className={dockBoxCls}>
           <p className={dockLabelCls}>Your bet</p>
-          <p className="text-xs sm:text-base font-semibold text-zinc-100 leading-tight line-clamp-2">{bet}</p>
+          <p className="text-xs sm:text-[15px] font-semibold text-ink leading-tight line-clamp-2">{bet}</p>
         </div>
         <div className={dockBoxCls}>
           <p className={dockLabelCls}>Result</p>
-          <p className="text-xs sm:text-base font-semibold text-zinc-100 leading-tight truncate" title={result}>
+          <p className="text-xs sm:text-[15px] font-semibold text-ink leading-tight truncate" title={result}>
             {result}
           </p>
           {runStatus && (
             <p
-              className={`text-[11px] sm:text-sm font-bold leading-tight line-clamp-2 mt-0.5 ${RUN_STATUS_TONE[runStatus.tone]}`}
+              className={`text-[11px] sm:text-[13px] font-semibold leading-tight line-clamp-2 mt-0.5 ${RUN_STATUS_TONE[runStatus.tone]}`}
             >
               {runStatus.text}
             </p>
@@ -193,7 +203,7 @@ export function GameOutcomeColumns({
         </div>
         <div className={dockBoxCls}>
           <p className={dockLabelCls}>Profit</p>
-          <p className={`text-base sm:text-2xl font-black tabular-nums leading-tight ${profitColor}`}>
+          <p className={`num text-base sm:text-[22px] leading-tight ${profitColor}`}>
             {profitLabel}
           </p>
         </div>
@@ -203,12 +213,12 @@ export function GameOutcomeColumns({
 
   const valueCls =
     size === 'history'
-      ? 'text-sm font-semibold text-zinc-100 leading-tight'
-      : 'text-xs font-semibold text-zinc-200 leading-tight'
+      ? 'text-[13px] font-semibold text-ink leading-tight'
+      : 'text-xs font-semibold text-soft leading-tight'
   const profitCls =
     size === 'history'
-      ? `text-base font-black tabular-nums leading-tight ${profitColor}`
-      : `text-sm font-black tabular-nums leading-tight ${profitColor}`
+      ? `num text-[15px] leading-tight ${profitColor}`
+      : `num text-[13px] leading-tight ${profitColor}`
 
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -241,9 +251,9 @@ export function GameCurrentBetBadge({
 }) {
   if (!visible || betAmount <= 0) return null
   return (
-    <div className="absolute left-2 top-2 z-10 select-none pointer-events-none rounded-xl border border-zinc-800/90 bg-zinc-950/95 px-3 py-2.5 shadow-lg max-w-[min(13rem,48vw)]">
-      <p className={`${BET_SECTION_TITLE} mb-2`}>Current bet</p>
-      <p className="text-base font-bold text-white tabular-nums leading-tight truncate">
+    <div className="rise pointer-events-none absolute left-3 top-3 z-10 max-w-[min(13rem,48vw)] select-none rounded-md bg-ground/90 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+      <p className={`${BET_SECTION_TITLE} mb-1`}>Current bet</p>
+      <p className="num truncate text-[15px] leading-tight text-ink">
         {formatCurrentBetLine(betAmount, betSpecification)}
       </p>
     </div>
@@ -266,12 +276,12 @@ export function GameLastBetPanel({
   onToggleHistory: () => void
 }) {
   return (
-    <div className="pointer-events-auto absolute right-2 top-2 z-30 max-w-[min(17rem,56vw)]">
+    <div className="pointer-events-auto absolute right-3 top-3 z-30 max-w-[min(17rem,56vw)]">
       <button
         type="button"
         onClick={onToggleHistory}
         aria-expanded={historyOpen}
-        className="w-full rounded-xl border border-zinc-700/90 bg-zinc-950/95 px-3 py-2.5 text-left shadow-lg backdrop-blur-sm hover:bg-zinc-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-500"
+        className="w-full rounded-md bg-ground/90 px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur-sm transition-[box-shadow,background-color] hover:bg-raised hover:shadow-[inset_0_0_0_1px_rgba(79,174,132,0.35)]"
       >
         <p className={`${BET_SECTION_TITLE} mb-2`}>Last bet</p>
         <GameOutcomeColumns
@@ -281,8 +291,8 @@ export function GameLastBetPanel({
           profitTone={profitTone}
           size="compact"
         />
-        <p className="mt-2 text-center text-[10px] text-zinc-600">
-          {historyOpen ? 'Hide full history' : 'Open full history'}
+        <p className="mt-2 text-center text-[11px] text-dim">
+          {historyOpen ? 'Hide history' : 'Full history →'}
         </p>
       </button>
     </div>
@@ -313,9 +323,9 @@ export function GameActiveBetBadge({
 export function OpeningTicketBetMarker({ className = '' }: { className?: string }) {
   return (
     <span
-      className={`shrink-0 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 px-1.5 py-0.5 rounded-md border border-emerald-500/50 bg-emerald-950/55 shadow-[0_0_10px_rgba(16,185,129,0.2)] animate-pulse ${className}`}
+      className={`unit-current shrink-0 rounded-full bg-felt-tint px-2 py-0.5 text-[11px] font-semibold text-felt ${className}`}
     >
-      ✦ Opening Ticket
+      Opening ticket
     </span>
   )
 }
@@ -333,15 +343,15 @@ export function GameDockBetRow({
   const ladder = useIsLadderRoute()
   return (
     <div className="flex items-center gap-2.5 flex-wrap justify-center">
-      <span className="text-zinc-500 text-base">{ladder ? 'All-in' : label}</span>
-      <span className="font-bold text-xl text-white tabular-nums">
+      <span className="text-[14px] text-dim">{ladder ? 'All-in' : label}</span>
+      <span className="num text-xl text-ink">
         {currentBet > 0 ? formatChips(currentBet) : '—'}
       </span>
       {currentBet > 0 && !ladder && (
         <button
           type="button"
           onClick={onClear}
-          className="px-2 py-0.5 text-xs font-medium rounded border border-zinc-700 hover:border-zinc-500 text-zinc-500 hover:text-white transition-colors"
+          className="h-6 rounded-full border border-control px-2.5 text-xs text-dim transition-colors hover:border-loss hover:text-loss"
         >
           Clear
         </button>
@@ -414,7 +424,7 @@ export function GameDockChipRow({
       {showQuote && quoteIdx !== undefined ? (
         <GameDockRandomQuote quoteIdx={quoteIdx} />
       ) : ladder ? (
-        <p className="text-sm text-zinc-500">The whole pot rides on this round.</p>
+        <p className="text-[13px] text-soft">The whole pot rides on this round.</p>
       ) : (
         <>
           {openingTicketActive && useSurvivalChips && minBet ? (
@@ -422,22 +432,24 @@ export function GameDockChipRow({
               type="button"
               onClick={() => onAddChip(openingTicketCap - currentBet)}
               disabled={currentBet >= openingTicketCap}
-              className={`${FRAC_BTN} bg-emerald-950 hover:bg-emerald-900 border-emerald-600 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.25)]`}
+              className={`${FRAC_BTN} border-felt bg-felt-tint text-felt shadow-[0_0_14px_-4px_rgba(79,174,132,0.7)]`}
             >
-              Opening Ticket
+              Opening ticket
             </button>
           ) : (
             <>
               {useSurvivalChips
-                ? survivalChips!.map((chip) => (
+                ? survivalChips!.map((chip, i) => (
                     <button
                       key={chip.value}
                       type="button"
                       onClick={() => onAddChip(chip.value)}
                       disabled={chip.value > bankroll - currentBet}
-                      className={`${FRAC_BTN} bg-amber-950 hover:bg-amber-900 border-amber-800 text-amber-300`}
+                      aria-label={`Add ${chip.label}`}
+                      className={`${CHIP_BTN} w-auto min-w-11 px-2 sm:min-w-12`}
+                      style={chipStyle(SURVIVAL_CHIP_COLOURS[i % 4]!.chip, SURVIVAL_CHIP_COLOURS[i % 4]!.ink)}
                     >
-                      {chip.label}
+                      <span>{chip.label}</span>
                     </button>
                   ))
                 : GAME_CHIPS.map((chip) => (
@@ -446,16 +458,18 @@ export function GameDockChipRow({
                       type="button"
                       onClick={() => onAddChip(chip.value)}
                       disabled={chip.value > bankroll - currentBet}
-                      className={`${CHIP_BTN} ${chip.cls}`}
+                      aria-label={`Add ${chip.value}`}
+                      className={CHIP_BTN}
+                      style={chipStyle(chip.chip, chip.ink)}
                     >
-                      {chip.label}
+                      <span>{chip.label}</span>
                     </button>
                   ))}
               <button
                 type="button"
                 onClick={() => onAddChip(Math.max(Math.floor(bankroll / 4), minBet ?? 1))}
                 disabled={currentBet >= bankroll || bankroll <= 0}
-                className={`${FRAC_BTN} bg-blue-100 hover:bg-blue-50 border-blue-200 text-blue-900`}
+                className={FRAC_BTN}
               >
                 ¼
               </button>
@@ -463,7 +477,7 @@ export function GameDockChipRow({
                 type="button"
                 onClick={() => onAddChip(Math.max(Math.floor(bankroll / 2), minBet ?? 1))}
                 disabled={currentBet >= bankroll || bankroll <= 0}
-                className={`${FRAC_BTN} bg-blue-50 hover:bg-white border-blue-100 text-blue-900`}
+                className={FRAC_BTN}
               >
                 ½
               </button>
@@ -471,9 +485,9 @@ export function GameDockChipRow({
                 type="button"
                 onClick={() => onAddChip(bankroll)}
                 disabled={currentBet >= bankroll || bankroll <= 0}
-                className={`${FRAC_BTN} bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-900`}
+                className={`${FRAC_BTN} border-gold text-gold hover:border-gold hover:bg-gold-tint hover:shadow-[0_0_18px_-6px_rgba(217,164,65,0.8)]`}
               >
-                All In
+                All in
               </button>
             </>
           )}
@@ -484,5 +498,5 @@ export function GameDockChipRow({
 }
 
 export function GameBoardHint({ children }: { children: ReactNode }) {
-  return <p className="text-xs text-zinc-500 text-center px-2 max-w-md">{children}</p>
+  return <p className="max-w-md px-2 text-center text-[13px] text-dim">{children}</p>
 }

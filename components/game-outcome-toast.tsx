@@ -39,16 +39,19 @@ export function GameOutcomeToast({
   if (!open || typeof document === 'undefined') return null
 
   const titleCls =
-    tone === 'win' ? 'text-emerald-400' :
-    tone === 'loss' ? 'text-red-400' :
-    tone === 'push' ? 'text-zinc-200' :
-    'text-zinc-100'
+    tone === 'win' ? 'text-felt glow-felt' :
+    tone === 'loss' ? 'text-loss glow-loss' :
+    'text-ink'
+  const edge =
+    tone === 'win' ? 'shadow-[inset_0_0_0_1px_rgba(79,174,132,0.4),0_0_60px_-10px_rgba(79,174,132,0.55)]' :
+    tone === 'loss' ? 'shadow-[inset_0_0_0_1px_rgba(229,86,111,0.4),0_0_60px_-10px_rgba(229,86,111,0.5)]' :
+    'shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_20px_50px_rgba(0,0,0,0.6)]'
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-5">
       <button
         type="button"
-        className="absolute inset-0 cursor-default border-0 bg-black/20 p-0"
+        className="absolute inset-0 cursor-default border-0 bg-black/30 p-0"
         onClick={onDismiss}
         aria-label="Dismiss result"
       />
@@ -57,15 +60,15 @@ export function GameOutcomeToast({
         aria-modal="true"
         aria-labelledby="game-outcome-title"
         className={cn(
-          'relative z-10 w-full max-w-sm rounded-2xl border border-zinc-600/70 bg-zinc-950/95 px-5 py-4 text-center shadow-2xl',
-          'pointer-events-auto',
+          'rise pointer-events-auto relative z-10 w-full max-w-sm rounded-md bg-surface px-5 py-4 text-center',
+          edge,
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <p id="game-outcome-title" className={cn('text-lg font-bold tracking-tight', titleCls)}>
+        <p id="game-outcome-title" className={cn('text-xl font-semibold', titleCls)}>
           {title}
         </p>
-        {subtitle ? <p className="mt-1.5 text-sm text-zinc-400">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 text-[13px] text-soft">{subtitle}</p> : null}
       </div>
     </div>,
     document.body,

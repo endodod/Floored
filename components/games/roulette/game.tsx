@@ -313,8 +313,8 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Roulette</span>
-        <span className="text-sm text-zinc-600">{spinning ? 'Spinning…' : round.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Roulette</span>
+        <span className="text-[13px] text-dim">{spinning ? 'Spinning…' : round.message}</span>
       </div>
 
       <GameFieldWithHistory

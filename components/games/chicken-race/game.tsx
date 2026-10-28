@@ -218,8 +218,8 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Chicken Race</span>
-        <span className="text-sm text-zinc-600">{state.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Chicken Race</span>
+        <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
       <GameFieldWithHistory

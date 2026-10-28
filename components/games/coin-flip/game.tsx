@@ -217,8 +217,8 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Coin Flip</span>
-        <span className="text-sm text-zinc-600">{isFlipping ? 'Flipping…' : state.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Coin Flip</span>
+        <span className="text-[13px] text-dim">{isFlipping ? 'Flipping…' : state.message}</span>
       </div>
 
       <GameFieldWithHistory

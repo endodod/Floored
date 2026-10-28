@@ -13,9 +13,9 @@ export function PerkHint({ children, className = '', active = true }: PerkHintPr
 
   return (
     <p
-      className={`text-center text-[11px] font-semibold text-emerald-300 bg-emerald-950/55 border border-emerald-500/55 rounded-lg px-2 py-1 shadow-[0_0_12px_rgba(16,185,129,0.25)] animate-pulse ${className}`}
+      className={`unit-current rounded-full bg-felt-tint px-3 py-1 text-center text-xs font-semibold text-felt ${className}`}
     >
-      ✦ Perk active — {children}
+      Perk active · {children}
     </p>
   )
 }

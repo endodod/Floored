@@ -409,8 +409,8 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Street Cups</span>
-        <span className="text-sm text-zinc-600 text-right max-w-[min(100%,28rem)]">{boardInstruction}</span>
+        <span className="text-[13px] font-semibold text-ink">Street Cups</span>
+        <span className="text-[13px] text-dim text-right max-w-[min(100%,28rem)]">{boardInstruction}</span>
       </div>
 
       <GameFieldWithHistory

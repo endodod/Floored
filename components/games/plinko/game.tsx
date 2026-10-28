@@ -277,8 +277,8 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Plinko</span>
-        <span className="text-sm text-zinc-500 truncate max-w-[60%] text-right">{statusMsg}</span>
+        <span className="text-[13px] font-semibold text-ink">Plinko</span>
+        <span className="text-[13px] text-dim truncate max-w-[60%] text-right">{statusMsg}</span>
       </div>
 
       <GameFieldWithHistory

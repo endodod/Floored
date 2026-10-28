@@ -299,8 +299,8 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Case Battles</span>
-        <span className="text-sm text-zinc-600">{state.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Case Battles</span>
+        <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
       <GameFieldWithHistory

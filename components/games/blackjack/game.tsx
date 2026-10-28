@@ -64,8 +64,8 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
   return (
     <div className={GAME_CARD_SHELL} style={CARD_CSS}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Blackjack</span>
-        <span className="text-sm text-zinc-600">{round.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Blackjack</span>
+        <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
       <GameFieldWithHistory

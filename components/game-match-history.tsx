@@ -27,20 +27,20 @@ function formatTime(d: Date) {
   })
 }
 
+/** A round in the history: a surface card with a 2px edge in the colour of its outcome. */
 function toneBorder(t: MatchHistoryTone) {
-  if (t === 'win') return 'border-green-900/60 bg-green-950/30'
-  if (t === 'push') return 'border-zinc-700 bg-zinc-900/50'
-  if (t === 'partial') return 'border-amber-900/50 bg-amber-950/25'
-  if (t === 'loss') return 'border-red-900/50 bg-red-950/20'
-  return 'border-zinc-800 bg-zinc-900/40'
+  if (t === 'win') return 'bg-surface shadow-[inset_2px_0_0_var(--felt)]'
+  if (t === 'partial') return 'bg-surface shadow-[inset_2px_0_0_var(--gold)]'
+  if (t === 'loss') return 'bg-surface shadow-[inset_2px_0_0_var(--loss)]'
+  return 'bg-surface shadow-[inset_2px_0_0_var(--control)]'
 }
 
 function toneTitle(t: MatchHistoryTone) {
-  if (t === 'win') return 'text-green-400'
-  if (t === 'push') return 'text-zinc-200'
-  if (t === 'partial') return 'text-amber-300'
-  if (t === 'loss') return 'text-red-400'
-  return 'text-zinc-300'
+  if (t === 'win') return 'text-felt'
+  if (t === 'push') return 'text-ink'
+  if (t === 'partial') return 'text-gold'
+  if (t === 'loss') return 'text-loss'
+  return 'text-soft'
 }
 
 /** Wider panel for three-column outcome rows */
@@ -48,8 +48,8 @@ function toneTitle(t: MatchHistoryTone) {
 function HistoryEntryCard({ entry }: { entry: MatchHistoryEntry }) {
   if (hasOutcomeEntry(entry)) {
     return (
-      <div className={cn('rounded-lg border px-3 py-2.5 text-left', toneBorder(entry.tone))}>
-        <p className="text-[10px] text-zinc-500 tabular-nums mb-2">{formatTime(entry.at)}</p>
+      <div className={cn('rounded-md px-3 py-2.5 text-left', toneBorder(entry.tone))}>
+        <p className="num mb-2 text-[11px] text-dim">{formatTime(entry.at)}</p>
         <GameOutcomeColumns
           betSummary={entry.betSummary!}
           resultSummary={entry.resultSummary!}
@@ -62,10 +62,10 @@ function HistoryEntryCard({ entry }: { entry: MatchHistoryEntry }) {
   }
 
   return (
-    <div className={cn('rounded-lg border px-2.5 py-2 text-left', toneBorder(entry.tone))}>
-      <p className="text-[10px] text-zinc-500 tabular-nums">{formatTime(entry.at)}</p>
-      <p className={cn('text-base font-black', toneTitle(entry.tone))}>{entry.title}</p>
-      <p className="mt-0.5 text-xs leading-snug text-zinc-500">{entry.subtitle}</p>
+    <div className={cn('rounded-md px-3 py-2 text-left', toneBorder(entry.tone))}>
+      <p className="num text-[11px] text-dim">{formatTime(entry.at)}</p>
+      <p className={cn('text-[15px] font-semibold', toneTitle(entry.tone))}>{entry.title}</p>
+      <p className="mt-0.5 text-xs leading-snug text-dim">{entry.subtitle}</p>
     </div>
   )
 }
@@ -115,15 +115,12 @@ export function GameFieldWithHistory({
             onToggleHistory={toggle}
           />
         ) : (
-          <div className="pointer-events-auto absolute right-2 top-2 z-30">
+          <div className="pointer-events-auto absolute right-3 top-3 z-30">
             <button
               type="button"
               onClick={toggle}
               aria-expanded={open}
-              className={cn(
-                'rounded-xl border border-zinc-700/90 bg-zinc-950/95 px-3 py-2 text-xs font-bold uppercase tracking-widest text-zinc-500 shadow-lg backdrop-blur-sm',
-                'hover:bg-zinc-900 hover:text-zinc-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-500',
-              )}
+              className="h-8 rounded-full border border-control bg-ground/90 px-3.5 text-[13px] font-medium text-soft backdrop-blur-sm transition-colors hover:border-dim hover:text-ink"
             >
               History
             </button>
@@ -135,21 +132,21 @@ export function GameFieldWithHistory({
         <>
           <button
             type="button"
-            className="absolute inset-0 z-[85] cursor-default border-0 bg-black/15 p-0"
+            className="absolute inset-0 z-[85] cursor-default border-0 bg-black/40 p-0 backdrop-blur-[1px]"
             onClick={close}
             aria-label="Close history"
           />
           <aside
-            className="absolute inset-y-0 right-0 z-[90] flex w-[min(17rem,80%)] flex-col overflow-hidden border-l border-zinc-700 bg-zinc-950 shadow-2xl"
+            className="sheet-in absolute inset-y-0 right-0 z-[90] flex w-[min(18rem,85%)] flex-col overflow-hidden border-l border-line bg-ground shadow-[0_0_60px_rgba(0,0,0,0.7)]"
             aria-label={`${gameLabel} match history`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 px-3 py-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Match history</span>
+            <div className="flex h-10 shrink-0 items-center justify-between border-b border-line px-3">
+              <span className="text-[13px] font-semibold text-ink">History</span>
               <button
                 type="button"
                 onClick={close}
-                className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
+                className="rounded-full px-2.5 py-1 text-xs text-dim transition-colors hover:bg-raised hover:text-ink"
               >
                 Close
               </button>
@@ -158,7 +155,7 @@ export function GameFieldWithHistory({
               {hasPlays ? entries.map((e) => (
                 <HistoryEntryCard key={e.id} entry={e} />
               )) : (
-                <p className="px-1 pt-2 text-xs text-zinc-600">{emptyHint}</p>
+                <p className="px-1 pt-2 text-[13px] text-dim">{emptyHint}</p>
               )}
             </div>
           </aside>

@@ -9,17 +9,17 @@ export const GAME_CARD_FRAME =
 export const GAME_CARD_SHELL = `${GAME_CARD_FRAME} bg-surface`
 
 export const GAME_STATUS_BAR =
-  'shrink-0 px-5 py-2 bg-ground flex items-center justify-between border-b border-line'
+  'shrink-0 px-4 sm:px-5 h-10 gap-4 bg-ground flex items-center justify-between border-b border-line'
 
 /** Flex arena: grows like Crash / Plinko; add your own flex direction / padding inside. */
 export const GAME_BOARD_ARENA =
-  'flex-1 min-h-0 w-full min-h-[min(360px,52vh)] relative overflow-hidden'
+  'table-felt flex-1 min-h-0 w-full min-h-[min(360px,52vh)] relative overflow-hidden'
 
 /** Centered curve / SVG field (Crash baseline). */
 export const GAME_BOARD_ARENA_CENTER = `${GAME_BOARD_ARENA} flex items-center justify-center`
 
 export const GAME_CONTROL_DOCK =
-  'shrink-0 border-t border-line bg-ground px-5 py-1'
+  'shrink-0 border-t border-line bg-ground px-3 sm:px-5 py-1'
 
 /** Fixed-height control shells — swap inner panels without collapsing the dock. */
 export const GAME_CONTROL_DOCK_S =
