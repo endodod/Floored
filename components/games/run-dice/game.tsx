@@ -286,7 +286,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   }
 
   function outcomeColor(val: number, cfg = gameConfig): string {
-    if (cfg.win.includes(val))  return 'bg-felt-tint border-felt text-felt'
+    if (cfg.win.includes(val))  return 'bg-[rgba(79,174,132,0.3)] border-black text-ink'
     if (cfg.loss.includes(val)) return 'bg-loss-tint border-transparent text-loss'
     return 'bg-black/25 border-transparent text-dim'
   }
