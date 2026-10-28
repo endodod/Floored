@@ -402,29 +402,44 @@
   animation: quote-in 600ms ease both;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .mark-line::after,
-  .tile,
-  .tile-suit,
-  .ambience-lamp {
-    transition: none;
-  }
-  .rise,
-  .page-in,
-  .unit,
-  .unit-current,
-  .tick-up,
-  .tick-down,
-  .bar-glow,
-  .bar-danger,
-  .sheet-in,
-  .sheet-in li,
-  .quote-in {
-    animation: none;
-  }
-  .tile:not(:disabled):hover {
-    transform: none;
-  }
+/* Reduced motion. <html data-motion> is set before first paint from the
+   player's setting (Account → Settings → Motion), which defaults to the OS
+   preference. Entrances, pulses and travel stop; colours and static glows stay.
+   Game boards keep their own animations — they carry the result of a round. */
+:root[data-motion='reduced'] .mark-line::after,
+:root[data-motion='reduced'] .tile,
+:root[data-motion='reduced'] .tile-suit,
+:root[data-motion='reduced'] .ambience-lamp,
+:root[data-motion='reduced'] .m-instant {
+  transition: none;
+}
+:root[data-motion='reduced'] .rise,
+:root[data-motion='reduced'] .page-in,
+:root[data-motion='reduced'] .unit,
+:root[data-motion='reduced'] .unit-current,
+:root[data-motion='reduced'] .tick-up,
+:root[data-motion='reduced'] .tick-down,
+:root[data-motion='reduced'] .bar-glow,
+:root[data-motion='reduced'] .bar-danger,
+:root[data-motion='reduced'] .sheet-in,
+:root[data-motion='reduced'] .sheet-in li,
+:root[data-motion='reduced'] .quote-in,
+:root[data-motion='reduced'] .animate-in,
+:root[data-motion='reduced'] .animate-out {
+  animation: none;
+}
+/* Things that travel on hover or press stay put. */
+:root[data-motion='reduced'] .tile:not(:disabled):hover,
+:root[data-motion='reduced'] .tile:not(:disabled):active,
+:root[data-motion='reduced'] .m-still,
+:root[data-motion='reduced'] .m-still:hover,
+:root[data-motion='reduced'] .m-still:active,
+:root[data-motion='reduced'] .group:hover .m-still {
+  transform: none !important;
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+}
+:root[data-motion='reduced'] .tile:not(:disabled):hover .tile-suit {
+  transform: rotate(-12deg);
 }
 
 @keyframes slot-spin {

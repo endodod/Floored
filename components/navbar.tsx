@@ -84,7 +84,7 @@ export function Navbar() {
       <nav className="sticky top-0 z-50 shrink-0 border-b border-line bg-[rgba(23,23,25,0.78)] backdrop-blur-md">
         <div className="container mx-auto flex h-12 items-center gap-6 px-4 sm:px-6">
           <Link href="/" className="group flex shrink-0 items-center gap-2 text-ink" aria-label="Floored, home">
-            <FlooredMark className="transition-transform duration-300 group-hover:-rotate-6" />
+            <FlooredMark className="m-still transition-transform duration-300 group-hover:-rotate-6" />
             <span className="text-[15px] font-semibold tracking-[-0.01em]">Floored</span>
           </Link>
 

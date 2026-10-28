@@ -7,7 +7,7 @@ import { LADDER_ENABLED } from '@/lib/features'
 import { useLadderStore } from '@/store/ladder-store'
 import { ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
-import { useSettingsStore } from '@/store/settings-store'
+import { useSettingsStore, type MotionPreference } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips, parseChips } from '@/utils/format'
 import { allPurchasedUpgradesForDev } from '@/lib/survival/upgrades-catalog'
@@ -26,6 +26,12 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
+
+const MOTION_OPTIONS: { value: MotionPreference; label: string }[] = [
+  { value: 'system', label: 'Match system' },
+  { value: 'reduced', label: 'Reduced' },
+  { value: 'full', label: 'Full' },
+]
 
 function Toggle({ on, label, note, onToggle }: { on: boolean; label: string; note?: string; onToggle: () => void }) {
   return (
@@ -105,6 +111,7 @@ export default function AccountPage() {
   const bestDaily = bestMultiplier(dailyHistory)
   const ladder = ladderStats(useLadderStore((s) => s.history))
   const {
+    motion, setMotion,
     autoReBet, setAutoReBet,
     forceTie, setForceTie,
     showAllGames, setShowAllGames,
@@ -202,8 +209,38 @@ export default function AccountPage() {
         </dl>
       </Section>
 
-      <Section title="Settings" description="How the tables behave between rounds.">
-        <Toggle on={autoReBet} label="Auto re-bet" note="repeat your last stake" onToggle={() => setAutoReBet(!autoReBet)} />
+      <Section title="Settings" description="How the tables behave between rounds, and how much the interface moves.">
+        <div className="flex flex-col divide-y divide-rule">
+          <Toggle on={autoReBet} label="Auto re-bet" note="repeat your last stake" onToggle={() => setAutoReBet(!autoReBet)} />
+          <div className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <span className="text-[13px] text-ink">
+              Motion
+              <span className="ml-1.5 text-dim">entrances, pulses and hover travel</span>
+            </span>
+            <div className="flex gap-4" role="radiogroup" aria-label="Motion">
+              {MOTION_OPTIONS.map((o) => {
+                const on = (hydrated ? motion : 'system') === o.value
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    data-active={on}
+                    onClick={() => setMotion(o.value)}
+                    className={`mark-line text-[13px] ${on ? 'text-ink' : 'text-dim hover:text-ink'}`}
+                  >
+                    {o.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-dim">
+          Reduced stops the interface&apos;s entrances, pulsing glows and hover movement. Game boards still animate
+          their rounds — that is how a result is shown.
+        </p>
       </Section>
 
       <Section title="Dev mode" description="Testing switches for the survival run. Locked behind a password.">

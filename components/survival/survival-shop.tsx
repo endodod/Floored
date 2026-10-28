@@ -238,7 +238,7 @@ function OfferCard({
     .join(' · ')
 
   return (
-    <div className={`relative flex flex-col gap-2 rounded-md bg-raised p-4 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.35),0_10px_30px_-14px_rgba(217,164,65,0.5)] ${CARD_HEIGHT}`}>
+    <div className={`m-still relative flex flex-col gap-2 rounded-md bg-raised p-4 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.35),0_10px_30px_-14px_rgba(217,164,65,0.5)] ${CARD_HEIGHT}`}>
       {canReroll && (
         <button
           type="button"

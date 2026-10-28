@@ -42,7 +42,7 @@ function ModeRow({ name, description, track, trackCaption, figureLabel, figure, 
       {/* the felt edge that lights up on the row you are about to pick */}
       <span
         aria-hidden
-        className="absolute bottom-4 left-0 top-4 w-[2px] origin-center scale-y-0 bg-felt shadow-[0_0_12px_rgba(79,174,132,0.9)] transition-transform duration-300 group-hover:scale-y-100"
+        className="m-instant absolute bottom-4 left-0 top-4 w-[2px] origin-center scale-y-0 bg-felt shadow-[0_0_12px_rgba(79,174,132,0.9)] transition-transform duration-300 group-hover:scale-y-100"
       />
       <div className="min-w-0">
         <h2 className="flex items-baseline gap-2 text-[17px] font-semibold leading-snug text-ink">
@@ -234,7 +234,7 @@ export function ModeSelect() {
             <li key={g.name} className="border-t border-rule">
               <Link
                 href={`/freeplay/${g.name}`}
-                className="group flex items-baseline justify-between gap-4 py-3 transition-[padding] duration-200 hover:pl-1.5"
+                className="m-instant group flex items-baseline justify-between gap-4 py-3 transition-[padding] duration-200 hover:pl-1.5"
               >
                 <span className="min-w-0">
                   <span className="mark-line text-[14px] font-medium text-ink">{g.label}</span>

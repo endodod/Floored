@@ -85,7 +85,7 @@ export function GameTile({
           >
             {loading ? 'Dealing…' : action}
             {!loading && !disabled && (
-              <span aria-hidden className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">
+              <span aria-hidden className="m-still inline-block transition-transform duration-200 group-hover:translate-x-0.5">
                 →
               </span>
             )}
@@ -114,7 +114,7 @@ export function TileCornerButton({
       onClick={onClick}
       className="group/reroll flex h-7 items-center gap-1 rounded-full border border-control bg-surface px-2.5 text-xs font-medium text-soft transition-colors hover:border-gold hover:text-gold"
     >
-      <span aria-hidden className="inline-block transition-transform duration-300 group-hover/reroll:rotate-180">
+      <span aria-hidden className="m-still inline-block transition-transform duration-300 group-hover/reroll:rotate-180">
         ↻
       </span>
       {children}
