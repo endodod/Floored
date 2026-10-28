@@ -1305,6 +1305,9 @@ body > div.neon-auth-ui {
   transition: none;
 }
 /* The wheel still lands on the result, just without the long spin. */
+:root[data-motion='reduced'] .cb-roll {
+  animation-duration: 400ms !important;
+}
 :root[data-motion='reduced'] .roulette-anim,
 :root[data-motion='reduced'] .fw-anim {
   transition-duration: 400ms !important;
@@ -1324,7 +1327,6 @@ body > div.neon-auth-ui {
 :root[data-motion='reduced'] .fw-tick,
 :root[data-motion='reduced'] .sl-strip,
 :root[data-motion='reduced'] .sl-land,
-:root[data-motion='reduced'] .cb-strip,
 :root[data-motion='reduced'] .cb-wait,
 :root[data-motion='reduced'] .animate-in,
 :root[data-motion='reduced'] .g-deal,
@@ -1517,10 +1519,10 @@ body > div.neon-auth-ui {
 }
 
 
-/* Case Battles: drawn cases on the felt, then a duel of two sides. Items are a
-   gem in their rarity colour (common dim → uncommon soft → rare felt → epic
-   gold outline → legendary gold). While an item opens, a strip of gems runs
-   under a gold marker (cb-strip). Tall boards: two columns of rows; short
+/* Case Battles: drawn cases on the felt, then a duel of two sides. Each item has
+   its own drawn icon (item-icons.tsx) in its rarity colour (common dim →
+   uncommon soft → rare felt → epic and legendary gold). While a case opens, a
+   reel of its items slows to a stop on the result under a gold marker (cb-roll). Tall boards: two columns of rows; short
    boards: two lanes of square tiles (names live in the tile title). */
 .cb-r-common {
   --rar: var(--dim);
@@ -1577,17 +1579,30 @@ body > div.neon-auth-ui {
 .cb-tile-value {
   display: none;
 }
-/* The strip runs twice its own length, so -50% loops seamlessly. */
-@keyframes cb-strip {
+/* The opening reel: the case's items in a row, centred cell by cell under the
+   marker, decelerating from --from cells to --to cells (the result). */
+.cb-slot {
+  --cell: calc(var(--slot-h) * 0.62 + 0.5rem);
+}
+.cb-roll {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  transform: translateX(calc(var(--to) * var(--cell)));
+  animation: cb-roll var(--roll, 1150ms) cubic-bezier(0.12, 0.72, 0.18, 1) both;
+}
+@keyframes cb-roll {
   from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
+    transform: translateX(calc(var(--from) * var(--cell)));
   }
 }
-.cb-strip {
-  animation: cb-strip 520ms linear infinite;
+.cb-cell {
+  display: flex;
+  width: var(--cell);
+  flex-shrink: 0;
+  justify-content: center;
 }
 .cb-marker {
   width: 2px;
@@ -1646,6 +1661,9 @@ body > div.neon-auth-ui {
     justify-content: center;
     gap: 0.1rem;
     padding: 0.15rem;
+  }
+  .cb-slot {
+    --cell: calc(var(--slot-h) * 0.5 + 0.3rem);
   }
   .cb-slot .cb-icon {
     width: calc(var(--slot-h) * 0.5);

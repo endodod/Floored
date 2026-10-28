@@ -44,7 +44,8 @@ import {
 } from '@/games/case-battles/engine'
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
-import type { CaseBattleState, CaseRarity } from '@/games/case-battles/types'
+import type { CaseBattleState, CaseDef, CaseItem, CaseRarity } from '@/games/case-battles/types'
+import { ItemIcon } from './item-icons'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 
 interface CaseBattlesResult {
@@ -72,11 +73,27 @@ const RARITY_CLASS: Record<CaseRarity, string> = {
   legendary: 'cb-r-legendary',
 }
 
-// What runs past the marker while an item opens (looped twice for a seamless strip).
-const STRIP: CaseRarity[] = [
-  'common', 'rare', 'common', 'uncommon', 'epic', 'common',
-  'uncommon', 'rare', 'legendary', 'common', 'uncommon', 'rare',
-]
+// The opening reel: a run of the case's own items (drawn by their odds) that
+// slows down and stops with the real result under the marker.
+const OPEN_MS = 1300
+const REEL_LEN = 34
+const REEL_TARGET = 29
+
+function reelFor(pool: CaseDef['items'], result: CaseItem, seed: number): CaseItem[] {
+  let h = seed * 2654435761 >>> 0
+  for (const ch of result.name) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0
+  const rand = () => {
+    h = (Math.imul(h, 1664525) + 1013904223) >>> 0
+    return h / 4294967296
+  }
+  const total = pool.reduce((s, e) => s + e.weight, 0)
+  return Array.from({ length: REEL_LEN }, (_, k) => {
+    if (k === REEL_TARGET) return result
+    let r = rand() * total
+    for (const e of pool) if ((r -= e.weight) < 0) return e.item
+    return pool[0]!.item
+  })
+}
 
 // One metal per case tier: Bronze, Silver, Gold, Diamond, Crown.
 const CASE_METAL = [
@@ -105,16 +122,6 @@ function CaseArt({ tier, className = '' }: { tier: number; className?: string })
   )
 }
 
-function ItemGem({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={`cb-gem ${className}`} aria-hidden>
-      <path d="M7 4h10l4 5-9 11.5L3 9z" fill="currentColor" />
-      <path d="M7 4h10l-2.5 5h-5z" fill="#fff" opacity="0.28" />
-      <path d="M3 9h18M7 4l2.5 5L12 20.5 14.5 9 17 4" fill="none" stroke="#000" strokeOpacity="0.3" strokeWidth="0.9" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 function WinnerCrown() {
   return (
     <svg viewBox="0 0 20 14" className="inline-block h-3 w-4 align-[-1px] text-gold" aria-label="winner">
@@ -123,12 +130,14 @@ function WinnerCrown() {
   )
 }
 
-// One opened case on a side: the closed case, then the strip, then the item.
+// One opened case on a side: the closed case, then the reel, then the item.
 function ItemSlot({
-  tier, item, isRevealing, isRevealed, isRerolling = false, dim = false,
+  tier, pool, seed, item, isRevealing, isRevealed, isRerolling = false, dim = false,
 }: {
   tier: number
-  item: { name: string; icon: string; value: number; rarity: CaseRarity }
+  pool: CaseDef['items']
+  seed: number
+  item: CaseItem
   isRevealing: boolean
   isRevealed: boolean
   isRerolling?: boolean
@@ -143,9 +152,9 @@ function ItemSlot({
       <div
         key="shown"
         title={`${item.name} · ${item.rarity} · ${formatChips(item.value)}`}
-        className={`${base} cb-slot-shown g-flip ${RARITY_CLASS[item.rarity]} ${item.rarity === 'legendary' ? 'g-gold' : ''} ${dim ? 'g-dim' : ''}`}
+        className={`${base} cb-slot-shown g-fade ${RARITY_CLASS[item.rarity]} ${item.rarity === 'legendary' || item.rarity === 'epic' ? 'g-gold' : ''} ${dim ? 'g-dim' : ''}`}
       >
-        <ItemGem className="cb-icon shrink-0" />
+        <ItemIcon name={item.name} className="cb-icon shrink-0" />
         <p className="cb-row-text min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight" style={{ color: 'var(--rar)' }}>
           {item.name}
         </p>
@@ -155,15 +164,19 @@ function ItemSlot({
     )
   if (open)
     return (
-      <div key="open" className={`${base} cb-slot-open`} aria-label="Opening">
-        <div className="cb-strip flex shrink-0 items-center" aria-hidden>
-          {[...STRIP, ...STRIP].map((r, k) => (
-            <span key={k} className={`${RARITY_CLASS[r]} mr-2 flex shrink-0`}>
-              <ItemGem className="cb-icon" />
+      <div key={isRerolling ? 'reroll' : 'open'} className={`${base} cb-slot-open`} aria-label="Opening">
+        <div
+          className="cb-roll"
+          style={{ '--from': '-5.5', '--to': `-${REEL_TARGET + 0.5}`, '--roll': `${OPEN_MS - 150}ms` } as React.CSSProperties}
+          aria-hidden
+        >
+          {reelFor(pool, item, seed).map((it, k) => (
+            <span key={k} className={`cb-cell ${RARITY_CLASS[it.rarity]}`}>
+              <ItemIcon name={it.name} className="cb-icon" />
             </span>
           ))}
         </div>
-        <span className="cb-marker absolute inset-y-1 left-1/2 -translate-x-1/2 rounded-full" />
+        <span className="cb-marker absolute inset-y-0.5 left-1/2 -translate-x-1/2 rounded-full" />
       </div>
     )
   return (
@@ -217,7 +230,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
   const canBattle = state.selectedCases.length > 0 && state.totalCost <= bankroll && state.totalCost >= minBet
   const numCases  = state.selectedCases.length
 
-  const displayUserTotal = state.userItems.slice(0, revealedCount).reduce((s, oc) => s + oc.item.value, 0)
+  const displayUserTotal = state.userItems.slice(0, revealedCount).reduce((s, oc, i) => s + (i === rerollingIdx ? 0 : oc.item.value), 0)
   const displayBotTotal  = state.botItems.slice(0, revealedCount).reduce((s, oc) => s + oc.item.value, 0)
 
   function clearTimeouts() {
@@ -237,7 +250,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         setRevealedCount(i + 1)
         if (i + 1 < total) setRevealingIdx(i + 1)
         else setRevealingIdx(-1)
-      }, i * 800 + 600)
+      }, (i + 1) * OPEN_MS)
       timeoutsRef.current.push(t)
     }
 
@@ -250,7 +263,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         settleCaseBattle(settled)
         setState(settled)
       }
-    }, (total - 1) * 800 + 600 + 500)
+    }, total * OPEN_MS + 500)
     timeoutsRef.current.push(tSettle)
 
     return clearTimeouts
@@ -303,14 +316,16 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
 
   function handleReroll(slotIndex: number) {
     setRerollPending(false)
+    // Rolled up front so the reel can stop on the new item; it settles once the reel lands.
+    const withReroll = rerollUserItem(stateRef.current, slotIndex, cases)
+    setState(withReroll)
     setRerollingIdx(slotIndex)
     setTimeout(() => {
       setRerollingIdx(-1)
-      const withReroll = rerollUserItem(stateRef.current, slotIndex, cases)
       const settled = settleBattle(withReroll)
       settleCaseBattle(settled)
       setState(settled)
-    }, 700)
+    }, OPEN_MS)
   }
 
   function handleSkipReroll() {
@@ -465,6 +480,8 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                       const slot = (
                         <ItemSlot
                           tier={oc.caseId}
+                          pool={cases[oc.caseId]?.items ?? []}
+                          seed={i * 2 + (side.user ? 0 : 1) + (side.user && i === rerollingIdx ? 7 : 0)}
                           item={oc.item}
                           isRevealing={i === revealingIdx}
                           isRevealed={i < revealedCount}
@@ -625,7 +642,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                   const pct = Math.round((entry.weight / totalWeight) * 100)
                   return (
                     <div key={i} className={`flex items-center gap-2.5 rounded-lg border border-line bg-raised/50 px-2.5 py-2 ${RARITY_CLASS[entry.item.rarity]}`}>
-                      <ItemGem className="h-5 w-5 shrink-0" />
+                      <ItemIcon name={entry.item.name} className="h-6 w-6 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold" style={{ color: 'var(--rar)' }}>{entry.item.name}</p>
                         <p className="text-[10px] capitalize text-dim">{entry.item.rarity}</p>
