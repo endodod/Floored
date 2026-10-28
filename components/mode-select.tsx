@@ -47,6 +47,7 @@ export function ModeSelect() {
   const ladderRung = useLadderStore((s) => s.rung)
   const ladderPot = useLadderStore((s) => s.pot)
   const ladderClimbing = hydrated && ladderStatus === 'climbing'
+  const startLadderRun = useLadderStore((s) => s.startRun)
 
   // The home page is prerendered, so today's challenge is only known once mounted.
   const today = hydrated ? dailyDateKey() : null
@@ -121,6 +122,10 @@ export function ModeSelect() {
         {LADDER_ENABLED && (
         <Link
           href="/ladder"
+          // Straight into a run — a finished run's results aren't shown again from here.
+          onClick={() => {
+            if (useLadderStore.getState().status !== 'climbing') startLadderRun()
+          }}
           className="relative overflow-hidden rounded-2xl border border-violet-900/60 hover:border-violet-500 bg-gradient-to-br from-violet-950 to-fuchsia-950 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] group transition-all duration-200 text-left"
         >
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={FELT} />

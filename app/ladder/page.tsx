@@ -174,8 +174,12 @@ export default function LadderPage() {
   const tutorial = useTutorial('ladder')
 
   useEffect(() => {
+    const ladder = useLadderStore.getState()
     // A round left mid-way on a previous visit counts as a fall.
-    useLadderStore.getState().abandonOpenRound()
+    ladder.abandonOpenRound()
+    // No start screen — landing here without a run starts one straight away. Checked on entry
+    // only, so abandoning (which goes back to idle) routes home instead of restarting.
+    if (ladder.status === 'idle') ladder.startRun()
   }, [])
 
   const used = useMemo(() => usedGames(s.cleared), [s.cleared])
@@ -239,29 +243,16 @@ export default function LadderPage() {
       />
 
       {s.status !== 'climbing' ? (
-        <>
-          {s.status === 'over' && s.history[0] ? (
-            <>
-              {result && (
-                <div className={`rounded-2xl border px-4 py-3 text-sm ${TONE[result.tone]}`}>
-                  <b className="text-white">{result.title}.</b> {result.body}
-                </div>
-              )}
-              <LadderResults record={s.history[0]} onNewRun={s.startRun} />
-            </>
-          ) : (
-            <>
-              <Rules />
-              <button
-                type="button"
-                onClick={s.startRun}
-                className="self-start px-7 py-3 bg-white hover:bg-zinc-100 text-zinc-900 font-bold rounded-xl transition-colors shadow-lg"
-              >
-                Start climbing
-              </button>
-            </>
-          )}
-        </>
+        s.status === 'over' && s.history[0] ? (
+          <>
+            {result && (
+              <div className={`rounded-2xl border px-4 py-3 text-sm ${TONE[result.tone]}`}>
+                <b className="text-white">{result.title}.</b> {result.body}
+              </div>
+            )}
+            <LadderResults record={s.history[0]} onNewRun={s.startRun} />
+          </>
+        ) : null
       ) : (
         <>
           {s.rung === 0 && s.lives === LADDER_LIVES && !result && <Rules />}
@@ -321,6 +312,7 @@ export default function LadderPage() {
                   onClick={() => {
                     setConfirmAbandon(false)
                     s.abandonRun()
+                    router.push('/')
                   }}
                   className="text-sm px-4 py-2 rounded bg-red-900/60 border border-red-800 text-red-300 hover:bg-red-900 transition-colors"
                 >
