@@ -76,19 +76,27 @@ interface Poker1pGameProps {
 type PendingResult = GamePendingResult
 
 // Five cards across: capped by height on a desktop, by width on a phone.
-const CARD_STYLE = { '--card-h': 'min(clamp(5.25rem, 16vh, 8.75rem), calc((100vw - 6rem) * 0.27))' } as React.CSSProperties
+/** Five cards fit the board's width and what its height leaves after the hand name, tags and hint. */
+const CARD_STYLE = {
+  '--card-h': 'min(clamp(4rem, calc(100cqh - 13rem), 8.75rem), calc((100cqw - 4.5rem) * 0.28))',
+} as React.CSSProperties
 
 /** A card in the hand: tap to hold — a held card lifts with a gold edge, winners glow felt green. */
 function CardView({
   card,
+  index,
   held,
   isWinning,
+  isDead,
   selectable,
   onToggle,
 }: {
   card: Card
+  index: number
   held: boolean
   isWinning: boolean
+  /** Settled with no scoring hand: the cards fall back. */
+  isDead: boolean
   selectable: boolean
   onToggle: () => void
 }) {
@@ -100,7 +108,7 @@ function CardView({
       aria-pressed={held}
       aria-label={`${card.rank}${card.suit}${held ? ', held' : ''}`}
       className={[
-        'm-still group relative flex flex-col items-center gap-1.5 rounded-md transition-transform duration-200',
+        'm-still g-lift group relative flex flex-col items-center gap-1.5 rounded-md',
         held || isWinning ? '-translate-y-2' : '',
         selectable ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default',
       ].join(' ')}
@@ -108,12 +116,15 @@ function CardView({
       <PlayingCard
         rank={card.rank}
         suit={card.suit}
+        style={{ '--i': index } as React.CSSProperties}
         className={
           isWinning
-            ? 'card-deal-in shadow-[0_0_0_2px_var(--felt),0_0_28px_-2px_rgba(79,174,132,0.9)]'
+            ? 'g-deal g-win'
             : held
-              ? 'card-deal-in shadow-[0_0_0_2px_var(--gold),0_0_24px_-4px_rgba(217,164,65,0.85)]'
-              : 'card-deal-in'
+              ? 'g-deal shadow-[0_0_0_2px_var(--gold),0_0_24px_-4px_rgba(217,164,65,0.85)]'
+              : isDead
+                ? 'g-deal g-dim'
+                : 'g-deal'
         }
       />
       <span
@@ -221,7 +232,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
   const heldCount = state.held.filter(Boolean).length
 
   return (
-    <div className={GAME_CARD_SHELL} style={CARD_STYLE}>
+    <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">1 Player Poker</span>
         <span className="text-[13px] text-dim">{state.message}</span>
@@ -229,7 +240,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-4 gap-4"
+        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,2.5cqh,1rem)] gap-[clamp(0.5rem,2.5cqh,1rem)]"
         entries={matchHistory}
         gameLabel="1 Player Poker"
       >
@@ -245,7 +256,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
         />
 
         {isBetting && (
-          <div className="rise w-full max-w-sm shrink-0 rounded-md border border-[rgba(217,164,65,0.3)] bg-black/20 px-5 py-3" aria-label="Pay table">
+          <div className="poker-pays rise w-full max-w-sm shrink-0 rounded-md border border-[rgba(217,164,65,0.3)] bg-black/20 px-5 py-3" aria-label="Pay table">
             <p className="felt-print mb-2 text-center">Jacks or better · pays</p>
             <dl className="flex flex-col">
               {HAND_ORDER.map((rank, i) => (
@@ -260,7 +271,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
         )}
 
         {(isSelecting || isSettled) && (
-          <div className="flex flex-col items-center gap-3 shrink-0">
+          <div className="poker-hand flex flex-col items-center gap-[clamp(0.25rem,2cqh,0.75rem)] shrink-0" style={CARD_STYLE}>
             <div className={`min-h-[2rem] text-center ${!isSettled ? 'invisible' : ''}`}>
               <p
                 className={`rise text-[22px] font-semibold ${
@@ -277,8 +288,10 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
                 <CardView
                   key={`${i}-${card.rank}${card.suit}`}
                   card={card}
+                  index={i}
                   held={state.held[i] ?? false}
                   isWinning={isSettled && state.winningIndices.includes(i)}
+                  isDead={isSettled && state.handRank === 'none'}
                   selectable={isSelecting}
                   onToggle={() => handleToggleHold(i)}
                 />
@@ -291,7 +304,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
           </div>
         )}
 
-        <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
+        <div className="poker-hint min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
           <p className="text-center text-[13px] text-dim">
             {isBetting
               ? 'Place chips and deal. Pair of jacks or better pays.'
