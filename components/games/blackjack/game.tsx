@@ -124,7 +124,7 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
             />
             <div className="flex items-end justify-center">
               {displayedDealerHand.length === 0 ? (
-                <><CardBack /><CardBack style={fan(1, 2)} /></>
+                <div className="flex gap-2"><CardBack /><CardBack /></div>
               ) : (
                 displayedDealerHand.map((card, i) => (
                   <CardFace
@@ -175,7 +175,7 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
             />
             <div className="flex items-end justify-center">
               {round.playerHand.length === 0 ? (
-                <><CardBack /><CardBack style={fan(1, 2)} /></>
+                <div className="flex gap-2"><CardBack /><CardBack /></div>
               ) : (
                 round.playerHand.map((card, i) => (
                   <CardFace
