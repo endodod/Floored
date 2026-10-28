@@ -95,6 +95,15 @@
   }
 }
 
+/* Neon Auth wraps the app in its own div; let it pass the screen height down so the
+   game boards fill tall monitors. Unlayered, because Neon's own stylesheet is too. */
+body > div.neon-auth-ui {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
 @layer components {
   /* Every figure: mono, tabular, so columns of money stack digit for digit. */
   .num {
