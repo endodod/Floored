@@ -1285,6 +1285,10 @@ body > div.neon-auth-ui {
   animation: none;
 }
 /* A result still has to read: flips become a quick fade. */
+/* The marker still travels to the roll, faster. */
+:root[data-motion='reduced'] .ou-marker {
+  transition-duration: 300ms !important;
+}
 :root[data-motion='reduced'] .coin-landing {
   animation: none;
 }
@@ -1504,6 +1508,25 @@ body > div.neon-auth-ui {
   font-weight: 900;
   letter-spacing: 0.28em;
   text-transform: uppercase;
+}
+
+/* Over-Under: the bar and figures shrink with the board; on a short board the
+   column starts below the badge band and the hint (a repeat of the figures)
+   is dropped. */
+.ou-bar {
+  height: clamp(2.5rem, 14cqh, 3.5rem);
+}
+@container board (max-height: 340px) {
+  .ou-board {
+    padding-top: 3.6rem;
+    gap: 0.4rem !important;
+  }
+  .ou-stats p:last-child {
+    font-size: 1.25rem;
+  }
+  .ou-hint {
+    display: none !important;
+  }
 }
 
 @keyframes case-item-suspense {

@@ -13,6 +13,7 @@ import {
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -221,58 +222,68 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
           visible={!isBetting && round.betAmount > 0}
         />
 
-        <div className="flex w-full max-w-md flex-col items-center gap-4 shrink-0">
-          <div className="flex h-14 shrink-0 items-center gap-8 sm:gap-14">
+        <div className="ou-board flex w-full max-w-md flex-col items-center gap-[clamp(0.5rem,3cqh,1rem)] shrink-0">
+          <div className="ou-stats flex shrink-0 items-center gap-8 sm:gap-14">
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-teal-600 mb-0.5">Safe</p>
-              <p className="text-2xl font-black text-teal-300 tabular-nums">{displaySafeZone}%</p>
+              <p className="text-[11px] text-dim mb-0.5">Safe</p>
+              <p className="num text-2xl font-semibold text-felt">{displaySafeZone}%</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-0.5">Payout</p>
-              <p className="text-2xl font-black text-white tabular-nums">{formatMultiplier(payoutMult)}</p>
+              <p className="text-[11px] text-dim mb-0.5">Payout</p>
+              <p key={payoutMult} className={`num text-2xl font-semibold text-gold glow-gold ${isBetting ? '' : 'g-pop'}`}>{formatMultiplier(payoutMult)}</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-red-600 mb-0.5">Danger</p>
-              <p className="text-2xl font-black text-red-300 tabular-nums">{100 - displaySafeZone}%</p>
+              <p className="text-[11px] text-dim mb-0.5">Danger</p>
+              <p className="num text-2xl font-semibold text-loss">{100 - displaySafeZone}%</p>
             </div>
           </div>
 
           <div className="w-full shrink-0">
-            <div className="relative h-14 rounded-full overflow-hidden">
-              <div className="absolute inset-0 bg-red-900/50" />
-              <div
-                className="absolute inset-y-0 left-0 bg-teal-700/80 transition-all duration-100"
-                style={{ width: `${displaySafeZone}%` }}
-              />
-              <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none select-none">
-                <span className="text-teal-100/50 text-sm font-bold">Safe</span>
-                <span className="text-red-200/50 text-sm font-bold">Danger</span>
+            <div
+              key={markerOutcome === 'loss' ? 'bust' : 'bar'}
+              className={`ou-bar relative rounded-full ${markerOutcome === 'loss' ? 'g-shake' : ''} ${markerOutcome === 'win' ? 'g-win' : ''}`}
+            >
+              <div className="absolute inset-0 overflow-hidden rounded-full border border-line bg-loss-tint">
+                <div
+                  className="absolute inset-0 origin-left bg-felt-tint shadow-[inset_0_0_0_1px_rgba(79,174,132,0.35)]"
+                  style={{ transform: `scaleX(${displaySafeZone / 100})` }}
+                />
+                <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none select-none text-[12px] font-semibold">
+                  <span className="text-felt opacity-70">Safe</span>
+                  <span className="text-loss opacity-70">Danger</span>
+                </div>
               </div>
               <div
-                className="absolute inset-y-0 w-[3px] bg-white/40 overflow-visible"
-                style={{ left: `calc(${displaySafeZone}% - 1.5px)` }}
+                className="absolute inset-y-0 left-0 w-full pointer-events-none"
+                style={{ transform: `translateX(${displaySafeZone}%)` }}
+                aria-hidden
               >
-                <span className="absolute top-1/2 -translate-y-1/2 right-full pr-1.5 text-white/60 text-xs font-bold pointer-events-none select-none">←</span>
-                <span className="absolute top-1/2 -translate-y-1/2 left-full pl-1.5 text-white/60 text-xs font-bold pointer-events-none select-none">→</span>
+                <span className={`absolute top-1/2 left-0 flex h-[115%] w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-px rounded-full border border-control bg-raised transition-opacity ${isBetting ? '' : 'opacity-40'}`}>
+                  <span className="h-1/3 w-px bg-dim" />
+                  <span className="h-1/3 w-px bg-dim" />
+                </span>
               </div>
               {markerAt !== null && (
                 <div
-                  className={`absolute top-[12%] bottom-[12%] w-[5px] rounded-full ${
-                    markerOutcome === 'win'
-                      ? 'bg-emerald-400 shadow-lg shadow-emerald-400/60'
-                      : markerOutcome === 'loss'
-                        ? 'bg-red-400 shadow-lg shadow-red-400/60'
-                        : 'bg-white shadow-lg shadow-white/40'
-                  }`}
+                  className="ou-marker absolute inset-y-0 left-0 w-full pointer-events-none"
                   style={{
-                    left: `${markerAt}%`,
-                    transform: 'translateX(-50%)',
+                    transform: `translateX(${markerAt}%)`,
                     transition:
                       markerAt === 100 || markerOutcome !== null
                         ? 'none'
-                        : `left ${ROLL_ANIM_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+                        : `transform ${ROLL_ANIM_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
                   }}
-                />
+                >
+                  <span
+                    className={`absolute top-[12%] bottom-[12%] left-0 w-[5px] -translate-x-1/2 rounded-full ${
+                      markerOutcome === 'win'
+                        ? 'bg-felt shadow-[0_0_14px_2px_rgba(79,174,132,0.7)]'
+                        : markerOutcome === 'loss'
+                          ? 'bg-loss shadow-[0_0_14px_2px_rgba(229,86,111,0.7)]'
+                          : 'bg-ink shadow-[0_0_12px_rgba(255,255,255,0.45)]'
+                    }`}
+                  />
+                </div>
               )}
               <input
                 type="range"
@@ -282,16 +293,31 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
                 value={safeZone}
                 onChange={(e) => { if (isBetting) setSafeZone(Number(e.currentTarget.value)) }}
                 disabled={!isBetting}
+                aria-label="Safe zone"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default appearance-none"
               />
             </div>
-            <div className="flex justify-center mt-2 px-1 text-xs text-zinc-600">
-              <span>{isBetting ? 'Drag to adjust' : `Rolled ${round.rollResult ?? '—'}`}</span>
+            <div className="flex h-6 items-center justify-center mt-1.5 px-1 text-[12px] text-dim">
+              {isBetting || round.rollResult == null ? (
+                <span>{isBetting ? 'Drag to adjust' : 'Rolling…'}</span>
+              ) : (
+                <span>
+                  Rolled{' '}
+                  <span
+                    key={round.rollResult}
+                    className={`num g-pop inline-block text-[15px] font-semibold ${
+                      markerOutcome === 'win' ? 'text-felt glow-felt' : markerOutcome === 'loss' ? 'text-loss' : 'text-ink'
+                    }`}
+                  >
+                    {round.rollResult}
+                  </span>
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="min-h-10 flex w-full shrink-0 items-center justify-center px-2">
-            <p className="text-center text-xs text-zinc-500">
+          <div className="ou-hint min-h-9 flex w-full shrink-0 items-center justify-center px-2">
+            <p className="text-center text-[13px] text-dim">
               {isBetting
                 ? `Roll 1–${displaySafeZone} wins · ${displaySafeZone + 1}–100 loses. Drag the bar to set risk.`
                 : isInProgress
@@ -317,9 +343,9 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -346,7 +372,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
                     type="button"
                     onClick={isSettled ? handleNextRound : handleRoll}
                     disabled={isBetting && !canRoll}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : 'Roll →'}
                   </button>
