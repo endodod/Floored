@@ -53,18 +53,19 @@ interface CrashGameProps {
 type PendingResult = GamePendingResult
 
 function crashPendingResult(
-  outcome: 'win' | 'loss' | 'push',
+  outcome: 'win' | 'loss',
   betAmount: number,
   payout: number,
   multiplier: number,
   freeBet?: boolean,
+  /** Crash Cushion returned part of the stake: still a loss, by the rest of the stake. */
+  cushioned = false,
 ): PendingResult {
   return buildPendingResult(
     { outcome, betAmount, payout },
     {
       result: formatMultiplier(multiplier),
-      resultSpecification:
-        outcome === 'win' ? 'Cashed' : outcome === 'push' ? 'Protected' : 'Crashed',
+      resultSpecification: outcome === 'win' ? 'Cashed' : cushioned ? 'Cushioned' : 'Crashed',
     },
     { gameMultiplier: outcome === 'win' ? multiplier : undefined, freeBet },
   )
@@ -282,11 +283,12 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
         })
         setPendingResult(
           crashPendingResult(
-            cushionPayout > 0 ? 'push' : 'loss',
+            'loss',
             betAmount,
             resolved.payout,
             resolved.multiplier ?? crashAt,
             resolved.firstBetWasFree,
+            cushionPayout > 0,
           ),
         )
       }

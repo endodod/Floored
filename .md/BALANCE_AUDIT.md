@@ -261,7 +261,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Mode differences:** None in the engine — Freeplay, Daily, Survival and Ladder share the same crash distribution. Only Survival applies Crash Cushion; curse/bless never apply in Daily or Ladder.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard game boost table.
-- **Game Perk — Crash Cushion:** On a crash below **3×**, recovers **25/35/45/60/75%** of the bet by level (`CRASH_CUSHION_BY_LEVEL`), settled as a push.
+- **Game Perk — Crash Cushion:** On a crash below **3×**, recovers **25/35/45/60/75%** of the bet by level (`CRASH_CUSHION_BY_LEVEL`). It settles as a loss of the rest of the stake; the dock shows the result as "Cushioned" with the net loss.
 - **TODO:** None.
 
 ---
