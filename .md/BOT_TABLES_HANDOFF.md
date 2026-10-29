@@ -108,8 +108,8 @@ No rake.
   the same shoe.
 - **Format:** Everyone starts with 1,000 tournament chips. **12 hands**; each
   hand everyone bets between a min and max (e.g. 10–500) and plays it out
-  against the dealer. Most chips after hand 12 wins the pot (open question:
-  payout split). Below the min bet → out.
+  against the dealer. Most chips after hand 12 wins the pot. The owner approved
+  winner-takes-all for the prize pool. Below the min bet → out.
 - **Twist:** the **last hand bets are secret** (everyone commits face down,
   revealed together), so the leader can't simply mirror the chasers.
 - **Rules:** standard Floored blackjack (3:2 blackjack, dealer hits ≤ 16, double
@@ -121,6 +121,14 @@ No rake.
   `Math.random`).
 - **Board:** dealer at the top, four seat arcs below with each player's stack,
   bet chips and cards; a standings strip (rank, stack, hands left).
+
+**Blackjack Showdown implementation:** The owner approved the handoff defaults
+and winner-takes-all payout. Implemented a separate Tables hub and route, a
+refillable 10,000-chip play-money wallet, the 4-seat / 12-hand shared-shoe engine, per-seat
+views, a basic-strategy bot policy, and the blackjack table board. The wallet
+uses buy-ins of 100 / 500 / 2,000; the four-seat prize is 4× the buy-in. The
+browser and responsive checks remain pending. This does not implement Hold'em,
+Liar's Dice, the cross-game bot core, or the simulation harness.
 
 ### Phase 1 deliverables
 

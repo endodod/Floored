@@ -7,13 +7,14 @@ import { useSurvivalStore } from '@/store/survival-store'
 import { FLOOR_BET_LIMIT, MAX_FLOORS, STARTING_BANKROLL } from '@/lib/survival/balance'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useHydrated } from '@/hooks/use-hydrated'
-import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
 import { useLadderStore } from '@/store/ladder-store'
 import { CHECKPOINT_EVERY, LADDER_LIVES, LADDER_RUNGS, START_POT } from '@/lib/ladder/rules'
 import { dailyDateKey, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
 import { dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
 import { useDailyStore } from '@/store/daily-store'
 import { useFreeplayStore } from '@/store/freeplay-store'
+import { useTablesStore } from '@/store/tables-store'
 import { GAMES } from '@/lib/game-catalog'
 import { formatChips } from '@/utils/format'
 import { Button } from '@/components/ui/button'
@@ -83,6 +84,7 @@ export function ModeSelect() {
   const ladderPot = useLadderStore((s) => s.pot)
   const ladderLives = useLadderStore((s) => s.lives)
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
+  const tablesWallet = useTablesStore((s) => s.wallet)
   const ladderClimbing = hydrated && ladderStatus === 'climbing'
   const survivalLive = hydrated && runActive
 
@@ -142,6 +144,18 @@ export function ModeSelect() {
             </Button>
           }
         />
+        {TABLES_ENABLED && (
+          <ModeRow
+            index={4}
+            name="Tables"
+            description="Multiplayer casino tables against bots. Start with Blackjack Showdown; more tables are coming."
+            track={<UnitTrack total={12} done={0} label="12 hands per table" />}
+            trackCaption="Blackjack Showdown · 4 seats"
+            figureLabel="Tables wallet"
+            figure={hydrated ? formatChips(tablesWallet) : '—'}
+            action={<Button asChild variant="outline" className="w-full lg:w-auto"><Link href="/tables">Choose a table</Link></Button>}
+          />
+        )}
 
         {/* ── Ladder ── */}
         {LADDER_ENABLED && (

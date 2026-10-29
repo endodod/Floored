@@ -9,12 +9,12 @@
      mono, and the felt green as the one accent: a 1px line on whatever is selected,
      and the colour of a win. Red only for a loss, gold only for sparks. */
   :root {
-    --ground: #171719;
-    --surface: #131217;
-    --raised: #212023;
-    --line: #26252a;
-    --rule: #1d1c21;
-    --control: #3a3a3e;
+    --ground: #111612;
+    --surface: #141a15;
+    --raised: #202720;
+    --line: #2b342d;
+    --rule: #222a24;
+    --control: #3a463b;
     --ink: #ffffff;
     --soft: #bdbdc0;
     --dim: #8a8c92;
@@ -26,19 +26,19 @@
     --gold-tint: #2a2416;
 
     /* shadcn roles, as bare "H S% L%" triples */
-    --background: 240 4% 9%;
+    --background: 135 11% 8%;
     --foreground: 0 0% 100%;
-    --card: 252 12% 8%;
+    --card: 132 13% 9%;
     --card-foreground: 0 0% 100%;
-    --popover: 260 4% 13%;
+    --popover: 135 10% 13%;
     --popover-foreground: 0 0% 100%;
     --primary: 0 0% 100%;
     --primary-foreground: 240 4% 9%;
-    --secondary: 260 4% 13%;
+    --secondary: 135 10% 13%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 260 4% 13%;
+    --muted: 135 10% 13%;
     --muted-foreground: 225 4% 56%;
-    --accent: 260 4% 13%;
+    --accent: 135 10% 13%;
     --accent-foreground: 0 0% 100%;
     --destructive: 350 73% 62%;
     --destructive-foreground: 0 0% 100%;
@@ -84,6 +84,8 @@
   }
   body {
     @apply min-h-screen bg-background text-foreground antialiased;
+    background-image: radial-gradient(ellipse 90% 55% at 50% -12%, rgba(50, 91, 62, 0.2), transparent 78%);
+    background-attachment: fixed;
   }
 
   ::selection {
@@ -160,7 +162,7 @@ body > div.neon-auth-ui {
   opacity: 1;
 }
 .ambience-lamp[data-mode='felt'] {
-  background: radial-gradient(ellipse 55% 60% at 50% 0%, rgba(79, 174, 132, 0.22), rgba(79, 174, 132, 0.05) 45%, transparent 75%);
+  background: radial-gradient(ellipse 58% 62% at 50% 0%, rgba(79, 174, 132, 0.24), rgba(79, 174, 132, 0.06) 44%, transparent 76%);
 }
 .ambience-lamp[data-mode='gold'] {
   background: radial-gradient(ellipse 55% 60% at 50% 0%, rgba(217, 164, 65, 0.2), rgba(217, 164, 65, 0.045) 45%, transparent 75%);
@@ -256,7 +258,14 @@ body > div.neon-auth-ui {
 
 /* Primary button: a felt glow when it is about to be pressed. */
 .btn-glow:hover:not(:disabled) {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4), 0 0 26px -2px rgba(79, 174, 132, 0.55);
+  box-shadow: 0 0 0 1px rgba(217, 164, 65, 0.55), 0 0 24px -3px rgba(79, 174, 132, 0.6);
+}
+
+/* Brass trim on the shared navigation ties the room together without competing
+   with the green felt accents inside each game. */
+.site-nav .mark-line::after {
+  background: var(--gold);
+  box-shadow: 0 0 9px rgba(217, 164, 65, 0.65);
 }
 
 /* ── The table ──
