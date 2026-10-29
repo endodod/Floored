@@ -262,7 +262,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
         <div className="crc-board flex w-full max-w-2xl min-h-0 flex-1 flex-col justify-center gap-[clamp(0.3rem,2cqh,0.75rem)]">
           <p className="crc-label felt-print px-1">{isBetting ? 'Pick your chicken' : 'Race'}</p>
 
-          <div className="flex flex-col gap-[clamp(0.25rem,1.6cqh,0.6rem)]">
+          <div className="crc-rail flex flex-col gap-[clamp(0.25rem,1.6cqh,0.6rem)] rounded-[14px]">
             {CHICKENS.map((chicken) => {
               const isSelected = state.pickedChicken === chicken.id
               const isWinner = isSettled && state.winner === chicken.id
@@ -285,7 +285,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
                       ? 'border-dashed border-loss/50 bg-ground/30 opacity-50 cursor-not-allowed'
                       : isSelected
                         ? 'border-felt bg-felt-tint/80'
-                        : 'border-line bg-ground/40',
+                        : 'crc-lane-idle bg-ground/40',
                     isBetting && !isScoutCrossed ? 'cursor-pointer hover:border-dim' : '',
                     isWinner ? (isSelected ? 'g-gold' : 'g-win') : '',
                     isLoser ? 'g-dim' : '',

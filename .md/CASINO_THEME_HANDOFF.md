@@ -35,7 +35,7 @@ outcome glows; the table colours above are for surfaces.
 
 ## Per game
 
-Done: Roulette, Fortune Wheel, Slots, Over-Under, Run Dice, Plinko (brass pegs), Mines, Keno, Dragon Tower, Blackjack.
+Done: Roulette, Fortune Wheel, Slots, Over-Under, Run Dice, Plinko (brass pegs), Mines, Keno, Dragon Tower, Blackjack, Chicken Race.
 
 | Game | Suggested change |
 |---|---|
@@ -45,7 +45,6 @@ Done: Roulette, Fortune Wheel, Slots, Over-Under, Run Dice, Plinko (brass pegs),
 | Coin Flip | Coin to brass/gold metal gradient if it isn't; Heads / Tails picks as table chips (green / red with gold rim). |
 | Street Cups | Cups already drawn: add a wood-and-gold base strip under them (a table rail). |
 | Crash | Chart panel in a wood-and-gold frame; keep the felt-print grid. |
-| Chicken Race | Track in a wood-and-gold rail like `.ou-rail`; lanes divided by gold hairlines. |
 | Case Battles | Case column / battle area as `.rd-plaque` panels with gold hairline; labels felt-print. |
 
 ## When you're done
