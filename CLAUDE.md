@@ -14,6 +14,8 @@ Read the one that matches the task before changing code:
 - [.md/GAME_REDESIGN_HANDOFF.md](.md/GAME_REDESIGN_HANDOFF.md): the per-game board redesign:
   what each board looks like, the shared board pieces, the fit-without-scrolling and motion
   rules. **Read before changing a game's board.**
+- [.md/CASINO_THEME_HANDOFF.md](.md/CASINO_THEME_HANDOFF.md): the casino theme pass (wood, gold,
+  table colours) still to apply to the remaining games, with a cheap way to work through it.
 - [.md/BALANCE_AUDIT.md](.md/BALANCE_AUDIT.md): every survival and game number (quotas, sparks,
   shop, perks, missions, per-game EV), checked against the code.
 - [.md/ACTIVE_ITEMS_SPEC.md](.md/ACTIVE_ITEMS_SPEC.md): design for survival active items.
