@@ -50,7 +50,8 @@ bookkeeping. A push returns the stake (`payout === betAmount`).
 ### Modes inside a game
 Components take `mode: GameMode` (`freeplay | daily | ladder | survival`).
 Survival perks are read with `useSurvivalPerks(game)`; the minimum bet comes from
-`useGameMinBet`; run endings (bust, floor done, rung lost) from `useRunEnd`; the
+`useGameMinBet`; run endings (bust, floor done, rung lost, Daily out of bets or day over) from `useRunEnd`,
+which shows them in the dock's result row and swaps Leave / Next for the run's action (no modals); the
 Ladder's all-in pot from `useLadderAllIn`. Dev curse/bless/force-tie toggles only
 apply in Freeplay and Survival, never in Daily or Ladder.
 
