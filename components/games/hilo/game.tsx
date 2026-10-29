@@ -155,7 +155,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   function handleGuess(guess: 'higher' | 'lower') {
     if (!isPlaying && !isRiding) return
     let next = forceTie ? tieGame(round) : blessed ? winGame(round, guess) : cursed ? loseGame(round, guess) : guessHiLo(round, guess)
-    if (hiloHotStreak && next.stage === 'riding' && !next.isTie && Math.random() < 0.25) {
+    if (mode === 'survival' && hiloHotStreak && next.stage === 'riding' && !next.isTie && Math.random() < 0.25) {
       next = bumpStreak(next)
       setHotStreakFlash(true)
       setTimeout(() => setHotStreakFlash(false), 1200)
