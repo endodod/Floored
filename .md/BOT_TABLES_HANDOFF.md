@@ -1,5 +1,36 @@
 # Bot Tables — handoff
 
+## Status (2026-10-29)
+
+Built, with the open questions answered by the proposals below (owner asked to
+build to completion): name **Tables**; own wallet (10K, refill below 100);
+Hold'em as a Sit & Go; difficulty tied to the stakes (100 Rookie / 500
+Regular / 2K Shark); Hold'em seats 4 on phones; `tsx` added (dev); leaving
+forfeits the buy-in; bots have names and a style tag, no chat; top two paid
+(65/35 at six seats, 70/30 at four).
+
+- Engines: `games/holdem` (7-card evaluator, side pots, incomplete all-in
+  raises, blinds every 5 hands), `games/liars-dice`, `games/blackjack-showdown`.
+  Contract: `TableEngine` in `lib/tables/types.ts`; `apply` is pure, random
+  steps happen in `advance`.
+- Bots: `lib/bots/` (core, roster, one policy per game). Skill tiers blend a
+  profile toward a solid baseline (`playingProfile`); Rookies get leaks.
+- Harness: `pnpm sim:bots [game] [tables] [--seed n]` (tiers, styles, length,
+  illegal actions, hidden-info leaks via a re-drawn twin state) and
+  `pnpm check:tables` (evaluator, side pots, chip conservation, bid rules).
+- UI: hub `app/tables`, table page `app/tables/[game]`, rules at
+  `/how-to-play/tables/[game]`, boards in `components/tables/`, store
+  `store/tables-store.ts`, flag `TABLES_ENABLED`, navbar + home row.
+- **Playable:** Hold'em and Liar's Dice (checked at 1440×900, 1280×720,
+  390×844). **Not yet:** Blackjack Showdown has engine and bots but only a
+  placeholder board; it is hidden from the hub (`READY` in
+  `lib/tables/catalog.ts`). Not yet checked: 150/200% zoom, reduced motion.
+
+Harness results (seed 1): Hold'em Shark +27% / Rookie −27% of buy-in per
+table, ~57 hands; Liar's Dice +26% / −26%, ~17 rounds; Showdown +8% / −8%
+(mostly the cards).
+
+
 Branch: `claude/bot-tables` (from `main` at `fd5f83b`).
 TODO item: "New mode → Multiplayer casino games against bots (e.g. poker)".
 Working name for the mode: **Tables** (open question 1).

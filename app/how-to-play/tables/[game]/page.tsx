@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { TABLES_ENABLED } from '@/lib/features'
-import { TABLE_GAMES, TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
+import { TABLE_GAMES, TABLE_GAME_BY_NAME, isTableGame } from '@/lib/tables/catalog'
 import { TABLE_TIERS, payoutSplits } from '@/lib/tables/stakes'
 import { TABLE_TUTORIALS } from '@/lib/tables/tutorials'
 import type { TableGameName } from '@/lib/tables/types'
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function TableHowToPlayPage({ params }: { params: Params }) {
   const { game } = await params
   const entry = TABLE_GAME_BY_NAME.get(game as TableGameName)
-  if (!TABLES_ENABLED || !entry) notFound()
+  if (!TABLES_ENABLED || !entry || !isTableGame(entry.name)) notFound()
   const tutorial = TABLE_TUTORIALS[entry.name]
   const others = TABLE_GAMES.filter((g) => g.name !== entry.name)
 

@@ -106,9 +106,7 @@ export function TableShell({
             aria-label={`How to play ${game.label} (opens in a new tab)`}
             className={`${CORNER_BTN} inline-flex w-8 items-center justify-center px-0`}
           >
-            <span aria-hidden className="flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] leading-none">
-              ?
-            </span>
+            <span aria-hidden>?</span>
           </Link>
         </div>
 

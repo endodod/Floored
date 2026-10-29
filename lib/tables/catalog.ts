@@ -15,7 +15,7 @@ export interface TableGameEntry {
   format: string
 }
 
-export const TABLE_GAMES: TableGameEntry[] = [
+const ALL_TABLE_GAMES: TableGameEntry[] = [
   {
     name: 'holdem',
     label: "Texas Hold'em",
@@ -45,8 +45,12 @@ export const TABLE_GAMES: TableGameEntry[] = [
   },
 ]
 
-export const TABLE_GAME_BY_NAME = new Map(TABLE_GAMES.map((g) => [g.name, g]))
+/** Blackjack Showdown has an engine and bots but no board yet, so it stays off the hub. */
+const READY: TableGameName[] = ['holdem', 'liars-dice']
+
+export const TABLE_GAMES = ALL_TABLE_GAMES.filter((g) => READY.includes(g.name))
+export const TABLE_GAME_BY_NAME = new Map(ALL_TABLE_GAMES.map((g) => [g.name, g]))
 
 export function isTableGame(name: string): name is TableGameName {
-  return TABLE_GAME_BY_NAME.has(name as TableGameName)
+  return READY.includes(name as TableGameName)
 }
