@@ -363,30 +363,35 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
           </div>
 
           <div className="flex flex-1 min-h-0 w-full items-center justify-center">
-            <div className="flex h-7 items-center gap-1.5 flex-wrap justify-center">
-              <span className="text-[13px] text-dim">Balls</span>
-              <button
-                type="button"
-                disabled={isDropping || ballCount <= MIN_BALLS}
-                onClick={() => setBallCount((c) => Math.max(MIN_BALLS, c - 1))}
-                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
-                aria-label="Fewer balls"
-              >
-                −
-              </button>
-              <span className="num min-w-[1.5rem] text-center text-[14px] font-semibold text-ink">
-                {ballCount}
-              </span>
-              <button
-                type="button"
-                disabled={isDropping || ballCount >= maxBalls}
-                onClick={() => setBallCount((c) => Math.min(maxBalls, c + 1))}
-                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
-                aria-label="More balls"
-              >
-                +
-              </button>
-            </div>
+            {mode === 'ladder' ? (
+              // The whole pot is one stake, so a ladder drop is always a single ball.
+              <p className="flex h-7 items-center text-[13px] text-dim">One ball carries the pot</p>
+            ) : (
+              <div className="flex h-7 items-center gap-1.5 flex-wrap justify-center">
+                <span className="text-[13px] text-dim">Balls</span>
+                <button
+                  type="button"
+                  disabled={isDropping || ballCount <= MIN_BALLS}
+                  onClick={() => setBallCount((c) => Math.max(MIN_BALLS, c - 1))}
+                  className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
+                  aria-label="Fewer balls"
+                >
+                  −
+                </button>
+                <span className="num min-w-[1.5rem] text-center text-[14px] font-semibold text-ink">
+                  {ballCount}
+                </span>
+                <button
+                  type="button"
+                  disabled={isDropping || ballCount >= maxBalls}
+                  onClick={() => setBallCount((c) => Math.min(maxBalls, c + 1))}
+                  className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
+                  aria-label="More balls"
+                >
+                  +
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-1 min-h-0 w-full items-center justify-center gap-2">
