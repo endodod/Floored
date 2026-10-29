@@ -39,11 +39,12 @@ Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`loca
 
 ## Tables
 
-Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones) and Liar's Dice (four seats).
+Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones), Liar's Dice, or Blackjack Showdown.
 
 - Own **Tables wallet** ($10,000, refillable below the smallest buy-in)
 - **Stakes** 100 / 500 / 2,000 pick the bots: Rookies, Regulars or Sharks
-- Every buy-in goes into the prize pool (no rake); top two are paid (65/35 at six seats, 70/30 at four)
+- Every buy-in goes into the prize pool (no rake); Hold'em pays the top two, while Blackjack Showdown and Liar's Dice are winner-takes-all
+- Account Records track the Tables peak wallet, refills, and each game's results
 - Leaving a table before your place is decided forfeits the buy-in
 - Bots decide only from what their seat can see; `pnpm sim:bots` and `pnpm check:tables` test them
 

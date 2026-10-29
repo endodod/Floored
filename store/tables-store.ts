@@ -44,6 +44,7 @@ const emptyStats = (): TableGameStats => ({ played: 0, won: 0, cashes: 0, bestFi
 
 interface TablesStore {
   wallet: number
+  peakWallet: number
   refills: number
   open: OpenTable | null
   stats: Record<TableGameName, TableGameStats>
@@ -90,6 +91,7 @@ export const useTablesStore = create<TablesStore>()(
           return {
             open: null,
             wallet: s.wallet + prize,
+            peakWallet: Math.max(s.peakWallet, s.wallet + prize),
             lastResult: record,
             history: [record, ...s.history].slice(0, HISTORY_LIMIT),
             stats: {
@@ -108,6 +110,7 @@ export const useTablesStore = create<TablesStore>()(
 
       return {
         wallet: TABLES_START_WALLET,
+        peakWallet: TABLES_START_WALLET,
         refills: 0,
         open: null,
         stats: { holdem: emptyStats(), 'liars-dice': emptyStats(), 'blackjack-showdown': emptyStats() },
@@ -145,12 +148,18 @@ export const useTablesStore = create<TablesStore>()(
         refill: () => {
           const s = get()
           if (s.open || s.wallet >= MIN_BUY_IN) return false
-          set({ wallet: TABLES_START_WALLET, refills: s.refills + 1 })
+          set({ wallet: TABLES_START_WALLET, peakWallet: Math.max(s.peakWallet, TABLES_START_WALLET), refills: s.refills + 1 })
           return true
         },
         dismissResult: () => set({ lastResult: null }),
       }
     },
-    { name: 'floored-tables' },
+    {
+      name: 'floored-tables',
+      merge: (persisted, current) => {
+        const restored = { ...current, ...(persisted as Partial<TablesStore>) }
+        return { ...restored, peakWallet: Math.max(restored.peakWallet, restored.wallet) }
+      },
+    },
   ),
 )

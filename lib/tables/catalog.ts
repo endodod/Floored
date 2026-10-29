@@ -45,8 +45,7 @@ const ALL_TABLE_GAMES: TableGameEntry[] = [
   },
 ]
 
-/** Blackjack Showdown has an engine and bots but no board yet, so it stays off the hub. */
-const READY: TableGameName[] = ['holdem', 'liars-dice']
+const READY: TableGameName[] = ['holdem', 'liars-dice', 'blackjack-showdown']
 
 export const TABLE_GAMES = ALL_TABLE_GAMES.filter((g) => READY.includes(g.name))
 export const TABLE_GAME_BY_NAME = new Map(ALL_TABLE_GAMES.map((g) => [g.name, g]))
