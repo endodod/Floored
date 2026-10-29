@@ -367,7 +367,6 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
                 <button
                   type="button"
                   onClick={isSettled ? handleNext : isRiding ? handleCashOut : handleFlip}
-                  data-sound={isSettled ? 'deal' : isRiding ? 'cashout' : 'coin'}
                   disabled={(isBetting && !canFlip) || isFlipping}
                   className={isRiding ? GAME_DOCK_SECONDARY_BTN : GAME_DOCK_PRIMARY_BTN}
                 >
@@ -379,7 +378,6 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
               <button
                 type="button"
                 onClick={handleFlipAgain}
-                data-sound="coin"
                 disabled={!state.nextPick || isFlipping}
                 className={GAME_DOCK_PRIMARY_BTN}
               >

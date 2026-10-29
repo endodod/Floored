@@ -47,7 +47,6 @@ import { useBless } from '@/hooks/use-bless'
 import type { CaseBattleState, CaseDef, CaseItem, CaseRarity } from '@/games/case-battles/types'
 import { ItemIcon } from './item-icons'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
-import { playSiteSound } from '@/components/site-sound'
 
 interface CaseBattlesResult {
   outcome: 'win' | 'loss' | 'push'
@@ -250,7 +249,6 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
 
     for (let i = 0; i < total; i++) {
       const t = setTimeout(() => {
-        playSiteSound('case-tick')
         setRevealedCount(i + 1)
         if (i + 1 < total) setRevealingIdx(i + 1)
         else setRevealingIdx(-1)
@@ -319,7 +317,6 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
   }
 
   function handleReroll(slotIndex: number) {
-    playSiteSound('case')
     setRerollPending(false)
     // Rolled up front so the reel can stop on the new item; it settles once the reel lands.
     const withReroll = rerollUserItem(stateRef.current, slotIndex, cases)
@@ -343,7 +340,6 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
 
   function handleBattle() {
     if (!canBattle || !lock()) return
-    playSiteSound('case')
     onBet?.(state.totalCost)
     setLastSelectedCases(state.selectedCases)
     setQuoteIdx((prev) => pickQuote(prev))
@@ -511,7 +507,6 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                           key={i}
                           type="button"
                           onClick={() => handleReroll(i)}
-                          data-sound="silent"
                           aria-label={`Reroll ${oc.item.name}`}
                           className="group relative block rounded-lg text-left ring-1 ring-felt/70"
                         >
@@ -611,7 +606,6 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : handleBattle}
-                    data-sound={isSettled ? 'deal' : 'silent'}
                     disabled={isOpening || (isSetup && !canBattle)}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

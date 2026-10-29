@@ -51,7 +51,6 @@ export function BoardTile({
       disabled={disabled}
       aria-label={label}
       data-state={state}
-      data-sound={sound}
       className={`btile m-still ${motion} ${className}`}
       style={{ ...(stagger ? ({ '--i': index } as CSSProperties) : null), ...style }}
     >

@@ -357,7 +357,6 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : isSelecting ? handleDraw : handleDeal}
-                    data-sound="card"
                     disabled={isBetting && !canDeal}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

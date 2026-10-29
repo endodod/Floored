@@ -422,7 +422,6 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : handleSpin}
-                    data-sound={isSettled ? 'deal' : 'spin'}
                     disabled={!isSettled && (!canSpin || isSpinning)}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

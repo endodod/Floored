@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu, User, X, Volume2, VolumeX } from 'lucide-react'
+import { Menu, User, X } from 'lucide-react'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
@@ -13,7 +13,6 @@ import { useTablesStore } from '@/store/tables-store'
 import { useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
 import { FlooredMark } from '@/components/ui/terminal'
-import { useSettingsStore } from '@/store/settings-store'
 
 const MODES = [
   { href: '/daily', label: 'Daily', enabled: true },
@@ -43,7 +42,8 @@ function BarFigure({ label, value }: { label: string; value: number }) {
     <p className="flex items-baseline gap-1.5 whitespace-nowrap">
       <span className="hidden text-xs text-dim md:inline tall:text-[13px]">{label}</span>
       {/* key re-mounts the span so the flash replays on every change */}
-      <span key={tick} className={`num text-sm text-ink tall:text-base ${tick}`}>
+      <span key={tick} className={
+um text-sm text-ink tall:text-base ${tick}`}>
         {formatChips(value)}
       </span>
     </p>
@@ -62,13 +62,6 @@ export function Navbar() {
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
   const floorBetsPlaced = useSurvivalStore((s) => s.floorBetsPlaced)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [soundOpen, setSoundOpen] = useState(false)
-  const uiSoundsEnabled = useSettingsStore((s) => s.uiSoundsEnabled)
-  const soundVolume = useSettingsStore((s) => s.soundVolume)
-  const setUiSoundsEnabled = useSettingsStore((s) => s.setUiSoundsEnabled)
-  const setSoundVolume = useSettingsStore((s) => s.setSoundVolume)
-  const anyAudioEnabled = uiSoundsEnabled
-  const soundToggles = [{ label: 'Interface sounds', enabled: uiSoundsEnabled, set: setUiSoundsEnabled }]
 
   const inFreeplay = pathname.startsWith('/freeplay')
   const inDaily = pathname.startsWith('/daily')
@@ -140,37 +133,6 @@ export function Navbar() {
 
           <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0 lg:flex-1 lg:justify-end">
             {figure}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setSoundOpen((open) => !open)}
-                aria-label="Sound settings"
-                aria-expanded={soundOpen}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-control text-soft transition-colors hover:border-dim hover:text-ink tall:h-10 tall:w-10"
-              >
-                {anyAudioEnabled ? <Volume2 className="h-4 w-4" strokeWidth={1.6} /> : <VolumeX className="h-4 w-4" strokeWidth={1.6} />}
-              </button>
-              {soundOpen && (
-                <div className="absolute right-0 top-full z-[70] mt-2 w-72 rounded-md border border-line bg-surface p-4 shadow-xl" role="group" aria-label="Sound settings">
-                  {soundToggles.map(({ label, enabled, set }) => {
-                    const on = enabled
-                    return (
-                      <div key={label} className="flex items-center justify-between gap-3 py-1.5">
-                        <p className="text-[13px] font-medium text-ink">{label}</p>
-                        <button type="button" role="switch" aria-checked={on} aria-label={`Enable ${label.toLowerCase()}`} onClick={() => set(!on)} className={`relative h-6 w-11 rounded-full transition-colors ${on ? 'bg-felt' : 'bg-control'}`}>
-                          <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${on ? 'left-6' : 'left-1'}`} />
-                        </button>
-                      </div>
-                    )
-                  })}
-                  <label className={`mt-3 flex items-center gap-3 text-xs text-soft ${uiSoundsEnabled ? '' : 'opacity-40'}`}>
-                    <span>Interface volume</span>
-                    <input type="range" min="0" max="1" step="0.01" value={soundVolume} disabled={!uiSoundsEnabled} aria-label="Interface sound volume" onChange={(event) => setSoundVolume(Number(event.currentTarget.value))} className="w-full accent-[#4fae84]" />
-                    <span className="num w-8 text-right">{Math.round(soundVolume * 100)}%</span>
-                  </label>
-                </div>
-              )}
-            </div>
             <Link
               href="/account"
               aria-label="Account"

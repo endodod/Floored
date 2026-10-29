@@ -301,7 +301,6 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
             <button
               type="button"
               onClick={() => handleGuess('higher')}
-              data-sound="card"
               className={`${GUESS_BTN} hilo-higher`}
             >
               <span className="mr-1.5">↑</span>Higher
@@ -309,14 +308,13 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
             <button
               type="button"
               onClick={() => handleGuess('lower')}
-              data-sound="card"
               className={`${GUESS_BTN} hilo-lower`}
             >
               <span className="mr-1.5">↓</span>Lower
             </button>
           </div>
           <div className={`absolute inset-x-0 flex gap-3 ${!isRiding ? 'invisible pointer-events-none' : ''}`}>
-            <button type="button" onClick={handleCashOut} data-sound="cashout" className={`${GAME_DOCK_PRIMARY_BTN} h-12 min-w-0 flex-1 px-4`}>
+            <button type="button" onClick={handleCashOut} className={`${GAME_DOCK_PRIMARY_BTN} h-12 min-w-0 flex-1 px-4`}>
               Cash out <span className="num ml-1">{formatChips(cashoutAmount)}</span>
             </button>
             <button
@@ -384,7 +382,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
             {showGameOver ? (
               <GameDockGameOverButton onClick={handleGameOver} />
             ) : isBetting ? (
-              <button type="button" onClick={handleDeal} disabled={!canDeal} data-sound="card" className={GAME_DOCK_PRIMARY_BTN}>
+              <button type="button" onClick={handleDeal} disabled={!canDeal} className={GAME_DOCK_PRIMARY_BTN}>
                 Deal →
               </button>
             ) : isSettled ? (

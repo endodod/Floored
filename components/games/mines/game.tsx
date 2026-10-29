@@ -53,7 +53,6 @@ import type { MinesState } from '@/games/mines/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 import { BoardTile, TileMark, type BoardTileState } from '@/components/games/board-tile'
-import { playSiteSound } from '@/components/site-sound'
 
 const DIFFICULTIES: MinesState['difficulty'][] = ['easy', 'medium', 'hard', 'insane']
 
@@ -161,7 +160,6 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
   function handleTileClick(tileId: number) {
     if (round.stage !== 'inProgress') return
     const next = blessed ? winGame(round, tileId) : cursed ? loseGame(round, tileId) : revealMineTile(round, tileId)
-    playSiteSound(next.stage === 'settled' && next.outcome === 'loss' ? 'mine-hit' : 'mine-safe')
     setRound(next)
     if (next.stage === 'settled' && next.outcome) {
       recordOutcome(
