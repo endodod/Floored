@@ -553,7 +553,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isSetup && (
               <div className="flex items-center gap-2.5 flex-wrap justify-center">
-                <span className="text-base text-dim">Total cost</span>
+                <span className="text-base text-dim">{ladder ? 'All-in' : 'Total cost'}</span>
                 <span
                   className={`num text-xl font-semibold ${state.totalCost > bankroll ? 'text-loss' : 'text-ink'}`}
                 >

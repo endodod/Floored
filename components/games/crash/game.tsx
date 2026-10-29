@@ -394,7 +394,9 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
 
           <p className="cx-hint shrink-0 px-2 py-1 text-center text-[13px] text-dim">
             {isBetting
-              ? 'Place chips and start. Cash out before the curve crashes.'
+              ? mode === 'ladder'
+                ? 'Start with the whole pot. Cash out before the curve crashes.'
+                : 'Place chips and start. Cash out before the curve crashes.'
               : isInProgress
                 ? 'The multiplier rises until it crashes. Cash out any time to lock it in.'
                 : '\u00A0'}

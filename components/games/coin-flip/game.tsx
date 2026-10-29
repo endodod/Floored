@@ -308,7 +308,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
         <div className="cf-hint min-h-9 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
           <p className="text-center text-[13px] text-dim">
             {isBetting && !isFlipping
-              ? 'Pick heads or tails, place chips, then flip.'
+              ? mode === 'ladder'
+                ? 'Pick heads or tails, then flip for the whole pot.'
+                : 'Pick heads or tails, place chips, then flip.'
               : isFlipping
                 ? 'Flipping…'
                 : isRiding

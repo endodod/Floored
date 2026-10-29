@@ -305,7 +305,9 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
         <div className="poker-hint min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
           <p className="text-center text-[13px] text-dim">
             {isBetting
-              ? 'Place chips and deal. Pair of jacks or better pays.'
+              ? mode === 'ladder'
+                ? 'Deal for the whole pot. Pair of jacks or better pays.'
+                : 'Place chips and deal. Pair of jacks or better pays.'
               : isSelecting
                 ? 'Hold cards, then draw.'
                 : '\u00A0'}

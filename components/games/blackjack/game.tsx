@@ -193,7 +193,9 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
           <div className="bj-hint min-h-10 flex w-full shrink-0 items-center justify-center">
             <p className="max-w-md px-2 text-center text-[13px] text-dim">
               {isBetting
-                ? 'Place chips and deal. Blackjack pays 3:2; push returns your bet.'
+                ? mode === 'ladder'
+                  ? 'Deal for the whole pot. Blackjack pays 3:2; push returns your bet.'
+                  : 'Place chips and deal. Blackjack pays 3:2; push returns your bet.'
                 : playerCanAct
                   ? 'Hit, stand, or double on two cards. Dealer hits on 16 and below.'
                   : ' '}

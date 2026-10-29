@@ -433,7 +433,9 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
           <div className="fw-hint min-h-9 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
             <p className="text-center text-[13px] text-dim">
               {isBetting
-                ? 'Pick a colour, place chips, then spin.'
+                ? mode === 'ladder'
+                  ? 'Pick a colour, then spin for the whole pot.'
+                  : 'Pick a colour, place chips, then spin.'
                 : spinning
                   ? 'Wheel spinning…'
                   : '\u00A0'}

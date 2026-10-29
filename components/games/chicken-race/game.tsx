@@ -324,7 +324,9 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
 
           <p className="crc-hint px-2 text-center text-[13px] text-dim">
             {isBetting
-              ? 'Pick a chicken, place chips, then race.'
+              ? mode === 'ladder'
+                ? 'Pick a chicken, then race for the whole pot.'
+                : 'Pick a chicken, place chips, then race.'
               : isRacing
                 ? 'Race in progress…'
                 : '\u00A0'}

@@ -324,7 +324,9 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
 
           <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
             {isBetting
-              ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
+              ? mode === 'ladder'
+                ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, then play for the whole pot. ${DRAW_COUNT} balls are drawn.`
+                : `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
               : isDrawing
                 ? 'Numbers reveal one by one. Use Reveal All to skip the draw.'
                 : '\u00A0'}

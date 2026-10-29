@@ -144,7 +144,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
   const statusMsg = isDropping
     ? `${sessions.length} ball${sessions.length === 1 ? '' : 's'} in flight`
-    : 'Place chips and drop.'
+    : mode === 'ladder' ? 'Drop for the whole pot.' : 'Place chips and drop.'
 
   useEffect(() => {
     setBallCount((c) => Math.min(Math.max(MIN_BALLS, c), maxBalls))

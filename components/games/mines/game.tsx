@@ -292,7 +292,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
 
           <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
             {isBetting
-              ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
+              ? mode === 'ladder'
+                ? 'Pick a difficulty, then start with the whole pot. Reveal safe tiles — cash out anytime or hit a mine and lose.'
+                : 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
               : isInProgress
                 ? 'Tap a tile to reveal it. Cash out to lock in your potential total winnings.'
                 : '\u00A0'}
