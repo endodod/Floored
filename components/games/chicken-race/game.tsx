@@ -377,6 +377,7 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : handleRace}
+                    data-sound={isSettled ? 'deal' : 'race'}
                     disabled={actionDisabled}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

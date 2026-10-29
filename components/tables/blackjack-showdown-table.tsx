@@ -165,7 +165,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
           <button type="button" className={GAME_DOCK_PRIMARY_BTN} disabled={!yourTurn || v.phase !== 'betting'} onClick={() => runner.act({ type: 'bet', amount: betValue })}>
             Bet <span className="num ml-1">{formatChips(betValue)}</span>
           </button>
-          <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || v.phase !== 'playing'} onClick={() => runner.act({ type: 'hit' })}>Hit</button>
+          <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || v.phase !== 'playing'} data-sound="card" onClick={() => runner.act({ type: 'hit' })}>Hit</button>
           <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || v.phase !== 'playing'} onClick={() => runner.act({ type: 'stand' })}>Stand</button>
           <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || v.phase !== 'playing' || !v.legal?.canDouble} onClick={() => runner.act({ type: 'double' } as ShowdownAction)}>Double</button>
         </div>

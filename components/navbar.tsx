@@ -63,10 +63,22 @@ export function Navbar() {
   const floorBetsPlaced = useSurvivalStore((s) => s.floorBetsPlaced)
   const [menuOpen, setMenuOpen] = useState(false)
   const [soundOpen, setSoundOpen] = useState(false)
-  const soundEnabled = useSettingsStore((s) => s.soundEnabled)
+  const uiSoundsEnabled = useSettingsStore((s) => s.uiSoundsEnabled)
+  const gameSoundsEnabled = useSettingsStore((s) => s.gameSoundsEnabled)
+  const musicEnabled = useSettingsStore((s) => s.musicEnabled)
   const soundVolume = useSettingsStore((s) => s.soundVolume)
-  const setSoundEnabled = useSettingsStore((s) => s.setSoundEnabled)
+  const musicVolume = useSettingsStore((s) => s.musicVolume)
+  const setUiSoundsEnabled = useSettingsStore((s) => s.setUiSoundsEnabled)
+  const setGameSoundsEnabled = useSettingsStore((s) => s.setGameSoundsEnabled)
+  const setMusicEnabled = useSettingsStore((s) => s.setMusicEnabled)
   const setSoundVolume = useSettingsStore((s) => s.setSoundVolume)
+  const setMusicVolume = useSettingsStore((s) => s.setMusicVolume)
+  const anyAudioEnabled = uiSoundsEnabled || gameSoundsEnabled || musicEnabled
+  const soundToggles = [
+    { label: 'Interface sounds', enabled: uiSoundsEnabled, set: setUiSoundsEnabled },
+    { label: 'Game sounds', enabled: gameSoundsEnabled, set: setGameSoundsEnabled },
+    { label: 'Casino music', enabled: musicEnabled, set: setMusicEnabled },
+  ]
 
   const inFreeplay = pathname.startsWith('/freeplay')
   const inDaily = pathname.startsWith('/daily')
@@ -146,40 +158,40 @@ export function Navbar() {
                 aria-expanded={soundOpen}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-control text-soft transition-colors hover:border-dim hover:text-ink tall:h-10 tall:w-10"
               >
-                {soundEnabled ? <Volume2 className="h-4 w-4" strokeWidth={1.6} /> : <VolumeX className="h-4 w-4" strokeWidth={1.6} />}
+                {anyAudioEnabled ? <Volume2 className="h-4 w-4" strokeWidth={1.6} /> : <VolumeX className="h-4 w-4" strokeWidth={1.6} />}
               </button>
               {soundOpen && (
-                <div className="absolute right-0 top-full z-[70] mt-2 w-64 rounded-md border border-line bg-surface p-4 shadow-xl" role="group" aria-label="Sound settings">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-ink">Game sounds</p>
-                      <p className="mt-0.5 text-xs text-dim">Interface and table effects</p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={soundEnabled}
-                      aria-label="Enable game sounds"
-                      onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={`relative h-6 w-11 rounded-full transition-colors ${soundEnabled ? 'bg-felt' : 'bg-control'}`}
-                    >
-                      <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${soundEnabled ? 'left-6' : 'left-1'}`} />
-                    </button>
-                  </div>
-                  <label className={`mt-4 flex items-center gap-3 text-xs text-soft ${soundEnabled ? '' : 'opacity-40'}`}>
-                    <span>Volume</span>
+                <div className="absolute right-0 top-full z-[70] mt-2 w-72 rounded-md border border-line bg-surface p-4 shadow-xl" role="group" aria-label="Sound settings">
+                  {soundToggles.map(({ label, enabled, set }) => {
+                    const on = enabled
+                    return (
+                      <div key={label} className="flex items-center justify-between gap-3 py-1.5">
+                        <p className="text-[13px] font-medium text-ink">{label}</p>
+                        <button type="button" role="switch" aria-checked={on} aria-label={`Enable ${label.toLowerCase()}`} onClick={() => set(!on)} className={`relative h-6 w-11 rounded-full transition-colors ${on ? 'bg-felt' : 'bg-control'}`}>
+                          <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${on ? 'left-6' : 'left-1'}`} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                  <label className={`mt-3 flex items-center gap-3 text-xs text-soft ${gameSoundsEnabled ? '' : 'opacity-40'}`}>
+                    <span>Effects</span>
                     <input
                       type="range"
                       min="0"
                       max="1"
                       step="0.01"
                       value={soundVolume}
-                      disabled={!soundEnabled}
-                      aria-label="Sound volume"
+                      disabled={!gameSoundsEnabled}
+                      aria-label="Game sound volume"
                       onChange={(event) => setSoundVolume(Number(event.currentTarget.value))}
                       className="w-full accent-[#4fae84]"
                     />
                     <span className="num w-8 text-right">{Math.round(soundVolume * 100)}%</span>
+                  </label>
+                  <label className={`mt-3 flex items-center gap-3 text-xs text-soft ${musicEnabled ? '' : 'opacity-40'}`}>
+                    <span>Music</span>
+                    <input type="range" min="0" max="1" step="0.01" value={musicVolume} disabled={!musicEnabled} aria-label="Music volume" onChange={(event) => setMusicVolume(Number(event.currentTarget.value))} className="w-full accent-[#4fae84]" />
+                    <span className="num w-8 text-right">{Math.round(musicVolume * 100)}%</span>
                   </label>
                 </div>
               )}

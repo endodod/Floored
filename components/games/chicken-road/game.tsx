@@ -50,6 +50,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { ChickenState } from '@/games/chicken-road/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { playSiteSound } from '@/components/site-sound'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 import { BoardTile, TileMark, type BoardTileState } from '@/components/games/board-tile'
 
@@ -158,6 +159,7 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
     const useSafe = safeAdvancePending
     if (useSafe) setSafeAdvancePending(false)
     const next = blessed ? winGame(round) : cursed ? loseGame(round) : useSafe ? advanceChickenRoundSafe(round) : advanceChickenRound(round)
+    playSiteSound(next.stage === 'settled' && next.outcome === 'loss' ? 'step-hit' : 'step-safe')
     setRound(next)
     if (next.stage === 'settled') settleRound(next)
   }
@@ -343,6 +345,7 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                 <button
                   type="button"
                   onClick={handleAdvance}
+                  data-sound="silent"
                   className={GAME_DOCK_PRIMARY_BTN}
                 >
                   Advance →
@@ -350,6 +353,7 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                 <button
                   type="button"
                   onClick={handleCashOut}
+                  data-sound="cashout"
                   className={GAME_DOCK_SECONDARY_BTN}
                 >
                   Cash Out

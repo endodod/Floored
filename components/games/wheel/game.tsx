@@ -487,6 +487,7 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
                   <button
                     type="button"
                     onClick={isSettled ? handleNextRound : handleSpin}
+                    data-sound={isSettled ? 'deal' : 'wheel'}
                     disabled={!isSettled && (!canSpin || spinning)}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

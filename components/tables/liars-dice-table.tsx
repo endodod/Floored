@@ -278,7 +278,7 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
       </div>
       <div className={GAME_DOCK_ACTIONS}>
         <div className="flex justify-center gap-2">
-          <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || !v.canCallLiar} onClick={() => runner.act({ type: 'liar' })}>
+          <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || !v.canCallLiar} data-sound="dice" onClick={() => runner.act({ type: 'liar' })}>
             Liar!
           </button>
           <button

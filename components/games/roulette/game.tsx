@@ -688,6 +688,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : handleSpin}
+                    data-sound={isSettled ? 'deal' : 'wheel'}
                     disabled={!isSettled && (!canSpin || spinning)}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

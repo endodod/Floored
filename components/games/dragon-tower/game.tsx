@@ -47,6 +47,7 @@ import type { DragonTowerState, TileRow } from '@/games/dragon-tower/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 import { BoardTile, TileMark, type BoardTileState } from '@/components/games/board-tile'
+import { playSiteSound } from '@/components/site-sound'
 
 interface DragonTowerResult {
   outcome: 'win' | 'loss'
@@ -140,6 +141,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
 
   function handlePickTile(tileIdx: number) {
     const next = blessed ? winGame(state, tileIdx) : cursed ? loseGame(state, tileIdx) : pickTile(state, tileIdx)
+    playSiteSound(next.stage === 'busted' ? 'tower-hit' : 'tower-safe')
     setState(next)
     if (next.stage === 'busted' || next.stage === 'cashed-out') recordOutcome(next)
   }
@@ -240,6 +242,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                           state={tState}
                           index={NUM_ROWS - 1 - rowIdx + ti}
                           disabled={!isActive}
+                          sound="silent"
                           onClick={() => isActive && handlePickTile(ti)}
                           label={mark === 'skull' ? 'Dragon' : mark === 'gem' ? 'Safe' : `Floor ${floorNum}, tile ${ti + 1}`}
                           className={`dt-tile ${tState === 'dormant' ? 'btile-bad' : ''} ${blindspotSafe ? 'btile-hint' : ''}`}

@@ -480,6 +480,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
               <button
                 type="button"
                 onClick={handleRoll}
+                data-sound="dice"
                 disabled={isRolling}
                 className={GAME_DOCK_PRIMARY_BTN}
               >

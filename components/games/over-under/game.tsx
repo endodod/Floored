@@ -369,6 +369,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
                   <button
                     type="button"
                     onClick={isSettled ? handleNextRound : handleRoll}
+                    data-sound="dice"
                     disabled={isBetting && !canRoll}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

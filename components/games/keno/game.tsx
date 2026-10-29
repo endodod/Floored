@@ -57,6 +57,7 @@ import {
 import type { KenoState } from '@/games/keno/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+import { playSiteSound } from '@/components/site-sound'
 
 const DRAW_TICK_MS = 380
 import { BoardTile, type BoardTileState } from '@/components/games/board-tile'
@@ -157,6 +158,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
 
   function handleNumberClick(num: number) {
     if (!isBetting) return
+    playSiteSound('keno-pick')
     setLastUsedQuickPick(false)
     setRound((prev) => toggleKenoPick(prev, num))
   }
@@ -175,6 +177,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
 
   function handleRevealAll() {
     if (!isDrawing) return
+    playSiteSound('keno-ball')
     setRound((prev) => {
       const next = revealAllKenoDraws(prev)
       if (next.stage === 'settled') finishRound(next)
@@ -187,6 +190,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
     if (round.revealedDrawn.length >= round.drawn.length) return
 
     const timer = window.setTimeout(() => {
+        playSiteSound('keno-ball')
       setRound((prev) => {
         const next = revealNextKenoDraw(prev)
         if (next.stage === 'settled') finishRound(next)
@@ -307,6 +311,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                   state={state}
                   index={(i % 5) + Math.floor(i / 5)}
                   onClick={() => handleNumberClick(num)}
+                  sound="silent"
                   disabled={!isBetting || (!picked && round.picks.length >= MAX_PICKS)}
                   className={[
                     isHit ? 'g-gold' : '',
@@ -380,6 +385,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : isDrawing ? handleRevealAll : handleStart}
+                    data-sound={isDrawing ? 'silent' : undefined}
                     disabled={isBetting && !canStart}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

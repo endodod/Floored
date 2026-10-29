@@ -35,6 +35,7 @@ import { useBless } from '@/hooks/use-bless'
 import type { CrashState } from '@/games/crash/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+import { playSiteSound, startCrashCurveSound, stopCrashCurveSound, updateCrashCurveSound } from '@/components/site-sound'
 
 interface CrashResult {
   outcome: 'win' | 'loss' | 'push'
@@ -252,6 +253,7 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
   useEffect(() => {
     if (!isInProgress) return
 
+    startCrashCurveSound()
     const startTime = Date.now()
     const crashAt   = round.crashAt
     const betAmount = round.betAmount
@@ -259,10 +261,13 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
     const id = setInterval(() => {
       const elapsed = Date.now() - startTime
       const m       = computeMultiplier(elapsed)
+      updateCrashCurveSound(m)
       setElapsedMs(elapsed)
 
       if (m >= crashAt) {
         clearInterval(id)
+        stopCrashCurveSound()
+        playSiteSound('crash-hit')
         const cushionPayout =
           hasCushion && crashAt < 3.0
             ? Math.round(betAmount * getCrashCushion(crashCushionLevel))
@@ -294,7 +299,10 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
       }
     }, 50)
 
-    return () => clearInterval(id)
+    return () => {
+      clearInterval(id)
+      stopCrashCurveSound()
+    }
   }, [isInProgress, round.crashAt, round.betAmount, onResolve, hasCushion, crashCushionLevel])
 
   function addChip(value: number) {
@@ -316,6 +324,8 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
     const m       = computeMultiplier(elapsedMs)
     const payout  = Math.round(round.betAmount * m)
     const outcome = m >= 1.0 ? 'win' : 'loss'
+    stopCrashCurveSound()
+    playSiteSound(outcome === 'win' ? 'cashout' : 'crash-hit')
     setRound(prev => ({
       ...prev,
       stage: 'settled',
@@ -455,6 +465,7 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
                   <button
                     type="button"
                     onClick={isSettled ? handleNextCrash : isInProgress ? handleCashOut : handleStart}
+                    data-sound={isSettled ? 'deal' : isInProgress ? 'silent' : 'crash-rise'}
                     disabled={isBetting && !canStart}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >

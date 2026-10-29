@@ -44,6 +44,7 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { playSiteSound } from '@/components/site-sound'
 import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 /* Slot anchors (centre of each slot, as a share of the stage width). */
@@ -259,6 +260,7 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
 
     const swap = swaps[idx]
     if (!swap) return
+    playSiteSound('cups')
     swapIdxRef.current = idx + 1
 
     setCupSlots(prev => {

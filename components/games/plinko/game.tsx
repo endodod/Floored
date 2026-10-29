@@ -34,6 +34,7 @@ import { useBless } from '@/hooks/use-bless'
 import type { PlinkoPayoutResult, PlinkoRisk } from '@/games/plinko/types'
 import { PlinkoBoard, type PlinkoBall } from '@/components/plinko-board'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { playSiteSound } from '@/components/site-sound'
 
 const MIN_BALLS = 1
 const MAX_BALLS = 10
@@ -212,6 +213,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
     const session = sessionsRef.current.find((s) => s.id === id)
     if (!session) return
 
+    playSiteSound('ball')
     setSessions((prev) => prev.filter((s) => s.id !== id))
     inFlightBetRef.current = Math.max(0, inFlightBetRef.current - session.bet)
 
@@ -415,6 +417,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
               <button
                 type="button"
                 onClick={handleDrop}
+                data-sound="ball"
                 disabled={!canDrop}
                 className={GAME_DOCK_PRIMARY_BTN}
               >

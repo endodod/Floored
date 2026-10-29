@@ -26,6 +26,7 @@ export function BoardTile({
   style,
   label,
   children,
+  sound,
 }: {
   state: BoardTileState
   onClick?: () => void
@@ -36,6 +37,7 @@ export function BoardTile({
   style?: CSSProperties
   label?: string
   children?: ReactNode
+  sound?: string
 }) {
   const faceUp = FACE_UP.includes(state)
   // Face-down tiles cascade in; a tile turning up flips (on its own, or in the
@@ -49,6 +51,7 @@ export function BoardTile({
       disabled={disabled}
       aria-label={label}
       data-state={state}
+      data-sound={sound}
       className={`btile m-still ${motion} ${className}`}
       style={{ ...(stagger ? ({ '--i': index } as CSSProperties) : null), ...style }}
     >

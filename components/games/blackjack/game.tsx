@@ -241,14 +241,14 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
               showGameOver ? (
                 <GameDockGameOverButton onClick={handleGameOver} />
               ) : (
-                <button type="button" onClick={handleDeal} disabled={!canDeal} className={GAME_DOCK_PRIMARY_BTN}>
+                <button type="button" onClick={handleDeal} disabled={!canDeal} data-sound="card" className={GAME_DOCK_PRIMARY_BTN}>
                   Deal →
                 </button>
               )
             )}
             {!isBetting && playerCanAct && (
               <div className="flex flex-wrap justify-center gap-2.5">
-                <button type="button" onClick={handleHit} className={`${GAME_DOCK_PRIMARY_BTN} min-w-[6rem]`}>Hit</button>
+                <button type="button" onClick={handleHit} data-sound="card" className={`${GAME_DOCK_PRIMARY_BTN} min-w-[6rem]`}>Hit</button>
                 <button type="button" onClick={handleStand} className={GAME_DOCK_SECONDARY_BTN}>Stand</button>
                 <button type="button" onClick={handleDouble} disabled={!canDouble} className={GAME_DOCK_SECONDARY_BTN}>
                   Double <span className="num ml-1 text-gold">×2</span>
