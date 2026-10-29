@@ -25,7 +25,7 @@ const [sb2, bb2] = HOLDEM_BLINDS[2]!
 export const TABLES_STEPS: TutorialStep[] = [
   {
     title: 'Pick a game and stakes',
-    body: `Buy in for ${TABLE_TIERS.map((t) => formatChips(t.buyIn)).join(' / ')}. This comes from your Tables wallet and contributes to the prize pool; it is not your bankroll at the table. The stakes also pick the bots you face: Rookies, Regulars or Sharks.`,
+    body: `Buy in for ${TABLE_TIERS.map((t) => formatChips(t.buyIn)).join(' / ')}. This comes from your Tables wallet and contributes to the prize pool; it is not your bankroll at the table. Choose opponent difficulty separately; your choice is remembered in this browser.`,
   },
   {
     title: 'Buy-ins make the prize pool',

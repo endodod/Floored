@@ -65,8 +65,8 @@ function BetChip({ amount }: { amount: number }) {
 
 export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
   const game = TABLE_GAME_BY_NAME.get('holdem')!
-  const bots = useMemo(() => [null, ...seatBots(table.seats - 1, table.tier, createRng(table.seed ^ 0x51ed))], [table])
-  const runner = useTableRunner(holdemDef, { seats: table.seats, human: 0, bots, seed: table.seed, turnMs: TURN_MS, pauseMs: pause })
+  const bots = useMemo(() => [null, ...seatBots(table.seats - 1, table.botSkill ?? table.tier, createRng(table.seed ^ 0x48de))], [table])
+  const runner = useTableRunner(holdemDef, { seats: table.seats, human: 0, bots, memoryKey: 'holdem', seed: table.seed, turnMs: TURN_MS, pauseMs: pause })
   const { view: v, yourTurn, thinking } = runner
   const names = useMemo(() => ['You', ...bots.slice(1).map((b) => b!.profile.name)], [bots])
   const me = v.seats[0]!

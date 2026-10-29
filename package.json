@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
@@ -29,13 +29,6 @@
     "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.13"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "prisma",
-      "unrs-resolver"
-    ]
-  },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19.2.15",
@@ -48,5 +41,12 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "unrs-resolver"
+    ]
   }
 }

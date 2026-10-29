@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRng } from '@/utils/rng'
 import { createMind } from '@/lib/bots/core'
-import type { Bot, BotMind } from '@/lib/bots/types'
+import type { Bot, BotMind, SeatReads } from '@/lib/bots/types'
 import type { TableDef } from '@/lib/tables/defs'
 import type { Standings } from '@/lib/tables/types'
 
@@ -39,6 +39,8 @@ export function useTableRunner<S, V, A>(
     human: number
     /** One per seat; null for the human. */
     bots: (Bot | null)[]
+    /** Separates a bot's saved reads by game. */
+    memoryKey?: string
     seed: number
     turnMs: number
     /** Pause before a random step (next deal / next roll), to read the last result. */
@@ -49,6 +51,7 @@ export function useTableRunner<S, V, A>(
   const [state, setState] = useState<S>(() => def.create(opts.seats))
   const rng = useRef(createRng(opts.seed))
   const minds = useRef<BotMind[]>(Array.from({ length: opts.seats }, (_, i) => createMind(i, opts.seats)))
+  const memoryLoaded = useRef(false)
   const [thinking, setThinking] = useState<TableRunner<V, A>['thinking']>(null)
   const [deadline, setDeadline] = useState<number | null>(null)
   const [watching, setWatching] = useState(false)
@@ -59,12 +62,32 @@ export function useTableRunner<S, V, A>(
   const place = engine.placeOf(state, human)
   const pace = watching ? 0.35 : 1
 
-  // Every bot reads the table after each step (public information only).
   useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('floored-tables-opponent-memory') ?? '{}') as Record<string, SeatReads>
+      bots.forEach((bot, i) => {
+        if (!bot) return
+        const reads = saved[`${opts.memoryKey ?? 'table'}:${bot.profile.id}`]
+        if (reads) minds.current[i]!.reads[human] = { ...minds.current[i]!.reads[human]!, ...reads }
+      })
+    } catch { /* Continue with an empty memory if browser storage is unavailable. */ }
+    memoryLoaded.current = true
+  }, [bots, human, opts.memoryKey])
+
+  // Bots observe public actions, then retain their read on you if they return in a later table.
+  useEffect(() => {
+    if (!memoryLoaded.current) return
     bots.forEach((bot, i) => {
       if (bot) def.policy.observe(engine.viewFor(state, i), bot, minds.current[i]!)
     })
-  }, [state, bots, def, engine])
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('floored-tables-opponent-memory') ?? '{}') as Record<string, SeatReads>
+      bots.forEach((bot, i) => {
+        if (bot) saved[`${opts.memoryKey ?? 'table'}:${bot.profile.id}`] = minds.current[i]!.reads[human]!
+      })
+      window.localStorage.setItem('floored-tables-opponent-memory', JSON.stringify(saved))
+    } catch { /* The table remains playable without persistent reads. */ }
+  }, [state, bots, def, engine, human, opts.memoryKey])
 
   useEffect(() => {
     if (over) return

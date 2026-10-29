@@ -63,6 +63,7 @@ export function TableShell({
   const [resultReady, setResultReady] = useState(false)
   const settled = useRef(false)
   const tier = TIER_BY_ID.get(table.tier)!
+  const botSkill = table.botSkill ?? table.tier
   const prizes = payoutsFor(standings, table.buyIn, table.seats, table.game)
   const prize = place != null ? (prizes[0] ?? 0) : 0
 
@@ -92,7 +93,7 @@ export function TableShell({
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">
           {game.label}
-          <span className="ml-2 hidden font-normal text-dim sm:inline">{tier.label}</span>
+          <span className="ml-2 hidden font-normal text-dim sm:inline">{tier.label} · {botSkill === 'shark' ? 'Expert bots' : botSkill === 'regular' ? 'Regular bots' : 'For fun'}</span>
         </span>
         <span className="text-[13px] text-dim">{message}</span>
       </div>

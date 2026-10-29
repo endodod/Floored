@@ -1,7 +1,7 @@
 import { calculateHandValue } from '@/games/blackjack/engine'
 import type { Card, ShowdownAction, ShowdownView } from '@/games/blackjack-showdown/types'
 import type { Rng } from '@/lib/tables/types'
-import { SKILL, clamp, gauss, playingProfile, thinkTime } from './core'
+import { SKILL, clamp, gauss, playingProfile, shrunk, thinkTime } from './core'
 import type { Bot, BotMind, BotPolicy } from './types'
 
 /**
@@ -65,7 +65,10 @@ function decideBet(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): numbe
   if (bot.skill === 'rookie' && rng() < 0.5) return clampBet(me.stack * (0.05 + rng() * 0.2))
   if (rng() < skill.mistakes * 2) return clampBet(legal.min + rng() * (max - legal.min))
   // What it likes to bet when nothing presses: more for a bolder player.
-  const base = me.stack * (0.04 + risk * 0.12)
+  const decksLeft = Math.max(view.cardsLeft / 52, 0.25)
+  const trueCount = mind.shoeCount / decksLeft
+  const countEdge = bot.skill === 'shark' ? clamp(trueCount / 12, -0.16, 0.24) : bot.skill === 'regular' ? clamp(trueCount / 24, -0.05, 0.08) : 0
+  const base = me.stack * clamp(0.04 + risk * 0.12 + countEdge, 0.025, 0.32)
 
   const stacks = others.map((s) => s.stack).sort((a, b) => b - a)
   const leader = stacks[0] ?? 0
@@ -97,7 +100,10 @@ function decideBet(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): numbe
     const cushion = lead / Math.max(left, 1)
     if (cushion > view.config.maxBet * 0.6) return legal.min
     if (placed.length) return clampBet(Math.max(...placed))
-    return clampBet(base * 0.6)
+    const leaderSeat = view.seats.findIndex((s, i) => i !== view.seat && !s.out && s.stack === leader)
+    const leaderReads = leaderSeat >= 0 ? mind.reads[leaderSeat]! : null
+    const rivalSwing = leaderReads ? shrunk(leaderReads.pfr, leaderReads.hands, 0.25) : 0.25
+    return clampBet(base * (0.6 + rivalSwing * 0.6))
   }
 
   // Chasing: the gap spread over the hands left, swinging harder as they run out.
@@ -125,12 +131,21 @@ function decidePlay(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): Show
     return calculateHandValue(me.cards) >= 15 ? { type: 'stand' } : { type: 'hit' }
   }
   let move = basicStrategy(me.cards, up)
+  const { total, soft } = handShape(me.cards)
+  // Count-aware deviations are limited to close totals; the public count only nudges expert play.
+  const count = mind.shoeCount / Math.max(view.cardsLeft / 52, 0.25)
+  if (bot.skill === 'shark' && !soft && me.cards.length === 2) {
+    if (total === 16 && up === 10 && count >= 4) move = 'stand'
+    else if (total === 15 && up === 10 && count >= 5) move = 'stand'
+    else if (total === 12 && up === 3 && count >= 2) move = 'stand'
+    else if (total === 12 && up === 2 && count >= 3) move = 'stand'
+    else if (total === 13 && up === 2 && count <= -1) move = 'hit'
+  }
   // Far behind on the last hands: double more freely to catch up.
   const others = view.seats.filter((s, i) => i !== view.seat && !s.out)
   const leader = Math.max(0, ...others.map((s) => s.stack))
   const behind = leader - me.stack
   const left = view.config.hands - view.hand
-  const { total } = handShape(me.cards)
   if (move === 'hit' && legal.canDouble && left <= 1 && behind > (me.bet ?? 0) && total >= 8 && total <= 11 + Math.round(bot.profile.risk * 3)) {
     move = 'double'
   }
@@ -147,9 +162,30 @@ function decideShowdown(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): 
 }
 
 function observeShowdown(view: ShowdownView, bot: Bot, mind: BotMind) {
+  if (view.cardsLeft > mind.lastCardsLeft) mind.shoeCount = 0
+  mind.lastCardsLeft = view.cardsLeft
   if (view.phase !== 'handOver' && view.phase !== 'over') return
   if (view.hand <= mind.lastCounted) return
   mind.lastCounted = view.hand
+  const exposed = [...view.dealer.filter((card): card is Card => card != null), ...view.seats.flatMap((seat) => seat.cards)]
+  for (const card of exposed) {
+    const value = cardValue(card)
+    if (value >= 2 && value <= 6) mind.shoeCount++
+    else if (value === 10 || value === 11) mind.shoeCount--
+  }
+  for (const [seat, player] of view.seats.entries()) {
+    if (seat === view.seat || player.out) continue
+    const reads = mind.reads[seat]!
+    reads.hands++
+    const bet = view.log.find((entry) => entry.hand === view.hand && entry.seat === seat && entry.action.type === 'bet')
+    if (bet?.action.type === 'bet' && bet.action.amount >= view.config.maxBet * 0.65) reads.vpip++
+    if (bet?.action.type === 'bet' && bet.action.amount >= view.config.maxBet * 0.9) reads.pfr++
+    for (const entry of view.log) {
+      if (entry.hand !== view.hand || entry.seat !== seat) continue
+      if (entry.action.type === 'hit' || entry.action.type === 'double') reads.aggressive++
+      else if (entry.action.type === 'stand') reads.passive++
+    }
+  }
   mind.tilt *= 0.6
   const me = view.seats[view.seat]!
   if (me.net < 0 && -me.net >= (me.stack - me.net) * 0.25) mind.tilt = Math.max(mind.tilt, bot.profile.tiltProne)

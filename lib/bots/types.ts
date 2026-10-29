@@ -1,4 +1,4 @@
-import type { Rng, TableTier } from '@/lib/tables/types'
+import type { Rng, TableDifficulty } from '@/lib/tables/types'
 
 /**
  * The bot system's shared core. A bot is a profile (who it is and how it
@@ -6,7 +6,7 @@ import type { Rng, TableTier } from '@/lib/tables/types'
  * turns a seat's view into an action. Bots never see more than a human in
  * their seat would: a policy only ever receives `viewFor(state, seat)`.
  */
-export type BotSkill = TableTier
+export type BotSkill = TableDifficulty
 
 export type BotStyle = 'rock' | 'maniac' | 'station' | 'regular' | 'trickster' | 'nit'
 
@@ -60,6 +60,9 @@ export interface BotMind {
   seen: number
   /** Hand / round already counted. */
   lastCounted: number
+  /** Public high-low count from cards exposed in completed blackjack hands. */
+  shoeCount: number
+  lastCardsLeft: number
   /** Per-hand marks ("vpip:3" = seat 3 already counted this hand); cleared each hand. */
   marks: Record<string, true>
 }
