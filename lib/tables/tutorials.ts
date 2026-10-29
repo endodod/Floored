@@ -1,7 +1,7 @@
 import type { TutorialStep } from '@/components/mode-tutorial'
 import { HOLDEM_BLINDS, HOLDEM_HANDS_PER_LEVEL, HOLDEM_STARTING_STACK } from '@/games/holdem/engine'
 import { LIARS_DICE_PER_SEAT } from '@/games/liars-dice/engine'
-import { SHOWDOWN_HANDS, SHOWDOWN_MAX_BET, SHOWDOWN_MIN_BET, SHOWDOWN_STARTING_STACK } from '@/games/blackjack-showdown/engine'
+import { SHOWDOWN_HANDS, SHOWDOWN_MAX_BET, SHOWDOWN_MIN_BET, SHOWDOWN_MIN_BET_MULTIPLIER, SHOWDOWN_STARTING_STACK } from '@/games/blackjack-showdown/engine'
 import { formatChips } from '@/utils/format'
 import { MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, payoutSplits } from './stakes'
 import type { TableGameName } from './types'
@@ -88,7 +88,7 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
   'blackjack-showdown': {
     intro: `Tournament blackjack: ${SHOWDOWN_HANDS} hands against one dealer, and the most chips wins.`,
     steps: [
-      { title: 'Bet in turn', body: `Everyone bets ${SHOWDOWN_MIN_BET}–${SHOWDOWN_MAX_BET} in seat order, and sees the bets before theirs.` },
+      { title: 'Bet in turn', body: `Minimum bets start at ${SHOWDOWN_MIN_BET} and multiply by ${SHOWDOWN_MIN_BET_MULTIPLIER} each hand, capped at ${SHOWDOWN_MAX_BET}. Bets are placed in seat order, and you see the bets before yours.` },
       { title: 'Play your hand', body: 'Hit, stand or double on two cards against the dealer, as in solo Blackjack. One shoe for the whole table.' },
       { title: 'Watch the standings', body: 'You are racing the other players, not the dealer. The leader wants calm; the chasers need swings.' },
       { title: 'Secret last bet', body: `On hand ${SHOWDOWN_HANDS} everyone bets face down, revealed together when the cards come out.` },

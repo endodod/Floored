@@ -24,8 +24,16 @@ import type {
 
 export const SHOWDOWN_STARTING_STACK = 1000
 export const SHOWDOWN_HANDS = 12
-export const SHOWDOWN_MIN_BET = 10
+export const SHOWDOWN_MIN_BET = 50
+export const SHOWDOWN_MIN_BET_MULTIPLIER = 1.5
 export const SHOWDOWN_MAX_BET = 500
+
+export function showdownMinBetForHand(hand: number): number {
+  return Math.min(
+    SHOWDOWN_MAX_BET,
+    Math.ceil((SHOWDOWN_MIN_BET * SHOWDOWN_MIN_BET_MULTIPLIER ** Math.max(0, hand - 1)) / 25) * 25,
+  )
+}
 
 export function showdownConfig(seats: number): ShowdownConfig {
   return {
@@ -105,7 +113,7 @@ export function legalFor(state: ShowdownState, seat: number): ShowdownLegal | nu
   const s = state.seats[seat]!
   if (state.phase === 'betting') {
     const max = Math.min(state.config.maxBet, s.stack)
-    return { bet: { min: Math.min(state.config.minBet, max), max }, canHit: false, canStand: false, canDouble: false }
+    return { bet: { min: Math.min(showdownMinBetForHand(state.hand), max), max }, canHit: false, canStand: false, canDouble: false }
   }
   if (state.phase === 'playing') {
     return {
@@ -181,7 +189,7 @@ function settle(state: ShowdownState): ShowdownState {
     const outcome = outcomeOf(s.cards, state.dealer)
     const net = outcome === 'blackjack' ? Math.floor(s.bet * 1.5) : outcome === 'win' ? s.bet : outcome === 'push' ? 0 : -s.bet
     const stack = s.stack + net
-    const out = stack < state.config.minBet
+    const out = stack < showdownMinBetForHand(state.hand + 1)
     if (out) busts.push({ seat: i, hand: state.hand, stack })
     return { ...s, outcome, net, stack, done: true, out }
   })

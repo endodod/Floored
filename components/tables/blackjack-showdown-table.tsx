@@ -120,7 +120,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
         </div>
         <p className="num h-5 text-[12px] text-soft">{dealerValue != null ? `Dealer ${dealerValue}` : v.phase === 'playing' ? 'Hole card face down' : 'Dealer'}</p>
       </div>
-      <div className="hd-you flex items-center justify-center gap-3" style={{ gridArea: 'y' }}>
+      <div className="hd-you flex min-w-0 flex-col items-center justify-center gap-1.5" style={{ gridArea: 'y' }}>
         <SeatPlate
           name="You"
           you
@@ -133,11 +133,12 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
           status={me.outcome && currentResult ? `${OUTCOME_LABEL[me.outcome]} · ${me.net > 0 ? '+' : me.net < 0 ? '−' : ''}${formatChips(Math.abs(me.net))}` : undefined}
           statusTone={me.outcome === 'loss' ? 'loss' : me.outcome === 'win' || me.outcome === 'blackjack' ? 'win' : 'neutral'}
         />
-        <div className="hd-hole flex gap-1" style={{ '--card-h': 'var(--you-card-h)' } as CSSProperties} aria-label="Your cards">
+        <div className="hd-hole flex gap-1" style={{ '--card-h': 'var(--seat-card-h)' } as CSSProperties} aria-label="Your cards">
           {me.cards.map((card, k) => <PlayingCard key={`${v.hand}-you-${k}`} rank={card.rank} suit={card.suit} className="g-deal" style={{ '--i': k } as CSSProperties} />)}
           {me.cards.length === 0 && [0, 1].map((k) => <PlayingCard key={`you-slot-${k}`} variant="slot" />)}
         </div>
-        {me.cards.length > 0 && <span className="num hd-made w-10 text-[12px] text-soft">{handValue(me.cards)}</span>}
+        {me.cards.length > 0 && <span className="num h-4 text-[10px] leading-4 text-dim">Hand {handValue(me.cards)}</span>}
+        <span className="num h-4 text-[10px] leading-4 text-dim">{me.bet > 0 ? `Bet ${formatChips(me.bet)}` : ''}</span>
       </div>
     </div>
   )
@@ -166,7 +167,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
           </button>
           <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || v.phase !== 'playing'} onClick={() => runner.act({ type: 'hit' })}>Hit</button>
           <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || v.phase !== 'playing'} onClick={() => runner.act({ type: 'stand' })}>Stand</button>
-          <button type="button" className={GAME_DOCK_RACK_BTN} disabled={!yourTurn || v.phase !== 'playing' || !v.legal?.canDouble} onClick={() => runner.act({ type: 'double' } as ShowdownAction)}>Double</button>
+          <button type="button" className={GAME_DOCK_SECONDARY_BTN} disabled={!yourTurn || v.phase !== 'playing' || !v.legal?.canDouble} onClick={() => runner.act({ type: 'double' } as ShowdownAction)}>Double</button>
         </div>
       </div>
     </div>
