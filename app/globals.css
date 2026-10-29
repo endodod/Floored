@@ -415,7 +415,11 @@ body > div.neon-auth-ui {
 }
 
 /* Plaque: a figure or picker panel on the felt, ruled in gold (casino trim).
-   Labels inside it use .felt-print. */
+   Labels inside it use .felt-print; .gold-print is just its colour, for
+   text that keeps its own size. */
+.gold-print {
+  color: rgba(217, 164, 65, 0.55);
+}
 .plaque {
   background: rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3);
@@ -645,7 +649,7 @@ body > div.neon-auth-ui {
   width: calc(var(--tile) * 1.3);
 }
 /* Casino trim: the tower stands in a thin wood-and-gold frame (the Slots
-   cabinet), floor numbers and multipliers printed in faded gold. */
+   cabinet), floor numbers and multipliers in .gold-print. */
 .dt-frame {
   padding: calc(var(--tile) * 0.06);
   border: calc(var(--tile) * 0.08) solid transparent;
@@ -658,9 +662,6 @@ body > div.neon-auth-ui {
     0 0 0 1px rgba(217, 164, 65, 0.55),
     0 0 0 3px #0a0806,
     0 14px 30px -14px rgba(0, 0, 0, 0.8);
-}
-.dt-print {
-  color: rgba(217, 164, 65, 0.55);
 }
 .btile[data-state='hidden'].btile-hint,
 .btile[data-state='idle'].btile-hint {
@@ -1603,6 +1604,15 @@ body > div.neon-auth-ui {
 .cb-slot .cb-icon {
   width: calc(var(--slot-h) * 0.62);
   height: calc(var(--slot-h) * 0.62);
+}
+/* Casino trim: the case column and both sides stand on .plaque panels; on a
+   narrow board the panels go so the item names keep their width. */
+@container board (max-width: 480px) {
+  .cb-duel .plaque {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
 }
 .cb-tile-value {
   display: none;

@@ -212,12 +212,12 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                   ].join(' ')}
                 >
                   <div className="w-[calc(var(--tile)*1.05)] shrink-0 text-right leading-none">
-                    <p className={`mb-1 text-[10px] font-semibold tracking-[0.12em] ${isActive ? 'text-felt' : 'dt-print'}`}>
+                    <p className={`mb-1 text-[10px] font-semibold tracking-[0.12em] ${isActive ? 'text-felt' : 'gold-print'}`}>
                       F{floorNum}
                     </p>
                     <p
                       className={`num text-[max(10px,calc(var(--tile)*0.27))] ${
-                        isActive ? 'text-ink' : isCleared || (isSettled && row.picked !== null && !hitDragon) ? 'text-gold' : 'dt-print'
+                        isActive ? 'text-ink' : isCleared || (isSettled && row.picked !== null && !hitDragon) ? 'text-gold' : 'gold-print'
                       }`}
                     >
                       {mult.toFixed(2)}×
