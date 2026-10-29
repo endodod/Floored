@@ -64,21 +64,11 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [soundOpen, setSoundOpen] = useState(false)
   const uiSoundsEnabled = useSettingsStore((s) => s.uiSoundsEnabled)
-  const gameSoundsEnabled = useSettingsStore((s) => s.gameSoundsEnabled)
-  const musicEnabled = useSettingsStore((s) => s.musicEnabled)
   const soundVolume = useSettingsStore((s) => s.soundVolume)
-  const musicVolume = useSettingsStore((s) => s.musicVolume)
   const setUiSoundsEnabled = useSettingsStore((s) => s.setUiSoundsEnabled)
-  const setGameSoundsEnabled = useSettingsStore((s) => s.setGameSoundsEnabled)
-  const setMusicEnabled = useSettingsStore((s) => s.setMusicEnabled)
   const setSoundVolume = useSettingsStore((s) => s.setSoundVolume)
-  const setMusicVolume = useSettingsStore((s) => s.setMusicVolume)
-  const anyAudioEnabled = uiSoundsEnabled || gameSoundsEnabled || musicEnabled
-  const soundToggles = [
-    { label: 'Interface sounds', enabled: uiSoundsEnabled, set: setUiSoundsEnabled },
-    { label: 'Game sounds', enabled: gameSoundsEnabled, set: setGameSoundsEnabled },
-    { label: 'Casino music', enabled: musicEnabled, set: setMusicEnabled },
-  ]
+  const anyAudioEnabled = uiSoundsEnabled
+  const soundToggles = [{ label: 'Interface sounds', enabled: uiSoundsEnabled, set: setUiSoundsEnabled }]
 
   const inFreeplay = pathname.startsWith('/freeplay')
   const inDaily = pathname.startsWith('/daily')
@@ -173,25 +163,10 @@ export function Navbar() {
                       </div>
                     )
                   })}
-                  <label className={`mt-3 flex items-center gap-3 text-xs text-soft ${gameSoundsEnabled ? '' : 'opacity-40'}`}>
-                    <span>Effects</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={soundVolume}
-                      disabled={!gameSoundsEnabled}
-                      aria-label="Game sound volume"
-                      onChange={(event) => setSoundVolume(Number(event.currentTarget.value))}
-                      className="w-full accent-[#4fae84]"
-                    />
+                  <label className={`mt-3 flex items-center gap-3 text-xs text-soft ${uiSoundsEnabled ? '' : 'opacity-40'}`}>
+                    <span>Interface volume</span>
+                    <input type="range" min="0" max="1" step="0.01" value={soundVolume} disabled={!uiSoundsEnabled} aria-label="Interface sound volume" onChange={(event) => setSoundVolume(Number(event.currentTarget.value))} className="w-full accent-[#4fae84]" />
                     <span className="num w-8 text-right">{Math.round(soundVolume * 100)}%</span>
-                  </label>
-                  <label className={`mt-3 flex items-center gap-3 text-xs text-soft ${musicEnabled ? '' : 'opacity-40'}`}>
-                    <span>Music</span>
-                    <input type="range" min="0" max="1" step="0.01" value={musicVolume} disabled={!musicEnabled} aria-label="Music volume" onChange={(event) => setMusicVolume(Number(event.currentTarget.value))} className="w-full accent-[#4fae84]" />
-                    <span className="num w-8 text-right">{Math.round(musicVolume * 100)}%</span>
                   </label>
                 </div>
               )}
