@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu, User, X } from 'lucide-react'
+import { Menu, User, X, Volume2, VolumeX } from 'lucide-react'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
@@ -13,6 +13,7 @@ import { useTablesStore } from '@/store/tables-store'
 import { useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
 import { FlooredMark } from '@/components/ui/terminal'
+import { useSettingsStore } from '@/store/settings-store'
 
 const MODES = [
   { href: '/daily', label: 'Daily', enabled: true },
@@ -61,6 +62,11 @@ export function Navbar() {
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
   const floorBetsPlaced = useSurvivalStore((s) => s.floorBetsPlaced)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [soundOpen, setSoundOpen] = useState(false)
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled)
+  const soundVolume = useSettingsStore((s) => s.soundVolume)
+  const setSoundEnabled = useSettingsStore((s) => s.setSoundEnabled)
+  const setSoundVolume = useSettingsStore((s) => s.setSoundVolume)
 
   const inFreeplay = pathname.startsWith('/freeplay')
   const inDaily = pathname.startsWith('/daily')
@@ -132,6 +138,52 @@ export function Navbar() {
 
           <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0 lg:flex-1 lg:justify-end">
             {figure}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSoundOpen((open) => !open)}
+                aria-label="Sound settings"
+                aria-expanded={soundOpen}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-control text-soft transition-colors hover:border-dim hover:text-ink tall:h-10 tall:w-10"
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" strokeWidth={1.6} /> : <VolumeX className="h-4 w-4" strokeWidth={1.6} />}
+              </button>
+              {soundOpen && (
+                <div className="absolute right-0 top-full z-[70] mt-2 w-64 rounded-md border border-line bg-surface p-4 shadow-xl" role="group" aria-label="Sound settings">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-ink">Game sounds</p>
+                      <p className="mt-0.5 text-xs text-dim">Interface and table effects</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={soundEnabled}
+                      aria-label="Enable game sounds"
+                      onClick={() => setSoundEnabled(!soundEnabled)}
+                      className={`relative h-6 w-11 rounded-full transition-colors ${soundEnabled ? 'bg-felt' : 'bg-control'}`}
+                    >
+                      <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${soundEnabled ? 'left-6' : 'left-1'}`} />
+                    </button>
+                  </div>
+                  <label className={`mt-4 flex items-center gap-3 text-xs text-soft ${soundEnabled ? '' : 'opacity-40'}`}>
+                    <span>Volume</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={soundVolume}
+                      disabled={!soundEnabled}
+                      aria-label="Sound volume"
+                      onChange={(event) => setSoundVolume(Number(event.currentTarget.value))}
+                      className="w-full accent-[#4fae84]"
+                    />
+                    <span className="num w-8 text-right">{Math.round(soundVolume * 100)}%</span>
+                  </label>
+                </div>
+              )}
+            </div>
             <Link
               href="/account"
               aria-label="Account"

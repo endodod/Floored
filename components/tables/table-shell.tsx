@@ -16,6 +16,7 @@ import { useTablesStore, type OpenTable } from '@/store/tables-store'
 import { formatChips } from '@/utils/format'
 import { signed } from '@/components/ui/terminal'
 import { cn } from '@/lib/utils'
+import { playSiteSound } from '@/components/site-sound'
 
 const CORNER_BTN =
   'h-8 rounded-full border border-control bg-ground px-3.5 text-[13px] font-medium text-soft transition-colors hover:border-dim hover:text-ink'
@@ -69,6 +70,7 @@ export function TableShell({
   useEffect(() => {
     if (place == null || settled.current) return
     settled.current = true
+    playSiteSound(prize > 0 ? 'win' : 'loss')
     finish(place, prize)
   }, [place, prize, finish])
 

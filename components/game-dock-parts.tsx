@@ -1,7 +1,7 @@
 'use client'
 import type { GameMode } from '@/store/types'
 
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
@@ -12,6 +12,7 @@ import { getOpeningTicketCapMultiplier } from '@/lib/survival/survival-perks'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatCurrentBetLine, formatOutcomeDisplayText } from '@/lib/game-result-labels'
 import { formatChips } from '@/utils/format'
+import { playSiteSound } from '@/components/site-sound'
 
 /** Standard chip denominations — copy across games via import. */
 export const GAME_CHIPS = [
@@ -387,6 +388,9 @@ export function GameDockSettledRow({
   tone: 'win' | 'loss'
 }) {
   const runStatus = useRunEndStatus(useRouteMode())
+  useEffect(() => {
+    playSiteSound(tone)
+  }, [tone, resultSummary])
   return (
     <div className="flex w-full max-w-lg items-center justify-center px-1">
       <GameOutcomeColumns
@@ -448,6 +452,7 @@ export function GameDockChipRow({
           {openingTicketActive && useSurvivalChips && minBet ? (
             <button
               type="button"
+              data-sound="chip"
               onClick={() => onAddChip(openingTicketCap - currentBet)}
               disabled={currentBet >= openingTicketCap}
               className={`${FRAC_BTN} border-felt bg-felt-tint text-felt shadow-[0_0_14px_-4px_rgba(79,174,132,0.7)]`}
@@ -461,6 +466,7 @@ export function GameDockChipRow({
                     <button
                       key={chip.value}
                       type="button"
+                      data-sound="chip"
                       onClick={() => onAddChip(chip.value)}
                       disabled={chip.value > bankroll - currentBet}
                       aria-label={`Add ${chip.label}`}
@@ -474,6 +480,7 @@ export function GameDockChipRow({
                     <button
                       key={chip.value}
                       type="button"
+                      data-sound="chip"
                       onClick={() => onAddChip(chip.value)}
                       disabled={chip.value > bankroll - currentBet}
                       aria-label={`Add ${chip.value}`}
@@ -485,6 +492,7 @@ export function GameDockChipRow({
                   ))}
               <button
                 type="button"
+                data-sound="chip"
                 onClick={() => onAddChip(Math.max(Math.floor(bankroll / 4), minBet ?? 1))}
                 disabled={currentBet >= bankroll || bankroll <= 0}
                 className={FRAC_BTN}
@@ -493,6 +501,7 @@ export function GameDockChipRow({
               </button>
               <button
                 type="button"
+                data-sound="chip"
                 onClick={() => onAddChip(Math.max(Math.floor(bankroll / 2), minBet ?? 1))}
                 disabled={currentBet >= bankroll || bankroll <= 0}
                 className={FRAC_BTN}
@@ -501,6 +510,7 @@ export function GameDockChipRow({
               </button>
               <button
                 type="button"
+                data-sound="chip"
                 onClick={() => onAddChip(bankroll)}
                 disabled={currentBet >= bankroll || bankroll <= 0}
                 className={`${FRAC_BTN} border-gold text-gold hover:border-gold hover:bg-gold-tint hover:shadow-[0_0_18px_-6px_rgba(217,164,65,0.8)]`}
@@ -562,6 +572,7 @@ export function GameDockChipPicker({
           <button
             key={chip.value}
             type="button"
+            data-sound="chip"
             role="radio"
             aria-checked={on}
             onClick={() => onSelect(chip.value)}

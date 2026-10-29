@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
+import { playSiteSound } from '@/components/site-sound'
 
 export type GameOutcomeTone = 'win' | 'push' | 'loss' | 'neutral'
 
@@ -32,9 +33,10 @@ export function GameOutcomeToast({
 }: GameOutcomeToastProps) {
   useEffect(() => {
     if (!open) return
+    if (tone === 'win' || tone === 'loss') playSiteSound(tone)
     const id = window.setTimeout(onDismiss, durationMs)
     return () => window.clearTimeout(id)
-  }, [open, durationMs, onDismiss])
+  }, [open, tone, durationMs, onDismiss])
 
   if (!open || typeof document === 'undefined') return null
 

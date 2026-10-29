@@ -7,6 +7,10 @@ import { persist } from 'zustand/middleware'
 export type MotionPreference = 'system' | 'reduced' | 'full'
 
 interface SettingsStore {
+  soundEnabled: boolean
+  setSoundEnabled: (v: boolean) => void
+  soundVolume: number
+  setSoundVolume: (v: number) => void
   motion: MotionPreference
   setMotion: (v: MotionPreference) => void
   autoReBet: boolean
@@ -24,6 +28,10 @@ interface SettingsStore {
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
+      soundEnabled: true,
+      setSoundEnabled: (v) => set({ soundEnabled: v }),
+      soundVolume: 0.35,
+      setSoundVolume: (v) => set({ soundVolume: Math.max(0, Math.min(1, v)) }),
       motion: 'system',
       setMotion: (v) => set({ motion: v }),
       autoReBet: true,

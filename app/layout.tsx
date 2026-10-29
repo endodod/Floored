@@ -6,6 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { AuthProvider } from './auth-provider'
 import { Ambience } from '@/components/ambience'
 import { MOTION_BOOT_SCRIPT, MotionPreferenceSync } from '@/components/motion-preference'
+import { SiteSound } from '@/components/site-sound'
 
 const sans = Public_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-floored-sans' })
 const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-floored-mono' })
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans bg-background text-foreground h-screen flex flex-col" suppressHydrationWarning>
         <MotionPreferenceSync />
+        <SiteSound />
         <Ambience />
         <AuthProvider>
           <Navbar />
