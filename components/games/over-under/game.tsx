@@ -90,7 +90,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
   const [quoteIdx, setQuoteIdx] = useState(() => pickQuote())
 
   const [markerAt, setMarkerAt] = useState<number | null>(null)
-  const [markerOutcome, setMarkerOutcome] = useState<'win' | 'loss' | null>(null)
+  const [markerOutcome, setMarkerOutcome] = useState<'win' | 'loss' | 'push' | null>(null)
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const isBetting    = round.stage === 'betting'
@@ -139,15 +139,19 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
     const shieldActive = shieldProc.rollForBet()
 
     const t2 = setTimeout(() => {
-      setMarkerOutcome(outcome)
-      setRound(settled)
-
       let finalOutcome: 'win' | 'loss' | 'push' = outcome
       let po = getOverUnderPayout(settled)
       if (shieldActive && outcome === 'loss') {
         po = bet
         finalOutcome = 'push'
       }
+      // A shielded loss lands as a push: neutral marker, no bust shake.
+      setMarkerOutcome(finalOutcome)
+      setRound(
+        finalOutcome === 'push'
+          ? { ...settled, message: `Rolled ${rollPos}: Safe Opening Roll refunds your bet.` }
+          : settled,
+      )
 
       const resolved = resolveGame(onResolve, {
         outcome: finalOutcome,
@@ -201,6 +205,9 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Over-Under</span>
+        {mode === 'survival' && shieldProc.perkActive && (isBetting || isInProgress) && (
+          <PerkHint>Safe Opening Roll — loss refunded to a push</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -211,11 +218,6 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
         gameLabel="Over-Under"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {mode === 'survival' && shieldProc.perkActive && (isBetting || isInProgress) && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Safe Opening Roll — loss refunded to a push
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={!isBetting ? `${displaySafeZone}% safe zone` : undefined}

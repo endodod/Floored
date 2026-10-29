@@ -53,18 +53,19 @@ interface CrashGameProps {
 type PendingResult = GamePendingResult
 
 function crashPendingResult(
-  outcome: 'win' | 'loss' | 'push',
+  outcome: 'win' | 'loss',
   betAmount: number,
   payout: number,
   multiplier: number,
   freeBet?: boolean,
+  /** Crash Cushion returned part of the stake: still a loss, by the rest of the stake. */
+  cushioned = false,
 ): PendingResult {
   return buildPendingResult(
     { outcome, betAmount, payout },
     {
       result: formatMultiplier(multiplier),
-      resultSpecification:
-        outcome === 'win' ? 'Cashed' : outcome === 'push' ? 'Protected' : 'Crashed',
+      resultSpecification: outcome === 'win' ? 'Cashed' : cushioned ? 'Cushioned' : 'Crashed',
     },
     { gameMultiplier: outcome === 'win' ? multiplier : undefined, freeBet },
   )
@@ -282,11 +283,12 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
         })
         setPendingResult(
           crashPendingResult(
-            cushionPayout > 0 ? 'push' : 'loss',
+            'loss',
             betAmount,
             resolved.payout,
             resolved.multiplier ?? crashAt,
             resolved.firstBetWasFree,
+            cushionPayout > 0,
           ),
         )
       }
@@ -356,6 +358,9 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
       {/* Status bar */}
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Crash</span>
+        {hasCushion && isBetting && (
+          <PerkHint>Cushion: {Math.round(getCrashCushion(crashCushionLevel) * 100)}% back on a sub-3× crash</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -366,11 +371,6 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
         gameLabel="Crash"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {hasCushion && isBetting && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Crash Cushion: recover {Math.round(getCrashCushion(crashCushionLevel) * 100)}% on sub-3× crash
-          </PerkHint>
-        )}
         <GameActiveBetBadge betAmount={round.betAmount} visible={(isInProgress || isSettled) && round.betAmount > 0} />
 
         <div className="cx-board flex h-full w-full max-w-2xl min-h-0 flex-col items-center">
@@ -396,7 +396,9 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
 
           <p className="cx-hint shrink-0 px-2 py-1 text-center text-[13px] text-dim">
             {isBetting
-              ? 'Place chips and start. Cash out before the curve crashes.'
+              ? mode === 'ladder'
+                ? 'Start with the whole pot. Cash out before the curve crashes.'
+                : 'Place chips and start. Cash out before the curve crashes.'
               : isInProgress
                 ? 'The multiplier rises until it crashes. Cash out any time to lock it in.'
                 : '\u00A0'}

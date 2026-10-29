@@ -199,6 +199,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Mines</span>
+        {minesProc.perkActive && isInProgress && (
+          <PerkHint>One safe tile revealed</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
       <GameFieldWithHistory
@@ -208,9 +211,6 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
         gameLabel="Mines"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {minesProc.perkActive && isInProgress && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">One safe tile revealed</PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={!isBetting ? DIFFICULTY_LABELS[round.difficulty] : undefined}
@@ -292,7 +292,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
 
           <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
             {isBetting
-              ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
+              ? mode === 'ladder'
+                ? 'Pick a difficulty, then start with the whole pot. Reveal safe tiles — cash out anytime or hit a mine and lose.'
+                : 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
               : isInProgress
                 ? 'Tap a tile to reveal it. Cash out to lock in your potential total winnings.'
                 : '\u00A0'}

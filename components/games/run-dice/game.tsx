@@ -73,6 +73,11 @@ interface RunDiceGameProps {
   onResolve: GameResolveFn<RunDiceResult>
 }
 
+/** A loss roll that Loss Shield refunded (the engine only marks it in the message). */
+function isProtectedPush(state: { outcome: string | null; message: string }): boolean {
+  return state.outcome === 'push' && state.message.includes('protected')
+}
+
 /** The total beside the dice: a figure on a tile, tinted by what it means. */
 function TotalTile({ value, tone, className = '' }: { value: number | null | undefined; tone: DieTone; className?: string }) {
   const toneClass =
@@ -114,6 +119,8 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   const [revealStep, setRevealStep] = useState<RevealStep>(0)
   const [targetDice, setTargetDice] = useState<[number, number] | null>(null)
   const [targetTotal, setTargetTotal] = useState<number | null>(null)
+  // Loss Shield turned this roll's loss into a push: it lands as a push, not a bust.
+  const [targetProtected, setTargetProtected] = useState(false)
   const spinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const animTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
@@ -186,6 +193,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
 
     // Snapshot target values for the animation to reveal
     setTargetDice(next.dice)
+    setTargetProtected(isProtectedPush(next))
     setTargetTotal(next.rollResult)
     setIsRolling(true)
     setRevealStep(0)
@@ -268,7 +276,8 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
     return 'bg-[#141318] text-soft'
   }
 
-  function dieTone(total: number): DieTone {
+  function dieTone(total: number, protectedLossPush = false): DieTone {
+    if (protectedLossPush) return 'neutral'
     const rollClass = classifyRunDiceTotal(gameConfig, total)
     if (rollClass === 'win') return 'win'
     if (rollClass === 'loss') return 'loss'
@@ -284,13 +293,18 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
 
   const lastRoll = round.rollResult
   const lastDice = round.dice
+  const lastProtected = isProtectedPush(round)
   // Outcome color is revealed only when the total appears (step 3); until then keep neutral
-  const tTone: DieTone = revealStep >= 3 && targetTotal != null ? dieTone(targetTotal) : 'neutral'
+  const tTone: DieTone =
+    revealStep >= 3 && targetTotal != null ? dieTone(targetTotal, targetProtected) : 'neutral'
 
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Run Dice</span>
+        {insightProc.perkActive && isInProgress && (
+          <PerkHint>Loss rolls return your bet this round</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -301,11 +315,6 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
         gameLabel="Run Dice"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {insightProc.perkActive && isInProgress && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Loss rolls return your bet this round
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={!isBetting && round.betAmount > 0 ? `Roll ${round.rollCount} / 3` : undefined}
@@ -337,24 +346,21 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
               </div>
               <p className="text-dim text-[12px] h-4">
                 {revealStep < 3 ? 'Rolling…' : (
-                  targetTotal != null && rollLabel(targetTotal)
+                  targetTotal != null && rollLabel(targetTotal, targetProtected)
                 )}
               </p>
             </div>
           ) : lastDice !== null && lastRoll !== null ? (
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-[calc(var(--die)*0.2)]">
-                <Die value={lastDice[0]} tone={dieTone(lastRoll)} />
+                <Die value={lastDice[0]} tone={dieTone(lastRoll, lastProtected)} />
                 <span className="text-dim text-xl">+</span>
-                <Die value={lastDice[1]} tone={dieTone(lastRoll)} />
+                <Die value={lastDice[1]} tone={dieTone(lastRoll, lastProtected)} />
                 <span className="text-dim text-xl">=</span>
-                <TotalTile value={lastRoll} tone={dieTone(lastRoll)} />
+                <TotalTile value={lastRoll} tone={dieTone(lastRoll, lastProtected)} />
               </div>
               <p className="text-dim text-[12px] h-4">
-                {rollLabel(
-                  lastRoll,
-                  round.outcome === 'push' && round.message.includes('protected'),
-                )}
+                {rollLabel(lastRoll, lastProtected)}
               </p>
             </div>
           ) : (

@@ -113,21 +113,21 @@ export function formatNetProfitDisplay(
   betAmount: number,
   outcome: GameRoundAmounts['outcome'],
 ): string {
-  if (outcome === 'push') return '$0'
+  if (outcome === 'push') return '0'
   const net = payout - betAmount
   if (net > 0) return `+${formatChips(net)}`
   if (net < 0) return `−${formatChips(-net)}`
-  return '$0'
+  return '0'
 }
 
 /** Match history title: net profit/loss. */
 export function formatHistoryNetTitle(payout: number, betAmount: number, outcome: GameRoundAmounts['outcome']) {
-  if (outcome === 'push') return '$0'
+  if (outcome === 'push') return '0'
   const net = payout - betAmount
   if (outcome === 'win' && net === 0 && payout > 0) return formatChips(payout)
   if (net > 0) return `+${formatChips(net)}`
   if (net < 0) return `−${formatChips(-net)}`
-  return '$0'
+  return '0'
 }
 
 export function formatSettledMultiplierHint(

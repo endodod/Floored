@@ -7,9 +7,10 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 
 Read the one that matches the task before changing code:
 
-- **On this branch:** [.md/BOT_TABLES_HANDOFF.md](.md/BOT_TABLES_HANDOFF.md) — the new Tables mode:
+- [.md/MODE_ADJUSTMENTS_HANDOFF.md](.md/MODE_ADJUSTMENTS_HANDOFF.md): Survival perks and Ladder
+  on the redesigned boards: what was checked and fixed, what is left, open questions.
+- [.md/BOT_TABLES_HANDOFF.md](.md/BOT_TABLES_HANDOFF.md): the new Tables mode:
   game designs (Hold'em, Liar's Dice, Blackjack Showdown), the bot system and the phases.
-  Start here.
 
 - [README.md](README.md): what each mode is and how it plays; the game list.
 - [.md/ARCHITECTURE.md](.md/ARCHITECTURE.md): code layout, the game/engine contract, the

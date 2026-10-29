@@ -95,7 +95,7 @@ function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wr
         data-lifted={lifted}
         data-tone={tone}
         disabled={!pickable || eliminated}
-        aria-label={`Cup ${slot + 1}`}
+        aria-label={eliminated ? `Cup ${slot + 1}: empty` : `Cup ${slot + 1}`}
         onClick={() => pickable && !eliminated && onPick(cupId)}
       >
         {/* What is under the cup, on the table; the cup lifts away to show it. */}
@@ -105,6 +105,12 @@ function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wr
         <span className="sc-body">
           <span className="sc-knob" />
           <span className="sc-shell" />
+          {/* Cup Truth: the cup the perk rules out is crossed off. */}
+          {eliminated && (
+            <svg viewBox="0 0 24 24" className="sc-out" aria-hidden>
+              <path d="M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          )}
         </span>
       </button>
     </div>
@@ -360,6 +366,9 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Street Cups</span>
+        {isPicking && eliminatedCupId !== null && cupsProc.perkActive && (
+          <PerkHint>One wrong cup eliminated</PerkHint>
+        )}
         <span className="text-[13px] text-dim text-right max-w-[min(100%,28rem)]">{boardInstruction}</span>
       </div>
 
@@ -370,11 +379,6 @@ export function StreetCupsGame({ mode, bankroll, onBet, onResolve }: StreetCupsG
         gameLabel="Street Cups"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {isPicking && eliminatedCupId !== null && cupsProc.perkActive && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            One wrong cup eliminated
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={!isBetting ? round.betAmount : 0}
           visible={!isBetting && round.betAmount > 0}

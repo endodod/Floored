@@ -30,12 +30,10 @@ export function applyResolveModifiers(
 
   if (state.wasFreeBet) {
     firstBetWasFree = true
-    if (payload.outcome === 'win' && payout > 0) {
-      // Free bet pays profit only — stake was never deducted.
-      payout = Math.max(0, payout - payload.betAmount)
-    } else if (payload.outcome === 'push') {
-      payout = 0
-    }
+    // Free bet pays profit only — stake was never deducted. So a push, and a loss that
+    // returns part of the stake (Crash Cushion, a Roulette partial, a sub-1× Plinko
+    // bucket), nets nothing rather than paying out.
+    payout = Math.max(0, payout - payload.betAmount)
   }
 
   let multiplier = payload.multiplier
