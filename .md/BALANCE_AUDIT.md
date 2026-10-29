@@ -351,7 +351,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Optimal EV:** **Path-dependent** (cash-out step); always cash step 1 → **0.9 × 0.9 = 0.81×** before boosts.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard.
-- **Game Perk — Safe Lane:** **30–75%** proc; `advanceChickenRoundSafe` (guaranteed step success).
+- **Game Perk — Safe Lane:** **30–75%** proc per round; the first Advance uses `advanceChickenRoundSafe` (guaranteed step success) and that lane is ringed in felt until taken.
 - **TODO:** None.
 
 ---
@@ -545,7 +545,7 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | over-under | Safe Opening Roll | First roll loss → push (proc) |
 | wheel | Color Scout | Cross out losing color |
 | run-dice | Loss Shield | Loss → push (proc) |
-| chicken-road | Safe Lane | Guaranteed safe step (proc) |
+| chicken-road | Safe Lane | First crossing guaranteed safe, lane marked (proc) |
 | slots | First Spin Shield | First spin loss → push (proc) |
 | roulette | Ball Tracker | 3 numbers shown won’t hit |
 | dragon-tower | Dragon’s Blind Spot | Safe marks rows 1–2 |

@@ -249,6 +249,8 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
               const isKilled = isSettled && round.outcome === 'loss' && currentStep === stepNum
               const isSafe = isSettled && round.outcome === 'win' && currentStep >= stepNum
               const isLanded = isSettled && round.outcome === 'win' && currentStep === stepNum
+              // Safe Lane: the crossing the perk guarantees is ringed in felt until it is taken.
+              const isSafeLane = safeAdvancePending && isInProgress && stepNum === currentStep + 1
               const state: BoardTileState = isKilled ? 'bad' : isPassed || isSafe ? 'safe' : 'idle'
               return (
                 <BoardTile
@@ -256,8 +258,8 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                   state={state}
                   index={stepNum}
                   disabled
-                  label={isKilled ? `Lane ${stepNum}: hit` : `Lane ${stepNum}`}
-                  className={isLanded ? 'g-win' : ''}
+                  label={isKilled ? `Lane ${stepNum}: hit` : isSafeLane ? `Lane ${stepNum}: safe` : `Lane ${stepNum}`}
+                  className={isLanded ? 'g-win' : isSafeLane ? 'btile-hint' : ''}
                 >
                   {isKilled ? (
                     <TileMark kind="mine" />
