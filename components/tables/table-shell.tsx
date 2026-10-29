@@ -175,7 +175,7 @@ export function TableShell({
               <div className="mt-5 flex flex-nowrap justify-center gap-2">
                 {!over && (
                   <button type="button" onClick={onWatch} className={GAME_DOCK_LEAVE_BTN}>
-                    Watch the rest
+                    Watch
                   </button>
                 )}
                 <button type="button" onClick={() => router.push('/tables')} className={GAME_DOCK_SECONDARY_BTN}>
