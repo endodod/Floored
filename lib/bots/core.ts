@@ -53,12 +53,13 @@ export function shrunk(hits: number, total: number, prior: number, weight = 6): 
   return (hits + prior * weight) / (total + weight)
 }
 
-/** Draws distinct personalities for one table; difficulty is independent of stakes. */
-export function seatBots(count: number, skill: BotSkill, rng: Rng): Bot[] {
+/** Draws distinct personalities; each independently gets a random skill for this table. */
+export function seatBots(count: number, rng: Rng): Bot[] {
   const pool = [...BOT_ROSTER]
   const bots: Bot[] = []
   for (let i = 0; i < count && pool.length; i++) {
     const j = Math.floor(rng() * pool.length)
+    const skill: BotSkill = (['rookie', 'regular', 'shark'] as const)[Math.floor(rng() * 3)]!
     bots.push({ profile: pool.splice(j, 1)[0]!, skill })
   }
   return bots

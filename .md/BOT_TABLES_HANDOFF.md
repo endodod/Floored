@@ -4,8 +4,8 @@
 
 Built, with the open questions answered by the proposals below (owner asked to
 build to completion): name **Tables**; own wallet (10K, refill below 100);
-Hold'em as a Sit & Go; difficulty selected independently from stakes and saved
-in browser storage; Hold'em seats 4 on phones; `tsx` added (dev); leaving
+Hold'em as a Sit & Go; each bot gets a random skill independently of stakes
+when a table is seated; Hold'em seats 4 on phones; `tsx` added (dev); leaving
 forfeits the buy-in; bots have names and a style tag, no chat; Hold'em pays
 top two (65/35 at six seats, 70/30 at four), while Blackjack Showdown and
 Liar's Dice are winner-takes-all.
@@ -14,10 +14,11 @@ Liar's Dice are winner-takes-all.
   raises, blinds every 5 hands), `games/liars-dice`, `games/blackjack-showdown`.
   Contract: `TableEngine` in `lib/tables/types.ts`; `apply` is pure, random
   steps happen in `advance`.
-- Bots: `lib/bots/` (core, roster, one policy per game). Difficulty is saved
-  separately from buy-in; 24 named profiles are dealt from a different seeded
-  roster per game. Skill tiers blend a profile toward a solid baseline
-  (`playingProfile`); For Fun bots get more leaks, Experts use deeper estimates.
+- Bots: `lib/bots/` (core, roster, one policy per game). Twenty-four named
+  profiles are dealt from a different seeded roster per game, and each bot
+  independently draws For Fun, Regular or Expert skill for that table. Skill
+  tiers blend a profile toward a solid baseline (`playingProfile`); For Fun
+  bots get more leaks, Experts use deeper estimates.
   Bots remember public reads on the player per game/profile in local storage;
   Blackjack Experts count exposed cards from the shared shoe.
 - Harness: `pnpm sim:bots [game] [tables] [--seed n]` (tiers, styles, length,
@@ -96,8 +97,8 @@ Showdown).
 
 Shared shape: the player sits at a table with bots, pays a **buy-in** from the
 Tables wallet into a prize pool, and plays until the table is decided. Buy-in
-tiers (e.g. 100 / 500 / 2,000) choose the stakes; bot difficulty can follow
-  the tier or be picked separately (resolved: difficulty is independent).
+  tiers (e.g. 100 / 500 / 2,000) choose only the stakes; bot skill is drawn
+  separately for each bot at each table.
 No rake.
 
 ### 1. Texas Hold'em — Sit & Go
@@ -246,7 +247,8 @@ Use the harness to tune bot tiers, blinds, hand counts and buy-ins; add a
    shared with the Freeplay balance?
 3. **Hold'em format:** Sit & Go (proposed), or a cash table you can join and
    leave at any time, or both?
-4. **Difficulty:** tied to the buy-in tier, or picked separately?
+4. **Difficulty:** tied to buy-in or picked separately? (Resolved: each bot gets
+   a fresh random skill draw when a table is seated.)
 5. **Phones:** 6-max Hold'em is cramped on a phone — 4-max there, or desktop
    only like Survival?
 6. **Tooling:** OK to add `tsx` (dev only) for the simulation harness?

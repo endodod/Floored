@@ -48,7 +48,7 @@ function Cup({ dice, lifted }: { dice: number; lifted: boolean }) {
 
 export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
   const game = TABLE_GAME_BY_NAME.get('liars-dice')!
-  const bots = useMemo(() => [null, ...seatBots(table.seats - 1, table.botSkill ?? table.tier, createRng(table.seed ^ 0x1d1ce))], [table])
+  const bots = useMemo(() => [null, ...seatBots(table.seats - 1, createRng(table.seed ^ 0x1d1ce))], [table])
   const runner = useTableRunner(liarsDef, { seats: table.seats, human: 0, bots, memoryKey: 'liars-dice', seed: table.seed, turnMs: TURN_MS, pauseMs: pause })
   const { view: v, yourTurn, thinking } = runner
   const names = useMemo(() => ['You', ...bots.slice(1).map((b) => b!.profile.name)], [bots])

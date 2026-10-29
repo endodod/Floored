@@ -3,14 +3,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { MIN_BUY_IN, TABLES_START_WALLET, TIER_BY_ID } from '@/lib/tables/stakes'
-import type { TableDifficulty, TableGameName, TableTier } from '@/lib/tables/types'
+import type { TableGameName, TableTier } from '@/lib/tables/types'
 
 /** The table you bought into. Leaving it before your place is decided forfeits the buy-in. */
 export interface OpenTable {
   id: string
   game: TableGameName
   tier: TableTier
-  botSkill: TableDifficulty
   buyIn: number
   seats: number
   seed: number
@@ -23,7 +22,6 @@ export interface TableRecord {
   id: string
   game: TableGameName
   tier: TableTier
-  botSkill?: TableDifficulty
   buyIn: number
   seats: number
   place: number
@@ -56,7 +54,7 @@ interface TablesStore {
   lastResult: TableRecord | null
 
   /** Pays the buy-in and opens a table; false if the wallet can't cover it or a table is open. */
-  sitDown: (game: TableGameName, tier: TableTier, botSkill: TableDifficulty, seats: number) => boolean
+  sitDown: (game: TableGameName, tier: TableTier, seats: number) => boolean
   markSeated: () => void
   /** Your place is decided: pays the prize and closes the table. */
   finish: (place: number, prize: number) => void
@@ -81,7 +79,6 @@ export const useTablesStore = create<TablesStore>()(
           id: open.id,
           game: open.game,
           tier: open.tier,
-          botSkill: open.botSkill,
           buyIn: open.buyIn,
           seats: open.seats,
           place,
@@ -120,7 +117,7 @@ export const useTablesStore = create<TablesStore>()(
         history: [],
         lastResult: null,
 
-        sitDown: (game, tier, botSkill, seats) => {
+        sitDown: (game, tier, seats) => {
           const s = get()
           const buyIn = TIER_BY_ID.get(tier)!.buyIn
           if (s.open || s.wallet < buyIn) return false
@@ -131,7 +128,6 @@ export const useTablesStore = create<TablesStore>()(
               id: `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`,
               game,
               tier,
-              botSkill,
               buyIn,
               seats,
               seed: Math.floor(Math.random() * 2 ** 31),

@@ -10,7 +10,7 @@ export interface TierEntry {
   buyIn: number
 }
 
-/** Buy-in tiers are separate from the saved opponent difficulty. */
+/** Buy-in tiers are independent of each bot's randomized skill. */
 export const TABLE_TIERS: TierEntry[] = [
   { id: 'rookie', label: 'Low stakes', symbol: '🪙', buyIn: 100, botLabel: 'Rookie bots' },
   { id: 'regular', label: 'Mid stakes', symbol: '💰', buyIn: 500, botLabel: 'Regular bots' },

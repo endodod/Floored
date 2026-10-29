@@ -1,4 +1,4 @@
-import type { Rng, TableDifficulty } from '@/lib/tables/types'
+import type { Rng } from '@/lib/tables/types'
 
 /**
  * The bot system's shared core. A bot is a profile (who it is and how it
@@ -6,7 +6,7 @@ import type { Rng, TableDifficulty } from '@/lib/tables/types'
  * turns a seat's view into an action. Bots never see more than a human in
  * their seat would: a policy only ever receives `viewFor(state, seat)`.
  */
-export type BotSkill = TableDifficulty
+export type BotSkill = 'rookie' | 'regular' | 'shark'
 
 export type BotStyle = 'rock' | 'maniac' | 'station' | 'regular' | 'trickster' | 'nit'
 
