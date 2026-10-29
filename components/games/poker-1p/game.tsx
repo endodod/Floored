@@ -256,7 +256,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
         />
 
         {isBetting && (
-          <div className="poker-pays rise w-full max-w-sm shrink-0 rounded-md border border-[rgba(217,164,65,0.3)] bg-black/20 px-5 py-3" aria-label="Pay table">
+          <div className="poker-pays poker-frame rise w-full max-w-sm shrink-0 rounded-md px-5 py-3" aria-label="Pay table">
             <p className="felt-print mb-2 text-center">Jacks or better · pays</p>
             <dl className="flex flex-col">
               {HAND_ORDER.map((rank, i) => (
