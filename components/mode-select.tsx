@@ -21,7 +21,6 @@ import { GAMES } from '@/lib/game-catalog'
 import { formatChips } from '@/utils/format'
 import { Button } from '@/components/ui/button'
 import { SectionTitle, UnitTrack } from '@/components/ui/terminal'
-import { PayoutCaption } from '@/components/game-payout'
 
 interface ModeRowProps {
   name: string
@@ -255,30 +254,6 @@ export function ModeSelect() {
         />
       </ul>
 
-      <section className="rise flex flex-col gap-4 [--d:420ms]" aria-labelledby="all-games">
-        <SectionTitle note="Tap a game to learn how it plays">
-          <span id="all-games">All {GAMES.length} games</span>
-        </SectionTitle>
-        <ul className="grid grid-cols-1 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
-          {GAMES.map((g) => (
-            <li key={g.name} className="border-t border-rule">
-              <Link
-                href={`/how-to-play/${g.name}`}
-                className="m-instant group flex items-baseline justify-between gap-4 py-3 transition-[padding] duration-200 hover:pl-1.5"
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    <span aria-hidden className="w-4 shrink-0 text-center text-[13px]">{g.symbol}</span>
-                    <span className="mark-line text-[14px] font-medium text-ink">{g.label}</span>
-                  </span>
-                  <span className="mt-0.5 block truncate text-[13px] text-dim">{g.sub}</span>
-                </span>
-                <PayoutCaption game={g.name} />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
     </div>
   )
 }
