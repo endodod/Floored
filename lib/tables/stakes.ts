@@ -6,6 +6,7 @@ export const TABLES_START_WALLET = 10_000
 export interface TierEntry {
   id: TableTier
   label: string
+  symbol: string
   buyIn: number
   /** The bots' skill at this tier. */
   botLabel: string
@@ -13,9 +14,9 @@ export interface TierEntry {
 
 /** Stakes: the buy-in picks the bots' skill too (Rookie → Regular → Shark). */
 export const TABLE_TIERS: TierEntry[] = [
-  { id: 'rookie', label: 'Low stakes', buyIn: 100, botLabel: 'Rookie bots' },
-  { id: 'regular', label: 'Mid stakes', buyIn: 500, botLabel: 'Regular bots' },
-  { id: 'shark', label: 'High stakes', buyIn: 2_000, botLabel: 'Shark bots' },
+  { id: 'rookie', label: 'Low stakes', symbol: '🪙', buyIn: 100, botLabel: 'Rookie bots' },
+  { id: 'regular', label: 'Mid stakes', symbol: '💰', buyIn: 500, botLabel: 'Regular bots' },
+  { id: 'shark', label: 'High stakes', symbol: '💎', buyIn: 2_000, botLabel: 'Shark bots' },
 ]
 
 export const TIER_BY_ID = new Map(TABLE_TIERS.map((t) => [t.id, t]))

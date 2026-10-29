@@ -176,7 +176,10 @@ export default function TablesPage() {
                     on ? 'border-felt bg-felt-tint shadow-[0_0_20px_-8px_rgba(79,174,132,0.7)]' : 'border-line bg-surface hover:border-control',
                   )}
                 >
-                  <span className={cn('text-[13px] font-semibold', on ? 'text-ink' : 'text-soft')}>{t.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className="text-sm leading-none">{t.symbol}</span>
+                    <span className={cn('text-[13px] font-semibold', on ? 'text-ink' : 'text-soft')}>{t.label}</span>
+                  </span>
                   <span className="num mt-0.5 text-[17px] text-ink">{formatChips(t.buyIn)}</span>
                   <span className="mt-0.5 text-xs text-dim">{t.botLabel}</span>
                 </button>
