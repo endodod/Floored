@@ -35,11 +35,10 @@ outcome glows; the table colours above are for surfaces.
 
 ## Per game
 
-Done: Roulette, Fortune Wheel, Slots, Over-Under, Run Dice, Plinko (brass pegs), Mines, Keno, Dragon Tower, Blackjack, Chicken Race, Case Battles, 1-Player Poker.
+Done: Roulette, Fortune Wheel, Slots, Over-Under, Run Dice, Plinko (brass pegs), Mines, Keno, Dragon Tower, Blackjack, Chicken Race, Case Battles, 1-Player Poker, HiLo.
 
 | Game | Suggested change |
 |---|---|
-| HiLo | Higher / Lower guess buttons on the board: table green / red fills with gold hairline; felt-print labels. |
 | Chicken Road | Lane tiles already have the dark outline + gold hairline (shared `.btile`); curb in wood tone left. |
 | Coin Flip | Coin to brass/gold metal gradient if it isn't; Heads / Tails picks as table chips (green / red with gold rim). |
 | Street Cups | Cups already drawn: add a wood-and-gold base strip under them (a table rail). |

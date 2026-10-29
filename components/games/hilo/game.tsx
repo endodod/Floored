@@ -277,7 +277,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
         {/* The two cards, the guess between them */}
         <div className="hilo-cards flex items-center gap-4 sm:gap-6">
           <div className="flex flex-col items-center gap-2">
-            <p className="text-[13px] text-soft">Current</p>
+            <p className="felt-print">Current</p>
             <CardView card={round.currentCard} animClass={currentCardAnim} />
           </div>
 
@@ -289,7 +289,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
           </span>
 
           <div className="flex flex-col items-center gap-2">
-            <p className="text-[13px] text-soft">Next</p>
+            <p className="felt-print">Next</p>
             {/* A right guess glows, a wrong one shakes. */}
             <div className={isSettled && round.outcome === 'loss' ? 'g-shake' : ''}>
               <NextCardReveal card={round.nextCard} pending={!isBetting} className={isRiding ? 'g-win' : ''} />
@@ -303,16 +303,16 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
             <button
               type="button"
               onClick={() => handleGuess('higher')}
-              className={`${GUESS_BTN} border-felt text-ink hover:bg-felt-tint hover:shadow-[0_0_24px_-6px_rgba(79,174,132,0.8)]`}
+              className={`${GUESS_BTN} hilo-higher`}
             >
-              <span className="mr-1.5 text-felt">↑</span>Higher
+              <span className="mr-1.5">↑</span>Higher
             </button>
             <button
               type="button"
               onClick={() => handleGuess('lower')}
-              className={`${GUESS_BTN} border-felt text-ink hover:bg-felt-tint hover:shadow-[0_0_24px_-6px_rgba(79,174,132,0.8)]`}
+              className={`${GUESS_BTN} hilo-lower`}
             >
-              <span className="mr-1.5 text-felt">↓</span>Lower
+              <span className="mr-1.5">↓</span>Lower
             </button>
           </div>
           <div className={`absolute inset-x-0 flex gap-3 ${!isRiding ? 'invisible pointer-events-none' : ''}`}>
