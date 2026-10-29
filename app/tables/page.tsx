@@ -7,7 +7,7 @@ import { useIsMobile } from '@/hooks/use-is-mobile'
 import { TABLE_GAMES, TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, TIER_BY_ID, ordinal, prizes } from '@/lib/tables/stakes'
 import { TABLES_STEPS } from '@/lib/tables/tutorials'
-import type { TableDifficulty, TableGameName, TableTier } from '@/lib/tables/types'
+import type { TableGameName, TableTier } from '@/lib/tables/types'
 import { useTablesStore } from '@/store/tables-store'
 import { formatChips } from '@/utils/format'
 import { Button } from '@/components/ui/button'
@@ -18,21 +18,11 @@ import { HowItWorks, ModeColumns, Rail } from '@/components/mode-intro'
 import { cn } from '@/lib/utils'
 
 const TIER_KEY = 'floored-tables-tier'
-const DIFFICULTY_KEY = 'floored-tables-difficulty'
 
 function readTier(): TableTier {
   try {
     const t = window.localStorage.getItem(TIER_KEY)
     return t === 'regular' || t === 'shark' ? t : 'rookie'
-  } catch {
-    return 'rookie'
-  }
-}
-
-function readDifficulty(): TableDifficulty {
-  try {
-    const value = window.localStorage.getItem(DIFFICULTY_KEY)
-    return value === 'regular' || value === 'shark' ? value : 'rookie'
   } catch {
     return 'rookie'
   }
@@ -44,12 +34,11 @@ export default function TablesPage() {
   const isMobile = useIsMobile()
   const s = useTablesStore()
   const [tier, setTier] = useState<TableTier>('rookie')
-  const [difficulty, setDifficulty] = useState<TableDifficulty>('rookie')
   const [pending, setPending] = useState<TableGameName | null>(null)
 
   useEffect(() => {
     setTier(readTier())
-    setDifficulty(readDifficulty())
+    try { window.localStorage.removeItem('floored-tables-difficulty') } catch { /* Ignore an obsolete preference. */ }
     // A table left mid-way counts as a forfeit; one bought but never dealt is refunded.
     const st = useTablesStore.getState()
     if (st.open?.seated) st.forfeit()
@@ -80,16 +69,11 @@ export default function TablesPage() {
     }
   }
 
-  function pickDifficulty(value: TableDifficulty) {
-    setDifficulty(value)
-    try { window.localStorage.setItem(DIFFICULTY_KEY, value) } catch { /* Keep the choice for this visit. */ }
-  }
-
   function sitDown(game: TableGameName) {
     if (pending) return
     const entry = TABLE_GAME_BY_NAME.get(game)!
     const seats = isMobile ? entry.phoneSeats : entry.seats
-    if (!useTablesStore.getState().sitDown(game, tier, difficulty, seats)) return
+    if (!useTablesStore.getState().sitDown(game, tier, seats)) return
     setPending(game)
     router.push(`/tables/${game}`)
   }
@@ -175,7 +159,7 @@ export default function TablesPage() {
         )}
 
         <section className="flex flex-col gap-4" aria-labelledby="tables-stakes">
-          <SectionTitle suit={1} note="Buy-in and opponent skill are separate">
+          <SectionTitle suit={1} note="Choose a buy-in · bots vary by table">
             <span id="tables-stakes">Stakes</span>
           </SectionTitle>
           <div role="radiogroup" aria-label="Stakes" className="grid grid-cols-3 gap-2">
@@ -198,25 +182,6 @@ export default function TablesPage() {
                   <span className="mt-0.5 text-xs text-dim">Paid to the prize pool</span>
                 </button>
               )
-            })}
-          </div>
-        </section>
-
-        <section className="flex flex-col gap-4" aria-labelledby="tables-difficulty">
-          <SectionTitle suit={2} note="Saved in this browser">
-            <span id="tables-difficulty">Opponent difficulty</span>
-          </SectionTitle>
-          <div role="radiogroup" aria-label="Opponent difficulty" className="grid grid-cols-3 gap-2">
-            {([
-              ['rookie', 'For fun', 'Loose play, more hunches and mistakes.'],
-              ['regular', 'Regular player', 'Uses table reads and steadier decisions.'],
-              ['shark', 'Expert', 'Sharper ranges, odds and tournament choices.'],
-            ] as const).map(([value, label, description]) => {
-              const on = difficulty === value
-              return <button key={value} type="button" role="radio" aria-checked={on} onClick={() => pickDifficulty(value)} className={cn('m-still flex flex-col items-start rounded-md border px-3 py-2.5 text-left transition-colors sm:px-4', on ? 'border-felt bg-felt-tint' : 'border-line bg-surface hover:border-control')}>
-                <span className={cn('text-[13px] font-semibold', on ? 'text-ink' : 'text-soft')}>{label}</span>
-                <span className="mt-1 text-xs text-dim">{description}</span>
-              </button>
             })}
           </div>
         </section>

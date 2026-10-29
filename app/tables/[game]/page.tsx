@@ -39,7 +39,7 @@ export default function TableGamePage({ params }: { params: Promise<{ game: stri
   function playAgain() {
     if (!table) return
     const s = useTablesStore.getState()
-    if (!s.sitDown(table.game, table.tier, table.botSkill ?? table.tier, table.seats)) return
+    if (!s.sitDown(table.game, table.tier, table.seats)) return
     s.markSeated()
     setTable(useTablesStore.getState().open)
   }

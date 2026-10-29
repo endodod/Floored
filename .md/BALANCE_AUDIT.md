@@ -817,7 +817,7 @@ Numbers live in `lib/tables/stakes.ts` and the engines.
 | Item | Value |
 |---|---|
 | Wallet | 10,000; refill to 10,000 when below 100 |
-| Buy-ins | 100 · 500 · 2,000 (opponent difficulty is selected separately) |
+| Buy-ins | 100 · 500 · 2,000 (bot skills are randomized per seat) |
 | Prize pool | all buy-ins, no rake; Hold'em 65/35 at 6 seats / 70/30 at 4; Blackjack Showdown and Liar's Dice winner-takes-all |
 | Account Records | peak Tables wallet, refills, and played / wins / cashes / best finish / net per game |
 | Hold'em | 1,500 stack; blinds 10/20, 15/30, 25/50, 50/100, 75/150, 100/200, 150/300, 200/400, 300/600, 500/1000, 800/1600, 1200/2400; up every 5 hands |
