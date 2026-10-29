@@ -233,7 +233,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                         row.picked === null &&
                         ti === safeHintTile
                       const tState = tileState(row, ti, isActive)
-                      const mark = tState === 'safe' ? 'gem' : tState === 'bad' || tState === 'dormant' ? 'flame' : null
+                      const mark = tState === 'safe' ? 'gem' : tState === 'bad' || tState === 'dormant' ? 'skull' : null
                       return (
                         <BoardTile
                           key={ti}
@@ -241,7 +241,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                           index={NUM_ROWS - 1 - rowIdx + ti}
                           disabled={!isActive}
                           onClick={() => isActive && handlePickTile(ti)}
-                          label={mark === 'flame' ? 'Dragon' : mark === 'gem' ? 'Safe' : `Floor ${floorNum}, tile ${ti + 1}`}
+                          label={mark === 'skull' ? 'Dragon' : mark === 'gem' ? 'Safe' : `Floor ${floorNum}, tile ${ti + 1}`}
                           className={`dt-tile ${tState === 'dormant' ? 'btile-bad' : ''} ${blindspotSafe ? 'btile-hint' : ''}`}
                         >
                           {mark ? (

@@ -57,7 +57,7 @@ New shared pieces on this branch:
 - `components/games/playing-card.tsx` — one card for all card games (face, back, slot). Sized by the `--card-h` CSS variable.
 - `app/globals.css` — `.board-fit` (every board is a size container named `board`), the **game motion kit** (`g-*` classes, read its comment block), `.pcard*` (cards), `.felt-print` (gold text printed on the felt), and per-game `@container board` blocks (`bj-*`, `hilo-*`, `poker-*`, `rl-*`) — copy their pattern.
 - `GameDockChipPicker`, `dockChips()`, `useOpeningTicketChip()` in `components/game-dock-parts.tsx` — the chip rack for games where chips are placed on a table (Roulette now; Keno may want it). Its chips are radios: in check scripts click them with `click:css=[aria-label="100 chip"]`.
-- `components/games/board-tile.tsx` — `BoardTile` (states hidden / idle / selected / safe / bad / hit / dormant, sized by `--tile`, cascades in with `g-pop`, turns up with `g-flip`) and `TileMark` (drawn gem / mine / flame). Styles: `.btile*` in `globals.css`. Modifiers: `btile-bad`, `btile-hint`, `btile-drawn`, `btile-miss`, `btile-wait`. Mines is the reference example.
+- `components/games/board-tile.tsx` — `BoardTile` (states hidden / idle / selected / safe / bad / hit / dormant, sized by `--tile`, cascades in with `g-pop`, turns up with `g-flip`) and `TileMark` (drawn gem / mine / skull). Styles: `.btile*` in `globals.css`. Modifiers: `btile-bad`, `btile-hint`, `btile-drawn`, `btile-miss`, `btile-wait`. Mines is the reference example.
 - `scripts/design-check/motion-check.cjs` — prints each element's animation under Motion = full and reduced. Steps take `click:css=<selector>` like `play-game.cjs`.
 
 ### Lessons from Phase 0 (read before the next game)
