@@ -70,9 +70,25 @@ const CASE_TEMPLATES = [
   },
 ]
 
+/** Relative case prices in the ladder, where one of each case is opened for the whole pot. */
+const LADDER_CASE_WEIGHTS = [1, 2, 3, 4, 5] as const
+
 export function getCases(minBet: number): CaseDef[] {
+  return buildCases(CASE_TEMPLATES.map((_, idx) => Math.round(minBet * CASE_MULTIPLIERS[idx]!)))
+}
+
+/** One of each case, priced by `LADDER_CASE_WEIGHTS` so the five together cost exactly `pot`. */
+export function getLadderCases(pot: number): CaseDef[] {
+  const totalWeight = LADDER_CASE_WEIGHTS.reduce((s, w) => s + w, 0)
+  const prices = LADDER_CASE_WEIGHTS.map((w) => Math.max(1, Math.floor((pot * w) / totalWeight)))
+  // Rounding remainder goes to the top case.
+  prices[prices.length - 1]! += pot - prices.reduce((s, p) => s + p, 0)
+  return buildCases(prices)
+}
+
+function buildCases(prices: number[]): CaseDef[] {
   return CASE_TEMPLATES.map((tpl, idx) => {
-    const price = Math.round(minBet * CASE_MULTIPLIERS[idx]!)
+    const price = prices[idx]!
     return {
       id: idx,
       name: tpl.name,

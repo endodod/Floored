@@ -1,8 +1,10 @@
 'use client'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+import type { GameMode } from '@/store/types'
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -17,7 +19,7 @@ import {
   GameDockSettledActions,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -31,6 +33,8 @@ import { useBetGuard } from '@/hooks/use-bet-guard'
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { HiLoCard, HiLoState } from '@/games/hilo/types'
+import { PlayingCard } from '@/components/games/playing-card'
+import { GAME_DOCK_PRIMARY_BTN } from '@/components/game-dock-parts'
 import {
   bumpStreak,
   cashOutHiLo,
@@ -44,11 +48,8 @@ import {
   winGame,
 } from '@/games/hilo/engine'
 
-const CARD_BACK = 'repeating-linear-gradient(45deg, #27272a, #27272a 4px, #1f1f23 4px, #1f1f23 8px)'
-
-function isRed(suit: string) {
-  return suit === '♥' || suit === '♦'
-}
+/** Cards take what the board has left after the streak, labels, buttons and hint. */
+const CARD_STYLE = { '--card-h': 'clamp(4rem, calc(100cqh - 13rem), 8.75rem)' } as React.CSSProperties
 
 function CardView({
   card,
@@ -59,46 +60,23 @@ function CardView({
   faceDown?: boolean
   animClass?: string
 }) {
-  if (!card || faceDown) {
-    return (
-      <div
-        className="rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl flex items-center justify-center shrink-0"
-        style={{ width: 80, height: 112 }}
-      >
-        {card && (
-          <div className="rounded-lg border border-zinc-700" style={{ width: 56, height: 80, background: CARD_BACK }} />
-        )}
-      </div>
-    )
-  }
-
-  const color = isRed(card.suit) ? 'text-red-600' : 'text-zinc-900'
-
-  return (
-    <div
-      className={`rounded-xl bg-white shadow-2xl flex flex-col justify-between border border-zinc-200 select-none shrink-0 ${animClass}`}
-      style={{ width: 80, height: 112, padding: 7 }}
-    >
-      <div className={`flex flex-col items-start leading-none ${color}`}>
-        <span className="font-black text-lg leading-none">{card.rank}</span>
-        <span className="text-base leading-none">{card.suit}</span>
-      </div>
-      <span className={`text-4xl leading-none self-center ${color}`}>{card.suit}</span>
-      <div className={`flex flex-col items-start rotate-180 leading-none ${color}`}>
-        <span className="font-black text-lg leading-none">{card.rank}</span>
-        <span className="text-base leading-none">{card.suit}</span>
-      </div>
-    </div>
-  )
+  if (!card) return <PlayingCard variant="slot" />
+  if (faceDown) return <PlayingCard variant="back" />
+  return <PlayingCard rank={card.rank} suit={card.suit} className={animClass} />
 }
 
-function NextCardReveal({ card }: { card: HiLoCard | null }) {
+/** Guess buttons on the felt: large outlined pills with the arrow leading. */
+const GUESS_BTN =
+  'm-still flex-1 h-12 rounded-full border text-[15px] font-semibold transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.97]'
+
+/** The next card: face-down while the guess is open, flipped up when it lands. */
+function NextCardReveal({ card, pending, className }: { card: HiLoCard | null; pending: boolean; className?: string }) {
   const [animClass, setAnimClass] = useState('')
   const prevCard = useRef<HiLoCard | null>(null)
 
   useEffect(() => {
     if (card && card !== prevCard.current) {
-      setAnimClass('card-reveal')
+      setAnimClass('g-flip')
       prevCard.current = card
       const t = setTimeout(() => setAnimClass(''), 350)
       return () => clearTimeout(t)
@@ -106,7 +84,8 @@ function NextCardReveal({ card }: { card: HiLoCard | null }) {
     if (!card) prevCard.current = null
   }, [card])
 
-  return <CardView card={card} faceDown={!card} animClass={animClass} />
+  if (!card) return <PlayingCard variant={pending ? 'back' : 'slot'} />
+  return <CardView card={card} animClass={`${animClass} ${className ?? ''}`} />
 }
 
 interface HiLoResult {
@@ -117,7 +96,7 @@ interface HiLoResult {
 }
 
 interface HiLoGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<HiLoResult>
@@ -127,16 +106,17 @@ type PendingResult = GamePendingResult
 
 export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
-  const { autoReBet, forceTie } = useSettingsStore()
+  const { autoReBet, forceTie: forceTieSetting } = useSettingsStore()
+  const forceTie = forceTieSetting && mode !== 'daily' && mode !== 'ladder'
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
   const { hiloHotStreak } = useSurvivalPerks('hilo')
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<HiLoState>(initHiLo)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
@@ -148,7 +128,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   const isPlaying = round.stage === 'playing'
   const isRiding = round.stage === 'riding'
   const isSettled = round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: isBetting || (isSettled && pendingResult != null),
   })
   const canDeal = currentBet >= minBet && currentBet <= bankroll
@@ -167,9 +147,9 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
     setCurrentBet(0)
     setPendingResult(null)
     setQuoteIdx((prev) => pickQuote(prev))
-    setCurrentCardAnim('card-deal-in')
+    setCurrentCardAnim('g-deal')
     setRound(startHiLoRound(bet))
-    setTimeout(() => setCurrentCardAnim(''), 300)
+    setTimeout(() => setCurrentCardAnim(''), 500)
   }
 
   function handleGuess(guess: 'higher' | 'lower') {
@@ -238,37 +218,37 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
     if (autoReBet && lastBet >= minBet && lastBet <= bankroll) setCurrentBet(lastBet)
   }
 
-  /* Arrow indicator color */
+  /* Arrow badge: lit felt on a hit, red on a miss, quiet while waiting */
   const arrowColor =
-    isRiding ? 'text-emerald-400' :
-    isSettled && round.outcome === 'win' ? 'text-emerald-400' :
-    isSettled && round.outcome === 'loss' ? 'text-red-400' :
-    'text-zinc-600'
+    isRiding || (isSettled && round.outcome === 'win')
+      ? 'text-felt bg-felt-tint shadow-[0_0_24px_-4px_rgba(79,174,132,0.7)]'
+      : isSettled && round.outcome === 'loss'
+        ? 'text-loss bg-loss-tint shadow-[0_0_24px_-4px_rgba(229,86,111,0.6)]'
+        : 'text-dim bg-ground/70'
 
   const guessArrow = round.lastGuess === 'higher' ? '↑' : round.lastGuess === 'lower' ? '↓' : '↕'
 
   const nextMult = isRiding ? streakMultiplier(round.streak + 1) : 0
 
-  /* Flame count for streak display */
-  const flames = '🔥'.repeat(Math.min(round.streak, 5))
 
   return (
-    <div className={GAME_CARD_SHELL}>
+    <div className={GAME_CARD_SHELL} style={CARD_STYLE}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">HiLo</span>
-        <span className="text-sm text-zinc-600">{round.message}</span>
+        <span className="text-[13px] font-semibold text-ink">HiLo</span>
+        <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-6 gap-5"
+        boardClassName="relative"
         entries={matchHistory}
         gameLabel="HiLo"
       >
+        <div className="hilo-board relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,3cqh,1.5rem)] gap-[clamp(0.5rem,3cqh,1.25rem)]">
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
         {hotStreakFlash && (
           <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            🔥 Hot Streak — streak jumped by 2!
+            Hot streak — streak jumped by 2
           </PerkHint>
         )}
         <GameActiveBetBadge
@@ -277,71 +257,80 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
           visible={!isBetting && round.betAmount > 0}
         />
 
-        {/* Streak indicator — visible whenever there's an active multiplier */}
-        <div className={`flex items-center gap-2 text-sm font-bold ${round.isTie ? 'text-zinc-300' : 'text-yellow-300'} ${round.multiplier === 0 ? 'invisible' : ''}`}>
+        {/* Streak: a gold pip per correct guess and the running multiplier */}
+        <div className={`hilo-streak flex h-8 items-center gap-3 ${round.multiplier === 0 ? 'invisible' : ''}`}>
           {round.isTie ? (
-            <span className="px-2 py-0.5 rounded-md bg-zinc-700 text-zinc-200 text-xs font-bold tracking-widest uppercase">Push</span>
+            <span className="rounded-full bg-raised px-2.5 py-0.5 text-xs font-semibold text-ink">Push</span>
           ) : (
-            <span>{flames}</span>
+            <span className="flex gap-1" aria-hidden>
+              {Array.from({ length: Math.min(round.streak, 10) }, (_, i) => (
+                <span key={i} className="unit h-2.5 w-2.5 rotate-45 bg-gold shadow-[0_0_8px_rgba(217,164,65,0.8)]" style={{ '--d': `${i * 40}ms` } as React.CSSProperties} />
+              ))}
+            </span>
           )}
-          <span>{round.isTie ? `Bet returned · ${formatMultiplier(round.multiplier)}` : `${round.streak}× streak · ${formatMultiplier(round.multiplier)}`}</span>
+          <span className="text-[13px] text-soft">
+            {round.isTie ? 'Bet returned' : `${round.streak}× streak`}
+          </span>
+          <span className="num text-[17px] text-gold glow-gold">{formatMultiplier(round.multiplier)}</span>
         </div>
 
-        {/* Card display */}
-        <div className="flex items-center gap-5">
+        {/* The two cards, the guess between them */}
+        <div className="hilo-cards flex items-center gap-4 sm:gap-6">
           <div className="flex flex-col items-center gap-2">
-            <p className="text-xs uppercase tracking-widest text-zinc-600">Current</p>
-            <CardView card={round.currentCard} faceDown={!round.currentCard} animClass={currentCardAnim} />
+            <p className="text-[13px] text-soft">Current</p>
+            <CardView card={round.currentCard} animClass={currentCardAnim} />
           </div>
 
-          <div className="flex flex-col items-center gap-1">
-            <span className={`text-4xl font-black transition-colors ${arrowColor}`}>{guessArrow}</span>
-          </div>
+          <span
+            className={`flex h-12 w-12 items-center justify-center rounded-full text-2xl font-semibold transition-[color,background-color,box-shadow] duration-300 ${arrowColor}`}
+            aria-label={round.lastGuess ? `Guessed ${round.lastGuess}` : 'Higher or lower'}
+          >
+            {guessArrow}
+          </span>
 
           <div className="flex flex-col items-center gap-2">
-            <p className="text-xs uppercase tracking-widest text-zinc-600">Next</p>
-            <NextCardReveal card={round.nextCard} />
+            <p className="text-[13px] text-soft">Next</p>
+            {/* A right guess glows, a wrong one shakes. */}
+            <div className={isSettled && round.outcome === 'loss' ? 'g-shake' : ''}>
+              <NextCardReveal card={round.nextCard} pending={!isBetting} className={isRiding ? 'g-win' : ''} />
+            </div>
           </div>
         </div>
 
         {/* Fixed-height slot shared by guess buttons and riding buttons */}
-        <div className="relative h-11 w-72 flex items-center justify-center">
+        <div className="hilo-actions relative flex h-12 w-full max-w-sm items-center justify-center">
           <div className={`absolute inset-x-0 flex gap-3 ${!isPlaying ? 'invisible pointer-events-none' : ''}`}>
             <button
               type="button"
               onClick={() => handleGuess('higher')}
-              className="flex-1 py-2.5 rounded-xl border-2 border-purple-600 bg-purple-950 hover:bg-purple-900 text-purple-200 font-bold text-sm uppercase tracking-wider transition-all duration-150 hover:scale-105 active:scale-95"
+              className={`${GUESS_BTN} border-felt text-ink hover:bg-felt-tint hover:shadow-[0_0_24px_-6px_rgba(79,174,132,0.8)]`}
             >
-              ↑ Higher
+              <span className="mr-1.5 text-felt">↑</span>Higher
             </button>
             <button
               type="button"
               onClick={() => handleGuess('lower')}
-              className="flex-1 py-2.5 rounded-xl border-2 border-purple-600 bg-purple-950 hover:bg-purple-900 text-purple-200 font-bold text-sm uppercase tracking-wider transition-all duration-150 hover:scale-105 active:scale-95"
+              className={`${GUESS_BTN} border-felt text-ink hover:bg-felt-tint hover:shadow-[0_0_24px_-6px_rgba(79,174,132,0.8)]`}
             >
-              ↓ Lower
+              <span className="mr-1.5 text-felt">↓</span>Lower
             </button>
           </div>
           <div className={`absolute inset-x-0 flex gap-3 ${!isRiding ? 'invisible pointer-events-none' : ''}`}>
-            <button
-              type="button"
-              onClick={handleCashOut}
-              className="flex-1 py-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-950 hover:bg-emerald-900 text-emerald-200 font-bold text-sm transition-all duration-150 hover:scale-105 active:scale-95"
-            >
-              Cash Out — {formatChips(cashoutAmount)}
+            <button type="button" onClick={handleCashOut} className={`${GAME_DOCK_PRIMARY_BTN} h-12 min-w-0 flex-1 px-4`}>
+              Cash out <span className="num ml-1">{formatChips(cashoutAmount)}</span>
             </button>
             <button
               type="button"
               onClick={handleGoAgain}
-              className="flex-1 py-2.5 rounded-xl border-2 border-yellow-600 bg-yellow-950 hover:bg-yellow-900 text-yellow-200 font-bold text-sm transition-all duration-150 hover:scale-105 active:scale-95"
+              className={`${GUESS_BTN} border-gold text-gold hover:bg-gold-tint hover:shadow-[0_0_24px_-6px_rgba(217,164,65,0.8)]`}
             >
-              Go Again → {formatMultiplier(nextMult)}
+              Go again <span className="num ml-1">{formatMultiplier(nextMult)}</span>
             </button>
           </div>
         </div>
 
-        <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
-          <p className="text-center text-xs text-zinc-500">
+        <div className="hilo-hint min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
+          <p className="text-center text-[13px] text-dim">
             {isBetting
               ? 'Ties keep your streak alive · Ace counts high · Win streaks multiply your payout.'
               : isPlaying
@@ -350,6 +339,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
                   ? 'Cash out or go again on the board.'
                   : '\u00A0'}
           </p>
+        </div>
         </div>
       </GameFieldWithHistory>
 
@@ -368,11 +358,11 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isRiding && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-[14px] text-soft">
                 {round.isTie ? (
-                  <>Push — <span className="font-semibold text-zinc-200">{formatChips(cashoutAmount)} returned if you cash out</span></>
+                  <>Push — <span className="num text-ink">{formatChips(cashoutAmount)}</span> returned if you cash out</>
                 ) : (
-                  <>Potential total winnings:{' '}<span className="font-semibold text-emerald-400">{formatChips(cashoutAmount)}</span></>
+                  <>Cash out now for <span className="num text-felt glow-felt">{formatChips(cashoutAmount)}</span></>
                 )}
               </p>
             )}
@@ -394,12 +384,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
             {showGameOver ? (
               <GameDockGameOverButton onClick={handleGameOver} />
             ) : isBetting ? (
-              <button
-                type="button"
-                onClick={handleDeal}
-                disabled={!canDeal}
-                className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
-              >
+              <button type="button" onClick={handleDeal} disabled={!canDeal} className={GAME_DOCK_PRIMARY_BTN}>
                 Deal →
               </button>
             ) : isSettled ? (
@@ -410,7 +395,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
                 onNext={handleNext}
               />
             ) : (
-              <p className="min-w-[10.5rem] px-7 py-2 invisible select-none" aria-hidden>
+              <p className="h-10 min-w-[10.5rem] px-7 invisible select-none" aria-hidden>
                 Deal →
               </p>
             )}

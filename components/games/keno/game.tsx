@@ -1,8 +1,8 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_BOARD_ARENA,
@@ -14,6 +14,7 @@ import {
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -22,7 +23,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -54,8 +55,11 @@ import {
   winGame,
 } from '@/games/keno/engine'
 import type { KenoState } from '@/games/keno/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const DRAW_TICK_MS = 380
+import { BoardTile, type BoardTileState } from '@/components/games/board-tile'
 
 interface KenoResult {
   outcome: 'win' | 'loss'
@@ -65,7 +69,7 @@ interface KenoResult {
 }
 
 interface KenoGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<KenoResult>
@@ -75,7 +79,6 @@ type PendingResult = GamePendingResult
 
 export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -86,10 +89,11 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
     'perk_keno_heat',
     kenoHeatLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [round, setRound] = useState<KenoState>(initKeno())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [lastPicks, setLastPicks] = useState<number[]>([])
   const [lastUsedQuickPick, setLastUsedQuickPick] = useState(false)
@@ -101,7 +105,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
   const isBetting = round.stage === 'betting'
   const isDrawing = round.stage === 'drawing'
   const isSettled = round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: isBetting || isSettled })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: isBetting || isSettled })
   const canStart = currentBet >= minBet && currentBet <= bankroll && round.picks.length >= MIN_PICKS
   const hasRevealedStats = round.revealedDrawn.length > 0
   const totalWinnings = useMemo(() => getKenoPayout(round), [round])
@@ -223,13 +227,13 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Keno</span>
-        <span className="text-sm text-zinc-600">{round.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Keno</span>
+        <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative min-h-0 flex flex-col items-center justify-start pt-4 pb-4 px-3 md:px-5"
+        boardClassName="relative min-h-0"
         entries={matchHistory}
         gameLabel="Keno"
       >
@@ -241,48 +245,44 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
         )}
         <GameActiveBetBadge betAmount={round.betAmount} visible={!isBetting} />
 
-        <div className="flex flex-col items-center w-full max-w-sm shrink-0 gap-2">
-          <div
-            className={`flex flex-wrap justify-center gap-2 h-10 items-center w-full shrink-0 ${
-              isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Hits </span>
-              <span className="font-semibold text-pink-300">
-                {hasRevealedStats ? round.hits : '—'}
-              </span>
-            </div>
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Multiplier </span>
-              <span className="font-semibold text-white">
-                {hasRevealedStats ? formatMultiplier(round.multiplier) : '—'}
-              </span>
-            </div>
+        <div className="grid5-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
+          {/* One slot: quick pick while betting, the draw's figures after. */}
+          <div className="grid5-top flex h-9 shrink-0 items-center justify-center gap-2">
+            {isBetting ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleQuickPick}
+                  className="m-still h-8 rounded-full border border-gold/60 px-3.5 text-[12px] font-semibold text-gold transition-colors hover:bg-gold-tint"
+                >
+                  Quick Pick (5)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearPicks}
+                  className="m-still plaque h-8 rounded-full px-3.5 text-[12px] font-semibold text-dim transition-colors hover:text-ink"
+                >
+                  Clear picks
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Hits</span>
+                  <span key={round.hits} className="num g-pop text-gold">{hasRevealedStats ? round.hits : '—'}</span>
+                </span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Multiplier</span>
+                  <span key={round.multiplier} className="num g-pop text-ink">
+                    {hasRevealedStats ? formatMultiplier(round.multiplier) : '—'}
+                  </span>
+                </span>
+              </>
+            )}
           </div>
 
-          <div
-            className={`flex justify-center gap-2 h-9 items-center w-full shrink-0 ${
-              !isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            <button
-              type="button"
-              onClick={handleQuickPick}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-pink-600 text-white hover:bg-pink-500 transition-colors"
-            >
-              Quick Pick (5)
-            </button>
-            <button
-              type="button"
-              onClick={handleClearPicks}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-white/10 text-white/60 hover:bg-white/15 transition-colors"
-            >
-              Clear picks
-            </button>
-          </div>
-
-          <div className="grid grid-cols-5 gap-1.5 w-full shrink-0">
+          {/* The board: picks turn white, each drawn ball flips its number up, hits glow gold. */}
+          <div className="grid5-grid grid shrink-0 grid-cols-5 gap-[calc(var(--tile)*0.14)] [--stagger:40ms]">
             {Array.from({ length: BOARD_SIZE }, (_, i) => {
               const num = i + 1
               const picked = pickSet.has(num)
@@ -291,47 +291,46 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
               const isMiss = picked && isSettled && !drawn
               const isDrawOnly = drawn && !picked
               const isHeat = heatSet.has(num) && !picked
+              const state: BoardTileState = isHit
+                ? 'hit'
+                : isDrawOnly
+                  ? 'dormant'
+                  : isMiss
+                    ? 'idle'
+                    : picked
+                      ? 'selected'
+                      : isBetting
+                        ? 'hidden'
+                        : 'idle'
 
               return (
-                <button
+                <BoardTile
                   key={num}
-                  type="button"
+                  state={state}
+                  index={(i % 5) + Math.floor(i / 5)}
                   onClick={() => handleNumberClick(num)}
                   disabled={!isBetting || (!picked && round.picks.length >= MAX_PICKS)}
                   className={[
-                    'h-9 rounded-md text-xs font-bold tabular-nums transition-all sm:h-10 sm:text-sm',
-                    isHeat
-                      ? 'border border-violet-400/80 bg-violet-950/60 text-violet-200 ring-1 ring-violet-500/50'
-                      : '',
-                    isHit
-                      ? 'border border-pink-300 bg-pink-500 text-zinc-900 shadow-lg shadow-pink-900/40'
-                      : isMiss
-                        ? 'border border-zinc-600 bg-zinc-800 text-zinc-400'
-                        : isDrawOnly
-                          ? 'border border-amber-500/60 bg-amber-950/80 text-amber-100'
-                          : picked
-                            ? 'border border-pink-500/80 bg-pink-950/60 text-pink-200'
-                            : isBetting
-                              ? 'border border-white/15 bg-white/5 text-white/70 hover:border-pink-500/50 hover:bg-pink-950/30'
-                              : 'border border-white/10 bg-white/5 text-white/30',
-                    isDrawing && picked && !drawn ? 'animate-pulse' : '',
+                    isHit ? 'g-gold' : '',
+                    isDrawOnly ? 'btile-drawn' : '',
+                    isMiss ? 'btile-miss' : '',
+                    isHeat ? 'btile-hint' : '',
+                    isDrawing && picked && !drawn ? 'btile-wait' : '',
                   ].join(' ')}
                 >
                   {num}
-                </button>
+                </BoardTile>
               )
             })}
           </div>
 
-          <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className="text-xs text-zinc-500 text-center px-2 max-w-md">
-              {isBetting
-                ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
-                : isDrawing
-                  ? 'Numbers reveal one by one. Use Reveal All to skip the draw.'
-                  : '\u00A0'}
-            </p>
-          </div>
+          <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
+            {isBetting
+              ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
+              : isDrawing
+                ? 'Numbers reveal one by one. Use Reveal All to skip the draw.'
+                : '\u00A0'}
+          </p>
         </div>
       </GameFieldWithHistory>
 
@@ -350,14 +349,14 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isDrawing && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-[13px] text-soft">
                 {hasRevealedStats ? (
                   <>
                     Potential total winnings:{' '}
-                    <span className="font-semibold text-emerald-400">{formatChips(totalWinnings)}</span>
+                    <span className="num text-felt glow-felt">{formatChips(totalWinnings)}</span>
                   </>
                 ) : (
-                  <>Drawing ball {round.revealedDrawn.length} of {DRAW_COUNT}…</>
+                  <>Drawing ball <span className="num text-ink">{round.revealedDrawn.length}</span> of {DRAW_COUNT}…</>
                 )}
               </p>
             )}
@@ -382,12 +381,7 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                     type="button"
                     onClick={isSettled ? handleNext : isDrawing ? handleRevealAll : handleStart}
                     disabled={isBetting && !canStart}
-                    className={[
-                      'min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                      isDrawing
-                        ? 'bg-pink-600 hover:bg-pink-500 text-white'
-                        : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                    ].join(' ')}
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : isDrawing ? 'Reveal All' : 'Play →'}
                   </button>

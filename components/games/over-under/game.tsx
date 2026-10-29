@@ -1,7 +1,7 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_CARD_SHELL,
@@ -13,6 +13,7 @@ import {
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -21,7 +22,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -45,6 +46,8 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { OverUnderState } from '@/games/over-under/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const ROLL_ANIM_MS = 620
 
@@ -56,7 +59,7 @@ interface OverUnderResult {
 }
 
 interface OverUnderGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<OverUnderResult>
@@ -65,7 +68,6 @@ interface OverUnderGameProps {
 type PendingResult = GamePendingResult
 
 export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGameProps) {
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -76,11 +78,12 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
     'perk_over_under_shield',
     overUnderShieldLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [safeZone, setSafeZone] = useState(40)
   const [round, setRound] = useState<OverUnderState>(initOverUnder())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
@@ -93,7 +96,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
   const isBetting    = round.stage === 'betting'
   const isInProgress = round.stage === 'inProgress'
   const isSettled    = round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: !isInProgress })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: !isInProgress })
 
   const displaySafeZone = isBetting ? safeZone : round.safeZone
   const payoutMult = isBetting ? getOverUnderPayoutMultiplier(safeZone) : round.payoutMultiplier
@@ -197,8 +200,8 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Over-Under</span>
-        <span className="text-sm text-zinc-600">{round.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Over-Under</span>
+        <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
       <GameFieldWithHistory
@@ -219,77 +222,98 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
           visible={!isBetting && round.betAmount > 0}
         />
 
-        <div className="flex w-full max-w-md flex-col items-center gap-4 shrink-0">
-          <div className="flex h-14 shrink-0 items-center gap-8 sm:gap-14">
+        <div className="ou-board flex w-full max-w-md flex-col items-center gap-[clamp(0.5rem,3cqh,1rem)] shrink-0">
+          <div className="ou-stats flex shrink-0 items-center gap-8 sm:gap-14">
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-teal-600 mb-0.5">Safe</p>
-              <p className="text-2xl font-black text-teal-300 tabular-nums">{displaySafeZone}%</p>
+              <p className="felt-print mb-1">Safe</p>
+              <p className="num text-2xl font-semibold text-felt">{displaySafeZone}%</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-0.5">Payout</p>
-              <p className="text-2xl font-black text-white tabular-nums">{formatMultiplier(payoutMult)}</p>
+              <p className="felt-print mb-1">Payout</p>
+              <p key={payoutMult} className={`num text-2xl font-semibold text-gold glow-gold ${isBetting ? '' : 'g-pop'}`}>{formatMultiplier(payoutMult)}</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-widest text-red-600 mb-0.5">Danger</p>
-              <p className="text-2xl font-black text-red-300 tabular-nums">{100 - displaySafeZone}%</p>
+              <p className="felt-print mb-1">Danger</p>
+              <p className="num text-2xl font-semibold text-loss">{100 - displaySafeZone}%</p>
             </div>
           </div>
 
           <div className="w-full shrink-0">
-            <div className="relative h-14 rounded-full overflow-hidden">
-              <div className="absolute inset-0 bg-red-900/50" />
-              <div
-                className="absolute inset-y-0 left-0 bg-teal-700/80 transition-all duration-100"
-                style={{ width: `${displaySafeZone}%` }}
-              />
-              <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none select-none">
-                <span className="text-teal-100/50 text-sm font-bold">Safe</span>
-                <span className="text-red-200/50 text-sm font-bold">Danger</span>
-              </div>
-              <div
-                className="absolute inset-y-0 w-[3px] bg-white/40 overflow-visible"
-                style={{ left: `calc(${displaySafeZone}% - 1.5px)` }}
-              >
-                <span className="absolute top-1/2 -translate-y-1/2 right-full pr-1.5 text-white/60 text-xs font-bold pointer-events-none select-none">←</span>
-                <span className="absolute top-1/2 -translate-y-1/2 left-full pl-1.5 text-white/60 text-xs font-bold pointer-events-none select-none">→</span>
-              </div>
-              {markerAt !== null && (
+            {/* The rail: a wooden frame trimmed in gold around the 1–100 track. */}
+            <div
+              key={markerOutcome === 'loss' ? 'bust' : 'bar'}
+              className={`ou-bar ou-rail relative rounded-full ${markerOutcome === 'loss' ? 'g-shake' : ''} ${markerOutcome === 'win' ? 'g-win' : ''}`}
+            >
+              <div className="relative h-full">
+                <div className="ou-track absolute inset-0 overflow-hidden rounded-full">
+                  <div
+                    className="absolute inset-0 origin-left bg-[#2a7a57]"
+                    style={{ transform: `scaleX(${displaySafeZone / 100})` }}
+                  />
+                  {/* Gold ticks every 10, top and bottom, like a printed scale. */}
+                  {Array.from({ length: 9 }, (_, i) => (
+                    <span key={i} className="ou-tick" style={{ left: `${(i + 1) * 10}%` }} aria-hidden />
+                  ))}
+                  <div className="absolute inset-0 flex items-center justify-between px-5 pointer-events-none select-none">
+                    <span className="ou-label">Safe</span>
+                    <span className="ou-label">Danger</span>
+                  </div>
+                </div>
                 <div
-                  className={`absolute top-[12%] bottom-[12%] w-[5px] rounded-full ${
-                    markerOutcome === 'win'
-                      ? 'bg-emerald-400 shadow-lg shadow-emerald-400/60'
-                      : markerOutcome === 'loss'
-                        ? 'bg-red-400 shadow-lg shadow-red-400/60'
-                        : 'bg-white shadow-lg shadow-white/40'
-                  }`}
-                  style={{
-                    left: `${markerAt}%`,
-                    transform: 'translateX(-50%)',
-                    transition:
-                      markerAt === 100 || markerOutcome !== null
-                        ? 'none'
-                        : `left ${ROLL_ANIM_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
-                  }}
+                  className="absolute inset-y-0 left-0 w-full pointer-events-none"
+                  style={{ transform: `translateX(${displaySafeZone}%)` }}
+                  aria-hidden
+                >
+                  <span className={`ou-lever absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 transition-opacity ${isBetting ? '' : 'opacity-40'}`} />
+                </div>
+                {markerAt !== null && (
+                  <div
+                    className="ou-marker absolute inset-y-0 left-0 w-full pointer-events-none"
+                    style={{
+                      transform: `translateX(${markerAt}%)`,
+                      transition:
+                        markerAt === 100 || markerOutcome !== null
+                          ? 'none'
+                          : `transform ${ROLL_ANIM_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+                    }}
+                  >
+                    <span className="ou-ball absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2" data-tone={markerOutcome ?? 'rolling'} />
+                  </div>
+                )}
+                <input
+                  type="range"
+                  min={10}
+                  max={90}
+                  step={1}
+                  value={safeZone}
+                  onChange={(e) => { if (isBetting) setSafeZone(Number(e.currentTarget.value)) }}
+                  disabled={!isBetting}
+                  aria-label="Safe zone"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default appearance-none"
                 />
-              )}
-              <input
-                type="range"
-                min={10}
-                max={90}
-                step={1}
-                value={safeZone}
-                onChange={(e) => { if (isBetting) setSafeZone(Number(e.currentTarget.value)) }}
-                disabled={!isBetting}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default appearance-none"
-              />
+              </div>
             </div>
-            <div className="flex justify-center mt-2 px-1 text-xs text-zinc-600">
-              <span>{isBetting ? 'Drag to adjust' : `Rolled ${round.rollResult ?? '—'}`}</span>
+            <div className="flex h-6 items-center justify-center mt-1.5 px-1 text-[12px] text-dim">
+              {isBetting || round.rollResult == null ? (
+                <span>{isBetting ? 'Drag to adjust' : 'Rolling…'}</span>
+              ) : (
+                <span>
+                  Rolled{' '}
+                  <span
+                    key={round.rollResult}
+                    className={`num g-pop inline-block text-[15px] font-semibold ${
+                      markerOutcome === 'win' ? 'text-felt glow-felt' : markerOutcome === 'loss' ? 'text-loss' : 'text-ink'
+                    }`}
+                  >
+                    {round.rollResult}
+                  </span>
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="min-h-10 flex w-full shrink-0 items-center justify-center px-2">
-            <p className="text-center text-xs text-zinc-500">
+          <div className="ou-hint min-h-9 flex w-full shrink-0 items-center justify-center px-2">
+            <p className="text-center text-[13px] text-dim">
               {isBetting
                 ? `Roll 1–${displaySafeZone} wins · ${displaySafeZone + 1}–100 loses. Drag the bar to set risk.`
                 : isInProgress
@@ -315,9 +339,9 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -344,7 +368,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
                     type="button"
                     onClick={isSettled ? handleNextRound : handleRoll}
                     disabled={isBetting && !canRoll}
-                    className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : 'Roll →'}
                   </button>

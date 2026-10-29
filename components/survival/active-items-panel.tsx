@@ -7,11 +7,11 @@ export function ActiveItemsPanel({ compact = false }: { compact?: boolean }) {
   return (
     <SurvivalSidebarPanel
       compact={compact}
-      title="Active Items"
+      title="Active items"
       count={0}
       empty
       emptyLabel="No active items yet"
-      footer={<p className="text-[9px] text-zinc-700">Coming soon</p>}
+      footer={<p className="text-[11px] text-dim">Coming soon</p>}
     />
   )
 }

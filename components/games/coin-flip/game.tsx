@@ -1,13 +1,16 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
-  GAME_DOCK_SETTLED_SLOT,
+  GAME_DOCK_ACTIONS,
   GAME_DOCK_INNER,
+  GAME_DOCK_PRIMARY_BTN,
+  GAME_DOCK_SECONDARY_BTN,
+  GAME_DOCK_SETTLED_SLOT,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -16,7 +19,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -32,6 +35,8 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import { cashOut, flipAgain, initCoinFlip, loseFlipAgain, loseGame, startFlip, winFlipAgain, winGame } from '@/games/coin-flip/engine'
 import type { CoinFlipState, CoinSide } from '@/games/coin-flip/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const COIN_SPIN_MS = 1500
 const COIN_LAND_MS = 900
@@ -56,7 +61,7 @@ interface CoinFlipResult {
 }
 
 interface CoinFlipGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<CoinFlipResult>
@@ -66,13 +71,12 @@ type PendingResult = GamePendingResult
 
 export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
   const { coinBias, purchasedUpgrades } = useSurvivalPerks('coin-flip')
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
   const biasChance =
     mode === 'survival' && coinBias
       ? getCoinBiasChance(purchasedUpgrades, 'coin-flip')
@@ -80,6 +84,7 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
 
   const [state, setState] = useState<CoinFlipState>(initCoinFlip)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
@@ -95,7 +100,7 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
   const isRiding = state.stage === 'riding'
   const isSettled = state.stage === 'settled'
   const isFlipping = coinAnim !== 'idle'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: !isFlipping && (isBetting || isSettled),
   })
   const canFlip = currentBet >= minBet && currentBet <= bankroll && state.pick !== null
@@ -204,6 +209,15 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
   }, [pendingResult, autoReBet, lastBet, bankroll, mode])
 
   const coinAnimClass = coinAnim === 'spinning' ? 'coin-spinning' : coinAnim === 'landing' ? 'coin-landing' : ''
+  // After the coin lands: a winning face glows, a losing one shakes and falls back.
+  const coinOutcome =
+    coinAnim === 'spinning' || !state.outcome
+      ? ''
+      : state.outcome === 'win'
+        ? 'g-gold'
+        : coinAnim === 'landing'
+          ? 'g-shake'
+          : 'g-dim'
   const displaySide = state.lastResult ?? 'heads'
   const coinStyle = {
     '--coin-rest-rotate': displaySide === 'tails' ? '180deg' : '0deg',
@@ -215,13 +229,13 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Coin Flip</span>
-        <span className="text-sm text-zinc-600">{isFlipping ? 'Flipping…' : state.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Coin Flip</span>
+        <span className="text-[13px] text-dim">{isFlipping ? 'Flipping…' : state.message}</span>
       </div>
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-6 gap-5"
+        boardClassName="relative flex min-h-0 h-full w-full"
         entries={matchHistory}
         gameLabel="Coin Flip"
       >
@@ -238,8 +252,10 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
           visible={activeBet > 0 && !isBetting}
         />
 
+        <div className="cf-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.5rem,3cqh,1.25rem)] px-4 py-3">
+        <div className={`cf-coin relative shrink-0 rounded-full ${coinOutcome}`}>
         <div
-          className={`coin-3d aspect-square w-40 shrink-0 sm:w-48 ${coinAnimClass}`}
+          className={`coin-3d h-full w-full ${coinAnimClass}`}
           style={coinStyle}
           aria-label={isFlipping ? 'Coin flipping' : `Coin showing ${displaySide}`}
         >
@@ -253,25 +269,36 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
             <span className="coin-name">Tails</span>
           </div>
         </div>
-
-        <div className={`flex items-center gap-2 text-sm font-bold text-yellow-300 min-h-6 ${!isRiding || isFlipping ? 'invisible' : ''}`}>
-          <span>{'🔥'.repeat(Math.min(state.streak, 5))}</span>
-          <span>{state.streak}× streak · {state.multiplier}× multiplier</span>
         </div>
 
-        <div className={`flex gap-4 shrink-0 ${isSettled || isFlipping ? 'invisible pointer-events-none' : ''}`}>
+        <div className="cf-side flex flex-col items-center gap-[clamp(0.5rem,3cqh,1.25rem)]">
+        <div className={`flex min-h-6 items-center gap-2 text-[13px] ${!isRiding || isFlipping ? 'invisible' : ''}`}>
+          <span className="flex gap-1" aria-hidden>
+            {Array.from({ length: Math.min(state.streak, 5) }, (_, i) => (
+              <span key={i} className="g-pop h-2 w-2 rounded-full bg-gold" style={{ '--i': i } as React.CSSProperties} />
+            ))}
+          </span>
+          <span className="text-soft">
+            <span className="num text-ink">{state.streak}×</span> streak ·{' '}
+            <span key={state.multiplier} className="num g-pop inline-block text-gold glow-gold">{state.multiplier}×</span>
+          </span>
+        </div>
+
+        <div className={`flex gap-3 shrink-0 ${isSettled || isFlipping ? 'invisible pointer-events-none' : ''}`} role="radiogroup" aria-label="Pick a side">
           {(['heads', 'tails'] as CoinSide[]).map((side) => {
             const isActive = isBetting ? state.pick === side : state.nextPick === side
             return (
               <button
                 key={side}
                 type="button"
+                role="radio"
+                aria-checked={isActive}
                 onClick={() => handlePickSide(side)}
                 className={[
-                  'w-24 h-14 rounded-xl border-2 font-bold text-sm uppercase tracking-wider transition-all duration-150',
+                  'g-lift m-still h-[clamp(2.5rem,12cqh,3.25rem)] w-24 rounded-full border text-[13px] font-semibold transition-[border-color,background-color,color,box-shadow,transform] duration-150 active:scale-95',
                   isActive
-                    ? 'bg-yellow-400/15 border-yellow-400 text-yellow-300'
-                    : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white',
+                    ? 'border-felt bg-felt-tint text-ink -translate-y-0.5 shadow-[0_0_18px_-6px_rgba(79,174,132,0.7)]'
+                    : 'border-control bg-black/25 text-soft hover:border-dim hover:text-ink',
                 ].join(' ')}
               >
                 {side === 'heads' ? 'Heads' : 'Tails'}
@@ -280,8 +307,8 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
           })}
         </div>
 
-        <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
-          <p className="text-center text-xs text-zinc-500">
+        <div className="cf-hint min-h-9 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
+          <p className="text-center text-[13px] text-dim">
             {isBetting && !isFlipping
               ? 'Pick heads or tails, place chips, then flip.'
               : isFlipping
@@ -290,6 +317,8 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
                   ? 'Win streak — cash out or flip again.'
                   : '\u00A0'}
           </p>
+        </div>
+        </div>
         </div>
       </GameFieldWithHistory>
 
@@ -310,9 +339,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
               <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />
             )}
             {isRiding && !isFlipping && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(cashoutAmount)}</span>
+                <span className="num text-felt glow-felt">{formatChips(cashoutAmount)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -328,7 +357,8 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
             )}
           </div>
 
-          <div className="shrink-0 w-full flex justify-center items-center gap-3">
+          <div className={GAME_DOCK_ACTIONS}>
+            <div className="flex justify-center gap-2">
             {showGameOver ? (
               <GameDockGameOverButton onClick={handleGameOver} />
             ) : (
@@ -338,14 +368,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
                   type="button"
                   onClick={isSettled ? handleNext : isRiding ? handleCashOut : handleFlip}
                   disabled={(isBetting && !canFlip) || isFlipping}
-                  className={[
-                    'min-w-[8rem] px-5 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                    isRiding
-                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50'
-                      : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                  ].join(' ')}
+                  className={isRiding ? GAME_DOCK_SECONDARY_BTN : GAME_DOCK_PRIMARY_BTN}
                 >
-                  {isSettled ? 'Next →' : isRiding ? `Cash Out — ${formatChips(cashoutAmount)}` : 'Flip →'}
+                  {isSettled ? 'Next →' : isRiding ? 'Cash Out' : 'Flip →'}
                 </button>
               </>
             )}
@@ -354,11 +379,12 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
                 type="button"
                 onClick={handleFlipAgain}
                 disabled={!state.nextPick || isFlipping}
-                className="min-w-[8rem] px-5 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                className={GAME_DOCK_PRIMARY_BTN}
               >
                 Flip Again →
               </button>
             )}
+            </div>
           </div>
 
         </div>

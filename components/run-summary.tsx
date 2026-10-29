@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSurvivalStore } from '@/store/survival-store'
 import type { RunSummary as RunSummaryType } from '@/store/types'
 
@@ -13,24 +12,24 @@ interface RunSummaryProps {
 function headline(lastRun: RunSummaryType): { title: string; description: string; accent: string } {
   if (lastRun.victory) {
     return {
-      title: '🏆 Victory!',
+      title: 'Victory',
       description: 'You cleared all 10 floors.',
-      accent: 'text-amber-400',
+      accent: 'text-felt',
     }
   }
   if (lastRun.endBankroll <= 0) {
     return {
       title: 'Defeated',
       description: 'Your bankroll hit zero.',
-      accent: 'text-red-400',
+      accent: 'text-loss',
     }
   }
   return {
-    title: 'Run Over',
+    title: 'Run over',
     description: lastRun.endlessMode
       ? `Endless run ended on floor ${lastRun.floorsReached}.`
       : 'Your survival run has ended.',
-    accent: 'text-zinc-300',
+    accent: 'text-ink',
   }
 }
 
@@ -45,17 +44,16 @@ export function RunSummary({ lastRun }: RunSummaryProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 max-w-md mx-auto py-8">
-      <Card className="w-full">
-        <CardHeader className="text-center">
-          <CardTitle className={accent}>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-      </Card>
-
-      <Button onClick={handleContinue} className="w-full max-w-xs" size="lg">
-        Continue
+    <section className="mx-auto flex w-full max-w-md flex-col gap-5 py-10" aria-labelledby="run-summary-title">
+      <div className="rounded-md bg-surface p-6">
+        <h1 id="run-summary-title" className={`text-[26px] font-semibold leading-tight ${accent}`}>
+          {title}
+        </h1>
+        <p className="mt-1 text-[13px] text-soft">{description}</p>
+      </div>
+      <Button onClick={handleContinue} size="lg" className="self-start">
+        Back to modes
       </Button>
-    </div>
+    </section>
   )
 }

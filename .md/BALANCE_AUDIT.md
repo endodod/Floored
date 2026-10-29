@@ -1,6 +1,6 @@
 # Floored — Game Balance Audit
 
-Source: codebase only (`lib/survival/`, `games/`, `store/`, etc.). Generated from repository state.
+Source: codebase only (`lib/survival/`, `games/`, `store/`, etc.). Generated from repository state; last checked against the code on 2026-10-28 (all changes from the August balance pass are reflected).
 
 ---
 
@@ -32,7 +32,7 @@ Source: codebase only (`lib/survival/`, `games/`, `store/`, etc.). Generated fro
 | Resource | Value |
 |----------|-------|
 | Bankroll | **1,000** (`STARTING_BANKROLL`) |
-| Sparks | **15** (`STARTING_SPARKS`) |
+| Sparks | **20** (`STARTING_SPARKS`) |
 | Reroll tickets | **3** (`STARTING_REROLL_TICKETS`) in inventory as `reroll_floor_game` |
 | Floor | 1 |
 | Floor min bet | **20** (`FLOOR_MIN_BETS[1]` in `utils/math.ts`) |
@@ -61,9 +61,9 @@ Sparks **reset to 15** on every new run and on abandon; they are **run-scoped**,
 ### Difficulty (run-wide)
 | Difficulty | Quota mult | Shop price mult | UI |
 |------------|------------|-----------------|-----|
-| `normal` | 1.0× | 1.0× | Enabled |
-| `hard` | 1.5× | 1.5× | **Disabled** (`disabled: true` in `difficulty-dialog.tsx`) |
-| `nightmare` | 2.5× | 2.0× | **Disabled** |
+| `normal` | 1.0× | 1.0× | Every run (started directly, no picker) |
+| `hard` | 1.5× | 1.5× | **No UI** — `difficulty-dialog.tsx` is not mounted |
+| `nightmare` | 2.5× | 2.0× | **No UI** |
 
 ### Early floor completion
 - If `bankroll >= quotaTarget` before 10 bets: navbar dev/control can call `finishQuotaEarly()` → `floorCompleteReason: 'early'`; player may advance or keep betting until 10 bets.
@@ -76,7 +76,7 @@ Sparks **reset to 15** on every new run and on abandon; they are **run-scoped**,
 Run-scoped currency used to **buy shop upgrades** and **Lobby Reroll Tickets**. Shown as ✦ in UI.
 
 ### Starting spark count
-**15** at run start (`STARTING_SPARKS`).
+**20** at run start (`STARTING_SPARKS`).
 
 ### Spark cap
 **None** in code (`spendSparks` floors at 0; no maximum).
@@ -86,7 +86,7 @@ Run-scoped currency used to **buy shop upgrades** and **Lobby Reroll Tickets**. 
 | Source | Formula / amount | When credited |
 |--------|------------------|---------------|
 | **Floor completion base** | `max(8, floor((8 + floor × 2) × sparkFloorMult(floor)))` where `sparkFloorMult(f) = 1 + (f - 1) × 0.2` | On `advanceFloor`, `continueToEndless`, or `endRun` victory (same `calcFloorSparksEarned` call) |
-| **Over-quota bonus** | `+min(5, floor((bankroll - quotaTarget) / 500))` if `bankroll >= quotaTarget` at floor end | Same |
+| **Over-quota bonus** | `+min(10, floor((bankroll - quotaTarget) / (quotaTarget × 1%)))` — one spark per 1% over quota, capped at 10 (`OVER_QUOTA_SPARK_MAX`) | Same |
 | **Mission completion** | Per mission `rewardSparks` (see §6) | Added in same floor transition sum: `missions.filter(completed).reduce(rewardSparks)` |
 
 **Example floor sparks (at exact quota, normal, no missions):**
@@ -122,7 +122,7 @@ Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` 
 | blackjack | Hole Card Reader | 24 | epic |
 | hilo | Hot Streak | 20 | rare |
 | chicken-race | Slow Scout | 22 | rare |
-| crash | Crash Zone | 22 | rare |
+| crash | Crash Cushion | 22 | rare |
 | mines | Mine Sweeper | 20 | rare |
 | plinko | Golden Ball | 18 | rare |
 | over-under | Safe Opening Roll | 16 | rare |
@@ -244,22 +244,24 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Optimal EV:** Basic strategy ≈ **~99% RTP** (rules: 2.5× BJ, dealer stand soft 17 implied by `dealerShouldHit` <17 only).
 - **Worst case:** −1× bet (or −2× if doubled).
 - **Game Boost:** +5% / +12% / +20% / +30% / +40% win payout (L1–L5).
-- **Game Perk — Hole Card Reader:** See dealer hole card while playing (`perk_peek_dealer`); **no proc roll** — always on if owned; **levels do not change effect** in code.
+- **Game Perk — Hole Card Reader:** (`perk_peek_dealer`, no proc roll — always on if owned). Cumulative by level: **L1** see the hole card while playing · **L2** also during betting · **L3** dealer blackjack refunds the bet (push) · **L4** double down on any hand size · **L5** natural blackjack pays **3×**. Logic in `hooks/use-blackjack-game.ts`.
 - **TODO:** None in engine.
 
 ---
 
 ### crash
 - **ID:** `crash`
-- **Rules:** Multiplier grows `e^(0.23 × t_seconds)`; crash point uniform-skewed in **[1.05, 30]** via `pow(random, 2.5)`.
+- **Rules:** Multiplier starts at **0.75×** and grows `0.75 × e^(0.23 × t_seconds)` (1× at ~1.2s, 2× at ~4.2s, 10× at ~11.2s). Crash point = `min(30, 0.95 / u)` with `u ~ U(0,1)`, rounded to 2 decimals (`generateCrashPoint` in `games/crash/engine.ts`).
+- **Crash distribution:** P(multiplier passes *m*) ≈ **0.95 / m** for *m* ≥ 0.95 — about **5%** of rounds crash below 1.0× (no profit possible), cashing out at 1.01× wins ~**94%**, 1.5× ~63%, 2× ~48%, 10× ~9.5%, 30× cap ~3%.
 - **Bet range:** min–max as above.
-- **Wins:** `payout = round(bet × cashoutMultiplier)` if cashed before crash.
+- **Wins:** `payout = round(bet × cashoutMultiplier)` if cashed before crash; cashing out below 1× returns less than the stake (`loss`).
 - **Loss:** No cashout before crash → **0**.
-- **Edge cases:** Manual cashout timing; crash at 1.05× ~200ms.
-- **Optimal EV:** **Player-dependent** (cashout strategy); uniform crash PDF on [1.05,30] is not flat — low crashes heavily weighted.
+- **Edge cases:** Manual cashout timing; a crash point below 0.75× ends the round on the first tick. Blessed rounds crash at 30×, cursed at **0.80×** (`MIN_CRASH`, only reachable via the curse).
+- **Optimal EV:** ~**0.95×** for any fixed cashout target below the 30× cap (P(pass m) × m ≈ 0.95) — the 5% house edge is uniform, so cashout strategy only trades variance.
+- **Mode differences:** None in the engine — Freeplay, Daily, Survival and Ladder share the same crash distribution. Only Survival applies Crash Cushion; curse/bless never apply in Daily or Ladder.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard game boost table.
-- **Game Perk — Crash Zone:** Shows band ±**8/7/6/5/4%** of `crashAt` by level (`CRASH_ZONE_PAD_BY_LEVEL`); informational.
+- **Game Perk — Crash Cushion:** On a crash below **3×**, recovers **25/35/45/60/75%** of the bet by level (`CRASH_CUSHION_BY_LEVEL`), settled as a push.
 - **TODO:** None.
 
 ---
@@ -415,7 +417,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 
 ### street-cups
 - **ID:** `street-cups`
-- **Rules:** 3 cups, 12 swaps, pick cup; **2×** on win (`STREET_CUPS_WIN_MULTIPLIER`).
+- **Rules:** 3 cups, 12 swaps, pick cup; **2.5×** on win (`STREET_CUPS_WIN_MULTIPLIER`).
 - **Bet range:** min–max.
 - **Win:** **2×**; loss **0**.
 - **Edge cases:** Cup Truth eliminates one empty cup.
@@ -473,11 +475,11 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 
 ### keno
 - **ID:** `keno`
-- **Rules:** Board **25**, draw **5**, pick **1–5**; hits pay `HIT_MULTIPLIERS`: 1→0.5, 2→1, 3→3, 4→5, 5→10.
+- **Rules:** Board **25**, draw **5**, pick **1–5**; hits pay `HIT_MULTIPLIERS`: 1→0.5, 2→2, 3→5, 4→15, 5→100.
 - **Bet range:** min–max.
 - **Loss:** 0 hits → **0** mult.
 - **Edge cases:** Number Heat highlights 2 winning numbers.
-- **Optimal EV (5 picks):** **~0.559×** (hypergeometric enumeration).
+- **Optimal EV (5 picks):** **~0.868×** (hypergeometric enumeration).
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard.
 - **Game Perk — Number Heat:** Shows 2 numbers that will hit.
@@ -491,11 +493,11 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Bet range:** min–max.
 - **Win:** Cash out at **2×, 4×, 8×, …**; single win **2×**.
 - **Loss:** **0** on miss.
-- **Edge cases:** Weighted Edge perk biases win chance **58–75%** by level.
+- **Edge cases:** Weighted Edge perk biases win chance **54–65%** by level.
 - **Optimal EV (fair 50%, always cash after 1 win):** **1.0×**; streak-riding lowers EV.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard.
-- **Game Perk — Weighted Edge:** Win chance **58/63/67/71/75%** (`COIN_BIAS_CHANCE_BY_LEVEL`).
+- **Game Perk — Weighted Edge:** Win chance **54/57/60/63/65%** (`COIN_BIAS_CHANCE_BY_LEVEL`).
 - **TODO:** None.
 
 ---
@@ -537,7 +539,7 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | blackjack | Hole Card Reader | Reveal dealer hole card (no proc) |
 | hilo | Hot Streak | 25% double streak bump on correct guess |
 | chicken-race | Slow Scout | Eliminate one non-winner |
-| crash | Crash Zone | ±% band on crash point by level |
+| crash | Crash Cushion | Recover % of bet on a sub-3× crash |
 | mines | Mine Sweeper | Reveal one safe tile at start (proc) |
 | plinko | Golden Ball | 2× payout when proc + mult>1 |
 | over-under | Safe Opening Roll | First roll loss → push (proc) |
@@ -551,7 +553,7 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | case-battles | Case X-Ray | One case tier revealed (proc) |
 | poker-1p | Hold Harmony | Draw bias to held ranks (proc) |
 | keno | Number Heat | 2 hitting numbers highlighted |
-| coin-flip | Weighted Edge | Win chance 58–75% by level |
+| coin-flip | Weighted Edge | Win chance 54–65% by level |
 
 ### Consumable
 | Item | Category | Cost (normal) | Effect | Max |
@@ -559,10 +561,10 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | Lobby Reroll Ticket | Consumable / Active slot | 8 | +1 reroll charge | Stack |
 
 ### Placeholders / flags
-- **Active Items UI:** not implemented.
+- **Active Items:** sidebar panel is a “Coming soon” placeholder; the shop's active slot only sells the Lobby Reroll Ticket. Design in `ACTIVE_ITEMS_SPEC.md`.
 - **`rerollShop` / spark mission rerolls:** backend only.
 - **`GRANT_ALL_UPGRADES`:** dev flag.
-- Hard/nightmare difficulties disabled in UI.
+- Hard/nightmare: no UI — runs start on Normal directly; `difficulty-dialog.tsx` is no longer mounted anywhere.
 
 ---
 
@@ -581,20 +583,24 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 
 | Type | Target(s) | Base reward (sparks) | Description |
 |------|-----------|-------------------|-------------|
-| `win_streak` | 2 / 3 / 4 / 5 | 4 / 6 / 8 / 10 | Consecutive wins; loss resets |
-| `play_game` | 1 | 5 | Play assigned floor game once at min bet+ |
-| `min_multiplier` | 2 / 3 | 5 / 8 | Win with ≥ target × mult |
-| `games_played` | 4 / 6 | 4 / 6 | Play N rounds at min bet+ |
-| `flawless` | 1 | 8 | No losses this floor (fails on any loss) |
-| `win_count` | 2 / 4 | 4 / 6 | N wins (losses OK) |
-| `big_win` | 10× / 30× min bet | 5 / 8 | Net profit in one round |
+Each variant also sets a **min-bet multiple** (`minBetMult`): the bets that count must be at least that many × the floor's min bet. Higher multiples pay more. Pool: `MISSION_POOL` in `lib/survival/missions.ts` (50 variants).
+
+| Type | Targets | Min-bet multiples | Base reward (sparks) | Description |
+|------|---------|-------------------|----------------------|-------------|
+| `win_streak` | 2 / 3 / 4 / 5 | 1–5× | 4–11 | Consecutive wins; loss resets |
+| `play_game` | 1 / 2 / 3 / 4 / 6 | 1–10× | 3–10 | Play the assigned floor game N times |
+| `min_multiplier` | 2 / 3 | 1–5× | 5–12 | Win with ≥ target × multiplier |
+| `games_played` | 3 / 5 / 8 | 1–5× | 3–9 | Play N rounds |
+| `flawless` | 1 | 1–3× | 8–10 | No losses this floor. **Only offered when ≥ 3 of the floor's games are low-variance** (`LOW_VARIANCE_GAME_IDS`) |
+| `win_count` | 2 / 4 | 1–5× | 4–10 | N wins (losses OK) |
+| `big_win` | 10× min bet | 1–3× | 5–7 | Net profit in one round (the 30× variant was removed) |
 
 **Reward scaling:** `reward = max(1, floor(base × (1 + (floor−1)×0.1) × diffMult))` where diffMult: normal **1**, hard **1.2**, nightmare **1.4**.
 
 **Example rewards (normal):** win_streak-2 → floor1 **4**, floor5 **5**, floor10 **7** sparks.
 
 ### Exclusivity
-Types `win_streak`, `min_multiplier`, `games_played`, `win_count`, `big_win`: only **one variant per type** per floor.
+Every type is exclusive (`EXCLUSIVE_TYPES`): at most **one variant per type** per floor.
 
 ### Interaction with shop / sparks
 - Rewards add to spark total on **floor transition** (with floor base sparks).
@@ -629,10 +635,9 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 ### Lobby vs generator
 - `lobby.tsx`: all games `availableSurvival: true` (18 playable).
 - `balance.ts` comment: lobby flags decoupled from generator (“Step 13 will flip lobby flags”).
-- `AI_HANDSHAKE.md` still lists some survival as locked — **doc drift**.
 
 ### Locked / disabled
-- **Hard / nightmare** difficulty disabled.
+- **Hard / nightmare** difficulty has no UI (runs start on Normal).
 - No games disabled in generator.
 
 ---
@@ -648,7 +653,7 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Single mission (sparks) | Sparks | Same | **Not in UI** (`rerollMission`) |
 | Entire shop | Sparks | `ceil((5+4n)×diffMult)` | **Not in UI** (`rerollShop`) |
 
-**Ticket grants:** start **3**, **+3** each `advanceFloor` / `continueToEndless` (`REROLL_TICKETS_PER_FLOOR`).
+**Ticket grants:** start **3**, **+2** each `advanceFloor` / `continueToEndless` (`REROLL_TICKETS_PER_FLOOR`).
 
 **Ticket purchase:** `purchaseLobbyRerollTicket` — **8** base sparks × difficulty.
 
@@ -662,8 +667,8 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Issue | Detail |
 |-------|--------|
 | **Slots ~104.8% RTP** | Base reel weights yield >1.0× EV — strongest grind game without perks. |
-| **Street cups ~66.7%** | 2× on 1/3 — weak unless missions need wins. |
-| **Keno 5-pick ~56%** | Low hit rate vs mult table. |
+| **Street cups ~83.3%** | 2.5× on 1/3 — still the weakest fixed-odds game. |
+| **Keno 5-pick ~87%** | Raised from ~56% by the new hit table. |
 | **Chicken race 90%** | Below fair 1.0 but above street cups. |
 | **Plinko / run-dice / over-under** | Tuned ~92–96% RTP band. |
 | **Skill / stop games** | Crash, mines, chicken-road, hilo, coin-flip streak — EV varies wildly with player policy. |
@@ -671,13 +676,13 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 ### Upgrade pricing
 | Issue | Detail |
 |-------|--------|
-| **Stacked boosts** | Max game boost **1.40×** × run **1.25×** = **1.75×** win payouts — large with high-RTP slots. |
-| **Epic perks same track depth** | Blackjack hole card L5 costs **72** sparks — informational edge, no level scaling. |
+| **Stacked boosts** | Max game boost **1.40×** × run **1.25×** would be 1.75×, but the combined multiplier is capped at **1.5×** (`RAW_PAYOUT_MULT_CAP`). |
+| **Epic perk pricing** | Blackjack Hole Card Reader L5 costs **72** sparks; levels now scale (L5: 3× blackjack, dealer-blackjack refund, any-hand double). |
 | **Opening Ticket** | Free first bet up to 30× min bet at L5 can be very strong on high floors. |
 
 ### Degenerate strategies
 - **Slots + payout boosts + free opener** for quota rush.
-- **Coin-flip Weighted Edge 75%** + streak cash-out rules.
+- **Coin-flip Weighted Edge** (max 65% after the nerf) + streak cash-out rules.
 - **Dev blessed mode** (navbar) trivializes all games — not production balance.
 
 ### Quota unreachable?
@@ -688,7 +693,7 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 - **Lobby tickets** flexible but **not** overpowered alone; no other actives in catalog.
 
 ### Spark starvation
-- Start **15**; L5 epic perk **72**; floor 1 income **~10** + missions **~4–10** each.
+- Start **20**; L5 epic perk **72**; floor 1 income **~10** + missions **~4–10** each.
 - **No meta persistence** — bad run = same start next run.
 - Empty shop pool if all families maxed — **no spark sink recovery** until next floor offers.
 
@@ -701,9 +706,8 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Active Items “Coming soon” | `active-items-panel.tsx` |
 | Spark reroll UI missing | `rerollShop`, `rerollMissions` |
 | `lastFloorGames` / invested guarantee | **Absent** |
-| Hard/nightmare disabled | `difficulty-dialog.tsx` |
-| Defeat copy “hit zero” vs code `bankroll < floorMinBet` | `survival-defeat-modal.tsx` vs `use-game-bankroll.ts` |
-| `AI_HANDSHAKE.md` survival locks outdated | docs |
+| Hard/nightmare have no UI; dialog unused | `difficulty-dialog.tsx` |
+| Defeat copy “hit zero” vs code `bankroll < floorMinBet` | `survival-defeat-panel.tsx` vs `use-game-bankroll.ts` |
 | Step 13 lobby flag comment | `balance.ts` |
 
 ---
@@ -713,9 +717,9 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Entity | Type | Value | Unit | Notes |
 |--------|------|-------|------|-------|
 | STARTING_BANKROLL | Constant | 1000 | chips | Run start |
-| STARTING_SPARKS | Constant | 15 | sparks | Run start; resets each run |
+| STARTING_SPARKS | Constant | 20 | sparks | Run start; resets each run |
 | STARTING_REROLL_TICKETS | Constant | 3 | tickets | Inventory |
-| REROLL_TICKETS_PER_FLOOR | Constant | 3 | tickets | On floor advance |
+| REROLL_TICKETS_PER_FLOOR | Constant | 2 | tickets | On floor advance |
 | MAX_FLOORS | Constant | 10 | floors | Standard run |
 | FLOOR_BET_LIMIT | Constant | 10 | bets/floor | Floor ends here |
 | GAMES_PER_FLOOR | Constant | 6 | games | Lobby offerings |
@@ -736,7 +740,7 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | sparkFloorMult | Formula | 1+(f−1)×0.2 | × | Floor 1→10: 1.0→2.8 |
 | Floor sparks base floor 1 | Reward | 10 | sparks | At quota |
 | Floor sparks base floor 10 | Reward | 78 | sparks | At quota |
-| Over-quota spark bonus | Formula | min(5,⌊(bank−quota)/500⌋) | sparks | |
+| Over-quota spark bonus | Formula | min(10,⌊(bank−quota)/(quota×1%)⌋) | sparks | |
 | SHOP_REROLL_BASE | Constant | 5 | sparks | Full shop reroll |
 | SHOP_REROLL_STEP | Constant | 4 | sparks | Per prior reroll |
 | MISSION_REROLL_BASE | Constant | 4 | sparks | |
@@ -754,7 +758,7 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | PROC_LEVEL_BONUS | Constant | 0.1125 | chance/level | |
 | PROC_MAX_CHANCE | Constant | 0.75 | chance | Cap |
 | COIN_BIAS L1–L5 | Perk | 58/63/67/71/75 | % win | |
-| CRASH_ZONE_PAD L1–L5 | Perk | 8/7/6/5/4 | % band | |
+| CRASH_CUSHION L1–L5 | Perk | 25/35/45/60/75 | % of bet | Crash below 3× |
 | MISSIONS_PER_FLOOR | Constant | 3 | missions | |
 | Mission win_streak 2 base | Mission | 4 | sparks | Scales with floor |
 | Mission flawless base | Mission | 8 | sparks | |
@@ -762,7 +766,9 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Blackjack natural | Game | 2.5 | × payout | |
 | Blackjack push | Game | 1 | × payout | |
 | Crash GROWTH_RATE | Game | 0.23 | /sec | |
-| Crash MIN_CRASH | Game | 1.05 | × | |
+| Crash START_MULT | Game | 0.75 | × | Curve start |
+| Crash HOUSE_EDGE | Game | 0.95 | factor | Crash point = 0.95 / U(0,1) |
+| Crash MIN_CRASH | Game | 0.80 | × | Cursed rounds only |
 | Crash MAX_CRASH | Game | 30 | × | |
 | Plinko ROWS | Game | 12 | rows | |
 | Plinko medium slot mults | Game | 8,5,3,1.5,1,0.8,0.5,0.8,1,1.5,3,5,8 | × | |
@@ -785,7 +791,7 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Dragon tower mults | Game | 1.40,1.96,2.74,3.84,5.38 | × | |
 | Chicken race win chance | Game | 25 | % | |
 | Chicken race payout | Game | 3.60 | × | |
-| Street cups win | Game | 2 | × | |
+| Street cups win | Game | 2.5 | × | |
 | Case tier EV | Game | ~0.94 | × | Per case open |
 | Case price mults | Game | 1,5,10,50,100 | × min bet | |
 | Poker royal flush | Game | 800 | × | |
@@ -793,7 +799,7 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | HiLo streak mult | Game | 2×1.5^(s−1) | × | |
 | HiLo Hot Streak proc | Perk | 25 | % | Extra bump |
 | Keno board/draw | Game | 25/5 | numbers | |
-| Keno hit mult 5 | Game | 10 | × | |
+| Keno hit mult 5 | Game | 100 | × | |
 | Coin flip streak | Game | 2^streak | × | |
 | Shop slots | Constant | 4 | slots | 2 game, 1 run, 1 active |
 | Shop game offers | Constant | 2 | slots | |
@@ -801,3 +807,18 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Freeplay bust threshold | Constant | ≤10 | chips | markBust |
 | Bust survival trigger | Rule | bankroll < floorMinBet | chips | After resolve |
 | Cursed/blessed | Dev | navbar | flag | Not production |
+
+## Tables
+
+Numbers live in `lib/tables/stakes.ts` and the engines.
+
+| Item | Value |
+|---|---|
+| Wallet | 10,000; refill to 10,000 when below 100 |
+| Buy-ins | 100 (Rookie bots) · 500 (Regular) · 2,000 (Shark) |
+| Prize pool | all buy-ins, no rake; 65/35 at 6 seats, 70/30 at 4 |
+| Hold'em | 1,500 stack; blinds 10/20, 15/30, 25/50, 50/100, 75/150, 100/200, 150/300, 200/400, 300/600, 500/1000, 800/1600, 1200/2400; up every 5 hands |
+| Liar's Dice | 5 dice each, 1s wild, opening bid not on 1s |
+| Turn timer | 30 s (stall = check / fold, or call liar) |
+
+Player EV with equal skill is 0 (no rake).

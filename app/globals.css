@@ -5,49 +5,47 @@
 @tailwind utilities;
 
 @layer base {
+  /* Floored — data-terminal tokens. One ground, cards a step darker, figures in
+     mono, and the felt green as the one accent: a 1px line on whatever is selected,
+     and the colour of a win. Red only for a loss, gold only for sparks. */
   :root {
-    --background: 220 8% 8%;
-    --foreground: 210 10% 96%;
-    --card: 220 12% 14%;
-    --card-foreground: 210 10% 96%;
-    --popover: 220 12% 16%;
-    --popover-foreground: 210 10% 96%;
-    --primary: 210 10% 96%;
-    --primary-foreground: 222.2 12% 8%;
-    --secondary: 220 12% 20%;
-    --secondary-foreground: 210 10% 96%;
-    --muted: 220 12% 22%;
-    --muted-foreground: 210 10% 70%;
-    --accent: 220 10% 24%;
-    --accent-foreground: 210 10% 96%;
-    --destructive: 0 50% 54%;
-    --destructive-foreground: 210 10% 96%;
-    --border: 220 10% 28%;
-    --input: 220 10% 18%;
-    --ring: 210 10% 96%;
-    --radius: 0.75rem;
-  }
+    --ground: #171719;
+    --surface: #131217;
+    --raised: #212023;
+    --line: #26252a;
+    --rule: #1d1c21;
+    --control: #3a3a3e;
+    --ink: #ffffff;
+    --soft: #bdbdc0;
+    --dim: #8a8c92;
+    --felt: #4fae84;
+    --felt-tint: #17271f;
+    --loss: #e5566f;
+    --loss-tint: #2c1a20;
+    --gold: #d9a441;
+    --gold-tint: #2a2416;
 
-  .dark {
-    --background: 220 8% 8%;
-    --foreground: 210 10% 96%;
-    --card: 220 12% 14%;
-    --card-foreground: 210 10% 96%;
-    --popover: 220 12% 16%;
-    --popover-foreground: 210 10% 96%;
-    --primary: 210 10% 96%;
-    --primary-foreground: 222.2 12% 8%;
-    --secondary: 220 12% 20%;
-    --secondary-foreground: 210 10% 96%;
-    --muted: 220 12% 22%;
-    --muted-foreground: 210 10% 70%;
-    --accent: 220 10% 24%;
-    --accent-foreground: 210 10% 96%;
-    --destructive: 0 50% 54%;
-    --destructive-foreground: 210 10% 96%;
-    --border: 220 10% 28%;
-    --input: 220 10% 18%;
-    --ring: 210 10% 96%;
+    /* shadcn roles, as bare "H S% L%" triples */
+    --background: 240 4% 9%;
+    --foreground: 0 0% 100%;
+    --card: 252 12% 8%;
+    --card-foreground: 0 0% 100%;
+    --popover: 260 4% 13%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 240 4% 9%;
+    --secondary: 260 4% 13%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 260 4% 13%;
+    --muted-foreground: 225 4% 56%;
+    --accent: 260 4% 13%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 350 73% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 255 6% 16%;
+    --input: 240 3% 24%;
+    --ring: 153 38% 50%;
+    --radius: 0.375rem;
   }
 
   /* Neon Auth reads these as raw color values (no hsl() wrapping applied on
@@ -81,35 +79,1664 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: dark;
+  }
   body {
     @apply min-h-screen bg-background text-foreground antialiased;
   }
+
+  ::selection {
+    background: var(--felt);
+    color: var(--ground);
+  }
+  :focus-visible {
+    outline: 1px solid var(--felt);
+    outline-offset: 2px;
+  }
 }
 
-@keyframes slot-spin {
+/* Neon Auth wraps the app in its own div; let it pass the screen height down so the
+   game boards fill tall monitors. Unlayered, because Neon's own stylesheet is too. */
+body > div.neon-auth-ui {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@layer components {
+  /* Every figure: mono, tabular, so columns of money stack digit for digit. */
+  .num {
+    font-family: var(--font-floored-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* The one selection mark: a 1px felt line exactly as wide as the label, on the
+     nearest edge. Set data-active on the element that carries the label. */
+  .mark-line {
+    position: relative;
+  }
+  .mark-line::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--felt);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .mark-line[data-active='true']::after,
+  .group:hover:not(:disabled) .mark-line::after,
+  .group:focus-visible .mark-line::after {
+    transform: scaleX(1);
+  }
+}
+
+/* ── Atmosphere ──────────────────────────────────────────────────────────────
+   A pool of lamplight over the table, tinted by the mode you are in, felt grain
+   on top, and the corners falling off into the dark. Everything here sits
+   behind the content and never under a game board (boards are opaque). */
+
+.ambience {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ambience-lamp {
+  position: absolute;
+  inset: -10% -10% auto -10%;
+  height: 80vh;
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+.ambience-lamp[data-on='true'] {
+  opacity: 1;
+}
+.ambience-lamp[data-mode='felt'] {
+  background: radial-gradient(ellipse 55% 60% at 50% 0%, rgba(79, 174, 132, 0.22), rgba(79, 174, 132, 0.05) 45%, transparent 75%);
+}
+.ambience-lamp[data-mode='gold'] {
+  background: radial-gradient(ellipse 55% 60% at 50% 0%, rgba(217, 164, 65, 0.2), rgba(217, 164, 65, 0.045) 45%, transparent 75%);
+}
+.ambience-lamp[data-mode='ember'] {
+  background: radial-gradient(ellipse 60% 65% at 50% 0%, rgba(229, 96, 80, 0.22), rgba(229, 86, 111, 0.05) 45%, transparent 75%);
+}
+.ambience-lamp[data-mode='steel'] {
+  background: radial-gradient(ellipse 55% 60% at 50% 0%, rgba(128, 150, 190, 0.18), rgba(128, 150, 190, 0.04) 45%, transparent 75%);
+}
+.ambience-lamp[data-mode='dim'] {
+  background: radial-gradient(ellipse 55% 60% at 50% 0%, rgba(255, 255, 255, 0.06), transparent 70%);
+}
+/* Felt grain: fractal noise, barely there. */
+.ambience-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.ambience-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 120% 90% at 50% 30%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+/* ── Glows ── */
+.mark-line::after {
+  box-shadow: 0 0 8px 0 rgba(79, 174, 132, 0.85);
+}
+.glow-felt {
+  text-shadow: 0 0 18px rgba(79, 174, 132, 0.45);
+}
+.glow-gold {
+  text-shadow: 0 0 18px rgba(217, 164, 65, 0.4);
+}
+.glow-loss {
+  text-shadow: 0 0 18px rgba(229, 86, 111, 0.4);
+}
+
+/* A game tile: lifts on hover, a spotlight follows the pointer, the suit
+   watermark wakes up, and the edge picks up a felt glow. */
+.tile {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 220ms ease,
+    background-color 220ms ease;
+}
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgba(79, 174, 132, 0.14), transparent 70%);
+  transition: opacity 220ms ease;
+}
+.tile:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(79, 174, 132, 0.35),
+    0 10px 30px -12px rgba(79, 174, 132, 0.45);
+}
+.tile:not(:disabled):hover::before {
+  opacity: 1;
+}
+.tile:not(:disabled):active {
+  transform: translateY(0) scale(0.99);
+}
+.tile-suit {
+  position: absolute;
+  right: -18px;
+  top: -30px;
+  z-index: -1;
+  font-size: 120px;
+  line-height: 1;
+  opacity: 0.035;
+  transform: rotate(-12deg);
+  transition:
+    opacity 300ms ease,
+    transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  user-select: none;
+}
+.tile:not(:disabled):hover .tile-suit {
+  opacity: 0.09;
+  transform: rotate(-4deg) translateY(6px);
+}
+
+/* Primary button: a felt glow when it is about to be pressed. */
+.btn-glow:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4), 0 0 26px -2px rgba(79, 174, 132, 0.55);
+}
+
+/* ── The table ──
+   Every game board sits on dark felt: a lamp-lit centre, a rim that falls into
+   shadow, and the same grain as the room. Boards that paint their own scene
+   simply cover it. */
+.table-felt {
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 75% 70% at 50% 42%, #18291f 0%, #13201a 45%, #0f1713 80%, #0c110f 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 0 90px rgba(0, 0, 0, 0.55);
+}
+.table-felt::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Casino chips: a coloured disc with six edge inserts and an inner ring.
+   --chip is the body colour, --chip-ink the label and inserts. */
+.chip {
+  position: relative;
+  border-radius: 9999px;
+  color: var(--chip-ink, #fff);
+  background:
+    radial-gradient(circle at 50% 50%, var(--chip) 0 55%, transparent 56%),
+    repeating-conic-gradient(var(--chip-ink, #fff) 0deg 18deg, var(--chip) 18deg 60deg);
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.25),
+    0 3px 0 rgba(0, 0, 0, 0.45),
+    0 6px 14px -4px rgba(0, 0, 0, 0.6);
+  transition:
+    transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 150ms ease,
+    opacity 150ms ease;
+}
+.chip::before {
+  content: '';
+  position: absolute;
+  inset: 22%;
+  border-radius: 9999px;
+  border: 1px dashed color-mix(in srgb, var(--chip-ink, #fff) 55%, transparent);
+  pointer-events: none;
+}
+.chip > span {
+  position: relative;
+}
+.chip:not(:disabled):hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.25),
+    0 6px 0 rgba(0, 0, 0, 0.45),
+    0 12px 22px -6px rgba(0, 0, 0, 0.7),
+    0 0 18px -2px color-mix(in srgb, var(--chip) 70%, transparent);
+}
+.chip:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+.chip:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* ── Playing cards (components/games/playing-card.tsx) ── */
+.pcard {
+  position: relative;
+  flex-shrink: 0;
+  width: calc(var(--card-h, 7rem) * 5 / 7);
+  height: var(--card-h, 7rem);
+  border-radius: calc(var(--card-h, 7rem) * 0.075);
+  user-select: none;
+}
+.pcard-face {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(var(--card-h, 7rem) * 0.065);
+  color: #1d1c21;
+  background: linear-gradient(160deg, #fdfaf3 0%, #f1ebde 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 2px 0 rgba(0, 0, 0, 0.25),
+    0 14px 28px -12px rgba(0, 0, 0, 0.8);
+}
+.pcard-red {
+  color: #c2344c;
+}
+.pcard-corner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: flex-start;
+  line-height: 0.9;
+}
+.pcard-corner-flip {
+  align-self: flex-end;
+  transform: rotate(180deg);
+}
+.pcard-rank {
+  font-weight: 700;
+  font-size: calc(var(--card-h, 7rem) * 0.15);
+  letter-spacing: -0.03em;
+}
+.pcard-suit {
+  font-size: calc(var(--card-h, 7rem) * 0.12);
+}
+.pcard-pip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--card-h, 7rem) * 0.38);
+  line-height: 1;
+}
+.pcard-back {
+  background:
+    repeating-linear-gradient(45deg, rgba(217, 164, 65, 0.16) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(-45deg, rgba(217, 164, 65, 0.16) 0 1px, transparent 1px 8px),
+    #15301f;
+  box-shadow:
+    inset 0 0 0 calc(var(--card-h, 7rem) * 0.045) #15301f,
+    inset 0 0 0 calc(var(--card-h, 7rem) * 0.045 + 1px) rgba(217, 164, 65, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 2px 0 rgba(0, 0, 0, 0.3),
+    0 14px 28px -12px rgba(0, 0, 0, 0.8);
+}
+.pcard-back-emblem {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--card-h, 7rem) * 0.16);
+  height: calc(var(--card-h, 7rem) * 0.16);
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #15301f;
+  box-shadow: 0 0 0 1px rgba(217, 164, 65, 0.7), 0 0 0 4px #15301f, 0 0 0 5px rgba(217, 164, 65, 0.35);
+}
+.pcard-slot {
+  border: 1.5px dashed rgba(255, 255, 255, 0.13);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Felt print: rules printed on the table in faded gold. */
+.felt-print {
+  color: rgba(217, 164, 65, 0.55);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+/* Plaque: a figure or picker panel on the felt, ruled in gold (casino trim).
+   Labels inside it use .felt-print; .gold-print is just its colour, for
+   text that keeps its own size. */
+.gold-print {
+  color: rgba(217, 164, 65, 0.55);
+}
+.plaque {
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3);
+}
+
+/* Board tile (components/games/board-tile.tsx): the grid games' tile, sized
+   by --tile. Face down it is a raised slab on the felt; face up it is tinted
+   by what it turned out to be. data-state picks the look. */
+.btile {
+  position: relative;
+  width: var(--tile, 3.5rem);
+  height: var(--tile, 3.5rem);
+  border-radius: calc(var(--tile, 3.5rem) * 0.2);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-floored-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: calc(var(--tile, 3.5rem) * 0.32);
+  color: var(--soft);
+  background: linear-gradient(180deg, #2a292d, #1f1e22);
+  /* Casino trim: every tile has the same dark outline (a border, so the
+     state looks below can keep their own glows) and a gold hairline. */
+  border: 2px solid #0a0806;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(217, 164, 65, 0.3),
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    0 6px 14px -8px rgba(0, 0, 0, 0.7);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btile[data-state='hidden'] {
+  cursor: pointer;
+}
+.btile[data-state='hidden']:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(79, 174, 132, 0.45),
+    0 3px 0 rgba(0, 0, 0, 0.35),
+    0 10px 20px -10px rgba(79, 174, 132, 0.55);
+}
+.btile[data-state='hidden']:not(:disabled):active {
+  transform: translateY(1px) scale(0.95);
+}
+.btile[data-state='idle'] {
+  cursor: default;
+  color: var(--dim);
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.18);
+}
+.btile[data-state='selected'] {
+  color: var(--ground);
+  background: var(--ink);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    0 0 18px -6px rgba(255, 255, 255, 0.6);
+}
+.btile[data-state='safe'] {
+  color: var(--felt);
+  background: var(--felt-tint);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(79, 174, 132, 0.75),
+    0 0 18px -6px rgba(79, 174, 132, 0.7);
+}
+.btile[data-state='hit'] {
+  color: var(--gold);
+  background: var(--gold-tint);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(217, 164, 65, 0.8),
+    0 0 18px -6px rgba(217, 164, 65, 0.75);
+}
+.btile[data-state='bad'] {
+  color: var(--loss);
+  background: var(--loss-tint);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(229, 86, 111, 0.85),
+    0 0 22px -4px rgba(229, 86, 111, 0.75);
+}
+.btile[data-state='dormant'] {
+  cursor: default;
+  color: var(--dim);
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.18);
+  opacity: 0.75;
+}
+.btile[data-state='dormant'].btile-bad {
+  color: rgba(229, 86, 111, 0.75);
+}
+.btile[data-state='dormant'].btile-drawn {
+  color: var(--ink);
+  opacity: 1;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.35);
+}
+.btile[data-state='idle'].btile-miss {
+  color: var(--soft);
+  box-shadow: none;
+  outline: 1.5px dashed rgba(255, 255, 255, 0.3);
+  outline-offset: -1.5px;
+}
+/* A pick waiting on the draw breathes. */
+@keyframes btile-wait {
+  50% {
+    opacity: 0.72;
+  }
+}
+.btile-wait {
+  animation: btile-wait 1.1s ease-in-out infinite;
+}
+.btile:disabled {
+  cursor: default;
+}
+.btile-mark {
+  width: 46%;
+  height: 46%;
+}
+
+/* Mines and Keno: the 5×5 field is sized from the board (width and height minus the
+   difficulty/figures row and the hint). On a short, wide board the row and
+   the hint stand beside the field so the tiles stay big enough to tap. */
+.grid5-board {
+  --tile: clamp(1.75rem, min(calc((100cqw - 2.5rem) / 5.56), calc((100cqh - 8.25rem) / 5.56)), 4.75rem);
+}
+/* On a portrait board the top row is as wide as the badges' band: start below it. */
+@container board (max-aspect-ratio: 4 / 5) {
+  .grid5-board {
+    --tile: clamp(1.75rem, min(calc((100cqw - 2.5rem) / 5.56), calc((100cqh - 12.5rem) / 5.56)), 4.75rem);
+    padding-top: 4.25rem !important;
+  }
+}
+@container board (max-height: 460px) and (min-aspect-ratio: 5 / 4) {
+  .grid5-board {
+    --tile: clamp(1.6rem, calc((100cqh - 1.5rem) / 5.56), 4.75rem) !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: clamp(1rem, 4cqw, 2.5rem);
+  }
+  .grid5-top {
+    grid-column: 1;
+    justify-self: end;
+    flex-direction: column;
+    align-items: flex-end;
+    height: auto;
+  }
+  .grid5-top > [role='radiogroup'] {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 1.1rem;
+  }
+  .grid5-grid {
+    grid-column: 2;
+  }
+  .grid5-hint {
+    grid-column: 3;
+    justify-self: start;
+    max-width: 13rem;
+    text-align: left;
+    font-size: 12px;
+  }
+}
+
+/* Coin Flip: the coin is sized from the board (height minus the streak, pick
+   and hint rows). On a short, wide board the rows stand beside the coin. */
+.cf-coin {
+  --coin: clamp(4.5rem, min(60cqw, calc(100cqh - 12.5rem)), 13rem);
+  width: var(--coin);
+  height: var(--coin);
+}
+.cf-coin .coin-face {
+  border-width: calc(var(--coin) * 0.045);
+  gap: calc(var(--coin) * 0.03);
+}
+.cf-coin .coin-mark {
+  font-size: calc(var(--coin) * 0.42);
+}
+.cf-coin .coin-name {
+  font-size: clamp(9px, calc(var(--coin) * 0.065), 12px);
+}
+.cf-side {
+  display: contents;
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 5 / 4) {
+  .cf-board {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: clamp(1rem, 5cqw, 3rem);
+    /* keep the badge band (back / bet badge, History) clear */
+    padding-top: 3.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .cf-coin {
+    grid-column: 2;
+  }
+  .cf-side {
+    grid-column: 3;
+    justify-self: start;
+    align-items: flex-start;
+  }
+  .cf-side .cf-hint {
+    justify-content: flex-start;
+    max-width: 13rem;
+  }
+  .cf-side .cf-hint p {
+    text-align: left;
+  }
+  .cf-coin {
+    --coin: clamp(4.5rem, calc(100cqh - 4.5rem), 13rem);
+  }
+  .cf-side {
+    display: flex;
+  }
+}
+
+/* Dragon Tower: five floors of three wide tiles, sized from the board's
+   height (and width on narrow phones). On a short, wide board the hint
+   stands beside the tower. */
+.dt-board {
+  --tile: clamp(1.5rem, min(calc((100cqh - 5.25rem) / 6.75), calc((100cqw - 3rem) / 5.85)), 3.6rem);
+}
+.dt-tile {
+  width: calc(var(--tile) * 1.3);
+}
+/* Casino trim: the tower stands in a thin wood-and-gold frame (the Slots
+   cabinet), floor numbers and multipliers in .gold-print. */
+.dt-frame {
+  padding: calc(var(--tile) * 0.06);
+  border: calc(var(--tile) * 0.08) solid transparent;
+  border-radius: calc(var(--tile) * 0.38);
+  background:
+    linear-gradient(rgba(10, 16, 13, 0.92), rgba(10, 16, 13, 0.92)) padding-box,
+    linear-gradient(#5a3b22, #3a2617 45%, #22160d) border-box;
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.45),
+    0 0 0 1px rgba(217, 164, 65, 0.55),
+    0 0 0 3px #0a0806,
+    0 14px 30px -14px rgba(0, 0, 0, 0.8);
+}
+.btile[data-state='hidden'].btile-hint,
+.btile[data-state='idle'].btile-hint {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1.5px rgba(79, 174, 132, 0.6),
+    0 0 16px -6px rgba(79, 174, 132, 0.7);
+}
+/* On a portrait board the tower is as wide as the badges' band: start below it. */
+@container board (max-aspect-ratio: 4 / 5) {
+  .dt-board {
+    --tile: clamp(1.5rem, min(calc((100cqh - 9.5rem) / 6.75), calc((100cqw - 3rem) / 5.85)), 3.6rem);
+    padding-top: 4.25rem !important;
+  }
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 5 / 4) {
+  .dt-board {
+    --tile: clamp(1.35rem, calc((100cqh - 1.75rem) / 6.75), 3.6rem) !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: clamp(1rem, 4cqw, 2.5rem);
+  }
+  .dt-tower {
+    grid-column: 2;
+  }
+  .dt-hint {
+    grid-column: 3;
+    justify-self: start;
+    max-width: 13rem;
+    text-align: left;
+    font-size: 12px;
+  }
+}
+
+/* Chicken Road: the start curb and ten lanes in one row, sized from the
+   board's width; on a portrait board they wrap into two rows. On a short,
+   wide board the figures and the hint share a row under the road, and the
+   road starts below the badge band. */
+.cr-board {
+  --tile: clamp(1.6rem, min(calc((100cqw - 2.5rem) / 12.5), calc((100cqh - 9rem) / 1.2)), 4.25rem);
+  --road-w: calc(var(--tile) * 12.4);
+}
+.cr-road {
+  max-width: var(--road-w);
+}
+.btile.cr-curb {
+  background: linear-gradient(#5a3b22, #3a2617 45%, #22160d);
+  box-shadow: inset 0 0 0 1.5px rgba(217, 164, 65, 0.55), 0 8px 18px -10px rgba(0, 0, 0, 0.75);
+}
+@keyframes cr-hop {
+  0% {
+    opacity: 0;
+    transform: translate(-90%, -10%) scale(0.85);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(-25%, -38%) scale(1.04);
+  }
+  100% {
+    transform: none;
+  }
+}
+.cr-hop {
+  animation: cr-hop var(--dur-med) var(--ease-out) both;
+}
+@container board (max-aspect-ratio: 1 / 1) {
+  .cr-board {
+    --tile: clamp(1.75rem, min(calc((100cqw - 2.5rem) / 6.8), calc((100cqh - 10rem) / 2.4)), 4.25rem);
+    --road-w: calc(var(--tile) * 6.7);
+    padding-top: 4.25rem !important;
+  }
+}
+@container board (max-height: 460px) and (min-aspect-ratio: 1 / 1) {
+  .cr-board {
+    --tile: clamp(1.6rem, min(calc((100cqw - 2.5rem) / 12.5), calc(100cqh - 9.75rem)), 4.25rem) !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    align-content: center;
+    column-gap: 1.25rem;
+    padding-top: 4.25rem !important;
+  }
+  .cr-road,
+  .cr-labels {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+  .cr-road {
+    grid-row: 1;
+  }
+  .cr-labels {
+    grid-row: 2;
+  }
+  .cr-stats {
+    grid-row: 3;
+    grid-column: 1;
+    justify-self: end;
+  }
+  .cr-hint {
+    grid-row: 3;
+    grid-column: 2;
+    justify-self: start;
+    max-width: 16rem;
+    text-align: left;
+    font-size: 12px;
+    min-height: 0;
+  }
+}
+
+/* Blackjack: on a short, wide board the hands sit side by side with the
+   table print between them, so the cards stay large instead of shrinking. */
+@container board (max-height: 430px) and (min-aspect-ratio: 9 / 5) {
+  .bj-table {
+    --card-h: clamp(3.5rem, calc(100cqh - 7rem), 8.5rem) !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 1fr auto;
+    align-items: center;
+    max-width: 56rem;
+    column-gap: 1.5rem;
+  }
+  .bj-table > .bj-hand {
+    justify-content: center;
+  }
+  .bj-table > .bj-print {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: 11rem;
+  }
+  .bj-table > .bj-hand-you {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .bj-table > .bj-hint {
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+  .bj-arc {
+    display: none;
+  }
+  .bj-print-pays {
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+}
+
+/* HiLo: on a short, wide board the guess buttons stand beside the cards and
+   the streak moves up between the bet badge and History. */
+@container board (max-height: 330px) and (min-aspect-ratio: 2 / 1) {
+  .hilo-board {
+    --card-h: clamp(4rem, calc(100cqh - 8.25rem), 8.75rem) !important;
+    display: grid !important;
+    grid-template-columns: auto minmax(13rem, 18rem);
+    grid-template-rows: 1fr auto;
+    justify-content: center;
+    align-items: center;
+    column-gap: 2.5rem;
+    padding-top: 4.25rem !important;
+  }
+  .hilo-streak {
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .hilo-cards {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .hilo-actions {
+    grid-column: 2;
+    grid-row: 1;
+    height: 5.75rem;
+  }
+  .hilo-actions > div {
+    flex-direction: column;
+  }
+  .hilo-actions > div > button {
+    flex: none;
+    height: 2.5rem;
+  }
+  .hilo-hint {
+    grid-column: 1 / -1;
+    min-height: 0;
+    justify-self: center;
+  }
+}
+
+/* Poker: on short boards the pay table spreads into columns and the
+   bottom hint (it repeats the hold line and the pay table) steps aside. */
+@container board (max-height: 420px) {
+  .poker-pays {
+    max-width: 44rem;
+    margin-top: 3rem;
+    padding-block: 0.5rem;
+  }
+  .poker-pays > dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    column-gap: 1.75rem;
+  }
+  .poker-pays > dl > div {
+    padding-block: 1px;
+  }
+  .poker-hint {
+    display: none;
+  }
+  .poker-hand {
+    --card-h: min(clamp(4rem, calc(100cqh - 8.5rem), 8.75rem), calc((100cqw - 4.5rem) * 0.28)) !important;
+  }
+}
+@container board (max-height: 260px) {
+  .poker-pays > .felt-print {
+    display: none;
+  }
+}
+
+/* Roulette board sizing. Stacked (wheel over table) on tall boards, side by
+   side on wide or short ones. The table's width sets its cell height, and the
+   wheel takes the height that is left. On short boards the bottom hint steps
+   aside: the line under the wheel already says the same. */
+.rl-layout {
+  --tw: min(560px, calc(100cqw - 1.5rem));
+  --cell-h: calc(var(--tw) / 13.15);
+  --out-h: 2.5rem;
+  --wheel: clamp(7rem, calc(100cqh - 3 * var(--cell-h) - 12.25rem), 300px);
+  margin-top: 2.5rem;
+  gap: 1rem;
+}
+.rl-wheel {
+  width: var(--wheel);
+}
+.rl-table {
+  width: var(--tw);
+}
+.rl-cell {
+  height: var(--cell-h);
+}
+.rl-out {
+  height: var(--out-h);
+}
+.rl-hint {
+  display: none;
+}
+@container board (min-height: 560px) {
+  .rl-layout {
+    --wheel: clamp(7rem, calc(100cqh - 3 * var(--cell-h) - 15.25rem), 300px);
+  }
+  .rl-hint {
+    display: flex;
+  }
+}
+@container board (min-width: 52rem) or (min-aspect-ratio: 8 / 5) {
+  .rl-layout {
+    --wheel: clamp(6rem, calc(100cqh - 7.5rem), 300px);
+    --tw: min(560px, calc(100cqw - var(--wheel) - 4rem));
+    --cell-h: min(calc(var(--tw) / 13.15), calc((100cqh - 9.25rem) / 3));
+    flex-direction: row;
+    justify-content: center;
+    gap: 2.5rem;
+  }
+}
+@container board (min-height: 560px) and ((min-width: 52rem) or (min-aspect-ratio: 8 / 5)) {
+  .rl-layout {
+    --cell-h: min(calc(var(--tw) / 13.15), calc((100cqh - 12.25rem) / 3));
+  }
+}
+
+/* Very short, wide boards: the readout sits beside the wheel, the outside
+   row slims down, and everything clears the bet badge and History. */
+@container board (max-height: 300px) and (min-aspect-ratio: 8 / 5) {
+  .rl-layout {
+    --wheel: clamp(5rem, calc(100cqh - 4.5rem), 300px);
+    --tw: min(560px, calc(100cqw - var(--wheel) - 12rem));
+    --cell-h: calc((100cqh - 7.75rem) / 3);
+    --out-h: 1.75rem;
+    margin-top: 3.25rem;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+  .rl-wheel-col {
+    flex-direction: row;
+  }
+}
+
+/* Fortune Wheel sizing: the wheel takes the height left after the colour
+   picks and the hint line, and never more than the width. On short boards the
+   hint steps aside (the status bar already says the same); on short wide ones
+   the picks stand beside the wheel in a 2 x 2 block. */
+.fw-layout {
+  --wheel: clamp(7rem, min(calc(100cqh - 9.5rem), calc(100cqw - 2rem)), 20rem);
+}
+.fw-wheel {
+  width: var(--wheel);
+}
+@container board (max-height: 420px) {
+  .fw-layout {
+    --wheel: clamp(5.5rem, min(calc(100cqh - 6.25rem), calc(100cqw - 2rem)), 20rem);
+  }
+  .fw-hint {
+    display: none;
+  }
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 3 / 2) {
+  .fw-layout {
+    --wheel: clamp(5.5rem, calc(100cqh - 2.5rem), 20rem);
+    flex-direction: row;
+    gap: 2rem;
+  }
+  .fw-picks {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+  }
+}
+.fw-slice {
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+/* The pointer flicks against the studs while the wheel turns. */
+@keyframes fw-tick {
   0%,
   100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-9deg);
+  }
+}
+.fw-tick {
+  transform-box: fill-box;
+  transform-origin: 50% 85%;
+  animation: fw-tick 140ms ease-out infinite;
+}
+
+/* Roulette: the ball rides the outer track, then drops into the pocket ring and settles. */
+@keyframes roulette-ball-drop {
+  0%,
+  62% {
+    transform: translateY(-85px);
+  }
+  80% {
+    transform: translateY(-58px);
+  }
+  88% {
+    transform: translateY(-64px);
+  }
+  100% {
+    transform: translateY(-61px);
+  }
+}
+.roulette-ball-drop {
+  animation: roulette-ball-drop 4000ms cubic-bezier(0.3, 0.6, 0.3, 1) both;
+}
+.roulette-wheel g {
+  transform-origin: 0 0;
+}
+
+/* ── Motion ── */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
     opacity: 1;
-    filter: blur(0px);
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-in {
+  animation: page-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes unit-in {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.unit {
+  transform-origin: bottom;
+  animation: unit-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes unit-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 4px 0 rgba(79, 174, 132, 0.5);
   }
   50% {
-    opacity: 0.45;
-    filter: blur(3px);
+    box-shadow: 0 0 12px 2px rgba(79, 174, 132, 0.85);
+  }
+}
+.unit-current {
+  animation:
+    unit-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    unit-pulse 2.2s ease-in-out 600ms infinite;
+  animation-delay: var(--d, 0ms), calc(var(--d, 0ms) + 600ms);
+}
+
+/* A figure that just changed: flashes the colour of the change, then settles. */
+@keyframes tick-up {
+  0% {
+    color: var(--felt);
+    text-shadow: 0 0 14px rgba(79, 174, 132, 0.9);
+    transform: translateY(-2px);
+  }
+  100% {
+    text-shadow: none;
+    transform: none;
+  }
+}
+@keyframes tick-down {
+  0% {
+    color: var(--loss);
+    text-shadow: 0 0 14px rgba(229, 86, 111, 0.9);
+    transform: translateY(2px);
+  }
+  100% {
+    text-shadow: none;
+    transform: none;
+  }
+}
+.tick-up {
+  display: inline-block;
+  animation: tick-up 900ms ease-out;
+}
+.tick-down {
+  display: inline-block;
+  animation: tick-down 900ms ease-out;
+}
+
+/* Quota met: the bar breathes. One bet from failing: it warns. */
+@keyframes bar-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 0 rgba(79, 174, 132, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 16px 2px rgba(79, 174, 132, 0.9);
+  }
+}
+@keyframes bar-danger {
+  0%,
+  100% {
+    box-shadow: 0 0 4px 0 rgba(229, 86, 111, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 14px 2px rgba(229, 86, 111, 0.85);
+  }
+}
+.bar-glow {
+  animation: bar-glow 2s ease-in-out infinite;
+}
+.bar-danger {
+  animation: bar-danger 1.2s ease-in-out infinite;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet-in {
+  animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.sheet-in li {
+  animation: rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.sheet-in li:nth-child(2) { animation-delay: 40ms; }
+.sheet-in li:nth-child(3) { animation-delay: 80ms; }
+.sheet-in li:nth-child(4) { animation-delay: 120ms; }
+.sheet-in li:nth-child(5) { animation-delay: 160ms; }
+.sheet-in li:nth-child(6) { animation-delay: 200ms; }
+
+@keyframes quote-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+.quote-in {
+  animation: quote-in 600ms ease both;
+}
+
+/* ── Board fit ──
+   Every game board (components/game-match-history.tsx) is a size container
+   named "board". Size cards, wheels, grids and gaps in cqh / cqw / cqmin with
+   clamp() floors so the board shrinks with the space it gets. Never scroll. */
+.board-fit {
+  container: board / size;
+}
+
+/* ── Game motion kit ──
+   One vocabulary for how every game board moves. Stagger with style --i (0, 1, 2…).
+   Each class is handled in the reduced-motion block below.
+   g-deal   arrives from the shoe/above with a slight arc          (decorative: off)
+   g-pop    pops into place                                          (decorative: off)
+   g-flip   turns face up                                            (result: quick fade)
+   g-win    felt glow pulses around a winner (needs position)        (pulse off, glow stays)
+   g-gold   the same in gold, for money and premium wins             (pulse off, glow stays)
+   g-dim    losers fall back instead of vanishing                    (kept, opacity only)
+   g-shake  a bust, a mine, a crash                                  (decorative: off)
+   g-lift   held/selected things rise with a spring (transition)     (no travel)
+   g-clear  leaves the table before the next round                   (decorative: off)
+   g-fade   generic fade in                                          (kept, opacity only) */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur-med: 280ms;
+  --dur-slow: 480ms;
+  --stagger: 80ms;
+}
+@keyframes g-deal {
+  from {
+    opacity: 0;
+    transform: translate(18px, -34px) rotate(6deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes g-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes g-flip {
+  from {
+    transform: perspective(700px) rotateY(90deg);
+  }
+  to {
+    transform: perspective(700px) rotateY(0deg);
+  }
+}
+@keyframes g-glow {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes g-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-6px) rotate(-1deg);
+  }
+  40% {
+    transform: translateX(5px) rotate(1deg);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+@keyframes g-clear {
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+@keyframes g-fade {
+  from {
+    opacity: 0;
+  }
+}
+.g-deal {
+  animation: g-deal var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+.g-pop {
+  animation: g-pop var(--dur-med) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+.g-flip {
+  animation: g-flip var(--dur-med) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+  backface-visibility: hidden;
+}
+.g-win::after,
+.g-gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 2px var(--felt),
+    0 0 28px -2px rgba(79, 174, 132, 0.9);
+  animation: g-glow 900ms var(--ease-out) both;
+}
+.g-gold::after {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 26px -4px rgba(217, 164, 65, 0.9);
+}
+.g-dim {
+  opacity: 0.4;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.g-shake {
+  animation: g-shake 420ms var(--ease-out) both;
+}
+.g-lift {
+  transition: transform var(--dur-med) var(--ease-spring);
+}
+.g-clear {
+  animation: g-clear var(--dur-med) ease-in both;
+}
+.g-fade {
+  animation: g-fade var(--dur-med) ease both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+/* Reduced motion. <html data-motion> is set before first paint from the
+   player's setting (Account → Settings → Motion), which defaults to the OS
+   preference. Entrances, pulses and travel stop; colours and static glows stay.
+   Game boards keep their own animations — they carry the result of a round. */
+:root[data-motion='reduced'] .mark-line::after,
+:root[data-motion='reduced'] .tile,
+:root[data-motion='reduced'] .tile-suit,
+:root[data-motion='reduced'] .ambience-lamp,
+:root[data-motion='reduced'] .m-instant {
+  transition: none;
+}
+/* The wheel still lands on the result, just without the long spin. */
+:root[data-motion='reduced'] .cb-roll {
+  animation-duration: 400ms !important;
+}
+:root[data-motion='reduced'] .roulette-anim,
+:root[data-motion='reduced'] .fw-anim {
+  transition-duration: 400ms !important;
+}
+:root[data-motion='reduced'] .rise,
+:root[data-motion='reduced'] .page-in,
+:root[data-motion='reduced'] .unit,
+:root[data-motion='reduced'] .unit-current,
+:root[data-motion='reduced'] .tick-up,
+:root[data-motion='reduced'] .tick-down,
+:root[data-motion='reduced'] .bar-glow,
+:root[data-motion='reduced'] .bar-danger,
+:root[data-motion='reduced'] .sheet-in,
+:root[data-motion='reduced'] .sheet-in li,
+:root[data-motion='reduced'] .quote-in,
+:root[data-motion='reduced'] .roulette-ball-drop,
+:root[data-motion='reduced'] .fw-tick,
+:root[data-motion='reduced'] .sl-strip,
+:root[data-motion='reduced'] .sl-land,
+:root[data-motion='reduced'] .cb-wait,
+:root[data-motion='reduced'] .animate-in,
+:root[data-motion='reduced'] .g-deal,
+:root[data-motion='reduced'] .g-pop,
+:root[data-motion='reduced'] .g-win::after,
+:root[data-motion='reduced'] .g-gold::after,
+:root[data-motion='reduced'] .g-shake,
+:root[data-motion='reduced'] .g-clear,
+:root[data-motion='reduced'] .btile-wait,
+:root[data-motion='reduced'] .cr-hop,
+:root[data-motion='reduced'] .cx-ready,
+:root[data-motion='reduced'] .cx-burst,
+:root[data-motion='reduced'] .crc-run,
+:root[data-motion='reduced'] .tb-ring circle,
+:root[data-motion='reduced'] .animate-out {
+  animation: none;
+}
+/* A result still has to read: flips become a quick fade. */
+/* The marker still travels to the roll, faster. */
+:root[data-motion='reduced'] .ou-marker {
+  transition-duration: 300ms !important;
+}
+:root[data-motion='reduced'] .dice-rolling,
+:root[data-motion='reduced'] .dice-landing,
+/* The cups still travel between slots and lift; no overshoot or hover hop. */
+:root[data-motion='reduced'] .sc-body,
+:root[data-motion='reduced'] .sc-prize {
+  transition-timing-function: var(--ease-out);
+}
+:root[data-motion='reduced'] .sc-cup[data-tone='pickable']:hover .sc-body {
+  transform: none;
+}
+:root[data-motion='reduced'] .coin-landing {
+  animation: none;
+}
+/* The coin still turns to its result at the same moment, as a quick swap. */
+:root[data-motion='reduced'] .coin-spinning {
+  animation: coin-swap 400ms linear 1100ms both;
+}
+@keyframes coin-swap {
+  0%,
+  50% {
+    opacity: 1;
+    transform: perspective(560px) rotateY(var(--coin-spin-from, 0deg));
+  }
+  50.01% {
+    opacity: 0.2;
+    transform: perspective(560px) rotateY(var(--coin-spin-end, 0deg));
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(560px) rotateY(var(--coin-spin-end, 0deg));
+  }
+}
+:root[data-motion='reduced'] .g-flip {
+  animation: g-fade 150ms ease both;
+}
+/* Things that travel on hover or press stay put. */
+:root[data-motion='reduced'] .tile:not(:disabled):hover,
+:root[data-motion='reduced'] .tile:not(:disabled):active,
+:root[data-motion='reduced'] .m-still,
+:root[data-motion='reduced'] .g-lift,
+:root[data-motion='reduced'] .chip:not(:disabled):hover,
+:root[data-motion='reduced'] .chip:not(:disabled):active,
+:root[data-motion='reduced'] .m-still:hover,
+:root[data-motion='reduced'] .m-still:active,
+:root[data-motion='reduced'] .group:hover .m-still {
+  transform: none !important;
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+}
+:root[data-motion='reduced'] .tile:not(:disabled):hover .tile-suit {
+  transform: rotate(-12deg);
+}
+
+/* Slots: a wooden cabinet with a gold frame, three ivory reels behind glass and
+   a gold payline. Reels take the height left after the pay table; the hint
+   (the status bar says the same) shows only on tall boards, and on short wide ones the pay table
+   stands beside the cabinet. */
+.sl-layout {
+  --reel-h: clamp(4.5rem, min(calc(100cqh - 14rem), calc((100cqw - 4rem) / 3 / 0.82)), 9.5rem);
+  max-width: 26rem;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.sl-cabinet {
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  background: linear-gradient(#3a2617, #22160d);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.55),
+    inset 0 0 0 4px #22160d,
+    inset 0 0 0 5px rgba(217, 164, 65, 0.3),
+    0 18px 36px -12px rgba(0, 0, 0, 0.7);
+}
+.sl-reel {
+  width: calc(var(--reel-h) * 0.82);
+  height: var(--reel-h);
+  background: #efe9dc;
+}
+.sl-cell {
+  width: 100%;
+  height: var(--reel-h);
+}
+.sl-glass {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 26%, transparent 74%, rgba(0, 0, 0, 0.55));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.sl-payline {
+  height: 2px;
+  transform: translateY(-50%);
+  background: rgba(217, 164, 65, 0.7);
+  box-shadow: 0 0 8px rgba(217, 164, 65, 0.5);
+}
+.sl-marker {
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translateY(-50%);
+  border-block: 6px solid transparent;
+}
+.sl-marker-l {
+  left: 0.15rem;
+  border-left: 8px solid var(--gold);
+}
+.sl-marker-r {
+  right: 0.15rem;
+  border-right: 8px solid var(--gold);
+}
+/* The strip runs down past the window; reels are out of step with each other. */
+@keyframes sl-spin {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.sl-strip {
+  animation: sl-spin 880ms linear infinite;
+  animation-delay: calc(var(--i, 0) * -290ms);
+}
+@keyframes sl-land {
+  0% {
+    transform: translateY(-22%);
+  }
+  65% {
+    transform: translateY(5%);
+  }
+  100% {
+    transform: none;
+  }
+}
+.sl-land {
+  animation: sl-land 360ms var(--ease-spring) both;
+}
+.sl-hint {
+  display: none;
+}
+@container board (min-height: 620px) {
+  .sl-layout {
+    --reel-h: clamp(4.5rem, min(calc(100cqh - 17rem), calc((100cqw - 4rem) / 3 / 0.82)), 9.5rem);
+  }
+  .sl-hint {
+    display: flex;
+  }
+}
+@container board (max-height: 520px) {
+  .sl-layout {
+    --reel-h: clamp(3.75rem, min(calc(100cqh - 13.5rem), calc((100cqw - 4rem) / 3 / 0.82)), 9.5rem);
+  }
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 3 / 2) {
+  .sl-layout {
+    --reel-h: clamp(3.75rem, calc(100cqh - 6.5rem), 9rem);
+    flex-direction: row;
+    align-items: center;
+    max-width: none;
+    width: auto;
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .sl-pays {
+    width: 19rem;
+  }
+}
+@container board (max-height: 260px) {
+  .sl-pays-title {
+    display: none;
   }
 }
 
-.slot-reel-spinning {
-  animation: slot-spin 0.12s linear infinite;
-}
 
-@keyframes slot-land {
-  0%   { transform: translateY(-6px) scale(1.08); }
-  60%  { transform: translateY(2px)  scale(0.96); }
-  100% { transform: translateY(0)    scale(1);    }
+/* Case Battles: drawn cases on the felt, then a duel of two sides. Each item has
+   its own drawn icon (item-icons.tsx) in its rarity colour (common dim →
+   uncommon soft → rare felt → epic and legendary gold). While a case opens, a
+   reel of its items slows to a stop on the result under a gold marker (cb-roll). Tall boards: two columns of rows; short
+   boards: two lanes of square tiles (names live in the tile title). */
+.cb-r-common {
+  --rar: var(--dim);
 }
-
-.slot-reel-landing {
-  animation: slot-land 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.cb-r-uncommon {
+  --rar: var(--soft);
+}
+.cb-r-rare {
+  --rar: var(--felt);
+}
+.cb-r-epic,
+.cb-r-legendary {
+  --rar: var(--gold);
+}
+.cb-gem {
+  color: var(--rar, var(--dim));
+}
+.cb-r-legendary .cb-gem {
+  filter: drop-shadow(0 0 6px rgba(217, 164, 65, 0.6));
+}
+.cb-pick {
+  --case: clamp(2.6rem, min(calc((100cqh - 11.5rem) / 0.8), calc((100cqw - 3rem) / 5.6)), 7rem);
+  width: min(100%, calc(var(--case) * 5 + 8rem));
+  margin-top: 2.25rem;
+}
+.cb-case {
+  width: var(--case);
+  height: calc(var(--case) * 0.8);
+}
+.cb-duel {
+  --slot-h: clamp(2rem, calc((100cqh - 11rem) / 5), 3.4rem);
+  width: min(100%, 36rem);
+  margin-top: 2.25rem;
+}
+.cb-slot {
+  height: var(--slot-h);
+  border-color: var(--line);
+  background: var(--surface);
+}
+.cb-slot-shown {
+  border-color: color-mix(in srgb, var(--rar) 55%, var(--line));
+  background: color-mix(in srgb, var(--rar) 9%, var(--surface));
+}
+.cb-r-legendary.cb-slot-shown {
+  background: var(--gold-tint);
+}
+.cb-slot-open {
+  border-color: var(--gold);
+}
+.cb-slot .cb-icon {
+  width: calc(var(--slot-h) * 0.62);
+  height: calc(var(--slot-h) * 0.62);
+}
+/* Casino trim: the case column and both sides stand on .plaque panels; on a
+   narrow board the panels go so the item names keep their width. */
+@container board (max-width: 480px) {
+  .cb-duel .plaque {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+}
+.cb-tile-value {
+  display: none;
+}
+/* Case markers: a column between the sides on tall boards (one per row, since
+   both sides open the same case), a corner tag on each tile on short boards. */
+.cb-case-row {
+  height: var(--slot-h);
+}
+.cb-case-mark {
+  width: clamp(1rem, calc(var(--slot-h) * 0.55), 1.6rem);
+  height: auto;
+}
+.cb-tag {
+  display: none;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(var(--slot-h) * 0.3);
+  height: auto;
+}
+/* The opening reel: the case's items in a row, centred cell by cell under the
+   marker, decelerating from --from cells to --to cells (the result). */
+.cb-slot {
+  --cell: calc(var(--slot-h) * 0.62 + 0.5rem);
+}
+.cb-roll {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  transform: translateX(calc(var(--to) * var(--cell)));
+  animation: cb-roll var(--roll, 1150ms) cubic-bezier(0.12, 0.72, 0.18, 1) both;
+}
+@keyframes cb-roll {
+  from {
+    transform: translateX(calc(var(--from) * var(--cell)));
+  }
+}
+.cb-cell {
+  display: flex;
+  width: var(--cell);
+  flex-shrink: 0;
+  justify-content: center;
+}
+.cb-marker {
+  width: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(217, 164, 65, 0.7);
+}
+@keyframes cb-wait {
+  50% {
+    opacity: 0.45;
+  }
+}
+.cb-wait {
+  animation: cb-wait 1.1s ease-in-out infinite;
+}
+@container board (max-height: 300px) {
+  .cb-pick-title {
+    display: none;
+  }
+  .cb-pick {
+    --case: clamp(2.4rem, min(calc((100cqh - 9.75rem) / 0.8), calc((100cqw - 3rem) / 5.6)), 6rem);
+    margin-top: 2.75rem;
+  }
+}
+/* Short boards: each side is a lane — label, five square tiles, total. */
+@container board (max-height: 360px) {
+  .cb-duel {
+    --slot-h: clamp(2.3rem, min(calc((100cqh - 6.25rem) / 2.2), calc((100cqw - 11rem) / 5.5)), 4.25rem);
+    flex-direction: column;
+    width: auto;
+    gap: 0.4rem;
+    margin-top: 3rem;
+  }
+  .cb-side {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .cb-items {
+    flex-direction: row;
+    gap: 0.35rem;
+  }
+  .cb-head {
+    width: 2.5rem;
+    text-align: left;
+  }
+  .cb-total {
+    width: 4.25rem;
+    border-top: 0;
+    border-left: 2px solid var(--line);
+    margin: 0;
+    padding: 0 0 0 0.4rem;
+  }
+  .cb-slot {
+    width: var(--slot-h);
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.15rem;
+  }
+  .cb-slot {
+    --cell: calc(var(--slot-h) * 0.5 + 0.3rem);
+  }
+  .cb-slot .cb-icon {
+    width: calc(var(--slot-h) * 0.5);
+    height: calc(var(--slot-h) * 0.5);
+  }
+  .cb-row-text {
+    display: none;
+  }
+  .cb-tile-value {
+    display: block;
+  }
+  .cb-cases {
+    display: none;
+  }
+  .cb-tag {
+    display: block;
+  }
 }
 
 @keyframes dice-shake {
@@ -201,10 +1828,10 @@
   border-radius: 9999px;
   background: linear-gradient(
     180deg,
-    #fbbf24 0%,
-    #b45309 42%,
-    #92400e 58%,
-    #fbbf24 100%
+    #f2d48f 0%,
+    #a87a2e 42%,
+    #8a6224 58%,
+    #d9a441 100%
   );
   transform: translateZ(-4px);
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.22);
@@ -226,22 +1853,22 @@
 
 .coin-head {
   color: #713f12;
-  border-color: #facc15;
+  border-color: #d9a441;
   background:
     radial-gradient(circle at 38% 28%, rgba(254, 249, 195, 0.9), transparent 24%),
     repeating-radial-gradient(circle, rgba(120, 53, 15, 0.18) 0 2px, transparent 2px 10px),
-    linear-gradient(145deg, #fde047 0%, #f59e0b 58%, #854d0e 100%);
+    linear-gradient(145deg, #f2d48f 0%, #d9a441 58%, #8a6224 100%);
   box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.16), inset 0 -18px 26px rgba(113, 63, 18, 0.3);
   transform: rotateY(0deg) translateZ(4px);
 }
 
 .coin-tail {
-  color: #18181b;
-  border-color: #e4e4e7;
+  color: #30291d;
+  border-color: #a87a2e;
   background:
     radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 0.92), transparent 24%),
     repeating-linear-gradient(135deg, rgba(63, 63, 70, 0.18) 0 3px, transparent 3px 12px),
-    linear-gradient(145deg, #fafafa 0%, #a1a1aa 58%, #3f3f46 100%);
+    linear-gradient(145deg, #fbfaf6 0%, #e7e4dc 58%, #cfcbc1 100%);
   box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.18), inset 0 -18px 26px rgba(24, 24, 27, 0.28);
   transform: rotateY(180deg) translateZ(4px);
 }
@@ -265,21 +1892,599 @@
   text-transform: uppercase;
 }
 
-@keyframes case-item-suspense {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);   transform: scale(1); }
-  50%       { box-shadow: 0 0 22px 5px rgba(234, 179, 8, 0.38); transform: scale(1.025); }
+/* Over-Under: the bar and figures shrink with the board; on a short board the
+   column starts below the badge band and the hint (a repeat of the figures)
+   is dropped. */
+.ou-bar {
+  height: clamp(2.75rem, 15cqh, 3.75rem);
+}
+/* The rail is the Slots cabinet's wood and gold; the track inside uses the
+   Roulette table's green and red, ruled with gold ticks every 10. */
+.ou-rail {
+  padding: clamp(0.3rem, 1.2cqh, 0.45rem);
+  background: linear-gradient(#5a3b22, #3a2617 45%, #22160d);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.55),
+    inset 0 1px 0 rgba(255, 220, 160, 0.18),
+    0 0 0 2px #0a0806,
+    0 18px 36px -12px rgba(0, 0, 0, 0.75);
+}
+.ou-track {
+  background: #a92b42;
+  box-shadow:
+    0 0 0 1px rgba(217, 164, 65, 0.6),
+    inset 0 0 0 2px #0a0806,
+    inset 0 6px 10px -4px rgba(0, 0, 0, 0.55),
+    inset 0 -4px 8px -4px rgba(0, 0, 0, 0.45);
+}
+.ou-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    rgba(217, 164, 65, 0.75) 0 18%,
+    transparent 18% 82%,
+    rgba(217, 164, 65, 0.75) 82%
+  );
+}
+.ou-label {
+  color: #f4f1ea;
+  opacity: 0.85;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+/* The handle: a brass lever with grip grooves, standing proud of the rail. */
+.ou-lever {
+  width: clamp(0.85rem, 2.6cqh, 1.1rem);
+  height: 135%;
+  border-radius: 9999px;
+  background:
+    repeating-linear-gradient(transparent 0 4px, rgba(42, 26, 15, 0.45) 4px 5px) center / 45% 40% no-repeat,
+    linear-gradient(90deg, #a87a2e, #f2d48f 45%, #d9a441 60%, #8a6224);
+  box-shadow:
+    0 0 0 1.5px #2a1a0f,
+    0 4px 10px rgba(0, 0, 0, 0.6);
+}
+/* The roll marker: the Roulette ivory ball, lit by the outcome when it stops. */
+.ou-ball {
+  height: 62%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #e7e4dc 55%, #b9b6ae);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 3px 6px rgba(0, 0, 0, 0.55);
+}
+.ou-ball[data-tone='win'] {
+  box-shadow: 0 0 0 2px var(--felt), 0 0 16px 3px rgba(79, 174, 132, 0.75);
+}
+.ou-ball[data-tone='loss'] {
+  box-shadow: 0 0 0 2px var(--loss), 0 0 16px 3px rgba(229, 86, 111, 0.75);
+}
+@container board (max-height: 340px) {
+  .ou-board {
+    padding-top: 3.6rem;
+    gap: 0.4rem !important;
+  }
+  .ou-stats p:last-child {
+    font-size: 1.25rem;
+  }
+  .ou-hint {
+    display: none !important;
+  }
 }
 
-.case-item-suspense {
-  animation: case-item-suspense 0.52s ease-in-out infinite;
+/* Crash: the curve is drawn on a felt-print grid that fills the board below
+   the multiplier. The tip is a lit dot riding the curve; a crash leaves a
+   burst and shakes the chart. On a short board the hint goes (the figure and
+   the dock already say it) and the figure shrinks. */
+.cx-mult {
+  font-size: clamp(2.25rem, 17cqh, 5.5rem);
+}
+.cx-figure {
+  min-height: clamp(3.5rem, 24cqh, 7.5rem);
+}
+.cx-tip {
+  box-shadow:
+    0 0 0 3px rgba(0, 0, 0, 0.35),
+    0 0 14px 2px currentColor;
+}
+.cx-chart {
+  overflow: hidden;
+  border: 1px solid rgba(217, 164, 65, 0.55);
+  border-radius: 0.8rem;
+  background: linear-gradient(#5a3b22, #3a2617 45%, #22160d);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.25), 0 18px 36px -12px rgba(0, 0, 0, 0.75);
+}
+.cx-ready {
+  animation: cx-ready 1.6s ease-in-out infinite;
+}
+@keyframes cx-ready {
+  50% {
+    opacity: 0.35;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+}
+.cx-burst {
+  animation: cx-burst var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes cx-burst {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(-30deg);
+  }
+}
+.cx-line {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+@container board (max-aspect-ratio: 1/1) {
+  .cx-board {
+    padding-top: 3.4rem;
+  }
+}
+@container board (max-height: 360px) {
+  .cx-hint {
+    display: none;
+  }
+  .cx-figure {
+    min-height: 0;
+    padding-bottom: 0.25rem;
+  }
 }
 
-@keyframes case-item-reveal {
-  0%   { opacity: 0; transform: scale(0.65); filter: brightness(2.8); }
-  55%  { transform: scale(1.1); filter: brightness(1.15); }
-  100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+/* Chicken Race: four lanes on the felt, sized from the board (--lane). A gate
+   with the bib and name, then the track: a faint lane mark and a chequered
+   finish. The runner layer is the track minus one token, moved by transform
+   on the game's own 90 ms tick; the chicken bobs while it runs. */
+.crc-board {
+  --lane: clamp(1.75rem, calc((100cqh - 9.75rem) / 4.4), 4.25rem);
+}
+.crc-lane {
+  height: var(--lane);
+}
+/* Casino trim: the lanes sit in the Over-Under wood-and-gold rail, each
+   resting lane edged with a gold hairline. */
+.crc-rail {
+  padding: clamp(0.15rem, 0.8cqh, 0.3rem);
+  border: clamp(0.2rem, 0.9cqh, 0.35rem) solid transparent;
+  background:
+    linear-gradient(rgba(10, 16, 13, 0.92), rgba(10, 16, 13, 0.92)) padding-box,
+    linear-gradient(#5a3b22, #3a2617 45%, #22160d) border-box;
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.45),
+    0 0 0 1px rgba(217, 164, 65, 0.55),
+    0 0 0 3px #0a0806,
+    0 18px 36px -12px rgba(0, 0, 0, 0.75);
+}
+.crc-lane-idle {
+  border-color: rgba(217, 164, 65, 0.3);
+  background-color: rgba(12, 17, 15, 0.92);
+}
+.crc-gate {
+  width: clamp(7rem, 30cqw, 10rem);
+}
+.crc-bib {
+  width: min(calc(var(--lane) * 0.5), 1.6rem);
+  height: min(calc(var(--lane) * 0.5), 1.6rem);
+  font-size: min(calc(var(--lane) * 0.27), 0.85rem);
+}
+.crc-lanemark {
+  border-top: 1px dashed rgba(217, 164, 65, 0.16);
+}
+.crc-finish {
+  width: 8px;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.55) 0 25%, rgba(0, 0, 0, 0.55) 0 50%) 0 0 / 8px 8px;
+  opacity: 0.7;
+}
+.crc-runner {
+  right: calc(var(--lane) * 0.85 + 8px);
+  transition: transform 90ms linear;
+}
+.crc-token {
+  width: calc(var(--lane) * 0.85);
+  height: 100%;
+  padding: calc(var(--lane) * 0.06) 0;
+}
+.crc-run {
+  animation: crc-run 220ms ease-in-out infinite alternate;
+}
+@keyframes crc-run {
+  to {
+    transform: translateY(-9%) rotate(-5deg);
+  }
+}
+@container board (max-height: 380px) {
+  .crc-board {
+    --lane: clamp(1.4rem, calc((100cqh - 5.5rem) / 4.4), 3.6rem);
+    margin-top: 0.5rem;
+  }
+  .crc-label,
+  .crc-hint {
+    display: none;
+  }
 }
 
-.case-item-reveal {
-  animation: case-item-reveal 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+/* Plinko: brass pegs and payout buckets drawn on the felt (components/
+   plinko-board.tsx). The bucket a ball lands in flashes in its own colour. */
+.pl-hit {
+  animation: pl-hit 520ms var(--ease-out) both;
+}
+@keyframes pl-hit {
+  from {
+    opacity: 0.75;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Run Dice: ivory dice with drawn pips, sized by --die from the board. On a
+   short, wide board the dice stand beside the outcome map and figures. */
+.rd-board {
+  --die: clamp(2.5rem, min(18cqw, 15cqh), 4.75rem);
+}
+.rd-die {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  width: var(--die);
+  height: var(--die);
+  padding: calc(var(--die) * 0.14);
+  border-radius: calc(var(--die) * 0.2);
+  background: linear-gradient(150deg, #fbfaf6 0%, #e7e4dc 70%, #cfcbc1 100%);
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px -6px rgba(0, 0, 0, 0.55);
+}
+.rd-pip {
+  width: calc(var(--die) * 0.17);
+  height: calc(var(--die) * 0.17);
+  border-radius: 9999px;
+  background: radial-gradient(circle at 40% 35%, #3a3a3e, var(--ground));
+}
+.rd-die[data-tone='loss'] {
+  box-shadow:
+    0 0 0 2px var(--loss),
+    0 0 22px -4px rgba(229, 86, 111, 0.8),
+    0 10px 18px -6px rgba(0, 0, 0, 0.55);
+}
+/* The outcome map sits in a wood-and-gold frame (the Slots cabinet); fields
+   use the Roulette table's green, red and black. */
+.rd-layout {
+  background: linear-gradient(#3a2617, #22160d);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.55),
+    0 14px 30px -14px rgba(0, 0, 0, 0.8);
+}
+.rd-field {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(217, 164, 65, 0.25);
+}
+.rd-plaque {
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3);
+}
+/* Before the first roll: blank ivory dice waiting on the felt, a touch dimmed. */
+.rd-die-idle {
+  filter: brightness(0.82);
+}
+.rd-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--die);
+  height: var(--die);
+  border-width: 1.5px;
+  border-radius: calc(var(--die) * 0.2);
+  font-size: calc(var(--die) * 0.42);
+  font-weight: 600;
+}
+@container board (max-height: 340px) and (min-aspect-ratio: 3 / 2) {
+  .rd-board {
+    --die: clamp(2.25rem, calc((100cqh - 6rem) / 1.6), 4rem);
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 22rem);
+    grid-template-rows: auto auto;
+    align-content: center;
+    justify-content: center;
+    column-gap: clamp(1rem, 4cqw, 2.5rem);
+    row-gap: 0.5rem !important;
+    padding-top: 3rem;
+  }
+  .rd-dice {
+    grid-row: 1 / 3;
+  }
+  .rd-hint {
+    display: none !important;
+  }
+}
+
+/* Street Cups: three cups on the felt, sized by --cup from the board (the
+   lifted cup must stay below the badge band). Cups move between slots by
+   transform; the body lifts to show the crown or an empty spot. */
+.sc-stage {
+  --cup: clamp(3rem, min(25cqw, calc((100cqh - 5rem) / 2.1)), 6.5rem);
+  height: calc(var(--cup) * 2.05);
+  border-bottom: 0.55rem solid #3a2617;
+  border-radius: 0 0 0.75rem 0.75rem;
+  background: linear-gradient(180deg, transparent calc(100% - 0.55rem), #5a3b22 calc(100% - 0.55rem));
+  box-shadow: inset 0 -1px 0 rgba(217, 164, 65, 0.75), 0 8px 18px -12px rgba(0, 0, 0, 0.8);
+}
+.sc-slot {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  pointer-events: none;
+  transition: transform 280ms ease-in-out;
+}
+.sc-cup {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: var(--cup);
+  height: 100%;
+  translate: -50% 0;
+  pointer-events: auto;
+  border-radius: calc(var(--cup) * 0.15);
+}
+.sc-cup:disabled {
+  cursor: default;
+}
+.sc-prize {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--cup) * 0.12);
+  width: calc(var(--cup) * 0.5);
+  height: calc(var(--cup) * 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  opacity: 0;
+  transform: translateX(-50%) scale(0.5) translateY(8px);
+  transition:
+    opacity 220ms ease 140ms,
+    transform 260ms var(--ease-spring) 140ms;
+}
+.sc-cup[data-lifted='true'] .sc-prize {
+  opacity: 1;
+  transform: translateX(-50%);
+}
+.sc-empty {
+  width: 55%;
+  height: 40%;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.sc-body {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: transform 360ms var(--ease-spring);
+}
+.sc-cup[data-lifted='true'] .sc-body {
+  transform: translateY(calc(var(--cup) * -0.7));
+}
+.sc-body {
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.45));
+}
+.sc-knob {
+  width: 26%;
+  height: calc(var(--cup) * 0.12);
+  border-radius: 9999px 9999px 3px 3px;
+  background: linear-gradient(180deg, #6a6573, #3a3740);
+}
+/* Mouth down: narrow at the top, wide where it meets the felt, ribbed. */
+.sc-shell {
+  width: 100%;
+  height: calc(var(--cup) * 1.05);
+  clip-path: polygon(16% 0%, 84% 0%, 100% 100%, 0% 100%);
+  border-radius: 6px 6px 3px 3px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.4), transparent 28%, rgba(255, 255, 255, 0.1) 52%, rgba(0, 0, 0, 0.45)),
+    linear-gradient(180deg, transparent 0 84%, var(--sc-ring, #5b5763) 84% 92%, transparent 92%),
+    repeating-linear-gradient(180deg, transparent 0 20%, rgba(0, 0, 0, 0.2) 20% 23%),
+    linear-gradient(180deg, #4a4650, #2c2a31);
+}
+.sc-cup[data-tone='won'] .sc-body {
+  filter: drop-shadow(0 0 10px rgba(79, 174, 132, 0.75));
+}
+.sc-cup[data-tone='wrong'] .sc-body {
+  filter: drop-shadow(0 0 10px rgba(229, 86, 111, 0.7));
+}
+.sc-cup[data-tone='pickable'] {
+  --sc-ring: #77727f;
+  cursor: pointer;
+}
+.sc-cup[data-tone='pickable']:hover .sc-body {
+  transform: translateY(calc(var(--cup) * -0.06));
+}
+.sc-cup[data-tone='pickable']:hover {
+  --sc-ring: var(--felt);
+}
+.sc-cup[data-tone='won'] {
+  --sc-ring: var(--felt);
+}
+.sc-cup[data-tone='wrong'] {
+  --sc-ring: var(--loss);
+}
+
+
+/* ── Tables (components/tables/*) ──
+   Seats are a plate (avatar disc, name, stack) with a status line; the turn
+   timer drains round the avatar (tb-ring). Hold'em (hd-) and Liar's Dice (ld-)
+   lay the seats out as grid areas: s1… for bots, c for the centre, y for you.
+   The top 3.25rem stays clear for the board's corner buttons. */
+.tb-plate {
+  padding: 3px 12px 3px 3px;
+  background: rgba(8, 10, 9, 0.66);
+  box-shadow: inset 0 0 0 1px var(--line);
+  max-width: 100%;
+}
+.tb-plate-you {
+  box-shadow: inset 0 0 0 1px rgba(79, 174, 132, 0.45);
+}
+.tb-avatar {
+  width: 2.1rem;
+  height: 2.1rem;
+  background: var(--raised);
+  color: var(--soft);
+  box-shadow: inset 0 0 0 1px var(--control);
+}
+.tb-plate-you .tb-avatar {
+  color: var(--felt);
+  box-shadow: inset 0 0 0 1px var(--felt);
+}
+.tb-ring circle {
+  fill: none;
+  stroke: var(--felt);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  animation: tb-ring linear both;
+}
+@keyframes tb-ring {
+  to {
+    stroke-dashoffset: 100;
+  }
+}
+.tb-dealer {
+  width: 1rem;
+  height: 1rem;
+  background: var(--ink);
+  color: var(--ground);
+  font-size: 9px;
+  font-weight: 700;
+}
+.tb-chip {
+  width: 0.9rem;
+  height: 0.9rem;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+.tb-chip::before {
+  display: none;
+}
+.hd-slider {
+  accent-color: var(--felt);
+}
+
+.hd-table,
+.ld-table {
+  --card-h: clamp(2.2rem, 12cqh, 5.25rem);
+  --seat-card-h: clamp(1.4rem, 6.5cqh, 2.8rem);
+  --you-card-h: clamp(2.6rem, 16cqh, 6.25rem);
+  --die-s: clamp(0.9rem, min(4.5cqh, 4cqw), 1.6rem);
+  --die-l: clamp(1.8rem, min(9cqh, 12cqw), 3rem);
+  --die-you: clamp(1.6rem, min(9cqh, 11cqw), 3rem);
+  position: relative;
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  padding: 3.25rem 0.75rem 0.5rem;
+  gap: clamp(0.2rem, 1.4cqh, 0.75rem) 0.5rem;
+  align-items: center;
+  justify-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+}
+.hd-table[data-seats='6'] {
+  grid-template-areas: 's2 s3 s4' 's1 c s5' 'y y y';
+}
+.hd-table[data-seats='4'],
+.ld-table {
+  grid-template-areas: '. s2 .' 's1 c s3' 'y y y';
+}
+.hd-table[data-seats='2'],
+.ld-table[data-seats='2'] {
+  grid-template-areas: '. s1 .' '. c .' 'y y y';
+}
+/* The table's rail, drawn behind the centre. */
+.hd-oval {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 22%;
+  bottom: 24%;
+  border-radius: 9999px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.16),
+    inset 0 0 60px rgba(0, 0, 0, 0.35);
+}
+.hd-seat .tb-plate,
+.ld-seat .tb-plate {
+  max-width: 11rem;
+}
+.hd-you,
+.ld-you {
+  min-width: 0;
+}
+
+/* Liar's Dice cup: leather, mouth down, a gold rim, a dot per die. */
+.ld-cup {
+  width: calc(var(--die-s) * 3.4);
+  height: calc(var(--die-s) * 1.15);
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+  background: linear-gradient(#5a3a22, #2e1d10);
+  box-shadow: inset 0 -3px 0 rgba(217, 164, 65, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ld-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #e7e4dc;
+}
+.ld-miss {
+  opacity: 0.35;
+}
+.ld-face .rd-die {
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.14);
+}
+
+/* Narrow boards: the side seats join the top row, the centre gets the width. */
+@container board (max-width: 34rem) {
+  .hd-table[data-seats='6'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas: 's2 s3 s4' 's1 . s5' 'c c c' 'y y y';
+  }
+  .hd-table[data-seats='4'],
+  .ld-table {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 's1 s2 s3' 'c c c' 'y y y';
+  }
+  .tb-tag,
+  .hd-made {
+    display: none;
+  }
+  .hd-oval {
+    display: none;
+  }
+}
+/* Short boards: the top seats sit in the band between the corner buttons. */
+@container board (max-height: 380px) and (min-aspect-ratio: 8 / 5) {
+  .hd-table,
+  .ld-table {
+    padding: 0.5rem 6.5rem 0.4rem 9rem;
+    gap: 0.15rem 0.5rem;
+  }
+  .hd-print,
+  .ld-print {
+    display: none;
+  }
 }

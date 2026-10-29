@@ -37,3 +37,5 @@ yarn-error.log*
 next-env.d.ts
 
 todo
+# design skill working files
+.taste-skill/

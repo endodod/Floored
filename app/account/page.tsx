@@ -3,11 +3,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth/client'
+import { LADDER_ENABLED } from '@/lib/features'
+import { useLadderStore } from '@/store/ladder-store'
+import { ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
-import { useSettingsStore } from '@/store/settings-store'
+import { useSettingsStore, type MotionPreference } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips, parseChips } from '@/utils/format'
 import { allPurchasedUpgradesForDev } from '@/lib/survival/upgrades-catalog'
+import { useDailyStore } from '@/store/daily-store'
+import { bestMultiplier, currentStreak, formatMultiplier } from '@/lib/daily/share'
+import { dailyDateKey } from '@/lib/daily/challenge'
+import { useHydrated } from '@/hooks/use-hydrated'
+import { Button } from '@/components/ui/button'
+import { PageTitle } from '@/components/ui/terminal'
 import {
   Dialog,
   DialogContent,
@@ -18,37 +27,58 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 
-const SECTION_TITLE = 'text-[10px] font-semibold uppercase tracking-wider mb-3'
+const MOTION_OPTIONS: { value: MotionPreference; label: string }[] = [
+  { value: 'system', label: 'Match system' },
+  { value: 'reduced', label: 'Reduced' },
+  { value: 'full', label: 'Full' },
+]
 
-function toggleTrack(on: boolean) {
-  return `relative h-4 w-7 rounded-full flex-shrink-0 transition-colors ${on ? 'bg-emerald-500' : 'bg-white/20'}`
-}
-function toggleDot(on: boolean) {
-  return `absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform duration-200 ${on ? 'translate-x-[13px]' : 'translate-x-0.5'}`
-}
-
-function Section({
-  border,
-  children,
-}: {
-  border: string
-  children: React.ReactNode
-}) {
+function Toggle({ on, label, note, onToggle }: { on: boolean; label: string; note?: string; onToggle: () => void }) {
   return (
-    <div className={`rounded-2xl border ${border} bg-zinc-900/60 p-5`}>
-      {children}
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className="flex w-full items-center justify-between gap-4 py-2.5 text-left"
+    >
+      <span className="text-[13px] text-ink">
+        {label}
+        {note && <span className="ml-1.5 text-dim">{note}</span>}
+      </span>
+      <span className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${on ? 'bg-felt shadow-[0_0_12px_rgba(79,174,132,0.7)]' : 'bg-control'}`}>
+        <span
+          className={`absolute top-0.5 h-3 w-3 rounded-full bg-ink transition-transform duration-200 ${on ? 'translate-x-[13px]' : 'translate-x-0.5'}`}
+        />
+      </span>
+    </button>
+  )
+}
+
+/** A settings section: its name and purpose on the left, its panel on the right. */
+function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="grid grid-cols-1 gap-4 border-t border-line py-8 first:border-t-0 first:pt-0 md:grid-cols-[280px_minmax(0,1fr)] md:gap-10">
+      <div>
+        <h2 className="text-base font-semibold text-ink">{title}</h2>
+        <p className="mt-1 text-[13px] leading-5 text-dim">{description}</p>
+      </div>
+      <div className="rounded-md bg-surface p-5">{children}</div>
+    </section>
   )
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-black/25 border border-white/5 px-3 py-2">
-      <p className="text-[10px] text-white/40 uppercase tracking-wide">{label}</p>
-      <p className="text-sm font-bold text-white tabular-nums">{value}</p>
+    <div className="flex items-baseline justify-between gap-4 py-2.5">
+      <dt className="text-[13px] text-dim">{label}</dt>
+      <dd className="num text-[14px] text-ink">{value}</dd>
     </div>
   )
 }
+
+const FIELD =
+  'h-[34px] min-w-0 flex-1 rounded-md border border-control bg-ground px-3 text-[13px] text-ink placeholder:text-dim outline-none focus:border-felt'
 
 interface ServerRunStats {
   highscore: number
@@ -75,7 +105,13 @@ export default function AccountPage() {
 
   const freeplayPeakBankroll = useFreeplayStore((s) => s.peakBankroll)
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
+  const hydrated = useHydrated()
+  const dailyHistory = useDailyStore((s) => s.history)
+  const dailiesPlayed = Object.keys(dailyHistory).length
+  const bestDaily = bestMultiplier(dailyHistory)
+  const ladder = ladderStats(useLadderStore((s) => s.history))
   const {
+    motion, setMotion,
     autoReBet, setAutoReBet,
     forceTie, setForceTie,
     showAllGames, setShowAllGames,
@@ -113,222 +149,204 @@ export default function AccountPage() {
   }, [devPassword, setDevModeUnlocked])
 
   return (
-    <div className="max-w-2xl mx-auto w-full space-y-5 py-2">
-      <div className="mb-2">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/50 hover:text-white/90 transition-colors mb-3"
-        >
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden>
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
-          </svg>
-          Home
-        </Link>
-        <h1 className="text-4xl sm:text-5xl font-black tracking-[0.06em] uppercase text-white leading-none">
-          Account
-        </h1>
-        <p className="text-white/30 text-[10px] tracking-[0.25em] uppercase mt-2">
-          Profile &middot; Stats &middot; Settings
-        </p>
-      </div>
+    <div className="mx-auto w-full max-w-[1152px] pb-12">
+      <PageTitle title="Account" sub="Your sign-in, your records across every mode, and settings." className="mb-8" />
 
-      <Section border="border-violet-900/50">
-        <p className={`${SECTION_TITLE} text-violet-300/70`}>Account</p>
+      <Section title="Sign-in" description="Optional. Signed in, your survival runs sync to your account.">
         {session.isPending ? (
-          <p className="text-sm text-white/50">Loading…</p>
+          <p className="text-[13px] text-dim">Checking your session…</p>
         ) : session.data ? (
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
+              <p className="truncate text-[14px] font-semibold text-ink">
                 {session.data.user.name || session.data.user.email}
               </p>
-              <p className="text-xs text-white/40 truncate">{session.data.user.email}</p>
+              <p className="truncate text-[13px] text-dim">{session.data.user.email}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setSignOutConfirmOpen(true)}
-              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
-            >
-              Sign Out
-            </button>
+            <Button variant="outline" size="sm" onClick={() => setSignOutConfirmOpen(true)}>
+              Sign out
+            </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <Link
-              href="/auth/sign-in"
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/sign-up"
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-900 hover:bg-white/90 transition-colors"
-            >
-              Sign Up
-            </Link>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[13px] text-soft">You are playing as a guest.</p>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/auth/sign-in">Sign in</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/auth/sign-up">Create account</Link>
+              </Button>
+            </div>
           </div>
         )}
       </Section>
 
-      <Section border="border-emerald-900/50">
-        <p className={`${SECTION_TITLE} text-emerald-300/70`}>Stats</p>
-        <div className="grid grid-cols-2 gap-3">
-          <Stat label="Peak Freeplay Bankroll" value={formatChips(freeplayPeakBankroll)} />
-          <Stat label="Freeplay Resets" value={String(freeplayResetCount)} />
-          <Stat
-            label="Survival Highscore"
-            value={`Floor ${serverStats ? serverStats.highscore : survivalHighscore}`}
-          />
-          <Stat
-            label="Survival Wins"
-            value={String(serverStats ? serverStats.wins : survivalWinCount)}
-          />
-        </div>
-        {session.data?.user && (
-          <p className="text-[10px] text-emerald-500/50 mt-3">
-            {serverStats
-              ? `Synced from your account · ${serverStats.totalRuns} run${serverStats.totalRuns === 1 ? '' : 's'} recorded`
-              : 'Loading synced stats…'}
-          </p>
-        )}
-      </Section>
-
-      <Section border="border-indigo-900/50">
-        <p className={`${SECTION_TITLE} text-indigo-300/70`}>Settings</p>
-        <button
-          type="button"
-          onClick={() => setAutoReBet(!autoReBet)}
-          className="flex w-full items-center justify-between gap-3 py-1.5 text-left"
-        >
-          <span className="text-sm text-white/80">Auto re-bet</span>
-          <div className={toggleTrack(autoReBet)}>
-            <div className={toggleDot(autoReBet)} />
-          </div>
-        </button>
-      </Section>
-
-      <Section border="border-yellow-900/40">
-        <div className="flex items-center justify-between mb-3">
-          <p className={`${SECTION_TITLE} mb-0 text-yellow-500/70`}>Dev Mode</p>
-          {devModeUnlocked && (
-            <button
-              type="button"
-              onClick={() => { setDevModeUnlocked(false); setForceTie(false); setShowAllGames(false); setCursed(false); setBlessed(false); setDevInfiniteBets(false) }}
-              className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
-            >
-              Lock
-            </button>
+      <Section
+        title="Records"
+        description={
+          session.data?.user
+            ? serverStats
+              ? `Survival figures synced from your account · ${serverStats.totalRuns} run${serverStats.totalRuns === 1 ? '' : 's'} recorded.`
+              : 'Loading your synced survival figures…'
+            : 'Kept in this browser. Sign in to keep survival runs across devices.'
+        }
+      >
+        <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 [&>div]:border-b [&>div]:border-rule">
+          <Stat label="Dailies played" value={hydrated ? String(dailiesPlayed) : '—'} />
+          <Stat label="Daily streak" value={hydrated ? `${currentStreak(dailyHistory, dailyDateKey())} days` : '—'} />
+          <Stat label="Best daily" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '—'} />
+          <Stat label="Peak freeplay balance" value={formatChips(freeplayPeakBankroll)} />
+          <Stat label="Freeplay resets" value={String(freeplayResetCount)} />
+          {LADDER_ENABLED && (
+            <>
+              <Stat label="Best ladder pot" value={hydrated && ladder.runs > 0 ? formatChips(ladder.bestPot) : '—'} />
+              <Stat label="Highest rung · tops" value={hydrated ? `${ladder.bestRung} · ${ladder.tops}` : '—'} />
+            </>
           )}
+          <Stat label="Survival best floor" value={String(serverStats ? serverStats.highscore : survivalHighscore)} />
+          <Stat label="Survival wins" value={String(serverStats ? serverStats.wins : survivalWinCount)} />
+        </dl>
+      </Section>
+
+      <Section title="Settings" description="How the tables behave between rounds, and how much the interface moves.">
+        <div className="flex flex-col divide-y divide-rule">
+          <Toggle on={autoReBet} label="Auto re-bet" note="repeat your last stake" onToggle={() => setAutoReBet(!autoReBet)} />
+          <div className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <span className="text-[13px] text-ink">
+              Motion
+              <span className="ml-1.5 text-dim">entrances, pulses and hover travel</span>
+            </span>
+            <div className="flex gap-4" role="radiogroup" aria-label="Motion">
+              {MOTION_OPTIONS.map((o) => {
+                const on = (hydrated ? motion : 'system') === o.value
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    data-active={on}
+                    onClick={() => setMotion(o.value)}
+                    className={`mark-line text-[13px] ${on ? 'text-ink' : 'text-dim hover:text-ink'}`}
+                  >
+                    {o.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
+        <p className="mt-2 text-xs leading-5 text-dim">
+          Reduced stops the interface&apos;s entrances, pulsing glows and hover movement. Game boards still animate
+          their rounds — that is how a result is shown.
+        </p>
+      </Section>
 
+      <Section title="Dev mode" description="Testing switches for the survival run. Locked behind a password.">
         {devModeUnlocked ? (
-          <div className="space-y-1">
-            <button
-              type="button"
-              onClick={() => setForceTie(!forceTie)}
-              className="flex w-full items-center justify-between gap-3 py-2 text-left"
-            >
-              <span className="text-sm text-white/80">Force tie <span className="text-white/30 text-xs">(HiLo)</span></span>
-              <div className={toggleTrack(forceTie)}><div className={toggleDot(forceTie)} /></div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAllGames(!showAllGames)}
-              className="flex w-full items-center justify-between gap-3 py-2 text-left"
-            >
-              <span className="text-sm text-white/80">All games <span className="text-white/30 text-xs">(survival)</span></span>
-              <div className={toggleTrack(showAllGames)}><div className={toggleDot(showAllGames)} /></div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setDevInfiniteBets(!devInfiniteBets)}
-              className="flex w-full items-center justify-between gap-3 py-2 text-left"
-            >
-              <span className="text-sm text-white/80">Infinite bets <span className="text-white/30 text-xs">(survival)</span></span>
-              <div className={toggleTrack(devInfiniteBets)}><div className={toggleDot(devInfiniteBets)} /></div>
-            </button>
+          <div className="flex flex-col divide-y divide-rule">
+            <Toggle on={forceTie} label="Force tie" note="HiLo, not in Daily" onToggle={() => setForceTie(!forceTie)} />
+            <Toggle on={showAllGames} label="All games" note="survival" onToggle={() => setShowAllGames(!showAllGames)} />
+            <Toggle on={devInfiniteBets} label="Infinite bets" note="survival" onToggle={() => setDevInfiniteBets(!devInfiniteBets)} />
 
-            <div className="flex w-full items-center justify-between gap-3 py-2">
-              <span className="text-sm text-white/80">Game mode</span>
-              <div className="relative flex h-5 w-16 shrink-0 rounded-full border border-white/10 bg-white/5 overflow-hidden">
-                <div
-                  className="absolute top-0 h-full w-1/3 rounded-full transition-all duration-200"
-                  style={{
-                    transform: `translateX(${cursed ? '0%' : blessed ? '200%' : '100%'})`,
-                    backgroundColor: cursed ? '#9333ea' : blessed ? '#10b981' : 'rgba(255,255,255,0.2)',
-                  }}
-                />
-                <button type="button" onClick={() => { setCursed(true); setBlessed(false) }} className={`relative z-10 flex-1 text-[10px] font-black transition-colors ${cursed ? 'text-white' : 'text-white/30 hover:text-white/60'}`}>C</button>
-                <button type="button" onClick={() => { setCursed(false); setBlessed(false) }} className={`relative z-10 flex-1 text-[10px] font-black transition-colors ${!cursed && !blessed ? 'text-white' : 'text-white/30 hover:text-white/60'}`}>N</button>
-                <button type="button" onClick={() => { setCursed(false); setBlessed(true) }} className={`relative z-10 flex-1 text-[10px] font-black transition-colors ${blessed ? 'text-white' : 'text-white/30 hover:text-white/60'}`}>B</button>
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <span className="text-[13px] text-ink">
+                Luck <span className="ml-1.5 text-dim">not in Daily</span>
+              </span>
+              <div className="flex gap-4" role="radiogroup" aria-label="Luck">
+                {[
+                  { key: 'cursed', label: 'Cursed', on: cursed, set: () => { setCursed(true); setBlessed(false) } },
+                  { key: 'normal', label: 'Normal', on: !cursed && !blessed, set: () => { setCursed(false); setBlessed(false) } },
+                  { key: 'blessed', label: 'Blessed', on: blessed, set: () => { setCursed(false); setBlessed(true) } },
+                ].map((o) => (
+                  <button
+                    key={o.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={o.on}
+                    data-active={o.on}
+                    onClick={o.set}
+                    className={`mark-line text-[13px] ${o.on ? 'text-ink' : 'text-dim hover:text-ink'}`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 py-2">
-              <span className="text-sm text-white/80 shrink-0">Bankroll</span>
+            <label className="flex items-center gap-3 py-2.5">
+              <span className="w-20 shrink-0 text-[13px] text-ink">Bankroll</span>
               <input
                 type="text"
                 value={devBankroll}
                 onChange={(e) => setDevBankroll(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { const n = parseChips(devBankroll); if (n !== null && n > 0) { setBankroll(n); setDevBankroll('') } } }}
                 placeholder={formatChips(bankroll)}
-                className="min-w-0 flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder-white/20 outline-none focus:border-white/30"
+                className={FIELD}
               />
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => { const n = parseChips(devBankroll); if (n !== null && n > 0) { setBankroll(n); setDevBankroll('') } }}
-                className="shrink-0 px-2 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/70 rounded transition-colors"
-              >Set</button>
-            </div>
+              >
+                Set
+              </Button>
+            </label>
 
-            <div className="flex items-center gap-1.5 py-2">
-              <span className="text-sm text-white/80 shrink-0">Sparks</span>
+            <label className="flex items-center gap-3 py-2.5">
+              <span className="w-20 shrink-0 text-[13px] text-ink">Sparks</span>
               <input
                 type="text"
                 value={devSparks}
                 onChange={(e) => setDevSparks(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { const n = parseChips(devSparks); if (n !== null && n >= 0) { setSparks(n); setDevSparks('') } } }}
                 placeholder={formatChips(sparks)}
-                className="min-w-0 flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder-white/20 outline-none focus:border-white/30"
+                className={FIELD}
               />
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => { const n = parseChips(devSparks); if (n !== null && n >= 0) { setSparks(n); setDevSparks('') } }}
-                className="shrink-0 px-2 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/70 rounded transition-colors"
-              >Set</button>
+              >
+                Set
+              </Button>
+            </label>
+
+            <div className="flex items-center gap-3 py-2.5">
+              <span className="w-20 shrink-0 text-[13px] text-ink">Upgrades</span>
+              <Button variant="outline" size="sm" onClick={() => devSetPurchasedUpgrades(allPurchasedUpgradesForDev())}>
+                Grant all
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => devSetPurchasedUpgrades([])}>
+                Clear
+              </Button>
             </div>
 
-            <div className="flex items-center gap-1.5 py-2">
-              <span className="text-sm text-white/80 shrink-0">Upgrades</span>
-              <button
-                type="button"
-                onClick={() => devSetPurchasedUpgrades(allPurchasedUpgradesForDev())}
-                className="flex-1 py-1 text-xs font-semibold bg-emerald-900/60 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 rounded transition-colors"
-              >Grant All</button>
-              <button
-                type="button"
-                onClick={() => devSetPurchasedUpgrades([])}
-                className="flex-1 py-1 text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 rounded transition-colors"
-              >Clear</button>
+            <div className="pt-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setDevModeUnlocked(false); setForceTie(false); setShowAllGames(false); setCursed(false); setBlessed(false); setDevInfiniteBets(false) }}
+              >
+                Lock dev mode
+              </Button>
             </div>
           </div>
         ) : (
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             <input
               type="password"
+              aria-label="Dev mode password"
               value={devPassword}
               onChange={(e) => setDevPassword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleDevUnlock()}
               placeholder="Password"
-              className={`min-w-0 flex-1 bg-white/5 border rounded px-2 py-1.5 text-xs text-white placeholder-white/20 outline-none focus:border-white/30 transition-colors ${devPasswordError ? 'border-red-500' : 'border-white/10'}`}
+              className={`${FIELD} ${devPasswordError ? 'border-loss' : ''}`}
             />
-            <button
-              type="button"
-              onClick={handleDevUnlock}
-              className="shrink-0 px-3 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/70 rounded transition-colors"
-            >
+            <Button variant="outline" onClick={handleDevUnlock}>
               Unlock
-            </button>
+            </Button>
           </div>
         )}
       </Section>
@@ -339,21 +357,19 @@ export default function AccountPage() {
             <DialogTitle>Sign out?</DialogTitle>
             <DialogDescription>You&apos;ll need to sign in again to access your account.</DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter>
             <DialogClose asChild>
-              <button className="text-sm px-4 py-2 rounded border border-zinc-700 text-muted-foreground hover:bg-zinc-800 transition-colors">
-                Cancel
-              </button>
+              <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <button
+            <Button
+              variant="destructive"
               onClick={() => {
                 setSignOutConfirmOpen(false)
                 authClient.signOut()
               }}
-              className="text-sm px-4 py-2 rounded bg-red-900/60 border border-red-800 text-red-300 hover:bg-red-900 transition-colors"
             >
               Sign out
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

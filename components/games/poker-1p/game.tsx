@@ -1,8 +1,8 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
 import {
@@ -17,7 +17,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -42,6 +42,10 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { Card, PokerHandRank, PokerState } from '@/games/poker-1p/types'
+import { PlayingCard } from '@/components/games/playing-card'
+import { GAME_DOCK_PRIMARY_BTN } from '@/components/game-dock-parts'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const HAND_ORDER: PokerHandRank[] = [
   'royal-flush',
@@ -63,7 +67,7 @@ interface PokerResult {
 }
 
 interface Poker1pGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<PokerResult>
@@ -71,63 +75,71 @@ interface Poker1pGameProps {
 
 type PendingResult = GamePendingResult
 
+// Five cards across: capped by height on a desktop, by width on a phone.
+/** Five cards fit the board's width and what its height leaves after the hand name, tags and hint. */
+const CARD_STYLE = {
+  '--card-h': 'min(clamp(4rem, calc(100cqh - 13rem), 8.75rem), calc((100cqw - 4.5rem) * 0.28))',
+} as React.CSSProperties
+
+/** A card in the hand: tap to hold — a held card lifts with a gold edge, winners glow felt green. */
 function CardView({
   card,
+  index,
   held,
   isWinning,
+  isDead,
   selectable,
   onToggle,
 }: {
   card: Card
+  index: number
   held: boolean
   isWinning: boolean
+  /** Settled with no scoring hand: the cards fall back. */
+  isDead: boolean
   selectable: boolean
   onToggle: () => void
 }) {
-  const isRed = card.suit === '♥' || card.suit === '♦'
-  const color = isRed ? 'text-red-400' : 'text-zinc-100'
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={!selectable}
+      aria-pressed={held}
+      aria-label={`${card.rank}${card.suit}${held ? ', held' : ''}`}
       className={[
-        'w-14 sm:w-16 h-[5.5rem] sm:h-24 rounded-xl border-2 flex flex-col items-center justify-center gap-1 select-none transition-all duration-150',
-        isWinning
-          ? 'border-emerald-400 bg-emerald-400/10 scale-105 shadow-lg shadow-emerald-900/30'
-          : held
-            ? 'border-yellow-400 bg-yellow-400/10 scale-105 shadow-lg shadow-yellow-900/30'
-            : 'border-zinc-600 bg-zinc-800',
-        selectable ? 'cursor-pointer hover:border-zinc-400 hover:bg-zinc-700 active:scale-95' : 'cursor-default',
+        'm-still g-lift group relative flex flex-col items-center gap-1.5 rounded-md',
+        held || isWinning ? '-translate-y-2' : '',
+        selectable ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default',
       ].join(' ')}
     >
-      <span className={`text-xl sm:text-2xl font-black leading-none ${color}`}>{card.rank}</span>
-      <span className={`text-2xl sm:text-3xl leading-none ${color}`}>{card.suit}</span>
+      <PlayingCard
+        rank={card.rank}
+        suit={card.suit}
+        style={{ '--i': index } as React.CSSProperties}
+        className={
+          isWinning
+            ? 'g-deal g-win'
+            : held
+              ? 'g-deal shadow-[0_0_0_2px_var(--gold),0_0_24px_-4px_rgba(217,164,65,0.85)]'
+              : isDead
+                ? 'g-deal g-dim'
+                : 'g-deal'
+        }
+      />
       <span
-        className={`text-[8px] font-bold text-yellow-400 tracking-widest ${held && !isWinning ? '' : 'invisible'}`}
+        className={`rounded-full px-2 text-[11px] font-semibold ${
+          isWinning ? 'bg-felt-tint text-felt' : held ? 'bg-gold-tint text-gold' : 'invisible'
+        }`}
       >
-        HOLD
+        {isWinning ? 'Scores' : 'Held'}
       </span>
     </button>
   )
 }
 
-const HAND_RANK_COLOR: Record<PokerHandRank, string> = {
-  'royal-flush': 'text-yellow-300',
-  'straight-flush': 'text-yellow-400',
-  'four-of-a-kind': 'text-purple-400',
-  'full-house': 'text-blue-400',
-  flush: 'text-green-400',
-  straight: 'text-teal-400',
-  'three-of-a-kind': 'text-emerald-400',
-  'two-pair': 'text-emerald-500',
-  'jacks-or-better': 'text-emerald-600',
-  none: 'text-red-400',
-}
-
 export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -139,10 +151,11 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
     pokerHoldBiasLevel,
   )
   const holdBiasRef = useRef(false)
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [state, setState] = useState<PokerState>(initPoker)
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
@@ -151,7 +164,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
   const isBetting = state.stage === 'betting'
   const isSelecting = state.stage === 'selecting'
   const isSettled = state.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: isBetting || isSettled })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: isBetting || isSettled })
   const canDeal = currentBet >= minBet && currentBet <= bankroll
   const showQuoteUntilNext = !isBetting && !isSettled
   const potentialWinnings =
@@ -221,13 +234,13 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">1 Player Poker</span>
-        <span className="text-sm text-zinc-600">{state.message}</span>
+        <span className="text-[13px] font-semibold text-ink">1 Player Poker</span>
+        <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-4 gap-4"
+        boardClassName="relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,2.5cqh,1rem)] gap-[clamp(0.5rem,2.5cqh,1rem)]"
         entries={matchHistory}
         gameLabel="1 Player Poker"
       >
@@ -243,51 +256,56 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
         />
 
         {isBetting && (
-          <div className="w-full max-w-xs bg-zinc-900/60 rounded-xl border border-zinc-800 overflow-hidden shrink-0">
-            <div className="px-4 py-2 border-b border-zinc-800">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 text-center">Pay Table</p>
-            </div>
-            <div className="px-3 py-2 flex flex-col gap-0.5">
-              {HAND_ORDER.map((rank) => (
-                <div key={rank} className="flex items-center justify-between py-0.5">
-                  <span className="text-xs text-zinc-400">{HAND_LABELS[rank]}</span>
-                  <span className="text-xs font-bold text-zinc-200 tabular-nums">{HAND_PAYOUTS[rank]}×</span>
+          <div className="poker-pays rise w-full max-w-sm shrink-0 rounded-md border border-[rgba(217,164,65,0.3)] bg-black/20 px-5 py-3" aria-label="Pay table">
+            <p className="felt-print mb-2 text-center">Jacks or better · pays</p>
+            <dl className="flex flex-col">
+              {HAND_ORDER.map((rank, i) => (
+                <div key={rank} className="flex items-baseline gap-2 py-[3px]">
+                  <dt className={`text-[13px] ${i === 0 ? 'text-gold' : 'text-soft'}`}>{HAND_LABELS[rank]}</dt>
+                  <span className="flex-1 border-b border-dotted border-[rgba(217,164,65,0.25)]" aria-hidden />
+                  <dd className={`num text-[13px] ${i === 0 ? 'text-gold glow-gold' : 'text-ink'}`}>{HAND_PAYOUTS[rank]}×</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </div>
         )}
 
         {(isSelecting || isSettled) && (
-          <div className="flex flex-col items-center gap-3 shrink-0">
-            <div className={`text-center min-h-[1.5rem] ${!isSettled ? 'invisible' : ''}`}>
-              <p className={`text-base font-black tracking-wide ${HAND_RANK_COLOR[state.handRank]}`}>
+          <div className="poker-hand flex flex-col items-center gap-[clamp(0.25rem,2cqh,0.75rem)] shrink-0" style={CARD_STYLE}>
+            <div className={`min-h-[2rem] text-center ${!isSettled ? 'invisible' : ''}`}>
+              <p
+                className={`rise text-[22px] font-semibold ${
+                  state.handRank === 'none' ? 'text-loss glow-loss' : 'text-felt glow-felt'
+                }`}
+              >
                 {HAND_LABELS[state.handRank]}
-                {state.multiplier > 0 && ` — ${state.multiplier}×`}
+                {state.multiplier > 0 && <span className="num ml-2 text-gold glow-gold">{state.multiplier}×</span>}
               </p>
             </div>
 
-            <div className="flex gap-2 sm:gap-2.5">
+            <div className="flex gap-1.5 sm:gap-2.5">
               {state.hand.map((card, i) => (
                 <CardView
-                  key={i}
+                  key={`${i}-${card.rank}${card.suit}`}
                   card={card}
+                  index={i}
                   held={state.held[i] ?? false}
                   isWinning={isSettled && state.winningIndices.includes(i)}
+                  isDead={isSettled && state.handRank === 'none'}
                   selectable={isSelecting}
                   onToggle={() => handleToggleHold(i)}
                 />
               ))}
             </div>
 
-            <p className={`text-sm font-medium text-zinc-400 tracking-wide min-h-5 ${!isSelecting ? 'invisible' : ''}`}>
-              Tap cards to hold · {heldCount} held · then draw
+            <p className={`min-h-5 text-[13px] text-soft ${!isSelecting ? 'invisible' : ''}`}>
+              Tap cards to hold · <span className="num text-gold">{heldCount}</span> held · then draw
             </p>
           </div>
         )}
 
-        <div className="min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
-          <p className="text-center text-xs text-zinc-500">
+        <div className="poker-hint min-h-10 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
+          <p className="text-center text-[13px] text-dim">
             {isBetting
               ? 'Place chips and deal. Pair of jacks or better pays.'
               : isSelecting
@@ -312,10 +330,8 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isSelecting && potentialWinnings > 0 && (
-              <p className="text-sm text-zinc-400">
-                Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
-                <span className="text-zinc-600 ml-1">(max)</span>
+              <p className="text-[14px] text-soft">
+                A royal flush pays <span className="num text-gold glow-gold">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -342,12 +358,7 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
                     type="button"
                     onClick={isSettled ? handleNext : isSelecting ? handleDraw : handleDeal}
                     disabled={isBetting && !canDeal}
-                    className={[
-                      'min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                      isSettled && state.outcome === 'win'
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white disabled:bg-zinc-800 disabled:text-zinc-600'
-                        : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                    ].join(' ')}
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : isSelecting ? 'Draw →' : 'Deal →'}
                   </button>

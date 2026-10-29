@@ -1,7 +1,7 @@
 # Active Items — Design Spec
 
-> Survival mode consumable system. Fully designed, not yet implemented in the
-> repo. This version supersedes the original design — Time Freeze, Last Resort,
+> Survival mode consumable system. Fully designed; only scaffolding exists in
+> the repo (see §6). Next up on the TODO list. This version supersedes the original design — Time Freeze, Last Resort,
 > Adrenaline, and Dead Man's Hand have been reworked since the survival floor
 > system moved from a timer to a fixed bet count (`FLOOR_BET_LIMIT`).
 
@@ -134,7 +134,20 @@ runLastResortUsed
 
 ## 6. Not yet implemented
 
-This entire system exists only as a design spec — no code in the current repo
-references active items (a grep for "active item" / item names only turns up an
-unrelated perk called "Hot Hand" in Run Dice's game-specific perk track, which
-is a naming coincidence, not this system).
+Status as of 2026-10-28 — what exists:
+
+- **Shop slot:** `shop-offers.ts` reserves the active slot (`SHOP_SLOT_ACTIVE`,
+  `SHOP_ACTIVE_OFFER_COUNT = 1`), but it only ever offers the Lobby Reroll
+  Ticket.
+- **UI:** `components/survival/active-items-panel.tsx` is a "Coming soon"
+  placeholder in the survival sidebar (mounted by `survival-game-wrapper.tsx`).
+- **Inventory:** `inventory` on the survival store holds consumable stacks
+  (currently only reroll tickets).
+
+Not built: the nine items, the `'active'` category, `activateItem`, the
+floor/run state fields of §5 and the resolution order of §4.
+
+Before building, re-check §4 against the current payout pipeline: payout boosts
+are now combined and capped at `RAW_PAYOUT_MULT_CAP` (1.5×) in
+`lib/survival/survival-perks.ts`, which this spec predates. "Hot Hand" also
+names an existing Run Dice perk — pick a different item name or rename one.

@@ -1,7 +1,7 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useEffect, useRef, useState } from 'react'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import { buildPendingResult, type GamePendingResult } from '@/lib/game-result-labels'
 import { survivalAfterNext } from '@/lib/survival/survival-round'
@@ -10,7 +10,7 @@ import { useBetGuard } from '@/hooks/use-bet-guard'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { resolveGame } from '@/lib/survival/game-resolve'
 import { useSurvivalPerks } from '@/hooks/use-survival-perks'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import type { BlackjackCard, BlackjackOutcome, BlackjackState } from '@/games/blackjack/types'
 import {
   calculateHandValue,
@@ -33,6 +33,8 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { MatchHistoryEntry } from '@/components/game-match-history'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 export interface BlackjackResult {
   outcome: BlackjackOutcome
@@ -50,22 +52,22 @@ export function useBlackjackGame({
   onBet,
   onResolve,
 }: {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<BlackjackResult>
 }) {
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
   const { peekDealer, peekDealerLevel } = useSurvivalPerks('blackjack')
   const showDealerHole = mode === 'survival' && peekDealer
 
   const [round, setRound] = useState<BlackjackState>(initBlackjack())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [quoteIdx, setQuoteIdx] = useState(() => pickQuote())
   const [pendingResult, setPendingResult] = useState<GamePendingResult | null>(null)
@@ -99,7 +101,7 @@ export function useBlackjackGame({
   const isInProgress = round.stage === 'inProgress'
   const playerCanAct = isInProgress && !settling
 
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, {
+  const { showGameOver, handleGameOver } = useRunEnd(mode, {
     idle: isBetting || (round.stage === 'settled' && pendingResult != null),
   })
 

@@ -74,57 +74,37 @@ export function MissionPanel({ compact = false }: MissionPanelProps) {
     const showReroll = showMissionReroll(m)
 
     return (
-      <li
-        key={m.id}
-        className={`flex-1 min-h-0 flex flex-col justify-center rounded-lg border px-3 py-3 ${
-          m.completed
-            ? 'border-emerald-800/50 bg-emerald-950/20'
-            : failed
-              ? 'border-red-900/50 bg-red-950/20'
-              : 'border-zinc-800 bg-zinc-950/40'
-        }`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-0.5 min-w-0">
+      <li key={m.id} className={`flex flex-col justify-center ${compact ? 'py-2' : 'py-3'}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-0.5">
             <span
-              className={`leading-snug ${compact ? 'text-[11px]' : 'text-xs'} ${
-                m.completed
-                  ? 'text-emerald-400 line-through'
-                  : failed
-                    ? 'text-red-400 line-through'
-                    : 'text-zinc-300'
+              className={`leading-snug ${compact ? 'text-[12px]' : 'text-[13px]'} ${
+                m.completed || failed ? 'text-dim line-through' : 'text-ink'
               }`}
             >
               {missionLabel(m)}
-              {failed && !m.completed ? ' — failed' : ''}
             </span>
-            <span className={`font-semibold text-emerald-400 ${compact ? 'text-[9px]' : 'text-[10px]'}`}>
-              +{m.rewardSparks} ✦
+            <span className="text-[13px]">
+              <span className="num text-gold">+{m.rewardSparks}</span>
+              <span className="text-dim"> sparks</span>
+              {m.completed && <span className="text-felt glow-felt"> · done</span>}
+              {failed && !m.completed && <span className="text-loss"> · failed</span>}
             </span>
           </div>
-          <div className="flex h-7 items-center justify-center">
-            {showReroll ? (
-              <button
-                type="button"
-                onClick={() => rerollMissionWithTicket(idx)}
-                className="inline-flex h-7 items-center gap-1 rounded-md border border-zinc-700 bg-zinc-950/80 pl-1.5 pr-2 text-zinc-100 hover:bg-zinc-900"
-                title="Use a lobby reroll ticket to reroll this mission (once per mission)"
-              >
-                <span aria-hidden className="text-xs leading-none">↻:</span>
-                <span aria-hidden className="text-xs leading-none">🎟️</span>
-                <span className="text-[10px] font-bold tabular-nums leading-none">×1</span>
-              </button>
-            ) : (
-              <span className="h-7 w-7" />
-            )}
-          </div>
+          {showReroll && (
+            <button
+              type="button"
+              onClick={() => rerollMissionWithTicket(idx)}
+              className="h-7 shrink-0 rounded-full border border-control px-2.5 text-xs font-medium text-soft transition-colors hover:border-dim hover:text-ink"
+              title="Use a reroll ticket on this mission (once per mission)"
+            >
+              Reroll · 1 ticket
+            </button>
+          )}
         </div>
         {!m.completed && !failed && (
-          <div className={`${compact ? 'mt-1 h-1' : 'mt-2 h-2'} rounded-full bg-zinc-800 overflow-hidden`}>
-            <div
-              className="h-full bg-amber-500/80 rounded-full transition-all"
-              style={{ width: `${pct}%` }}
-            />
+          <div className={`${compact ? 'mt-1.5 h-1' : 'mt-2 h-1.5'} overflow-hidden rounded-full bg-raised`}>
+            <div className="h-full rounded-full bg-felt shadow-[0_0_8px_rgba(79,174,132,0.7)] transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
           </div>
         )}
       </li>
@@ -133,52 +113,40 @@ export function MissionPanel({ compact = false }: MissionPanelProps) {
 
   if (missions.length === 0) {
     return (
-      <div className={`h-full rounded-xl border border-zinc-800 bg-zinc-900/60 ${compact ? 'p-2' : 'p-4'}`}>
-        <p className="text-xs text-zinc-500">No missions this floor.</p>
+      <div className={`h-full rounded-md bg-surface ${compact ? 'p-3' : 'p-5'}`}>
+        <p className="text-[13px] text-dim">No missions this floor.</p>
       </div>
     )
   }
 
+  const groups: { key: string; label: string; list: FloorMission[] }[] = [
+    { key: 'active', label: 'Active', list: activeMissions },
+    { key: 'done', label: 'Done', list: completedMissions },
+    { key: 'failed', label: 'Failed', list: failedMissions },
+  ].filter((g) => g.list.length > 0)
+  const showGroupLabels = groups.length > 1
+
   return (
-    <div className={`h-full rounded-xl border border-zinc-800 bg-zinc-900/60 flex flex-col gap-2 ${compact ? 'p-2' : 'p-4'}`}>
-      <div className="shrink-0 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className={`font-semibold uppercase tracking-wider text-zinc-400 ${compact ? 'text-[10px]' : 'text-xs'}`}>
-            Missions
-            <span className="text-zinc-600 font-normal normal-case tracking-normal">
-              {' '}({missions.length}{activeMissions.length > 0 && activeMissions.length < missions.length ? ` · ${activeMissions.length} active` : ''})
-            </span>
+    <div className={`flex h-full flex-col gap-2 rounded-md bg-surface ${compact ? 'p-3' : 'p-5'}`}>
+      <div className="shrink-0">
+        <h3 className={`font-semibold text-ink ${compact ? 'text-[13px]' : 'text-base'}`}>
+          Missions <span className="font-normal text-dim">{missions.length}</span>
+        </h3>
+        {!compact && (
+          <p className="mt-1 text-[13px] leading-5 text-dim">
+            Play-game missions count this floor&apos;s games only. Each mission can be rerolled once with a ticket.
           </p>
-          {!compact && (
-            <p className="text-[10px] text-zinc-600 leading-snug mt-0.5">
-              Play-game missions use this floor&apos;s lobby only. Each mission can be ticket-rerolled once.
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
-      <ul className="flex-1 flex flex-col gap-2 min-h-0">
-        {activeMissions.length > 0 && activeMissions.length < missions.length && (
-          <li className="list-none shrink-0">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-500/80 px-0.5">Active</p>
-          </li>
-        )}
-        {activeMissions.map((m) => renderMission(m))}
-
-        {completedMissions.length > 0 && (
-          <li className="list-none shrink-0">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-600 px-0.5 pt-1">Done</p>
-          </li>
-        )}
-        {completedMissions.map((m) => renderMission(m))}
-
-        {failedMissions.length > 0 && (
-          <li className="list-none shrink-0">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-red-700 px-0.5 pt-1">Failed</p>
-          </li>
-        )}
-        {failedMissions.map((m) => renderMission(m))}
-      </ul>
+      <div className="flex min-h-0 flex-1 flex-col">
+        {groups.map((g) => (
+          <div key={g.key}>
+            {showGroupLabels && <p className="pt-2 text-xs text-dim">{g.label}</p>}
+            <ul className="divide-y divide-rule">{g.list.map((m) => renderMission(m))}</ul>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

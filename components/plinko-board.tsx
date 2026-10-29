@@ -26,12 +26,22 @@ const TOTAL_MS = ENTRY_MS + ROWS * SEGMENT_MS + LANDING_MS
 function easeIn(t: number): number { return t * t }
 function lerp(a: number, b: number, t: number): number { return a + (b - a) * t }
 
-function slotFill(i: number, total: number): string {
-  const edge = Math.abs(i - (total - 1) / 2) / ((total - 1) / 2)
-  const r = Math.round(36 + 23 * edge)
-  const g = Math.round(36 + 94 * edge)
-  const b = Math.round(42 + 204 * edge)
-  return `rgb(${r},${g},${b})`
+// Bucket colour carries what it pays: under 1× loses, 1× is even, above wins, 5× and up is the money.
+type SlotTone = 'loss' | 'even' | 'felt' | 'gold'
+function slotTone(mult: number): SlotTone {
+  return mult < 1 ? 'loss' : mult === 1 ? 'even' : mult < 5 ? 'felt' : 'gold'
+}
+const SLOT_FILL: Record<SlotTone, string> = {
+  loss: 'var(--loss-tint)',
+  even: 'rgba(0,0,0,0.35)',
+  felt: 'var(--felt-tint)',
+  gold: 'var(--gold-tint)',
+}
+const SLOT_INK: Record<SlotTone, string> = {
+  loss: 'var(--loss)',
+  even: 'var(--soft)',
+  felt: 'var(--felt)',
+  gold: 'var(--gold)',
 }
 
 // Compute ball screen position from its precomputed columns, drop start time, and now.
@@ -85,6 +95,8 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
   const multipliers = getSlotMultipliers(risk)
 
   const [animNow, setAnimNow] = useState(0)
+  // Last ball to land in each slot, so the bucket flashes once per landing.
+  const [hits, setHits] = useState<Record<number, string>>({})
 
   const ballsRef = useRef(balls)
   ballsRef.current = balls
@@ -103,6 +115,8 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
       for (const ball of active) {
         if (now - ball.startedAt >= TOTAL_MS && !reportedIdsRef.current.has(ball.id)) {
           reportedIdsRef.current.add(ball.id)
+          const slot = ballColAtRow(ball.path.decisions, ROWS)
+          setHits((h) => ({ ...h, [slot]: ball.id }))
           onBallCompleteRef.current(ball.id)
         }
       }
@@ -131,6 +145,15 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
     }
   }, [])
 
+  // A peg is lit for the first half of the segment after a ball leaves it.
+  const litPegs = new Set<string>()
+  for (const ball of balls) {
+    const seg = Math.floor((animNow - ball.startedAt - ENTRY_MS) / SEGMENT_MS)
+    if (seg < 0 || seg >= ROWS) continue
+    if ((animNow - ball.startedAt - ENTRY_MS) % SEGMENT_MS > SEGMENT_MS / 2) continue
+    litPegs.add(`${seg}-${ballColAtRow(ball.path.decisions, seg)}`)
+  }
+
   return (
     <svg
       viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
@@ -153,41 +176,67 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        <radialGradient id={`${glowId}-peg`} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#f6e7c1" />
+          <stop offset="55%" stopColor="#c99a45" />
+          <stop offset="100%" stopColor="#6e5222" />
+        </radialGradient>
       </defs>
 
-      <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#111113" />
-
-      {/* Pin grid */}
+      {/* Brass pegs; a peg lights as a ball leaves it. */}
       {Array.from({ length: ROWS }, (_, row) =>
-        Array.from({ length: row + 1 }, (_, col) => (
-          <circle key={`p${row}-${col}`} cx={pinX(row, col)} cy={pinY(row)} r={PIN_R} fill="#52525b" />
-        ))
+        Array.from({ length: row + 1 }, (_, col) => {
+          const lit = litPegs.has(`${row}-${col}`)
+          return (
+            <g key={`p${row}-${col}`}>
+              <circle cx={pinX(row, col)} cy={pinY(row) + 1.4} r={PIN_R} fill="rgba(0,0,0,0.45)" />
+              <circle
+                cx={pinX(row, col)}
+                cy={pinY(row)}
+                r={lit ? PIN_R + 0.8 : PIN_R}
+                fill={lit ? 'var(--ink)' : `url(#${glowId}-peg)`}
+                filter={lit ? `url(#${glowId})` : undefined}
+              />
+            </g>
+          )
+        })
       )}
 
-      {/* Slot band — brighter slots = more landings (heat map) */}
-      {multipliers.map((mult, i) => (
-        <g key={i}>
-          <rect
-            x={slotLeft(i)}
-            y={SLOT_BAND_TOP}
-            width={SLOT_WIDTH}
-            height={SLOT_HEIGHT}
-            fill={slotFill(i, SLOT_COUNT)}
-            stroke="rgba(0,0,0,0.25)"
-            strokeWidth={0.5}
-          />
-          <text
-            x={slotCenterX(i)}
-            y={SLOT_BAND_TOP + SLOT_HEIGHT * 0.62}
-            textAnchor="middle"
-            fill="white"
-            fontWeight="bold"
-            style={{ fontSize: 8 }}
-          >
-            {mult}x
-          </text>
-        </g>
-      ))}
+      {/* Buckets, tinted by what they pay; one flashes when a ball lands in it. */}
+      {multipliers.map((mult, i) => {
+        const tone = slotTone(mult)
+        const x = slotLeft(i) + 1.5
+        const w = SLOT_WIDTH - 3
+        return (
+          <g key={i}>
+            <rect x={x} y={SLOT_BAND_TOP} width={w} height={SLOT_HEIGHT} rx={5} fill={SLOT_FILL[tone]} />
+            <rect x={x} y={SLOT_BAND_TOP} width={w} height={2.5} rx={1.25} fill={SLOT_INK[tone]} opacity={0.85} />
+            {hits[i] && (
+              <rect
+                key={hits[i]}
+                x={x}
+                y={SLOT_BAND_TOP}
+                width={w}
+                height={SLOT_HEIGHT}
+                rx={5}
+                fill={SLOT_INK[tone]}
+                className="pl-hit"
+              />
+            )}
+            <text
+              x={slotCenterX(i)}
+              y={SLOT_BAND_TOP + SLOT_HEIGHT * 0.64}
+              textAnchor="middle"
+              fill={SLOT_INK[tone]}
+              fontWeight={600}
+              className="num"
+              style={{ fontSize: `${mult}×`.length <= 2 ? 10 : `${mult}×`.length === 3 ? 9 : 7.5, letterSpacing: '-0.02em' }}
+            >
+              {mult}×
+            </text>
+          </g>
+        )
+      })}
 
       {/* Animated balls — one circle per active drop */}
       {balls.map((ball) => {
@@ -201,8 +250,8 @@ export function PlinkoBoard({ balls, onBallComplete, risk, goldenBallIds }: Plin
             cx={pos.x}
             cy={pos.y}
             r={BALL_R}
-            fill={isGolden ? '#fbbf24' : '#f4f4f5'}
-            stroke={isGolden ? '#f59e0b' : '#93c5fd'}
+            fill={isGolden ? 'var(--gold)' : 'var(--ink)'}
+            stroke={isGolden ? '#f6e7c1' : 'rgba(0,0,0,0.35)'}
             strokeWidth={1.5}
             filter={`url(#${glowId}${isGolden ? '-gold' : ''})`}
           />

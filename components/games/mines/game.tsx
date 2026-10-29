@@ -1,8 +1,8 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSurvivalStore } from '@/store/survival-store'
 import { useSettingsStore } from '@/store/settings-store'
 import {
   GAME_BOARD_ARENA,
@@ -14,6 +14,7 @@ import {
   GAME_DOCK_SETTLED_SLOT,
   GAME_DOCK_INNER,
   GAME_DOCK_ACTIONS,
+  GAME_DOCK_PRIMARY_BTN,
   GameActiveBetBadge,
   GameDockBackButton,
   GameDockBetRow,
@@ -22,7 +23,7 @@ import {
   GameDockLeaveButton,
   GameDockSettledRow,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { formatChips, formatMultiplier } from '@/utils/format'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
@@ -49,6 +50,9 @@ import {
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { MinesState } from '@/games/mines/types'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
+import { BoardTile, TileMark, type BoardTileState } from '@/components/games/board-tile'
 
 const DIFFICULTIES: MinesState['difficulty'][] = ['easy', 'medium', 'hard', 'insane']
 
@@ -67,7 +71,7 @@ interface MinesResult {
 }
 
 interface MinesGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<MinesResult>
@@ -77,7 +81,6 @@ type PendingResult = GamePendingResult
 
 export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) {
   const router = useRouter()
-  const { floorMinBet } = useSurvivalStore()
   const { autoReBet } = useSettingsStore()
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
@@ -88,12 +91,13 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
     'perk_mines_safe',
     minesSafeLevel,
   )
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [difficulty, setDifficulty] = useState<MinesState['difficulty']>('easy')
   const [lastDifficulty, setLastDifficulty] = useState<MinesState['difficulty']>('easy')
   const [round, setRound] = useState<MinesState>(initMines())
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
   const [pendingResult, setPendingResult] = useState<PendingResult | null>(null)
@@ -110,7 +114,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
   const isBetting = round.stage === 'betting'
   const isInProgress = round.stage === 'inProgress'
   const isSettled = round.stage === 'settled'
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: isBetting || isSettled })
+  const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: isBetting || isSettled })
   const canStart = currentBet >= minBet && currentBet <= bankroll
 
   function addChip(value: number) {
@@ -194,12 +198,12 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Mines</span>
-        <span className="text-sm text-zinc-600">{round.message}</span>
+        <span className="text-[13px] font-semibold text-ink">Mines</span>
+        <span className="text-[13px] text-dim">{round.message}</span>
       </div>
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative min-h-0 flex flex-col items-center justify-start pt-4 pb-4 px-4 md:px-6"
+        boardClassName="relative min-h-0"
         entries={matchHistory}
         gameLabel="Mines"
       >
@@ -213,87 +217,86 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
           visible={!isBetting}
         />
 
-        <div className="flex flex-col items-center w-full max-w-sm shrink-0 gap-2">
-          <div
-            className={`flex flex-wrap justify-center gap-3 h-10 items-center w-full shrink-0 ${
-              isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Safe left </span>
-              <span className="font-semibold text-white">{round.remainingSafe}</span>
-            </div>
-            <div className="rounded-lg bg-white/5 px-3 py-1.5 text-sm">
-              <span className="text-white/40">Multiplier </span>
-              <span className="font-semibold text-white">{formatMultiplier(round.multiplier)}</span>
-            </div>
-          </div>
-
-          <div
-            className={`flex justify-center gap-2 h-9 items-center w-full shrink-0 ${
-              !isBetting ? 'invisible pointer-events-none' : ''
-            }`}
-          >
-            {DIFFICULTIES.map((level) => (
-              <button
-                key={level}
-                type="button"
-                onClick={() => setDifficulty(level)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  difficulty === level ? 'bg-white text-gray-900' : 'bg-white/10 text-white/50 hover:bg-white/15'
-                }`}
-              >
-                {DIFFICULTY_LABELS[level]}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full shrink-0">
-            {round.tiles.length > 0 ? (
-              round.tiles.map((tile) => {
-                const showOutcome = tile.revealed || isSettled
-                const dormantMine = isSettled && !tile.revealed && tile.hasMine
-                const dormantSafe = isSettled && !tile.revealed && !tile.hasMine
-                return (
+        <div className="grid5-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
+          {/* One slot: difficulty while betting, the round's figures after. */}
+          <div className="grid5-top flex h-9 shrink-0 items-center justify-center gap-2">
+            {isBetting ? (
+              <div className="plaque flex rounded-full p-1" role="radiogroup" aria-label="Difficulty">
+                {DIFFICULTIES.map((level) => (
                   <button
-                    key={tile.id}
+                    key={level}
                     type="button"
-                    onClick={() => handleTileClick(tile.id)}
-                    disabled={!isInProgress || tile.revealed}
-                    className={`h-12 rounded-lg text-lg font-bold transition-all active:scale-95 sm:h-14 ${
-                      tile.revealed && tile.hasMine
-                        ? 'border border-red-400 bg-red-600 text-white shadow-lg shadow-red-900/50'
-                        : tile.revealed && !tile.hasMine
-                          ? 'border border-emerald-400 bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
-                          : dormantMine
-                            ? 'cursor-default border border-amber-500/70 bg-amber-950/80 text-amber-100 shadow-inner'
-                            : dormantSafe
-                              ? 'cursor-default border border-zinc-500/60 bg-zinc-800/80 text-zinc-200 shadow-inner'
-                              : isInProgress
-                                ? 'cursor-pointer border border-white/20 bg-white/10 text-white/0 hover:border-white/40 hover:bg-white/20'
-                                : 'cursor-default border border-white/10 bg-white/5 text-white/0'
+                    role="radio"
+                    aria-checked={difficulty === level}
+                    onClick={() => setDifficulty(level)}
+                    className={`m-still h-7 rounded-full px-3 text-[12px] font-semibold transition-colors ${
+                      difficulty === level ? 'bg-ink text-ground' : 'text-dim hover:text-ink'
                     }`}
                   >
-                    {showOutcome ? (tile.hasMine ? '💣' : '✓') : ''}
+                    {DIFFICULTY_LABELS[level]}
                   </button>
-                )
-              })
+                ))}
+              </div>
             ) : (
-              Array.from({ length: 25 }).map((_, i) => (
-                <div key={i} className="h-12 rounded-lg border border-white/10 bg-white/5 sm:h-14" />
-              ))
+              <>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Safe left</span>
+                  <span className="num text-ink">{round.remainingSafe}</span>
+                </span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Multiplier</span>
+                  <span key={round.multiplier} className={`num g-pop ${isSettled && round.outcome === 'loss' ? 'text-loss' : 'text-gold glow-gold'}`}>
+                    {formatMultiplier(round.multiplier)}
+                  </span>
+                </span>
+              </>
             )}
           </div>
 
-          <div className="min-h-10 flex items-center justify-center w-full shrink-0">
-            <p className="text-xs text-zinc-500 text-center px-2 max-w-md">
-              {isBetting
-                ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
-                : isInProgress
-                  ? 'Tap a tile to reveal it. Cash out to lock in your potential total winnings.'
-                  : '\u00A0'}
-            </p>
+          {/* The minefield: tiles cascade in, turn up with a flip, the board shakes on a mine. */}
+          <div
+            className={`grid5-grid grid shrink-0 grid-cols-5 [--stagger:40ms] gap-[calc(var(--tile)*0.14)] ${
+              isSettled && round.outcome === 'loss' ? 'g-shake' : ''
+            }`}
+          >
+            {round.tiles.length > 0
+              ? round.tiles.map((tile) => {
+                  const state: BoardTileState = tile.revealed
+                    ? tile.hasMine
+                      ? 'bad'
+                      : 'safe'
+                    : isSettled
+                      ? 'dormant'
+                      : isInProgress
+                        ? 'hidden'
+                        : 'idle'
+                  const mark = tile.revealed || isSettled ? (tile.hasMine ? 'mine' : 'gem') : null
+                  return (
+                    <BoardTile
+                      key={tile.id}
+                      state={state}
+                      index={(tile.id % 5) + Math.floor(tile.id / 5)}
+                      onClick={() => handleTileClick(tile.id)}
+                      disabled={!isInProgress || tile.revealed}
+                      label={mark ? (mark === 'mine' ? 'Mine' : 'Safe') : `Tile ${tile.id + 1}`}
+                      className={state === 'dormant' && tile.hasMine ? 'btile-bad' : ''}
+                    >
+                      {mark && <TileMark kind={mark} />}
+                    </BoardTile>
+                  )
+                })
+              : Array.from({ length: 25 }).map((_, i) => (
+                  <BoardTile key={`p${i}`} state="idle" index={(i % 5) + Math.floor(i / 5)} disabled label={`Tile ${i + 1}`} />
+                ))}
           </div>
+
+          <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
+            {isBetting
+              ? 'Pick a difficulty, place chips, then start. Reveal safe tiles — cash out anytime or hit a mine and lose.'
+              : isInProgress
+                ? 'Tap a tile to reveal it. Cash out to lock in your potential total winnings.'
+                : '\u00A0'}
+          </p>
         </div>
       </GameFieldWithHistory>
 
@@ -312,9 +315,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
           <div className={GAME_DOCK_SETTLED_SLOT}>
             {isBetting && <GameDockBetRow currentBet={currentBet} onClear={() => setCurrentBet(0)} />}
             {isInProgress && (
-              <p className="text-sm text-zinc-400">
+              <p className="text-[13px] text-soft">
                 Potential total winnings:{' '}
-                <span className="font-semibold text-emerald-400">{formatChips(potentialWinnings)}</span>
+                <span className="num text-felt glow-felt">{formatChips(potentialWinnings)}</span>
               </p>
             )}
             {isSettled && pendingResult && (
@@ -338,12 +341,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
                     type="button"
                     onClick={isSettled ? handleNext : isInProgress ? handleCashOut : handleStart}
                     disabled={isBetting && !canStart}
-                    className={[
-                      'min-w-[10.5rem] px-7 py-2 font-bold rounded-lg transition-colors text-base shadow-lg',
-                      isInProgress
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                        : 'bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900',
-                    ].join(' ')}
+                    className={GAME_DOCK_PRIMARY_BTN}
                   >
                     {isSettled ? 'Next →' : isInProgress ? 'Cash Out' : 'Start →'}
                   </button>

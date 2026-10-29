@@ -1,6 +1,6 @@
 export type Difficulty = 'normal' | 'hard' | 'nightmare'
 
-export type GameMode = 'survival' | 'freeplay'
+export type GameMode = 'survival' | 'freeplay' | 'daily' | 'ladder'
 
 export type GameName =
   | 'blackjack'

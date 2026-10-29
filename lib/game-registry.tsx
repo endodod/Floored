@@ -1,3 +1,4 @@
+import type { GameMode } from '@/store/types'
 import type { ComponentType } from 'react'
 import type { GameName } from '@/store/types'
 import { BlackjackGame } from '@/components/games/blackjack/game'
@@ -21,7 +22,7 @@ import { CoinFlipGame } from '@/components/games/coin-flip/game'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyGameComponent = ComponentType<{
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: (result: any) => any

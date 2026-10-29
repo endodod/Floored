@@ -1,8 +1,10 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
+import { useDailyStore } from '@/store/daily-store'
+import { useLadderStore } from '@/store/ladder-store'
 import type { GameName } from '@/store/types'
 import { applyResolveModifiers } from '@/lib/survival/apply-modifiers'
 import { evaluateMissionsOnGame } from '@/lib/survival/mission-evaluator'
@@ -94,8 +96,12 @@ export function useSurvivalGameBankroll(game: GameName) {
     [bankroll, openingBetFree, openingTicketFreeCap],
   )
 
+  // Payout already credited by partial resolves (Plinko balls) in the current drop.
+  const roundCreditedRef = useRef(0)
+
   const handleBet = useCallback(
     (amount: number) => {
+      roundCreditedRef.current = 0
       const before = useSurvivalStore.getState()
       const isFirstBetThisFloor = before.history.filter((h) => h.floor === currentFloor).length === 0
       const isFree =
@@ -133,6 +139,7 @@ export function useSurvivalGameBankroll(game: GameName) {
           },
           { settleFloorBet: false },
         )
+        roundCreditedRef.current += result.payout
         return result as R & ResolvedGamePayload
       }
 
@@ -153,8 +160,9 @@ export function useSurvivalGameBankroll(game: GameName) {
       )
 
       const bankrollDelta = result.payoutAlreadyCredited
-        ? adjusted.payout - result.payout
+        ? adjusted.payout - roundCreditedRef.current
         : adjusted.payout
+      roundCreditedRef.current = 0
 
       recordResultPayout(
         {
@@ -204,4 +212,83 @@ export function useSurvivalGameBankroll(game: GameName) {
   )
 
   return { bankroll, wagerCap, openingBetFree, handleBet, handleResolve }
+}
+
+export function useDailyGameBankroll(game: GameName, bets: number) {
+  const bankroll = useDailyStore((s) => s.bankroll)
+  const finished = useDailyStore((s) => s.finished)
+  const openRound = useDailyStore((s) => s.openRound)
+  const used = useDailyStore((s) => s.progress[game]?.betsUsed ?? 0)
+  const placeBet = useDailyStore((s) => s.placeBet)
+  const resolve = useDailyStore((s) => s.resolve)
+
+  const betsRemaining = Math.max(0, bets - used)
+  const roundOpen = openRound === game
+  // With no bets left the game sees an empty wallet, so it can't start another round.
+  const wagerCap = !finished && (betsRemaining > 0 || roundOpen) ? Math.max(0, bankroll) : 0
+
+  // Payout already credited by partial resolves (Plinko balls) in the current round.
+  const roundCreditedRef = useRef(0)
+
+  const handleBet = useCallback(
+    (amount: number) => {
+      if (useDailyStore.getState().openRound !== game) roundCreditedRef.current = 0
+      placeBet(game, amount)
+    },
+    [game, placeBet],
+  )
+
+  const handleResolve = useCallback(
+    <R extends GameResolvePayload>(result: R): R => {
+      const settle = result.settleFloorBet !== false
+      const credit = result.payoutAlreadyCredited
+        ? result.payout - roundCreditedRef.current
+        : result.payout
+      roundCreditedRef.current = settle ? 0 : roundCreditedRef.current + result.payout
+      resolve(game, credit, settle)
+      return result
+    },
+    [game, resolve],
+  )
+
+  return { bankroll, wagerCap, betsRemaining, roundOpen, finished, handleBet, handleResolve }
+}
+
+export function useLadderGameBankroll(game: GameName) {
+  const pot = useLadderStore((s) => s.pot)
+  const status = useLadderStore((s) => s.status)
+  const currentGame = useLadderStore((s) => s.currentGame)
+  const openRound = useLadderStore((s) => s.openRound)
+  const placeBet = useLadderStore((s) => s.placeBet)
+  const resolve = useLadderStore((s) => s.resolve)
+
+  const roundOpen = openRound?.game === game
+  // Only the picked game gets the pot; once its round settles the wallet is empty until the next pick.
+  const wagerCap = status === 'climbing' && currentGame === game ? Math.max(0, pot) : 0
+
+  // Payout already credited by partial resolves (Plinko balls) in the current round.
+  const roundCreditedRef = useRef(0)
+
+  const handleBet = useCallback(
+    (amount: number) => {
+      if (useLadderStore.getState().openRound?.game !== game) roundCreditedRef.current = 0
+      placeBet(game, amount)
+    },
+    [game, placeBet],
+  )
+
+  const handleResolve = useCallback(
+    <R extends GameResolvePayload>(result: R): R => {
+      const settle = result.settleFloorBet !== false
+      const credit = result.payoutAlreadyCredited
+        ? result.payout - roundCreditedRef.current
+        : result.payout
+      roundCreditedRef.current = settle ? 0 : roundCreditedRef.current + result.payout
+      resolve(game, credit, settle)
+      return result
+    },
+    [game, resolve],
+  )
+
+  return { pot, wagerCap, roundOpen, handleBet, handleResolve }
 }

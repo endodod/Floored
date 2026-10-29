@@ -1,4 +1,5 @@
 'use client'
+import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -11,13 +12,14 @@ import {
 } from '@/components/game-layout'
 import {
   GAME_DOCK_INNER,
+  GAME_DOCK_PRIMARY_BTN,
   GameCurrentBetBadge,
   GameDockBackButton,
   GameDockBetRow,
   GameDockChipRow,
   GameDockGameOverButton,
 } from '@/components/game-dock-parts'
-import { useSurvivalGameOver } from '@/hooks/use-survival-game-over'
+import { useRunEnd } from '@/hooks/use-run-end'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { buildPendingResult, formatPlinkoRiskLabel } from '@/lib/game-result-labels'
@@ -31,6 +33,8 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { PlinkoPayoutResult, PlinkoRisk } from '@/games/plinko/types'
 import { PlinkoBoard, type PlinkoBall } from '@/components/plinko-board'
+import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const MIN_BALLS = 1
 const MAX_BALLS = 10
@@ -66,7 +70,7 @@ interface PlinkoDropAccumulator {
 }
 
 interface PlinkoGameProps {
-  mode: 'survival' | 'freeplay'
+  mode: GameMode
   bankroll: number
   onBet?: (amount: number) => void
   onResolve: GameResolveFn<PlinkoResult>
@@ -75,7 +79,6 @@ interface PlinkoGameProps {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps) {
-  const floorMinBet = useSurvivalStore((s) => s.floorMinBet)
   const pendingDefeatReason = useSurvivalStore((s) => s.pendingDefeatReason)
   const { cursed } = useCurse()
   const { blessed } = useBless()
@@ -86,12 +89,13 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
     plinkoGoldenBallLevel,
   )
   const { autoReBet } = useSettingsStore()
-  const minBet = mode === 'survival' ? floorMinBet : 1
+  const minBet = useGameMinBet(mode)
 
   const [risk, setRisk] = useState<PlinkoRisk>('medium')
   const [ballCount, setBallCount] = useState(MIN_BALLS)
   const [sessions, setSessions] = useState<PlinkoSession[]>([])
   const [currentBet, setCurrentBet] = useState(0)
+  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
   const [quoteIdx, setQuoteIdx] = useState(0)
@@ -120,7 +124,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
   const dropAccumulatorRef = useRef<PlinkoDropAccumulator | null>(null)
 
   const isDropping = sessions.length > 0
-  const { showGameOver, handleGameOver } = useSurvivalGameOver(mode, { idle: !isDropping })
+  const { status: runStatus, showGameOver, handleGameOver } = useRunEnd(mode, { idle: !isDropping })
   const commitBet = currentBet >= minBet ? currentBet : lastBet >= minBet ? lastBet : 0
   const perBallBet = commitBet >= minBet ? commitBet : minBet
   const maxAffordableBalls = Math.max(
@@ -204,7 +208,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
     const acc = dropAccumulatorRef.current
     let resolved: PlinkoResult & { firstBetWasFree?: boolean; payoutBoostMult?: number }
 
-    if (acc && modeRef.current === 'survival') {
+    if (acc && modeRef.current !== 'freeplay') {
       acc.totalPayout += finalPayout
       acc.maxMultiplier = Math.max(acc.maxMultiplier, finalMultiplier)
       if (finalOutcome === 'loss' && session.bet >= minBetRef.current) {
@@ -274,13 +278,13 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
-        <span className="text-sm font-semibold tracking-widest uppercase text-zinc-600">Plinko</span>
-        <span className="text-sm text-zinc-500 truncate max-w-[60%] text-right">{statusMsg}</span>
+        <span className="text-[13px] font-semibold text-ink">Plinko</span>
+        <span className="text-[13px] text-dim truncate max-w-[60%] text-right">{statusMsg}</span>
       </div>
 
       <GameFieldWithHistory
         className={GAME_BOARD_ARENA}
-        boardClassName="relative flex flex-col w-full h-full bg-[#111113]"
+        boardClassName="relative flex flex-col w-full h-full"
         entries={matchHistory}
         gameLabel="Plinko"
         emptyHint="No drops yet — results appear after each ball lands."
@@ -299,27 +303,26 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
         />
 
         <div className="flex-1 min-h-0 w-full flex flex-col">
-          <div className="flex flex-col items-center gap-1 pt-10 pb-1.5 sm:py-1.5">
-            <span className="text-xs text-zinc-600 font-semibold uppercase tracking-widest">Risk</span>
-            <div className="flex gap-2">
+          <div className="pl-top flex shrink-0 flex-col items-center gap-1 pt-12 pb-1 sm:pt-2.5">
+            <div className={`flex rounded-full bg-black/25 p-1 transition-opacity ${isDropping ? 'invisible opacity-0' : ''}`} role="radiogroup" aria-label="Risk">
               {(['low', 'medium', 'high'] as PlinkoRisk[]).map((r) => (
                 <button
                   key={r}
                   type="button"
+                  role="radio"
+                  aria-checked={risk === r}
                   disabled={isDropping}
                   onClick={() => setRisk(r)}
-                  className={`px-3 py-0.5 rounded text-xs font-semibold transition-colors capitalize
-                    ${risk === r
-                      ? 'bg-white text-zinc-900'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 disabled:hover:bg-zinc-800'
-                    } disabled:opacity-50`}
+                  className={`m-still h-7 rounded-full px-3 text-[12px] font-semibold transition-colors disabled:opacity-50 ${
+                    risk === r ? 'bg-ink text-ground' : 'text-dim hover:text-ink disabled:hover:text-dim'
+                  }`}
                 >
-                  {r}
+                  {r[0]!.toUpperCase() + r.slice(1)} risk
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 px-2 pb-2">
             <PlinkoBoard
               balls={balls}
               onBallComplete={handleBallComplete}
@@ -332,9 +335,16 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
       <div className={GAME_CONTROL_DOCK_M}>
         <div className={`${GAME_DOCK_INNER} min-h-0`}>
-          <div className="flex flex-1 min-h-0 w-full items-center justify-center">
+          <div className="flex flex-1 min-h-0 w-full flex-col items-center justify-center">
+            {showGameOver && runStatus && (
+              <p
+                className={`text-base font-bold text-center ${runStatus.tone === 'win' ? 'text-felt' : runStatus.tone === 'loss' ? 'text-loss' : 'text-soft'}`}
+              >
+                {runStatus.text}
+              </p>
+            )}
             <GameDockChipRow
-              visible={!isDropping}
+              visible={!isDropping && !showGameOver}
               bankroll={bankroll}
               currentBet={currentBet}
               onAddChip={addChip}
@@ -356,24 +366,24 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
           <div className="flex flex-1 min-h-0 w-full items-center justify-center">
             <div className="flex h-7 items-center gap-1.5 flex-wrap justify-center">
-              <span className="text-zinc-500 text-xs">Balls</span>
+              <span className="text-[13px] text-dim">Balls</span>
               <button
                 type="button"
                 disabled={isDropping || ballCount <= MIN_BALLS}
                 onClick={() => setBallCount((c) => Math.max(MIN_BALLS, c - 1))}
-                className="w-7 h-7 rounded-md border border-zinc-700 hover:border-zinc-500 disabled:opacity-40 disabled:hover:border-zinc-700 text-zinc-300 hover:text-white font-bold text-sm leading-none transition-colors"
+                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
                 aria-label="Fewer balls"
               >
                 −
               </button>
-              <span className="font-bold text-sm text-white tabular-nums min-w-[1.25rem] text-center">
+              <span className="num min-w-[1.5rem] text-center text-[14px] font-semibold text-ink">
                 {ballCount}
               </span>
               <button
                 type="button"
                 disabled={isDropping || ballCount >= maxBalls}
                 onClick={() => setBallCount((c) => Math.min(maxBalls, c + 1))}
-                className="w-7 h-7 rounded-md border border-zinc-700 hover:border-zinc-500 disabled:opacity-40 disabled:hover:border-zinc-700 text-zinc-300 hover:text-white font-bold text-sm leading-none transition-colors"
+                className="m-still grid h-7 w-7 place-items-center rounded-full border border-control text-soft hover:border-dim hover:text-ink disabled:opacity-40 disabled:hover:border-control disabled:hover:text-soft font-semibold text-sm leading-none transition-colors active:scale-[0.94]"
                 aria-label="More balls"
               >
                 +
@@ -389,7 +399,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
                 type="button"
                 onClick={handleDrop}
                 disabled={!canDrop}
-                className="min-w-[10.5rem] px-7 py-2 bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-900 font-bold rounded-lg transition-colors text-base shadow-lg"
+                className={GAME_DOCK_PRIMARY_BTN}
               >
                 Drop →
               </button>
