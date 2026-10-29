@@ -189,7 +189,7 @@ export default function TablesPage() {
           <SectionTitle suit={3} note={`Buy-in ${formatChips(chosen.buyIn)} · paid into prize pool`}>
             <span id="tables-games">Pick a table</span>
           </SectionTitle>
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {TABLE_GAMES.map((g, i) => {
               const seats = isMobile ? g.phoneSeats : g.seats
               const prize = prizes(chosen.buyIn, seats)
