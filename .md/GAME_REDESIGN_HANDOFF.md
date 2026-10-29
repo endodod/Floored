@@ -32,7 +32,7 @@ new chips, buttons and dock. What remains is each game's own board.
 
 | Game | State | Notes |
 |---|---|---|
-| Blackjack | Done | Shared card, rules on an arc, overlapping hands; side by side on short wide boards; deal, hole-card flip, winner glows, loser dims |
+| Blackjack | Done | Shared card, rules on an arc, overlapping hands; side by side on short wide boards; deal, hole-card flip, winner glows, loser dims; casino trim: Dealer / You labels in felt print, the neutral hand total on a `.plaque` chip (the rules arc was already gold print; there is no shoe) |
 | HiLo | Done | Card sized from the board; on short wide boards the guesses stand beside the cards and the streak moves up; right guess glows, wrong one shakes |
 | 1-Player Poker | Done | Gold pay table (in columns on short boards); five cards fit by board width and height; staggered deal, spring hold, scoring cards glow, dead hand dims |
 | Roulette | Done, verified in the browser | **Real table betting** (asked for by the owner, so a deliberate logic change): pick a chip value, tap spots to place chips, stack them and cover several spots per spin; Undo / Clear. Chips sit on a layer over the mat (`ChipLayer`), centred on their spot. Ladder: a tap puts the whole pot on one spot. Survival opening ticket: one Ticket chip worth its cap. Blessed/cursed spins work on the whole bet set. **Not checked in a browser: the tracker perk, the ticket chip, Ladder** |
