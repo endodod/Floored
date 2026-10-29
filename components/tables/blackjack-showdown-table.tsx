@@ -133,7 +133,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
           status={me.outcome && currentResult ? `${OUTCOME_LABEL[me.outcome]} · ${me.net > 0 ? '+' : me.net < 0 ? '−' : ''}${formatChips(Math.abs(me.net))}` : undefined}
           statusTone={me.outcome === 'loss' ? 'loss' : me.outcome === 'win' || me.outcome === 'blackjack' ? 'win' : 'neutral'}
         />
-        <div className="hd-hole flex gap-1" style={{ '--card-h': 'var(--seat-card-h)' } as CSSProperties} aria-label="Your cards">
+        <div className="hd-hole flex gap-1" style={{ '--card-h': 'var(--you-card-h)' } as CSSProperties} aria-label="Your cards">
           {me.cards.map((card, k) => <PlayingCard key={`${v.hand}-you-${k}`} rank={card.rank} suit={card.suit} className="g-deal" style={{ '--i': k } as CSSProperties} />)}
           {me.cards.length === 0 && [0, 1].map((k) => <PlayingCard key={`you-slot-${k}`} variant="slot" />)}
         </div>
