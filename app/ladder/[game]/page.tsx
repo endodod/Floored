@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { GAME_REGISTRY } from '@/lib/game-registry'
 import { useLadderStore } from '@/store/ladder-store'
@@ -10,8 +10,15 @@ import { LADDER_LIVES, LADDER_RUNGS } from '@/lib/ladder/rules'
 import { formatChips } from '@/utils/format'
 import type { GameName } from '@/store/types'
 
-const PILL =
-  'px-2.5 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-700/60 tabular-nums text-sm font-bold text-zinc-200'
+/** One figure in the strip above the game: grey label, mono value (the survival sidebar's style). */
+function Figure({ label, children, tone }: { label: string; children: ReactNode; tone?: 'loss' }) {
+  return (
+    <div className="flex items-baseline gap-1.5 bg-surface px-3 py-1.5">
+      <span className="text-xs text-dim">{label}</span>
+      <span className={`num text-[14px] ${tone === 'loss' ? 'text-loss' : 'text-ink'}`}>{children}</span>
+    </div>
+  )
+}
 
 function LadderGame({ game }: { game: GameName }) {
   const { wagerCap, handleBet, handleResolve } = useLadderGameBankroll(game)
@@ -30,22 +37,18 @@ function LadderGame({ game }: { game: GameName }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3">
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-        <div className={PILL}>
-          <span className="text-[9px] font-normal text-zinc-500 mr-1">Rung</span>
-          {shown.rung + 1}
-          <span className="text-zinc-500">/{LADDER_RUNGS}</span>
-        </div>
-        <div className={PILL}>
-          <span className="text-[9px] font-normal text-zinc-500 mr-1">All-in</span>
-          {formatChips(shown.stake)}
-        </div>
-        <div className={PILL}>
-          <span className="text-[9px] font-normal text-zinc-500 mr-1">Win more than</span>
-          {formatChips(shown.stake)}
-        </div>
-        <div className={PILL} aria-label={`${lives} lives left`}>
-          {'❤️'.repeat(lives) + '🖤'.repeat(LADDER_LIVES - lives)}
+      <div className="flex shrink-0 justify-end">
+        <div className="flex flex-wrap gap-px overflow-hidden rounded-md bg-line">
+          <Figure label="Rung">
+            {shown.rung + 1}
+            <span className="text-dim">/{LADDER_RUNGS}</span>
+          </Figure>
+          <Figure label="All-in">{formatChips(shown.stake)}</Figure>
+          <Figure label="Win more than">{formatChips(shown.stake)}</Figure>
+          <Figure label="Lives" tone={lives === 1 ? 'loss' : undefined}>
+            {lives}
+            <span className="text-dim">/{LADDER_LIVES}</span>
+          </Figure>
         </div>
       </div>
 
