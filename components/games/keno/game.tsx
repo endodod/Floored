@@ -228,6 +228,9 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Keno</span>
+        {heatNumbers.length > 0 && (
+          <PerkHint>Heat: {heatNumbers.join(', ')} in this draw</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -238,11 +241,6 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
         gameLabel="Keno"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {heatNumbers.length > 0 && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Heat: {heatNumbers.join(', ')} in this draw
-          </PerkHint>
-        )}
         <GameActiveBetBadge betAmount={round.betAmount} visible={!isBetting} />
 
         <div className="grid5-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">

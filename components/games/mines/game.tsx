@@ -199,6 +199,9 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Mines</span>
+        {minesProc.perkActive && isInProgress && (
+          <PerkHint>One safe tile revealed</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
       <GameFieldWithHistory
@@ -208,9 +211,6 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
         gameLabel="Mines"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {minesProc.perkActive && isInProgress && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">One safe tile revealed</PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={!isBetting ? DIFFICULTY_LABELS[round.difficulty] : undefined}

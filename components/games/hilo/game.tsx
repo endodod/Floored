@@ -235,6 +235,9 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
     <div className={GAME_CARD_SHELL} style={CARD_STYLE}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">HiLo</span>
+        {hotStreakFlash && (
+          <PerkHint>Hot streak — streak jumped by 2</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -246,11 +249,6 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
       >
         <div className="hilo-board relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,3cqh,1.5rem)] gap-[clamp(0.5rem,3cqh,1.25rem)]">
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {hotStreakFlash && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Hot streak — streak jumped by 2
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={!isBetting ? round.betAmount : 0}
           extra={isRiding ? `${round.streak}× streak` : undefined}

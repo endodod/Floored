@@ -356,6 +356,9 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
       {/* Status bar */}
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Crash</span>
+        {hasCushion && isBetting && (
+          <PerkHint>Cushion: {Math.round(getCrashCushion(crashCushionLevel) * 100)}% back on a sub-3× crash</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -366,11 +369,6 @@ export function CrashGame({ mode, bankroll, onBet, onResolve }: CrashGameProps) 
         gameLabel="Crash"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {hasCushion && isBetting && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Crash Cushion: recover {Math.round(getCrashCushion(crashCushionLevel) * 100)}% on sub-3× crash
-          </PerkHint>
-        )}
         <GameActiveBetBadge betAmount={round.betAmount} visible={(isInProgress || isSettled) && round.betAmount > 0} />
 
         <div className="cx-board flex h-full w-full max-w-2xl min-h-0 flex-col items-center">

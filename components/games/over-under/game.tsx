@@ -201,6 +201,9 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Over-Under</span>
+        {mode === 'survival' && shieldProc.perkActive && (isBetting || isInProgress) && (
+          <PerkHint>Safe Opening Roll — loss refunded to a push</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -211,11 +214,6 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
         gameLabel="Over-Under"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {mode === 'survival' && shieldProc.perkActive && (isBetting || isInProgress) && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Safe Opening Roll — loss refunded to a push
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={!isBetting ? `${displaySafeZone}% safe zone` : undefined}

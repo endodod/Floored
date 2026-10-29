@@ -235,6 +235,9 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">1 Player Poker</span>
+        {mode === 'survival' && holdProc.perkActive && isSelecting && (
+          <PerkHint>Hold Harmony — draw favors held ranks</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
@@ -245,11 +248,6 @@ export function Poker1pGame({ mode, bankroll, onBet, onResolve }: Poker1pGamePro
         gameLabel="1 Player Poker"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {mode === 'survival' && holdProc.perkActive && isSelecting && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Hold Harmony — draw favors held ranks
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={!isBetting ? state.betAmount : 0}
           visible={!isBetting && state.betAmount > 0}

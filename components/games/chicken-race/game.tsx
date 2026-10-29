@@ -233,6 +233,9 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Chicken Race</span>
+        {scoutProc.perkActive && isBetting && scoutEliminate !== null && (
+          <PerkHint>Scout: {CHICKENS[scoutEliminate]!.name} won&apos;t win</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
@@ -243,11 +246,6 @@ export function ChickenRaceGame({ mode, bankroll, onBet, onResolve }: ChickenRac
         gameLabel="Chicken Race"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {scoutProc.perkActive && isBetting && scoutEliminate !== null && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Scout: {CHICKENS[scoutEliminate]!.name} won&apos;t win
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={activeBet}
           betType={

@@ -301,6 +301,9 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Slots</span>
+        {mode === 'survival' && shieldProc.perkActive && isSpinning && (
+          <PerkHint>First Spin Shield — loss refunded to a push</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
       <GameFieldWithHistory
@@ -310,11 +313,6 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
         gameLabel="Slots"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {mode === 'survival' && shieldProc.perkActive && isSpinning && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            First Spin Shield — loss refunded to a push
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount || lastBet}
           visible={!isBetting && (round.betAmount > 0 || lastBet > 0)}

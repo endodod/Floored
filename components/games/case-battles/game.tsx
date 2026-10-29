@@ -371,6 +371,12 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Case Battles</span>
+        {isSetup && (blessed || cursed) && (
+          <PerkHint>{blessed ? 'Guaranteed win this battle' : 'Guaranteed loss this battle'}</PerkHint>
+        )}
+        {isRerollPending && (
+          <PerkHint>Tap one of your items to reroll it</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
@@ -381,16 +387,6 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         gameLabel="Case Battles"
       >
         <GameDockBackButton mode={mode} visible={isSetup && !showGameOver} />
-        {isSetup && (blessed || cursed) && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            {blessed ? 'Guaranteed win this battle' : 'Guaranteed loss this battle'}
-          </PerkHint>
-        )}
-        {isRerollPending && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Tap one of your items to reroll it
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={!isSetup ? state.totalCost : 0}
           visible={!isSetup && state.totalCost > 0}

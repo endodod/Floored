@@ -193,6 +193,9 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Chicken Road</span>
+        {safeAdvancePending && isInProgress && (
+          <PerkHint>Safe lane: your next crossing can’t fail</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
       <GameFieldWithHistory
@@ -202,11 +205,6 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
         gameLabel="Chicken"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {safeAdvancePending && isInProgress && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Safe crossing — your next advance cannot fail
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={stepLabel}

@@ -279,6 +279,9 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Plinko</span>
+        {mode === 'survival' && goldenBallProc.perkActive && isDropping && (
+          <PerkHint>Golden Ball — 2× payout</PerkHint>
+        )}
         <span className="text-[13px] text-dim truncate max-w-[60%] text-right">{statusMsg}</span>
       </div>
 
@@ -291,11 +294,6 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
         showLastBet
       >
         <GameDockBackButton mode={mode} visible={!isDropping && !showGameOver} />
-        {mode === 'survival' && goldenBallProc.perkActive && isDropping && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Golden Ball — 2× payout
-          </PerkHint>
-        )}
         <GameCurrentBetBadge
           betAmount={sessions.reduce((s, x) => s + x.bet, 0)}
           betSpecification={isDropping ? formatPlinkoRiskLabel(risk) : undefined}

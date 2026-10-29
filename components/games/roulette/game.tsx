@@ -540,6 +540,9 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Roulette</span>
+        {trackerProc.perkActive && trackerEliminated.length > 0 && isBetting && (
+          <PerkHint>Not winning: {trackerEliminated.join(', ')}</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{spinning ? 'No more bets…' : round.message}</span>
       </div>
 
@@ -550,11 +553,6 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         gameLabel="Roulette"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {trackerProc.perkActive && trackerEliminated.length > 0 && isBetting && (
-          <PerkHint className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
-            Not winning: {trackerEliminated.join(', ')}
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={activeBet}
           betType={activeBet > 0 ? describeBets(lastBets) : undefined}

@@ -314,6 +314,9 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Run Dice</span>
+        {insightProc.perkActive && isInProgress && (
+          <PerkHint>Loss rolls return your bet this round</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -324,11 +327,6 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
         gameLabel="Run Dice"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {insightProc.perkActive && isInProgress && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Loss rolls return your bet this round
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={!isBetting && round.betAmount > 0 ? `Roll ${round.rollCount} / 3` : undefined}

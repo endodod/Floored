@@ -370,6 +370,9 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Fortune Wheel</span>
+        {scoutProc.perkActive && isBetting && crossedOutColor && (
+          <PerkHint>Scout: {wheelColorLabel(crossedOutColor)} won&apos;t land</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{spinning ? 'Spinning…' : round.message}</span>
       </div>
 
@@ -381,11 +384,6 @@ export function WheelGame({ mode, bankroll, onBet, onResolve }: WheelGameProps) 
       >
 
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {scoutProc.perkActive && isBetting && crossedOutColor && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Scout: {wheelColorLabel(crossedOutColor)} won&apos;t land
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={activeBet}
           betType={activeBet > 0 && !isBetting ? wheelColorBetLabel(round.betColor ?? selectedColor) : undefined}

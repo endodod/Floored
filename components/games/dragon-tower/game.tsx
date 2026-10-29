@@ -167,6 +167,9 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Dragon Tower</span>
+        {blindspotProc.perkActive && isClimbing && (
+          <PerkHint>Safe tile marked (floors 1–2)</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
@@ -177,9 +180,6 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
         gameLabel="Dragon Tower"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {blindspotProc.perkActive && isClimbing && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">Safe tile marked (floors 1–2)</PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={state.betAmount}
           betType={climbFloorLabel}

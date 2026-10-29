@@ -96,6 +96,9 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Blackjack</span>
+        {showDealerHole && (isInProgress || (isBetting && peekDealerLevel >= 2 && bettingPreview)) && (
+          <PerkHint>Hole card visible</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -106,9 +109,6 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
         gameLabel="Blackjack"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {showDealerHole && (isInProgress || (isBetting && peekDealerLevel >= 2 && bettingPreview)) && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">Hole card visible</PerkHint>
-        )}
         <GameCurrentBetBadge betAmount={round.betAmount} visible={!isBetting && round.betAmount > 0} />
 
         <div className="bj-table flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center gap-2" style={CARD_CSS}>
