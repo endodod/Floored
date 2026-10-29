@@ -60,6 +60,7 @@ export function TableShell({
   const forfeit = useTablesStore((s) => s.forfeit)
   const wallet = useTablesStore((s) => s.wallet)
   const [confirmLeave, setConfirmLeave] = useState(false)
+  const [resultReady, setResultReady] = useState(false)
   const settled = useRef(false)
   const tier = TIER_BY_ID.get(table.tier)!
   const prizes = payoutsFor(standings, table.buyIn, table.seats)
@@ -76,7 +77,14 @@ export function TableShell({
     else router.push('/tables')
   }
 
-  const showResult = place != null && (!watching || over)
+  useEffect(() => {
+    setResultReady(false)
+    if (place == null) return
+    const timer = setTimeout(() => setResultReady(true), place === 1 ? 0 : 1800)
+    return () => clearTimeout(timer)
+  }, [place])
+
+  const showResult = place != null && resultReady && (!watching || over)
   const canAgain = wallet >= table.buyIn
 
   return (
@@ -128,7 +136,7 @@ export function TableShell({
               aria-live="polite"
             >
               <p className={cn('text-[17px] font-semibold', place === 1 ? 'text-gold glow-gold' : prize > 0 ? 'text-felt' : 'text-ink')}>
-                {place === 1 ? 'You won the table' : `You finished ${ordinal(place!)}`}
+                {place === 1 ? 'You won the table' : prize > 0 ? `You finished ${ordinal(place!)}` : "You're bankrupt"}
               </p>
               <p className="mt-1 text-[13px] text-soft">
                 {prize > 0 ? (

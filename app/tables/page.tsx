@@ -219,8 +219,13 @@ export default function TablesPage() {
               )
             })}
           </ul>
-          <p className="text-xs text-dim">
-            Rules for each game:{' '}
+        </section>
+
+        <section className="flex flex-col gap-4" aria-labelledby="tables-rules">
+          <SectionTitle suit={2} note="How to play">
+            <span id="tables-rules">Game rules</span>
+          </SectionTitle>
+          <p className="text-[13px] text-soft">
             {TABLE_GAMES.map((g, i) => (
               <span key={g.name}>
                 {i > 0 && ' · '}
