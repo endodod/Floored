@@ -81,7 +81,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 function RecordGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section aria-label={`${title} records`}>
-      <h3 className="mb-1 border-b border-rule pb-1.5 text-xs font-semibold uppercase tracking-wider text-dim">{title}</h3>
+      <h3 className="mb-1 border-b border-rule pb-1.5 text-sm font-semibold uppercase tracking-wider text-soft">{title}</h3>
       <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 [&>div]:border-b [&>div]:border-rule">{children}</dl>
     </section>
   )
