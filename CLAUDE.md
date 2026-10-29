@@ -7,6 +7,9 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 
 Read the one that matches the task before changing code:
 
+- **On this branch:** [.md/MODE_ADJUSTMENTS_HANDOFF.md](.md/MODE_ADJUSTMENTS_HANDOFF.md) — the plan
+  for re-checking Survival perks and Ladder on the redesigned boards. Start here.
+
 - [README.md](README.md): what each mode is and how it plays; the game list.
 - [.md/ARCHITECTURE.md](.md/ARCHITECTURE.md): code layout, the game/engine contract, the
   shared game UI (shell, board and dock pieces, colour rules, layout stability), survival
