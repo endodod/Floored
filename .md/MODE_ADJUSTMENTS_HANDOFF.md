@@ -103,10 +103,9 @@ For each game in a Ladder climb:
     it, not add a second stake; Undo / Clear hidden.
   - **Case Battles** (`ladder` = one of each case, all five open): the stake is
     the pot, not the case prices — check the cost row and the result.
-  - **Plinko**: the all-in sets the *bet per ball* to the whole pot, so only one
-    ball is affordable (`maxBalls`). Check the − / + stepper is clearly locked
-    at 1 and doesn't read as broken; decide with the owner whether Ladder
-    should instead split the pot across balls.
+  - **Plinko**: Ladder splits the whole pot across the selected balls, keeps
+    each ball at or above the game's minimum bet, and distributes any remainder
+    into the final ball. Verify the stepper cap, stake display, and settlement.
   - Streak games (Coin Flip, HiLo, Mines, Chicken Road, Dragon Tower, Crash):
     the cash-out multiplier is what the rung records.
 - The Ladder hub (`app/ladder/page.tsx`): game tiles and payout captions after
@@ -131,7 +130,8 @@ Checked in a browser at 1440×900 (Survival with every perk at L5, Ladder fresh 
 - ✅ Fixed: Chicken Road safe lane marked; Street Cups cross on the empty cup; Run Dice / Over-Under /
   Slots shielded losses read as refunds; Crash cushion shows its real loss; Blackjack felt follows
   L4/L5; HiLo Hot Streak no longer leaks out of Survival; free bet can't profit on a loss.
-- ✅ Ladder: strip restyled, hints say "whole pot", Plinko shows one ball, coin-flip clear/fall checked.
+- ✅ Ladder: strip restyled, hints say "whole pot", coin-flip clear/fall checked.
+- Plinko Ladder now splits the whole pot across the selected balls; multi-ball settlement still needs browser verification.
 - ✅ Seen working: Mines, Dragon Tower, Keno, Poker, Wheel, Chicken Race, Coin Flip, Plinko golden ball.
 
 Still to check:
@@ -146,5 +146,4 @@ Still to check:
 ## Open questions
 
 - Case X-Ray is now a reroll (owner rework 71d3331); keep the name or rename it?
-- Plinko in Ladder: one ball for the whole pot (now labelled), or split the pot across balls?
 - Free-bet fix: a partial return on a free bet now nets 0 (was a profit). Confirm that's intended.
