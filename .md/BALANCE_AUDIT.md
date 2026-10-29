@@ -439,7 +439,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Optimal EV:** **~0.94×** per case price spent (engine comment); battle outcome ~50% win without bias → **~0.94×** rough.
 - **Worst case:** −total case cost.
 - **Game Boost:** Standard.
-- **Game Perk — Case X-Ray:** See one case tier before open (**30–75%** proc).
+- **Game Perk — Case X-Ray:** **30–75%** proc per battle; when active, after the cases open you may reroll one of your items (`rerollUserItem`, drawn from that case's odds) or skip. The name is from an older tier-reveal version.
 - **TODO:** None.
 
 ---
@@ -550,7 +550,7 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | roulette | Ball Tracker | 3 numbers shown won’t hit |
 | dragon-tower | Dragon’s Blind Spot | Safe marks rows 1–2 |
 | street-cups | Cup Truth | One empty cup removed |
-| case-battles | Case X-Ray | One case tier revealed (proc) |
+| case-battles | Case X-Ray | Reroll one of your items after opening (proc) |
 | poker-1p | Hold Harmony | Draw bias to held ranks (proc) |
 | keno | Number Heat | 2 hitting numbers highlighted |
 | coin-flip | Weighted Edge | Win chance 54–65% by level |

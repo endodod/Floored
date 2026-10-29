@@ -170,7 +170,7 @@ const GAME_PERK_DEFS: Record<
   },
   'case-battles': {
     name: 'Case X-Ray',
-    description: 'See the value tier of one random case before opening.',
+    description: 'When active, once your cases open you may reroll one of your items (or skip).',
     effectKey: 'perk_case_xray',
     baseCost: 20,
     rarity: 'rare',

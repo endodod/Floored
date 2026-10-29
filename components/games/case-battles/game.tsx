@@ -322,12 +322,13 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
     const withReroll = rerollUserItem(stateRef.current, slotIndex, cases)
     setState(withReroll)
     setRerollingIdx(slotIndex)
-    setTimeout(() => {
+    const t = setTimeout(() => {
       setRerollingIdx(-1)
       const settled = settleBattle(withReroll)
       settleCaseBattle(settled)
       setState(settled)
     }, OPEN_MS)
+    timeoutsRef.current.push(t)
   }
 
   function handleSkipReroll() {
@@ -576,7 +577,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
             )}
             {isRerollPending && (
               <p className="cb-wait text-sm font-semibold text-felt">
-                Perk active — tap one of your items to reroll
+                Reroll one of your items, or skip
               </p>
             )}
             {isSettled && pendingResult && (
@@ -605,10 +606,10 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                   <button
                     type="button"
                     onClick={isSettled ? handleNext : handleBattle}
-                    disabled={(isOpening && !isRerollPending) || (isSetup && !canBattle)}
+                    disabled={isOpening || (isSetup && !canBattle)}
                     className={GAME_DOCK_PRIMARY_BTN}
                   >
-                    {isSettled ? 'Next →' : isRerollPending ? 'Rerolling…' : isOpening ? 'Opening…' : 'Battle →'}
+                    {isSettled ? 'Next →' : isRerollPending ? 'Pick an item ↑' : isOpening ? 'Opening…' : 'Battle →'}
                   </button>
                 </>
               )}
