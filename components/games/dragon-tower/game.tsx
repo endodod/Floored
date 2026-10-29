@@ -167,6 +167,9 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Dragon Tower</span>
+        {blindspotProc.perkActive && isClimbing && (
+          <PerkHint>Safe tile marked (floors 1–2)</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{state.message}</span>
       </div>
 
@@ -177,9 +180,6 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
         gameLabel="Dragon Tower"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {blindspotProc.perkActive && isClimbing && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">Safe tile marked (floors 1–2)</PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={state.betAmount}
           betType={climbFloorLabel}
@@ -190,7 +190,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
           {/* The tower, top floor first. It rebuilds floor by floor when a climb starts. */}
           <div
             key={isBetting ? 'bet' : 'climb'}
-            className="dt-tower flex shrink-0 flex-col gap-[calc(var(--tile)*0.16)] [--stagger:45ms]"
+            className="dt-tower dt-frame flex shrink-0 flex-col gap-[calc(var(--tile)*0.16)] [--stagger:45ms]"
           >
             {Array.from({ length: NUM_ROWS }, (_, i) => NUM_ROWS - 1 - i).map((rowIdx) => {
               const row = state.rows[rowIdx]!
@@ -212,12 +212,12 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                   ].join(' ')}
                 >
                   <div className="w-[calc(var(--tile)*1.05)] shrink-0 text-right leading-none">
-                    <p className={`mb-1 text-[10px] font-semibold tracking-[0.12em] ${isActive ? 'text-felt' : 'text-dim'}`}>
+                    <p className={`mb-1 text-[10px] font-semibold tracking-[0.12em] ${isActive ? 'text-felt' : 'gold-print'}`}>
                       F{floorNum}
                     </p>
                     <p
                       className={`num text-[max(10px,calc(var(--tile)*0.27))] ${
-                        isActive ? 'text-ink' : isCleared || (isSettled && row.picked !== null && !hitDragon) ? 'text-gold' : 'text-dim'
+                        isActive ? 'text-ink' : isCleared || (isSettled && row.picked !== null && !hitDragon) ? 'text-gold' : 'gold-print'
                       }`}
                     >
                       {mult.toFixed(2)}×
@@ -233,7 +233,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                         row.picked === null &&
                         ti === safeHintTile
                       const tState = tileState(row, ti, isActive)
-                      const mark = tState === 'safe' ? 'gem' : tState === 'bad' || tState === 'dormant' ? 'flame' : null
+                      const mark = tState === 'safe' ? 'gem' : tState === 'bad' || tState === 'dormant' ? 'skull' : null
                       return (
                         <BoardTile
                           key={ti}
@@ -241,7 +241,7 @@ export function DragonTowerGame({ mode, bankroll, onBet, onResolve }: DragonTowe
                           index={NUM_ROWS - 1 - rowIdx + ti}
                           disabled={!isActive}
                           onClick={() => isActive && handlePickTile(ti)}
-                          label={mark === 'flame' ? 'Dragon' : mark === 'gem' ? 'Safe' : `Floor ${floorNum}, tile ${ti + 1}`}
+                          label={mark === 'skull' ? 'Dragon' : mark === 'gem' ? 'Safe' : `Floor ${floorNum}, tile ${ti + 1}`}
                           className={`dt-tile ${tState === 'dormant' ? 'btile-bad' : ''} ${blindspotSafe ? 'btile-hint' : ''}`}
                         >
                           {mark ? (

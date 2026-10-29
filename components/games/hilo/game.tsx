@@ -155,7 +155,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   function handleGuess(guess: 'higher' | 'lower') {
     if (!isPlaying && !isRiding) return
     let next = forceTie ? tieGame(round) : blessed ? winGame(round, guess) : cursed ? loseGame(round, guess) : guessHiLo(round, guess)
-    if (hiloHotStreak && next.stage === 'riding' && !next.isTie && Math.random() < 0.25) {
+    if (mode === 'survival' && hiloHotStreak && next.stage === 'riding' && !next.isTie && Math.random() < 0.25) {
       next = bumpStreak(next)
       setHotStreakFlash(true)
       setTimeout(() => setHotStreakFlash(false), 1200)
@@ -235,6 +235,9 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
     <div className={GAME_CARD_SHELL} style={CARD_STYLE}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">HiLo</span>
+        {hotStreakFlash && (
+          <PerkHint>Hot streak — streak jumped by 2</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -246,11 +249,6 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
       >
         <div className="hilo-board relative flex min-h-0 h-full w-full flex-col items-center justify-center px-4 py-[clamp(0.5rem,3cqh,1.5rem)] gap-[clamp(0.5rem,3cqh,1.25rem)]">
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {hotStreakFlash && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Hot streak — streak jumped by 2
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={!isBetting ? round.betAmount : 0}
           extra={isRiding ? `${round.streak}× streak` : undefined}
@@ -277,7 +275,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
         {/* The two cards, the guess between them */}
         <div className="hilo-cards flex items-center gap-4 sm:gap-6">
           <div className="flex flex-col items-center gap-2">
-            <p className="text-[13px] text-soft">Current</p>
+            <p className="felt-print">Current</p>
             <CardView card={round.currentCard} animClass={currentCardAnim} />
           </div>
 
@@ -289,7 +287,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
           </span>
 
           <div className="flex flex-col items-center gap-2">
-            <p className="text-[13px] text-soft">Next</p>
+            <p className="felt-print">Next</p>
             {/* A right guess glows, a wrong one shakes. */}
             <div className={isSettled && round.outcome === 'loss' ? 'g-shake' : ''}>
               <NextCardReveal card={round.nextCard} pending={!isBetting} className={isRiding ? 'g-win' : ''} />
@@ -303,16 +301,16 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
             <button
               type="button"
               onClick={() => handleGuess('higher')}
-              className={`${GUESS_BTN} border-felt text-ink hover:bg-felt-tint hover:shadow-[0_0_24px_-6px_rgba(79,174,132,0.8)]`}
+              className={`${GUESS_BTN} hilo-higher`}
             >
-              <span className="mr-1.5 text-felt">↑</span>Higher
+              <span className="mr-1.5">↑</span>Higher
             </button>
             <button
               type="button"
               onClick={() => handleGuess('lower')}
-              className={`${GUESS_BTN} border-felt text-ink hover:bg-felt-tint hover:shadow-[0_0_24px_-6px_rgba(79,174,132,0.8)]`}
+              className={`${GUESS_BTN} hilo-lower`}
             >
-              <span className="mr-1.5 text-felt">↓</span>Lower
+              <span className="mr-1.5">↓</span>Lower
             </button>
           </div>
           <div className={`absolute inset-x-0 flex gap-3 ${!isRiding ? 'invisible pointer-events-none' : ''}`}>

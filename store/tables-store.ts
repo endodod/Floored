@@ -2,76 +2,164 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { createBlackjackShowdown } from '@/games/blackjack-showdown/engine'
-import type { ShowdownState } from '@/games/blackjack-showdown/types'
-import { createRng } from '@/utils/rng'
-import { createTable, startHand } from '@/games/holdem/engine'
-import type { State as HoldemState } from '@/games/holdem/types'
-import { startGame } from '@/games/liars-dice/engine'
-import type { State as LiarsState } from '@/games/liars-dice/types'
+import { MIN_BUY_IN, TABLES_START_WALLET, TIER_BY_ID } from '@/lib/tables/stakes'
+import type { TableGameName, TableTier } from '@/lib/tables/types'
 
-type TableKey = 'blackjack-showdown'|'liars-dice'|'holdem'
-export interface TableGameRecord { played:number; wins:number; bestFinish:number|null; net:number }
-type TableGameRecords = Record<TableKey,TableGameRecord>
-const emptyRecords = ():TableGameRecords => ({
-  'blackjack-showdown':{played:0,wins:0,bestFinish:null,net:0},
-  'liars-dice':{played:0,wins:0,bestFinish:null,net:0},
-  holdem:{played:0,wins:0,bestFinish:null,net:0},
-})
-function recordResult(records:TableGameRecords,game:TableKey,buyIn:number,payout:number,place:number):TableGameRecords {
-  const previous=records[game]
-  return {...records,[game]:{played:previous.played+1,wins:previous.wins+(place===1?1:0),bestFinish:previous.bestFinish===null?place:Math.min(previous.bestFinish,place),net:previous.net+payout-buyIn}}
+/** The table you bought into. Leaving it before your place is decided forfeits the buy-in. */
+export interface OpenTable {
+  id: string
+  game: TableGameName
+  tier: TableTier
+  buyIn: number
+  seats: number
+  seed: number
+  startedAt: string
+  /** Set once the table page has dealt it — a second visit means the table was left. */
+  seated: boolean
 }
+
+export interface TableRecord {
+  id: string
+  game: TableGameName
+  tier: TableTier
+  buyIn: number
+  seats: number
+  place: number
+  prize: number
+  forfeited: boolean
+  endedAt: string
+}
+
+export interface TableGameStats {
+  played: number
+  won: number
+  /** Finished in a paid place. */
+  cashes: number
+  bestFinish: number | null
+  /** Prizes minus buy-ins. */
+  net: number
+}
+
+const emptyStats = (): TableGameStats => ({ played: 0, won: 0, cashes: 0, bestFinish: null, net: 0 })
 
 interface TablesStore {
   wallet: number
-  peakWallet:number
-  walletResetCount:number
-  gameStats:TableGameRecords
-  table: ShowdownState | null
-  buyIn: number
-  played: number
-  won: number
-  activeGame: 'blackjack-showdown'|'liars-dice'|'holdem'|null
-  holdemTable: HoldemState|null
-  liarsTable: LiarsState|null
-  refill: () => void
-  start: (buyIn: number) => void
-  setTable: (table: ShowdownState) => void
-  finish: (table: ShowdownState) => void
-  leave: () => void
-  reserve: (game: 'liars-dice'|'holdem', buyIn: number) => boolean
-  settleMini: (game: 'liars-dice'|'holdem', payout: number, place:number) => void
-  setHoldemTable: (table:HoldemState|null)=>void
-  setLiarsTable: (table:LiarsState)=>void
+  peakWallet: number
+  refills: number
+  open: OpenTable | null
+  stats: Record<TableGameName, TableGameStats>
+  /** Finished tables, newest first. */
+  history: TableRecord[]
+  /** The last table's result, shown once on the hub. */
+  lastResult: TableRecord | null
+
+  /** Pays the buy-in and opens a table; false if the wallet can't cover it or a table is open. */
+  sitDown: (game: TableGameName, tier: TableTier, seats: number) => boolean
+  markSeated: () => void
+  /** Your place is decided: pays the prize and closes the table. */
+  finish: (place: number, prize: number) => void
+  /** Leaving before your place is decided: last place, no prize. */
+  forfeit: () => void
+  /** A table bought into but never dealt (the page didn't open): the buy-in comes back. */
+  cancelUnseated: () => void
+  /** Back to the start amount, only when the wallet can't cover the smallest buy-in. */
+  refill: () => boolean
+  dismissResult: () => void
 }
 
-export const useTablesStore = create<TablesStore>()(persist((set, get) => ({
-  wallet: 10_000, peakWallet:10_000, walletResetCount:0, gameStats:emptyRecords(), table: null, buyIn: 100, played: 0, won: 0, activeGame: null, holdemTable:null, liarsTable:null,
-  refill: () => set(s => ({ wallet: 10_000, peakWallet:Math.max(s.peakWallet,10_000), walletResetCount:s.walletResetCount+1 })),
-  start: (buyIn) => {
-    const wallet = get().wallet
-    if (buyIn > wallet || get().activeGame) return
-    const table = createBlackjackShowdown(createRng(Date.now() >>> 0))
-    set({ wallet: wallet - buyIn, table, buyIn, activeGame: 'blackjack-showdown' })
-  },
-  setTable: (table) => set({ table }),
-  finish: (table) => {
-    if (table.phase !== 'finished') return
-    const won = table.winner === 0
-    set((s) => {
-      if(s.table?.phase==='finished')return {}
-      const payout=won?s.buyIn*4:0,place=1+table.players.filter((p,i)=>i!==0&&p.chips>table.players[0]!.chips).length,wallet=s.wallet+payout
-      return {table,activeGame:null,wallet,peakWallet:Math.max(s.peakWallet,wallet),played:s.played+1,won:s.won+(won?1:0),gameStats:recordResult(s.gameStats,'blackjack-showdown',s.buyIn,payout,place)}
-    })
-  },
-  leave: () => set(s => {
-    if (!s.activeGame) return { table: null, activeGame: null, holdemTable:null, liarsTable:null }
-    const place=s.activeGame==='holdem'?6:4
-    return { table: null, activeGame: null, holdemTable:null, liarsTable:null, played:s.played+1, gameStats:recordResult(s.gameStats,s.activeGame,s.buyIn,0,place) }
-  }),
-  reserve: (game, buyIn) => { const s=get(); if(s.wallet<buyIn||s.activeGame)return false; const rng=createRng(Date.now()>>>0); set({wallet:s.wallet-buyIn,buyIn,activeGame:game,...(game==='holdem'?{holdemTable:startHand(createTable(),rng)}:{liarsTable:startGame(rng)})}); return true },
-  settleMini: (game,payout,place) => set(s=>s.activeGame!==game?{}:(()=>{const wallet=s.wallet+payout;return {activeGame:null,wallet,peakWallet:Math.max(s.peakWallet,wallet),played:s.played+1,won:s.won+(place===1?1:0),gameStats:recordResult(s.gameStats,game,s.buyIn,payout,place)}})()),
-  setHoldemTable: (holdemTable)=>set({holdemTable}),
-  setLiarsTable: (liarsTable)=>set({liarsTable}),
-}), { name: 'floored-tables', partialize: (s) => ({ wallet: s.wallet, peakWallet:s.peakWallet,walletResetCount:s.walletResetCount,gameStats:s.gameStats,table: s.table, buyIn: s.buyIn, played: s.played, won: s.won, activeGame:s.activeGame,holdemTable:s.holdemTable,liarsTable:s.liarsTable }) }))
+const HISTORY_LIMIT = 40
+
+export const useTablesStore = create<TablesStore>()(
+  persist(
+    (set, get) => {
+      const close = (place: number, prize: number, forfeited: boolean) => {
+        const open = get().open
+        if (!open) return
+        const record: TableRecord = {
+          id: open.id,
+          game: open.game,
+          tier: open.tier,
+          buyIn: open.buyIn,
+          seats: open.seats,
+          place,
+          prize,
+          forfeited,
+          endedAt: new Date().toISOString(),
+        }
+        set((s) => {
+          const prev = s.stats[open.game] ?? emptyStats()
+          return {
+            open: null,
+            wallet: s.wallet + prize,
+            peakWallet: Math.max(s.peakWallet, s.wallet + prize),
+            lastResult: record,
+            history: [record, ...s.history].slice(0, HISTORY_LIMIT),
+            stats: {
+              ...s.stats,
+              [open.game]: {
+                played: prev.played + 1,
+                won: prev.won + (place === 1 ? 1 : 0),
+                cashes: prev.cashes + (prize > 0 ? 1 : 0),
+                bestFinish: prev.bestFinish == null ? place : Math.min(prev.bestFinish, place),
+                net: prev.net + prize - open.buyIn,
+              },
+            },
+          }
+        })
+      }
+
+      return {
+        wallet: TABLES_START_WALLET,
+        peakWallet: TABLES_START_WALLET,
+        refills: 0,
+        open: null,
+        stats: { holdem: emptyStats(), 'liars-dice': emptyStats(), 'blackjack-showdown': emptyStats() },
+        history: [],
+        lastResult: null,
+
+        sitDown: (game, tier, seats) => {
+          const s = get()
+          const buyIn = TIER_BY_ID.get(tier)!.buyIn
+          if (s.open || s.wallet < buyIn) return false
+          set({
+            wallet: s.wallet - buyIn,
+            lastResult: null,
+            open: {
+              id: `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`,
+              game,
+              tier,
+              buyIn,
+              seats,
+              seed: Math.floor(Math.random() * 2 ** 31),
+              startedAt: new Date().toISOString(),
+              seated: false,
+            },
+          })
+          return true
+        },
+        markSeated: () => set((s) => (s.open ? { open: { ...s.open, seated: true } } : {})),
+        finish: (place, prize) => close(place, prize, false),
+        forfeit: () => {
+          const open = get().open
+          if (open) close(open.seats, 0, true)
+        },
+        cancelUnseated: () =>
+          set((s) => (s.open && !s.open.seated ? { open: null, wallet: s.wallet + s.open.buyIn } : {})),
+        refill: () => {
+          const s = get()
+          if (s.open || s.wallet >= MIN_BUY_IN) return false
+          set({ wallet: TABLES_START_WALLET, peakWallet: Math.max(s.peakWallet, TABLES_START_WALLET), refills: s.refills + 1 })
+          return true
+        },
+        dismissResult: () => set({ lastResult: null }),
+      }
+    },
+    {
+      name: 'floored-tables',
+      merge: (persisted, current) => {
+        const restored = { ...current, ...(persisted as Partial<TablesStore>) }
+        return { ...restored, peakWallet: Math.max(restored.peakWallet, restored.wallet) }
+      },
+    },
+  ),
+)

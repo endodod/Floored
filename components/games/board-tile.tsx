@@ -58,7 +58,7 @@ export function BoardTile({
 }
 
 /** Drawn marks for a turned-up tile (no emoji in the UI). */
-export function TileMark({ kind, className = '' }: { kind: 'gem' | 'mine' | 'flame'; className?: string }) {
+export function TileMark({ kind, className = '' }: { kind: 'gem' | 'mine' | 'skull'; className?: string }) {
   if (kind === 'gem')
     return (
       <svg viewBox="0 0 24 24" className={`btile-mark ${className}`} aria-hidden>
@@ -66,14 +66,15 @@ export function TileMark({ kind, className = '' }: { kind: 'gem' | 'mine' | 'fla
         <path d="M12 2.5 16.5 12 12 21.5 7.5 12z" fill="#fff" opacity="0.22" />
       </svg>
     )
-  if (kind === 'flame')
+  if (kind === 'skull')
     return (
       <svg viewBox="0 0 24 24" className={`btile-mark ${className}`} aria-hidden>
         <path
-          d="M12 2c1 3.6 5.5 6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.4 1.2-4 2.4-5.2.2 1.7.9 2.8 2 3.3C10.6 8.6 11 5.2 12 2z"
+          fillRule="evenodd"
+          d="M12 2.5c-4.7 0-8 3.3-8 7.6 0 2.6 1.2 4.4 3 5.4V19a1.5 1.5 0 0 0 1.5 1.5h7A1.5 1.5 0 0 0 17 19v-3.5c1.8-1 3-2.8 3-5.4 0-4.3-3.3-7.6-8-7.6zM9 9.3a2 2 0 1 0 0 4 2 2 0 1 0 0-4zm6 0a2 2 0 1 0 0 4 2 2 0 1 0 0-4zm-3 4.3-1.1 2h2.2zM10.5 17.6h.9v2.9h-.9zm2.1 0h.9v2.9h-.9z"
           fill="currentColor"
         />
-        <path d="M12 13.5c.6 1.4 2.2 2.2 2.2 4a2.2 2.2 0 0 1-4.4 0c0-1.5 1.4-2.3 2.2-4z" fill="#fff" opacity="0.3" />
+        <path d="M7.4 7.2c.9-1.6 2.6-2.6 4.6-2.6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.3" />
       </svg>
     )
   return (

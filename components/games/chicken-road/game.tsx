@@ -193,6 +193,9 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Chicken Road</span>
+        {safeAdvancePending && isInProgress && (
+          <PerkHint>Safe lane: your next crossing can’t fail</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
       <GameFieldWithHistory
@@ -202,11 +205,6 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
         gameLabel="Chicken"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {safeAdvancePending && isInProgress && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Safe crossing — your next advance cannot fail
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={stepLabel}
@@ -215,12 +213,12 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
 
         <div className="cr-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
           <div className={`cr-stats flex h-9 shrink-0 items-center justify-center gap-2 ${isBetting ? 'invisible' : ''}`}>
-            <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-              <span className="text-dim">Step</span>
+            <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+              <span className="felt-print">Step</span>
               <span className="num text-ink">{currentStep}</span>
             </span>
-            <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-              <span className="text-dim">Multiplier</span>
+            <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+              <span className="felt-print">Multiplier</span>
               <span
                 key={round.multiplier}
                 className={`num g-pop ${isSettled && round.outcome === 'loss' ? 'text-loss' : 'text-gold glow-gold'}`}
@@ -251,6 +249,8 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
               const isKilled = isSettled && round.outcome === 'loss' && currentStep === stepNum
               const isSafe = isSettled && round.outcome === 'win' && currentStep >= stepNum
               const isLanded = isSettled && round.outcome === 'win' && currentStep === stepNum
+              // Safe Lane: the crossing the perk guarantees is ringed in felt until it is taken.
+              const isSafeLane = safeAdvancePending && isInProgress && stepNum === currentStep + 1
               const state: BoardTileState = isKilled ? 'bad' : isPassed || isSafe ? 'safe' : 'idle'
               return (
                 <BoardTile
@@ -258,8 +258,8 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
                   state={state}
                   index={stepNum}
                   disabled
-                  label={isKilled ? `Lane ${stepNum}: hit` : `Lane ${stepNum}`}
-                  className={isLanded ? 'g-win' : ''}
+                  label={isKilled ? `Lane ${stepNum}: hit` : isSafeLane ? `Lane ${stepNum}: safe` : `Lane ${stepNum}`}
+                  className={isLanded ? 'g-win' : isSafeLane ? 'btile-hint' : ''}
                 >
                   {isKilled ? (
                     <TileMark kind="mine" />

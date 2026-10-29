@@ -409,6 +409,7 @@ export function GameDockChipRow({
   quoteIdx,
   showQuote = false,
   minBet,
+  allInLabel = 'All in',
 }: {
   visible: boolean
   bankroll: number
@@ -417,6 +418,8 @@ export function GameDockChipRow({
   quoteIdx?: number
   showQuote?: boolean
   minBet?: number
+  /** The last pill adds everything `bankroll` allows: "All in", or "Max" where that is a table limit. */
+  allInLabel?: string
 }) {
   const openingTicketActive = useOpeningTicketActive()
   const ladder = useIsLadderRoute()
@@ -502,7 +505,7 @@ export function GameDockChipRow({
                 disabled={currentBet >= bankroll || bankroll <= 0}
                 className={`${FRAC_BTN} border-gold text-gold hover:border-gold hover:bg-gold-tint hover:shadow-[0_0_18px_-6px_rgba(217,164,65,0.8)]`}
               >
-                All in
+                {allInLabel}
               </button>
             </>
           )}
@@ -564,7 +567,7 @@ export function GameDockChipPicker({
             onClick={() => onSelect(chip.value)}
             disabled={chip.value > remaining}
             aria-label={`${chip.label} chip`}
-            className={`${CHIP_BTN} m-still g-lift ${chip.label.length > 3 ? 'w-auto min-w-11 px-2 sm:min-w-12' : ''} ${
+            className={`${CHIP_BTN} m-still g-lift ${chip.label.length > 3 ? 'text-[9px] tracking-tight sm:text-[10px]' : ''} ${
               on ? '-translate-y-1 ring-2 ring-gold ring-offset-2 ring-offset-ground' : ''
             }`}
             style={chipStyle(chip.chip, chip.ink)}

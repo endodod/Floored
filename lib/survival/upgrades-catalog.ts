@@ -135,7 +135,7 @@ const GAME_PERK_DEFS: Record<
   },
   'chicken-road': {
     name: 'Safe Lane',
-    description: 'One safe lane is marked on each crossing row.',
+    description: 'When active, your first crossing each round can’t fail; that lane is ringed in green.',
     effectKey: 'perk_chicken_road_lane',
     baseCost: 20,
     rarity: 'rare',
@@ -170,7 +170,7 @@ const GAME_PERK_DEFS: Record<
   },
   'case-battles': {
     name: 'Case X-Ray',
-    description: 'See the value tier of one random case before opening.',
+    description: 'When active, once your cases open you may reroll one of your items (or skip).',
     effectKey: 'perk_case_xray',
     baseCost: 20,
     rarity: 'rare',

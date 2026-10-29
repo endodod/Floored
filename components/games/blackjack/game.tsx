@@ -35,12 +35,12 @@ function fan(i: number, len: number): React.CSSProperties | undefined {
 /** A hand's label with its total as a mono pill; the pill lights up on 21. */
 function HandLabel({ who, total }: { who: string; total: number | null }) {
   return (
-    <p className="mb-2 flex items-center justify-center gap-2 text-[13px] text-soft">
-      {who}
+    <p className="mb-2 flex items-center justify-center gap-2">
+      <span className="felt-print">{who}</span>
       {total != null && (
         <span
           className={`num rounded-full px-2 py-0.5 text-[13px] ${
-            total === 21 ? 'bg-felt-tint text-felt glow-felt' : total > 21 ? 'bg-loss-tint text-loss' : 'bg-black/45 text-ink'
+            total === 21 ? 'bg-felt-tint text-felt glow-felt' : total > 21 ? 'bg-loss-tint text-loss' : 'plaque text-ink'
           }`}
         >
           {total}
@@ -92,10 +92,18 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
   const playerFx = outcome === 'win' ? 'g-win' : outcome === 'loss' ? 'g-dim' : ''
   const dealerFx = outcome === 'loss' ? 'g-win' : outcome === 'win' ? 'g-dim' : ''
 
+  // Hole Card Reader L4 lets you double on any hand and L5 pays a blackjack 3× (2 to 1): the felt says so.
+  const perkLevel = mode === 'survival' ? peekDealerLevel : 0
+  const bjPays = perkLevel >= 5 ? '2 to 1' : '3 to 2'
+  const doubleRule = perkLevel >= 4 ? 'Double on any hand' : 'Double on two cards'
+
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Blackjack</span>
+        {showDealerHole && (isInProgress || (isBetting && peekDealerLevel >= 2 && bettingPreview)) && (
+          <PerkHint>Hole card visible</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -106,9 +114,6 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
         gameLabel="Blackjack"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {showDealerHole && (isInProgress || (isBetting && peekDealerLevel >= 2 && bettingPreview)) && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">Hole card visible</PerkHint>
-        )}
         <GameCurrentBetBadge betAmount={round.betAmount} visible={!isBetting && round.betAmount > 0} />
 
         <div className="bj-table flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center gap-2" style={CARD_CSS}>
@@ -145,7 +150,7 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
           </div>
 
           {/* The table print: payouts on an arc, the house rules beneath it */}
-          <div className="bj-print relative w-full max-w-md shrink-0 select-none" aria-label="Blackjack pays 3 to 2. Dealer hits 16 and below.">
+          <div className="bj-print relative w-full max-w-md shrink-0 select-none" aria-label={`Blackjack pays ${bjPays}. Dealer hits 16 and below.`}>
             <svg viewBox="0 0 400 54" className="bj-arc w-full" aria-hidden>
               <defs>
                 <path id="bj-arc" d="M 24 44 Q 200 -6 376 44" />
@@ -153,17 +158,17 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
               <path d="M 14 50 Q 200 -2 386 50" fill="none" stroke="rgba(217,164,65,0.28)" strokeWidth="1" />
               <text className="felt-print" fill="currentColor" textAnchor="middle" style={{ fontSize: 12.5 }}>
                 <textPath href="#bj-arc" startOffset="50%">
-                  Blackjack pays 3 to 2 · Win pays 1 to 1
+                  Blackjack pays {bjPays} · Win pays 1 to 1
                 </textPath>
               </text>
             </svg>
             <p className="bj-print-pays felt-print hidden text-center text-[11px] leading-relaxed" aria-hidden>
-              Blackjack pays 3 to 2
+              Blackjack pays {bjPays}
               <br />
               Win pays 1 to 1
             </p>
             <p className="felt-print -mt-1 text-center text-[9.5px] opacity-80">
-              Dealer hits 16 and below · Double on two cards · No split
+              Dealer hits 16 and below · {doubleRule} · No split
             </p>
           </div>
 
@@ -193,9 +198,11 @@ export function BlackjackGame({ mode, bankroll, onBet, onResolve }: BlackjackGam
           <div className="bj-hint min-h-10 flex w-full shrink-0 items-center justify-center">
             <p className="max-w-md px-2 text-center text-[13px] text-dim">
               {isBetting
-                ? 'Place chips and deal. Blackjack pays 3:2; push returns your bet.'
+                ? mode === 'ladder'
+                  ? 'Deal for the whole pot. Blackjack pays 3:2; push returns your bet.'
+                  : `Place chips and deal. Blackjack pays ${bjPays === '2 to 1' ? '2:1' : '3:2'}; push returns your bet.`
                 : playerCanAct
-                  ? 'Hit, stand, or double on two cards. Dealer hits on 16 and below.'
+                  ? `Hit, stand, or double${perkLevel >= 4 ? '' : ' on two cards'}. Dealer hits on 16 and below.`
                   : ' '}
             </p>
           </div>

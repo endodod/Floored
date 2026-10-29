@@ -1,4 +1,5 @@
 'use client'
+import { Die, type DieTone } from '@/components/games/die'
 import type { GameMode } from '@/store/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -72,28 +73,9 @@ interface RunDiceGameProps {
   onResolve: GameResolveFn<RunDiceResult>
 }
 
-type DieTone = 'neutral' | 'win' | 'loss'
-
-// Pip positions on a 3×3 grid (0 = top left, 8 = bottom right).
-const PIPS: Record<number, number[]> = {
-  1: [4],
-  2: [2, 6],
-  3: [2, 4, 6],
-  4: [0, 2, 6, 8],
-  5: [0, 2, 4, 6, 8],
-  6: [0, 2, 3, 5, 6, 8],
-}
-
-/** An ivory die with drawn pips, sized by --die. */
-function Die({ value, tone = 'neutral', className = '' }: { value: number | null | undefined; tone?: DieTone; className?: string }) {
-  const pips = PIPS[value ?? 0] ?? []
-  return (
-    <div className={`rd-die relative ${tone === 'win' ? 'g-win' : ''} ${className}`} data-tone={tone} aria-label={value ? `Die showing ${value}` : 'Die'}>
-      {Array.from({ length: 9 }, (_, i) => (
-        <span key={i} className={pips.includes(i) ? 'rd-pip' : ''} />
-      ))}
-    </div>
-  )
+/** A loss roll that Loss Shield refunded (the engine only marks it in the message). */
+function isProtectedPush(state: { outcome: string | null; message: string }): boolean {
+  return state.outcome === 'push' && state.message.includes('protected')
 }
 
 /** The total beside the dice: a figure on a tile, tinted by what it means. */
@@ -137,6 +119,8 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   const [revealStep, setRevealStep] = useState<RevealStep>(0)
   const [targetDice, setTargetDice] = useState<[number, number] | null>(null)
   const [targetTotal, setTargetTotal] = useState<number | null>(null)
+  // Loss Shield turned this roll's loss into a push: it lands as a push, not a bust.
+  const [targetProtected, setTargetProtected] = useState(false)
   const spinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const animTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
@@ -209,6 +193,7 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
 
     // Snapshot target values for the animation to reveal
     setTargetDice(next.dice)
+    setTargetProtected(isProtectedPush(next))
     setTargetTotal(next.rollResult)
     setIsRolling(true)
     setRevealStep(0)
@@ -286,12 +271,13 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   }
 
   function outcomeColor(val: number, cfg = gameConfig): string {
-    if (cfg.win.includes(val))  return 'bg-[rgba(79,174,132,0.3)] border-black text-ink'
-    if (cfg.loss.includes(val)) return 'bg-loss-tint border-transparent text-loss'
-    return 'bg-black/25 border-transparent text-dim'
+    if (cfg.win.includes(val))  return 'bg-[#2a7a57] text-[#f4f1ea]'
+    if (cfg.loss.includes(val)) return 'bg-[#a92b42] text-[#f4f1ea]'
+    return 'bg-[#141318] text-soft'
   }
 
-  function dieTone(total: number): DieTone {
+  function dieTone(total: number, protectedLossPush = false): DieTone {
+    if (protectedLossPush) return 'neutral'
     const rollClass = classifyRunDiceTotal(gameConfig, total)
     if (rollClass === 'win') return 'win'
     if (rollClass === 'loss') return 'loss'
@@ -307,13 +293,18 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
 
   const lastRoll = round.rollResult
   const lastDice = round.dice
+  const lastProtected = isProtectedPush(round)
   // Outcome color is revealed only when the total appears (step 3); until then keep neutral
-  const tTone: DieTone = revealStep >= 3 && targetTotal != null ? dieTone(targetTotal) : 'neutral'
+  const tTone: DieTone =
+    revealStep >= 3 && targetTotal != null ? dieTone(targetTotal, targetProtected) : 'neutral'
 
   return (
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Run Dice</span>
+        {insightProc.perkActive && isInProgress && (
+          <PerkHint>Loss rolls return your bet this round</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -324,11 +315,6 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
         gameLabel="Run Dice"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {insightProc.perkActive && isInProgress && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Loss rolls return your bet this round
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={round.betAmount}
           betType={!isBetting && round.betAmount > 0 ? `Roll ${round.rollCount} / 3` : undefined}
@@ -360,31 +346,30 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
               </div>
               <p className="text-dim text-[12px] h-4">
                 {revealStep < 3 ? 'Rolling…' : (
-                  targetTotal != null && rollLabel(targetTotal)
+                  targetTotal != null && rollLabel(targetTotal, targetProtected)
                 )}
               </p>
             </div>
           ) : lastDice !== null && lastRoll !== null ? (
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-[calc(var(--die)*0.2)]">
-                <Die value={lastDice[0]} tone={dieTone(lastRoll)} />
+                <Die value={lastDice[0]} tone={dieTone(lastRoll, lastProtected)} />
                 <span className="text-dim text-xl">+</span>
-                <Die value={lastDice[1]} tone={dieTone(lastRoll)} />
+                <Die value={lastDice[1]} tone={dieTone(lastRoll, lastProtected)} />
                 <span className="text-dim text-xl">=</span>
-                <TotalTile value={lastRoll} tone={dieTone(lastRoll)} />
+                <TotalTile value={lastRoll} tone={dieTone(lastRoll, lastProtected)} />
               </div>
               <p className="text-dim text-[12px] h-4">
-                {rollLabel(
-                  lastRoll,
-                  round.outcome === 'push' && round.message.includes('protected'),
-                )}
+                {rollLabel(lastRoll, lastProtected)}
               </p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
               <div className="flex gap-[calc(var(--die)*0.2)]">
-                <div className="rd-total border-dashed border-control text-dim g-pop">?</div>
-                <div className="rd-total border-dashed border-control text-dim g-pop" style={{ '--i': 1 } as React.CSSProperties}>?</div>
+                <Die value={null} className="rd-die-idle g-pop" />
+                <span className="g-pop" style={{ '--i': 1 } as React.CSSProperties}>
+                  <Die value={null} className="rd-die-idle" />
+                </span>
               </div>
               <p className="h-4" />
             </div>
@@ -392,14 +377,15 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
         </div>
 
         <div className="rd-map shrink-0">
-          <p className="text-dim text-[11px] mb-1.5">Outcome map</p>
-          <div className="grid grid-cols-11 gap-1">
+          <p className="felt-print mb-1.5">Outcome map</p>
+          {/* A gold-ruled layout like the Roulette table; every field has the same dark outline. */}
+          <div className="rd-layout grid grid-cols-11 gap-1 rounded-md p-1">
             {Array.from({ length: 11 }, (_, i) => i + 2).map((val) => {
               const isLast = lastRoll === val && !isRolling
               return (
                 <div
                   key={isLast ? `${val}-hit` : val}
-                  className={`relative rounded-md border-2 px-0.5 py-[clamp(0.25rem,1.4cqh,0.5rem)] text-center text-[12px] font-semibold ${outcomeColor(val)} ${
+                  className={`rd-field relative rounded-[5px] border-2 border-black px-0.5 py-[clamp(0.25rem,1.4cqh,0.5rem)] text-center text-[12px] font-semibold ${outcomeColor(val)} ${
                     isLast ? 'g-pop g-gold z-10' : ''
                   }`}
                 >
@@ -414,16 +400,16 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
         </div>
 
         <div className="rd-stats grid grid-cols-3 gap-2 shrink-0">
-          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
-            <p className="text-dim text-[11px] mb-0.5">Win chance</p>
+          <div className="rd-plaque rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="felt-print mb-1">Win chance</p>
             <p className="num text-ink text-[14px]">{(winChance * 100).toFixed(1)}%</p>
           </div>
-          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
-            <p className="text-dim text-[11px] mb-0.5">Payout</p>
+          <div className="rd-plaque rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="felt-print mb-1">Payout</p>
             <p className="num text-gold glow-gold text-[14px]">{formatMultiplier(round.payoutMultiplier)}</p>
           </div>
-          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
-            <p className="text-dim text-[11px] mb-0.5">Rolls</p>
+          <div className="rd-plaque rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="felt-print mb-1">Rolls</p>
             <p key={round.rollCount} className={`num text-ink text-[14px] ${isBetting ? '' : 'g-pop'}`}>{round.rollCount} / 3</p>
           </div>
         </div>

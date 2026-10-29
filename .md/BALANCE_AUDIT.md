@@ -261,7 +261,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Mode differences:** None in the engine — Freeplay, Daily, Survival and Ladder share the same crash distribution. Only Survival applies Crash Cushion; curse/bless never apply in Daily or Ladder.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard game boost table.
-- **Game Perk — Crash Cushion:** On a crash below **3×**, recovers **25/35/45/60/75%** of the bet by level (`CRASH_CUSHION_BY_LEVEL`), settled as a push.
+- **Game Perk — Crash Cushion:** On a crash below **3×**, recovers **25/35/45/60/75%** of the bet by level (`CRASH_CUSHION_BY_LEVEL`). It settles as a loss of the rest of the stake; the dock shows the result as "Cushioned" with the net loss.
 - **TODO:** None.
 
 ---
@@ -351,7 +351,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Optimal EV:** **Path-dependent** (cash-out step); always cash step 1 → **0.9 × 0.9 = 0.81×** before boosts.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard.
-- **Game Perk — Safe Lane:** **30–75%** proc; `advanceChickenRoundSafe` (guaranteed step success).
+- **Game Perk — Safe Lane:** **30–75%** proc per round; the first Advance uses `advanceChickenRoundSafe` (guaranteed step success) and that lane is ringed in felt until taken.
 - **TODO:** None.
 
 ---
@@ -439,7 +439,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Optimal EV:** **~0.94×** per case price spent (engine comment); battle outcome ~50% win without bias → **~0.94×** rough.
 - **Worst case:** −total case cost.
 - **Game Boost:** Standard.
-- **Game Perk — Case X-Ray:** See one case tier before open (**30–75%** proc).
+- **Game Perk — Case X-Ray:** **30–75%** proc per battle; when active, after the cases open you may reroll one of your items (`rerollUserItem`, drawn from that case's odds) or skip. The name is from an older tier-reveal version.
 - **TODO:** None.
 
 ---
@@ -528,6 +528,8 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 | L4 | 50 | **22×** |
 | L5 | 60 | **30×** |
 
+The free stake is never deducted, so the bet pays **profit only** (`applyResolveModifiers`): a win pays payout − stake, and a push or a loss that returns part of the stake (Crash Cushion, a Roulette partial, a sub-1× Plinko bucket) nets **0**.
+
 ### Game Boosts (18 × 5 levels) — Game Boost — per game
 Each game: base **14**, costs **14/21/28/35/42**, effects **+5% / +12% / +20% / +30% / +40%** (same as `GAME_PAYOUT_MULT_BY_LEVEL`). Names in `GAME_BOOST_LABELS` (e.g. blackjack → Card Counter, crash → Early Cashout, …).
 
@@ -545,12 +547,12 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | over-under | Safe Opening Roll | First roll loss → push (proc) |
 | wheel | Color Scout | Cross out losing color |
 | run-dice | Loss Shield | Loss → push (proc) |
-| chicken-road | Safe Lane | Guaranteed safe step (proc) |
+| chicken-road | Safe Lane | First crossing guaranteed safe, lane marked (proc) |
 | slots | First Spin Shield | First spin loss → push (proc) |
 | roulette | Ball Tracker | 3 numbers shown won’t hit |
 | dragon-tower | Dragon’s Blind Spot | Safe marks rows 1–2 |
 | street-cups | Cup Truth | One empty cup removed |
-| case-battles | Case X-Ray | One case tier revealed (proc) |
+| case-battles | Case X-Ray | Reroll one of your items after opening (proc) |
 | poker-1p | Hold Harmony | Draw bias to held ranks (proc) |
 | keno | Number Heat | 2 hitting numbers highlighted |
 | coin-flip | Weighted Edge | Win chance 54–65% by level |
@@ -810,11 +812,16 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 
 ## Tables
 
-| Parameter | Value | Source |
-|---|---:|---|
-| Tables starting / refill wallet | 10,000 chips | `store/tables-store.ts` |
-| Buy-in tiers | 100 / 500 / 2,000 | `lib/tables/catalog.ts`, Tables hub |
-| Blackjack Showdown | 4 seats, 1,000 chips each, 12 hands, bets 10–500, 3:2 natural blackjack, winner receives 4× buy-in | `games/blackjack-showdown/engine.ts` |
-| Liar’s Dice | 4 players, 5 dice each; winner receives 4× buy-in | `games/liars-dice/engine.ts`, Tables store |
-| Hold’em | 6 seats, 1,500 starting chips, blinds 10/20 → 15/30 → 25/50 → 50/100 → 100/200 every 10 hands | `games/holdem/engine.ts` |
-| Hold’em prize | 6 buy-ins; 65% / 35% to first / second | `games/holdem/engine.ts`, Tables store |
+Numbers live in `lib/tables/stakes.ts` and the engines.
+
+| Item | Value |
+|---|---|
+| Wallet | 10,000; refill to 10,000 when below 100 |
+| Buy-ins | 100 (Rookie bots) · 500 (Regular) · 2,000 (Shark) |
+| Prize pool | all buy-ins, no rake; Hold'em 65/35 at 6 seats / 70/30 at 4; Blackjack Showdown and Liar's Dice winner-takes-all |
+| Account Records | peak Tables wallet, refills, and played / wins / cashes / best finish / net per game |
+| Hold'em | 1,500 stack; blinds 10/20, 15/30, 25/50, 50/100, 75/150, 100/200, 150/300, 200/400, 300/600, 500/1000, 800/1600, 1200/2400; up every 5 hands |
+| Liar's Dice | 5 dice each, 1s wild, opening bid not on 1s |
+| Turn timer | 30 s (stall = check / fold, or call liar) |
+
+Player EV with equal skill is 0 (no rake).

@@ -230,6 +230,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Coin Flip</span>
+        {biasChance != null && (isBetting || isRiding) && !isFlipping && (
+          <PerkHint>Coin biased toward your pick (~{Math.round(biasChance * 100)}%)</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{isFlipping ? 'Flipping…' : state.message}</span>
       </div>
 
@@ -240,11 +243,6 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
         gameLabel="Coin Flip"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !isFlipping && !showGameOver} />
-        {biasChance != null && (isBetting || isRiding) && !isFlipping && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Coin biased toward your pick (~{Math.round(biasChance * 100)}%)
-          </PerkHint>
-        )}
         <GameActiveBetBadge
           betAmount={activeBet}
           betType={pickLabel(isBetting ? state.pick : isRiding ? state.nextPick : state.pick)}
@@ -310,7 +308,9 @@ export function CoinFlipGame({ mode, bankroll, onBet, onResolve }: CoinFlipGameP
         <div className="cf-hint min-h-9 flex w-full max-w-sm items-center justify-center px-2 shrink-0">
           <p className="text-center text-[13px] text-dim">
             {isBetting && !isFlipping
-              ? 'Pick heads or tails, place chips, then flip.'
+              ? mode === 'ladder'
+                ? 'Pick heads or tails, then flip for the whole pot.'
+                : 'Pick heads or tails, place chips, then flip.'
               : isFlipping
                 ? 'Flipping…'
                 : isRiding

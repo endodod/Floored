@@ -8,6 +8,8 @@ import { useLadderStore } from '@/store/ladder-store'
 import { ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useTablesStore } from '@/store/tables-store'
+import type { TableGameStats } from '@/store/tables-store'
+import { TABLE_GAMES } from '@/lib/tables/catalog'
 import { useSettingsStore, type MotionPreference } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips, parseChips } from '@/utils/format'
@@ -78,6 +80,20 @@ function Stat({ label, value }: { label: string; value: string }) {
   )
 }
 
+function RecordGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section aria-label={`${title} records`}>
+      <h3 className="mb-1 border-b border-rule pb-1.5 text-xs font-semibold uppercase tracking-wider text-dim">{title}</h3>
+      <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 [&>div]:border-b [&>div]:border-rule">{children}</dl>
+    </section>
+  )
+}
+
+function tableNet(stats: TableGameStats) {
+  const sign = stats.net > 0 ? '+' : stats.net < 0 ? '−' : ''
+  return `${sign}${formatChips(Math.abs(stats.net))}`
+}
+
 const FIELD =
   'h-[34px] min-w-0 flex-1 rounded-md border border-control bg-ground px-3 text-[13px] text-ink placeholder:text-dim outline-none focus:border-felt'
 
@@ -107,7 +123,8 @@ export default function AccountPage() {
   const freeplayPeakBankroll = useFreeplayStore((s) => s.peakBankroll)
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
   const tablesPeakWallet = useTablesStore((s) => s.peakWallet)
-  const tablesWalletResetCount = useTablesStore((s) => s.walletResetCount)
+  const tablesRefills = useTablesStore((s) => s.refills)
+  const tableStats = useTablesStore((s) => s.stats)
   const hydrated = useHydrated()
   const dailyHistory = useDailyStore((s) => s.history)
   const dailiesPlayed = Object.keys(dailyHistory).length
@@ -195,23 +212,48 @@ export default function AccountPage() {
             : 'Kept in this browser. Sign in to keep survival runs across devices.'
         }
       >
-        <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 [&>div]:border-b [&>div]:border-rule">
-          <Stat label="Dailies played" value={hydrated ? String(dailiesPlayed) : '—'} />
-          <Stat label="Daily streak" value={hydrated ? `${currentStreak(dailyHistory, dailyDateKey())} days` : '—'} />
-          <Stat label="Best daily" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '—'} />
-          <Stat label="Peak freeplay balance" value={formatChips(freeplayPeakBankroll)} />
-          <Stat label="Freeplay resets" value={String(freeplayResetCount)} />
-          <Stat label="Peak Tables wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
-          <Stat label="Tables wallet resets" value={hydrated ? String(tablesWalletResetCount) : '—'} />
+        <div className="space-y-5">
+          <RecordGroup title="Daily">
+            <Stat label="Challenges played" value={hydrated ? String(dailiesPlayed) : '—'} />
+            <Stat label="Streak" value={hydrated ? `${currentStreak(dailyHistory, dailyDateKey())} days` : '—'} />
+            <Stat label="Best result" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '—'} />
+          </RecordGroup>
+
+          <RecordGroup title="Freeplay">
+            <Stat label="Peak balance" value={formatChips(freeplayPeakBankroll)} />
+            <Stat label="Resets" value={String(freeplayResetCount)} />
+          </RecordGroup>
+
           {LADDER_ENABLED && (
-            <>
-              <Stat label="Best ladder pot" value={hydrated && ladder.runs > 0 ? formatChips(ladder.bestPot) : '—'} />
+            <RecordGroup title="Ladder">
+              <Stat label="Best pot" value={hydrated && ladder.runs > 0 ? formatChips(ladder.bestPot) : '—'} />
               <Stat label="Highest rung · tops" value={hydrated ? `${ladder.bestRung} · ${ladder.tops}` : '—'} />
-            </>
+            </RecordGroup>
           )}
-          <Stat label="Survival best floor" value={String(serverStats ? serverStats.highscore : survivalHighscore)} />
-          <Stat label="Survival wins" value={String(serverStats ? serverStats.wins : survivalWinCount)} />
-        </dl>
+
+          <RecordGroup title="Survival">
+            <Stat label="Best floor" value={String(serverStats ? serverStats.highscore : survivalHighscore)} />
+            <Stat label="Wins" value={String(serverStats ? serverStats.wins : survivalWinCount)} />
+          </RecordGroup>
+
+          <RecordGroup title="Tables">
+            <Stat label="Peak wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
+            <Stat label="Wallet refills" value={hydrated ? String(tablesRefills) : '—'} />
+          </RecordGroup>
+
+          {TABLE_GAMES.map(({ name, label }) => {
+            const stats = tableStats[name]
+            return (
+              <RecordGroup key={name} title={label}>
+                <Stat label="Played" value={hydrated ? String(stats.played) : '—'} />
+                <Stat label="Won" value={hydrated ? String(stats.won) : '—'} />
+                <Stat label="Cashes" value={hydrated ? String(stats.cashes) : '—'} />
+                <Stat label="Best finish" value={hydrated && stats.bestFinish != null ? `#${stats.bestFinish}` : '—'} />
+                <Stat label="Net" value={hydrated ? tableNet(stats) : '—'} />
+              </RecordGroup>
+            )
+          })}
+        </div>
       </Section>
 
       <Section title="Settings" description="How the tables behave between rounds, and how much the interface moves.">

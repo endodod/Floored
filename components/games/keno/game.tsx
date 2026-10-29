@@ -228,6 +228,9 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
     <div className={GAME_CARD_SHELL}>
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">Keno</span>
+        {heatNumbers.length > 0 && (
+          <PerkHint>Heat: {heatNumbers.join(', ')} in this draw</PerkHint>
+        )}
         <span className="text-[13px] text-dim">{round.message}</span>
       </div>
 
@@ -238,11 +241,6 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
         gameLabel="Keno"
       >
         <GameDockBackButton mode={mode} visible={isBetting && !showGameOver} />
-        {heatNumbers.length > 0 && (
-          <PerkHint className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-            Heat: {heatNumbers.join(', ')} in this draw
-          </PerkHint>
-        )}
         <GameActiveBetBadge betAmount={round.betAmount} visible={!isBetting} />
 
         <div className="grid5-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
@@ -260,19 +258,19 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                 <button
                   type="button"
                   onClick={handleClearPicks}
-                  className="m-still h-8 rounded-full bg-black/25 px-3.5 text-[12px] font-semibold text-dim transition-colors hover:text-ink"
+                  className="m-still plaque h-8 rounded-full px-3.5 text-[12px] font-semibold text-dim transition-colors hover:text-ink"
                 >
                   Clear picks
                 </button>
               </>
             ) : (
               <>
-                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-                  <span className="text-dim">Hits</span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Hits</span>
                   <span key={round.hits} className="num g-pop text-gold">{hasRevealedStats ? round.hits : '—'}</span>
                 </span>
-                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-                  <span className="text-dim">Multiplier</span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Multiplier</span>
                   <span key={round.multiplier} className="num g-pop text-ink">
                     {hasRevealedStats ? formatMultiplier(round.multiplier) : '—'}
                   </span>
@@ -326,7 +324,9 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
 
           <p className="grid5-hint flex min-h-9 max-w-sm shrink-0 items-center px-2 text-center text-[13px] text-dim">
             {isBetting
-              ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
+              ? mode === 'ladder'
+                ? `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, then play for the whole pot. ${DRAW_COUNT} balls are drawn.`
+                : `Pick ${MIN_PICKS}–${MAX_PICKS} numbers, place chips, then play. ${DRAW_COUNT} balls are drawn.`
               : isDrawing
                 ? 'Numbers reveal one by one. Use Reveal All to skip the draw.'
                 : '\u00A0'}

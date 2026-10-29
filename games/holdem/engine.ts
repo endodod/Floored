@@ -1,122 +1,457 @@
-import type { Action, Card, Player, State, View } from './types'
+import type { Rng, Standings, TableEngine } from '@/lib/tables/types'
+import { placeIn, rankSeats } from '@/lib/tables/standings'
+import { evaluate, fullDeck, labelOf, shuffled } from './evaluator'
+import type {
+  Card,
+  HoldemAction,
+  HoldemActionKind,
+  HoldemConfig,
+  HoldemHandResult,
+  HoldemLegal,
+  HoldemPotResult,
+  HoldemSeat,
+  HoldemState,
+  HoldemStreet,
+  HoldemView,
+} from './types'
 
-const suits: Card['suit'][] = ['♠','♥','♦','♣']
-const ranks: Card['rank'][] = ['2','3','4','5','6','7','8','9','10','J','Q','K','A']
-const rv = (r: Card['rank']) => ranks.indexOf(r) + 2
-function shuffled(rng: () => number): Card[] {
-  const d = suits.flatMap(suit => ranks.map(rank => ({suit,rank})))
-  for(let i=d.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[d[i],d[j]]=[d[j]!,d[i]!]}
-  return d
-}
-function nextLive(players: Player[], from: number, canAct = false): number|null {
-  for(let step=1;step<=players.length;step++){const i=(from+step)%players.length;const p=players[i]!;if(!p.folded&&p.stack>0&&(!canAct||!p.allIn))return i}
-  return null
-}
+/**
+ * No-limit Texas Hold'em, Sit & Go: everyone starts with the same stack,
+ * blinds rise every `handsPerLevel` hands, and play goes on until one seat
+ * holds every chip. Pure state machine: `advance` deals a hand (the only
+ * random step), `apply` takes one betting action.
+ */
 
-export function createTable(names: string[] = ['You','Mara','Jax','Sage','Vale','Rook']): State {
-  const players = names.slice(0,6).map(name=>({name,stack:1500,hole:[],folded:false,allIn:false,bet:0,committed:0,lastAction:''}))
-  return {players,deck:[],board:[],button:players.length-1,currentSeat:null,street:'finished',handNumber:0,smallBlind:10,bigBlind:20,currentBet:0,minRaise:20,pot:0,message:'Sit & Go · 1,500 chips each',payouts:players.map(()=>0),acted:[],finishOrder:[]}
-}
+/** Blind schedule: every level lasts HOLDEM_HANDS_PER_LEVEL hands; the last level repeats. */
+export const HOLDEM_BLINDS: [number, number][] = [
+  [10, 20],
+  [15, 30],
+  [25, 50],
+  [50, 100],
+  [75, 150],
+  [100, 200],
+  [150, 300],
+  [200, 400],
+  [300, 600],
+  [500, 1000],
+  [800, 1600],
+  [1200, 2400],
+]
+export const HOLDEM_STARTING_STACK = 1500
+export const HOLDEM_HANDS_PER_LEVEL = 5
 
-export function startHand(state: State, rng: () => number): State {
-  if(state.street!=='finished'||state.players.filter(p=>p.stack>0).length<2)return state
-  const handNumber=state.handNumber+1
-  const schedule:[[number,number],[number,number],[number,number],[number,number],[number,number]]=[[10,20],[15,30],[25,50],[50,100],[100,200]]
-  const [smallBlind,bigBlind]=schedule[Math.min(Math.floor((handNumber-1)/10),schedule.length-1)]!
-  const button=nextLive(state.players,state.button) ?? 0
-  const players:Player[]=state.players.map(p=>({...p,hole:[],folded:p.stack===0,allIn:false,bet:0,committed:0,lastAction:''}))
-  const deck=shuffled(rng)
-  for(let n=0;n<2;n++)for(let step=1;step<=players.length;step++){const i=(button+step)%players.length;if(!players[i]!.folded)players[i]!.hole.push(deck.pop()!)}
-  const sb=nextLive(players,button)!,bb=nextLive(players,sb)!
-  const post=(i:number,amt:number)=>{const p=players[i]!;const v=Math.min(p.stack,amt);p.stack-=v;p.bet+=v;p.committed+=v;p.allIn=p.stack===0}
-  post(sb,smallBlind);post(bb,bigBlind)
-  const currentSeat=nextLive(players,bb,true)
-  const partial:State={...state,players,deck,board:[],button,currentSeat,street:'preflop',handNumber,smallBlind,bigBlind,currentBet:Math.max(players[sb]!.bet,players[bb]!.bet),minRaise:bigBlind,pot:players.reduce((n,p)=>n+p.committed,0),message:`Blinds ${smallBlind}/${bigBlind}`,payouts:players.map(()=>0),acted:[],finishOrder:[...state.finishOrder]}
-  return currentSeat===null?runout(partial):partial
-}
-
-export function viewFor(state:State,seat:number):View {
-  const {deck,...pub}=state
-  return {...pub,self:seat,players:state.players.map((p,i)=>({...p,hole:state.street==='finished'||i===seat||state.street==='showdown'?[...p.hole]:[]}))}
-}
-
-export function legalActions(state:State,seat:number):Action[] {
-  if(state.currentSeat!==seat||state.street==='finished'||state.street==='showdown')return []
-  const p=state.players[seat]!,toCall=state.currentBet-p.bet
-  const actions:Action[]=[{type:'fold'}]
-  if(toCall===0)actions.push({type:'check'});else actions.push({type:'call'})
-  const maxTo=p.bet+p.stack
-  if(maxTo>state.currentBet&&p.stack>0){
-    const toCall=Math.max(0,state.currentBet-p.bet)
-    const targets=[state.currentBet+Math.max(state.minRaise,state.bigBlind),state.currentBet+Math.max(state.bigBlind,Math.floor((state.pot+toCall)/2)),state.currentBet+Math.max(state.bigBlind,state.pot+toCall),maxTo]
-    for(const target of [...new Set(targets)].map(n=>Math.min(maxTo,n)).filter(n=>n>state.currentBet))actions.push({type:'raise',to:target})
+export function holdemConfig(seats: number): HoldemConfig {
+  return {
+    seats,
+    startingStack: HOLDEM_STARTING_STACK,
+    blinds: HOLDEM_BLINDS,
+    handsPerLevel: HOLDEM_HANDS_PER_LEVEL,
   }
-  return actions
 }
 
-export function apply(state:State,seat:number,action:Action):State {
-  if(!legalActions(state,seat).some(a=>a.type===action.type&&(!('to'in a)||'to'in action&&a.to===action.to)))throw new Error('Illegal action')
-  const players=state.players.map(p=>({...p,hole:[...p.hole]})),p=players[seat]!
-  let currentBet=state.currentBet,minRaise=state.minRaise,acted=[...state.acted],message=''
-  if(action.type==='fold'){p.folded=true;p.lastAction='Fold';acted.push(seat);message=`${p.name} folds`}
-  if(action.type==='check'){p.lastAction='Check';acted.push(seat);message=`${p.name} checks`}
-  if(action.type==='call'){const v=Math.min(p.stack,currentBet-p.bet);p.stack-=v;p.bet+=v;p.committed+=v;p.allIn=p.stack===0;p.lastAction=p.allIn?'All in':'Call';acted.push(seat);message=`${p.name} ${p.lastAction.toLowerCase()}`}
-  if(action.type==='raise'){const target=Math.min(action.to,p.bet+p.stack),increment=target-currentBet;const v=target-p.bet;p.stack-=v;p.bet+=v;p.committed+=v;p.allIn=p.stack===0;minRaise=Math.max(minRaise,increment);currentBet=target;p.lastAction=p.allIn?'All in':`Raise ${target}`;acted=[seat];message=`${p.name} raises to ${target}`}
-  const pot=players.reduce((n,x)=>n+x.committed,0)
-  if(players.filter(x=>!x.folded).length===1)return awardUncontested({...state,players,pot,currentBet,minRaise,acted,message})
-  const canAct=players.map((x,i)=>({x,i})).filter(({x})=>!x.folded&&!x.allIn)
-  let pending: {x:Player;i:number}|undefined
-  for(let step=1;step<=players.length;step++){const i=(seat+step)%players.length,x=players[i]!;if(!x.folded&&!x.allIn&&(!acted.includes(i)||x.bet<currentBet)){pending={x,i};break}}
-  if(pending)return {...state,players,pot,currentBet,minRaise,acted,currentSeat:pending.i,message}
-  if(canAct.some(({x})=>x.bet<currentBet))return {...state,players,pot,currentBet,minRaise,acted,currentSeat:nextLive(players,seat,true),message}
-  return advance({...state,players,pot,currentBet,minRaise,acted,message})
-}
-
-function advance(s:State):State {
-  if(s.street==='river')return showdown(s)
-  const deck=[...s.deck],board=[...s.board]
-  if(s.street==='preflop'){deck.pop();board.push(deck.pop()!,deck.pop()!,deck.pop()!)}
-  else {deck.pop();board.push(deck.pop()!)}
-  const street=s.street==='preflop'?'flop':s.street==='flop'?'turn':'river'
-  const players=s.players.map(p=>({...p,bet:0}))
-  const eligible=players.filter(p=>!p.folded&&!p.allIn)
-  if(eligible.length<2)return runout({...s,deck,board,players,street,currentBet:0,acted:[]})
-  return {...s,deck,board,players,street,currentBet:0,acted:[],currentSeat:nextLive(players,s.button,true),message:`${street[0]!.toUpperCase()+street.slice(1)} dealt`}
-}
-
-function runout(s:State):State {
-  let {deck,board}=s
-  deck=[...deck];board=[...board]
-  while(board.length<5){deck.pop();board.push(deck.pop()!)}
-  return showdown({...s,deck,board,street:'showdown',currentSeat:null})
-}
-function awardUncontested(s:State):State {
-  const w=s.players.findIndex(p=>!p.folded),players=s.players.map((p,i)=>({...p,stack:p.stack+(i===w?s.pot:0),committed:0,bet:0}))
-  return finishHand({...s,players,pot:0,message:`${players[w]!.name} wins uncontested`})
-}
-function showdown(s:State):State {
-  const players=s.players.map(p=>({...p})),payouts=Array(players.length).fill(0)
-  const levels=[...new Set(players.map(p=>p.committed).filter(n=>n>0))].sort((a,b)=>a-b);let prior=0
-  for(const level of levels){const contributors=players.filter(p=>p.committed>=level),amount=(level-prior)*contributors.length,eligible=contributors.map((p,i)=>players.indexOf(p)).filter(i=>!players[i]!.folded);prior=level;if(!eligible.length)continue
-    const best=eligible.map(i=>({i,score:rankSeven([...players[i]!.hole,...s.board])})).sort((a,b)=>compareScore(b.score,a.score))[0]!.score
-    const winners=eligible.filter(i=>compareScore(rankSeven([...players[i]!.hole,...s.board]),best)===0).sort((a,b)=>(a-s.button+players.length)%players.length-(b-s.button+players.length)%players.length)
-    const share=Math.floor(amount/winners.length),remainder=amount-share*winners.length
-    for(let wi=0;wi<winners.length;wi++)payouts[winners[wi]!]!+=share+(wi<remainder?1:0)
+export function createHoldem(config: HoldemConfig): HoldemState {
+  const seats: HoldemSeat[] = Array.from({ length: config.seats }, () => ({
+    stack: config.startingStack,
+    hole: [],
+    bet: 0,
+    committed: 0,
+    folded: false,
+    allIn: false,
+    out: false,
+    startStack: config.startingStack,
+    lastAction: null,
+  }))
+  return {
+    config,
+    seats,
+    phase: 'handOver',
+    street: 'preflop',
+    hand: 0,
+    button: -1,
+    smallBlind: config.blinds[0]![0],
+    bigBlind: config.blinds[0]![1],
+    board: [],
+    deck: [],
+    toAct: null,
+    currentBet: 0,
+    minRaise: 0,
+    pending: seats.map(() => false),
+    mayRaise: seats.map(() => true),
+    log: [],
+    lastResult: null,
+    busts: [],
   }
-  for(let i=0;i<players.length;i++)players[i]!.stack+=payouts[i]!
-  return finishHand({...s,players,payouts,pot:0,message:'Showdown · pot awarded'})
-}
-function finishHand(s:State):State {
-  const alive=s.players.filter(p=>p.stack>0),finished=alive.length<=1
-  const busted=s.players.map((p,i)=>({p,i})).filter(({p,i})=>p.stack===0&&!s.finishOrder.includes(i)).sort((a,b)=>a.p.committed-b.p.committed).map(x=>x.i)
-  const finishOrder=[...s.finishOrder,...busted,...(finished&&alive.length===1?[s.players.indexOf(alive[0]!)]:[])]
-  return {...s,players:s.players.map(p=>({...p,bet:0,committed:0,folded:false,allIn:false,lastAction:p.stack===0?'Busted':p.lastAction})),street:'finished',currentSeat:null,handNumber:s.handNumber,pot:0,finishOrder,message:finished?`${alive[0]?.name??'No player'} wins the Sit & Go`:`${s.message} · next hand`,acted:[]}
 }
 
-const combinations=(cards:Card[],n=5):Card[][]=>cards.length===n?[cards]:cards.length<n?[]:cards.flatMap((c,i)=>combinations(cards.slice(i+1),n-1).map(rest=>[c,...rest]))
-function scoreFive(cards:Card[]):number[]{const vals=cards.map(c=>rv(c.rank)).sort((a,b)=>b-a),counts=new Map<number,number>();for(const v of vals)counts.set(v,(counts.get(v)??0)+1);const groups=[...counts].sort((a,b)=>b[1]-a[1]||b[0]-a[0]),flush=cards.every(c=>c.suit===cards[0]!.suit),unique=[...new Set(vals)],straight=unique.length===5&&((unique[0]! - unique[4]!) === 4||unique.join(',')==='14,5,4,3,2'),high=unique.join(',')==='14,5,4,3,2'?5:unique[0]!
- if(flush&&straight)return [8,high];if(groups[0]![1]===4)return [7,groups[0]![0],groups[1]![0]];if(groups[0]![1]===3&&groups[1]![1]===2)return [6,groups[0]![0],groups[1]![0]];if(flush)return [5,...vals];if(straight)return [4,high];if(groups[0]![1]===3)return [3,groups[0]![0],...groups.slice(1).map(x=>x[0])];if(groups[0]![1]===2&&groups[1]![1]===2)return [2,Math.max(groups[0]![0],groups[1]![0]),Math.min(groups[0]![0],groups[1]![0]),groups[2]![0]];if(groups[0]![1]===2)return [1,groups[0]![0],...groups.slice(1).map(x=>x[0])];return [0,...vals]}
-export function rankSeven(cards:Card[]):number[]{return combinations(cards).map(scoreFive).sort(compareScore).at(-1)??[0]}
-function compareScore(a:number[],b:number[]):number{for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]??0)-(b[i]??0);if(d)return d}return 0}
-export function nextHand(state:State,rng:()=>number):State {return startHand(state,rng)}
-export const pokerRules={startingStack:1500,prizeSplit:[0.65,0.35] as const,seatCount:6}
+// ── Seat helpers ─────────────────────────────────────────────────────────────
+
+function nextSeat(n: number, from: number, pred: (i: number) => boolean): number {
+  for (let k = 1; k <= n; k++) {
+    const i = (from + k) % n
+    if (pred(i)) return i
+  }
+  return -1
+}
+
+const inHand = (s: HoldemSeat) => !s.out && !s.folded
+const canAct = (s: HoldemSeat) => inHand(s) && !s.allIn
+
+export function potOf(state: Pick<HoldemState, 'seats'>): number {
+  return state.seats.reduce((sum, s) => sum + s.committed, 0)
+}
+
+export function blindsForHand(config: HoldemConfig, hand: number): [number, number] {
+  const level = Math.min(Math.floor((hand - 1) / config.handsPerLevel), config.blinds.length - 1)
+  return config.blinds[level]!
+}
+
+/** 0-based blind level of a hand. */
+export function levelOf(config: HoldemConfig, hand: number): number {
+  return Math.min(Math.floor((Math.max(hand, 1) - 1) / config.handsPerLevel), config.blinds.length - 1)
+}
+
+// ── Dealing a hand ───────────────────────────────────────────────────────────
+
+function startHand(prev: HoldemState, rng: Rng): HoldemState {
+  const n = prev.seats.length
+  const hand = prev.hand + 1
+  const [sb, bb] = blindsForHand(prev.config, hand)
+  const seats: HoldemSeat[] = prev.seats.map((s) => ({
+    ...s,
+    hole: [],
+    bet: 0,
+    committed: 0,
+    folded: s.out,
+    allIn: false,
+    startStack: s.stack,
+    lastAction: null,
+  }))
+  const alive = (i: number) => !seats[i]!.out
+  const button = prev.button < 0 ? nextSeat(n, Math.floor(rng() * n) - 1 + n, alive) : nextSeat(n, prev.button, alive)
+
+  let deck = shuffled(fullDeck(), rng)
+  for (let round = 0; round < 2; round++) {
+    let i = button
+    for (let k = 0; k < n; k++) {
+      i = nextSeat(n, i, alive)
+      if (seats[i]!.hole.length === round) {
+        seats[i]!.hole = [...seats[i]!.hole, deck[0]!]
+        deck = deck.slice(1)
+      }
+    }
+  }
+
+  const aliveCount = seats.filter((s) => !s.out).length
+  const sbSeat = aliveCount === 2 ? button : nextSeat(n, button, alive)
+  const bbSeat = nextSeat(n, sbSeat, alive)
+  const log: HoldemState['log'] = []
+  const post = (seat: number, amount: number, kind: HoldemActionKind) => {
+    const s = seats[seat]!
+    const potBefore = potOf({ seats })
+    const paid = Math.min(amount, s.stack)
+    s.stack -= paid
+    s.bet += paid
+    s.committed += paid
+    if (s.stack === 0) s.allIn = true
+    s.lastAction = kind
+    log.push({ hand, street: 'preflop', seat, kind, amount: paid, potBefore })
+  }
+  post(sbSeat, sb, 'small-blind')
+  post(bbSeat, bb, 'big-blind')
+
+  const state: HoldemState = {
+    ...prev,
+    seats,
+    phase: 'betting',
+    street: 'preflop',
+    hand,
+    button,
+    smallBlind: sb,
+    bigBlind: bb,
+    board: [],
+    deck,
+    toAct: null,
+    currentBet: bb,
+    minRaise: bb,
+    pending: seats.map(canAct),
+    mayRaise: seats.map(() => true),
+    log: [...prev.log, ...log],
+  }
+  return continueFrom(state, bbSeat)
+}
+
+// ── Betting ──────────────────────────────────────────────────────────────────
+
+export function legalFor(state: HoldemState, seat: number): HoldemLegal | null {
+  if (state.phase !== 'betting' || state.toAct !== seat) return null
+  const s = state.seats[seat]!
+  const owe = Math.max(0, state.currentBet - s.bet)
+  const toCall = Math.min(owe, s.stack)
+  const maxRaiseTo = s.bet + s.stack
+  const othersCanAct = state.seats.some((o, i) => i !== seat && canAct(o))
+  const raiseOk = state.mayRaise[seat] && maxRaiseTo > state.currentBet && othersCanAct
+  return {
+    canCheck: owe === 0,
+    toCall,
+    minRaiseTo: raiseOk ? Math.min(state.currentBet + state.minRaise, maxRaiseTo) : null,
+    maxRaiseTo: raiseOk ? maxRaiseTo : null,
+  }
+}
+
+function applyHoldem(prev: HoldemState, seat: number, action: HoldemAction): HoldemState {
+  const legal = legalFor(prev, seat)
+  if (!legal) throw new Error(`Hold'em: seat ${seat} cannot act now`)
+  const seats = prev.seats.map((s) => ({ ...s }))
+  const s = seats[seat]!
+  const pending = [...prev.pending]
+  const mayRaise = [...prev.mayRaise]
+  let { currentBet, minRaise } = prev
+  const potBefore = potOf(prev)
+  let kind: HoldemActionKind
+
+  const put = (chips: number) => {
+    s.stack -= chips
+    s.bet += chips
+    s.committed += chips
+    if (s.stack === 0) s.allIn = true
+  }
+
+  switch (action.type) {
+    case 'fold':
+      s.folded = true
+      kind = 'fold'
+      break
+    case 'check':
+      if (!legal.canCheck) throw new Error(`Hold'em: seat ${seat} cannot check`)
+      kind = 'check'
+      break
+    case 'call':
+      if (legal.canCheck) throw new Error(`Hold'em: seat ${seat} has nothing to call`)
+      put(legal.toCall)
+      kind = s.allIn ? 'all-in' : 'call'
+      break
+    case 'raise': {
+      const { minRaiseTo, maxRaiseTo } = legal
+      const to = Math.floor(action.to)
+      if (minRaiseTo == null || maxRaiseTo == null) throw new Error(`Hold'em: seat ${seat} cannot raise`)
+      if (to > maxRaiseTo || (to < minRaiseTo && to !== maxRaiseTo) || to <= currentBet) {
+        throw new Error(`Hold'em: raise to ${to} is outside ${minRaiseTo}–${maxRaiseTo}`)
+      }
+      const increment = to - currentBet
+      const wasBet = currentBet === 0
+      put(to - s.bet)
+      if (increment >= minRaise) {
+        // A full raise reopens the betting for everyone.
+        minRaise = increment
+        seats.forEach((o, i) => {
+          mayRaise[i] = true
+          if (i !== seat && canAct(o)) pending[i] = true
+        })
+      } else {
+        // An all-in short of a full raise: seats that already acted may only call or fold.
+        seats.forEach((o, i) => {
+          if (i === seat || !canAct(o) || o.bet >= to) return
+          if (!pending[i]) mayRaise[i] = false
+          pending[i] = true
+        })
+      }
+      currentBet = to
+      kind = s.allIn ? 'all-in' : wasBet ? 'bet' : 'raise'
+      break
+    }
+  }
+  pending[seat] = false
+  s.lastAction = kind
+  const state: HoldemState = {
+    ...prev,
+    seats,
+    pending,
+    mayRaise,
+    currentBet,
+    minRaise,
+    log: [...prev.log, { hand: prev.hand, street: prev.street, seat, kind, amount: s.bet, potBefore }],
+  }
+  return continueFrom(state, seat)
+}
+
+/** After an action (or the blinds): hand to the next seat, close the street, or end the hand. */
+function continueFrom(state: HoldemState, last: number): HoldemState {
+  const n = state.seats.length
+  const live = state.seats.filter(inHand)
+  if (live.length === 1) return finishHand(state, false)
+
+  // A seat with nothing to call and nobody left to bet against has no decision to make.
+  const pending = state.pending.map((p, i) => {
+    const s = state.seats[i]!
+    if (!p || !canAct(s)) return false
+    const others = state.seats.some((o, j) => j !== i && canAct(o))
+    return others || s.bet < state.currentBet
+  })
+  state = { ...state, pending }
+  const next = nextSeat(n, last, (i) => pending[i]!)
+  if (next !== -1) return { ...state, toAct: next }
+  return closeStreet(state)
+}
+
+const STREETS: HoldemStreet[] = ['preflop', 'flop', 'turn', 'river']
+
+function closeStreet(state: HoldemState): HoldemState {
+  const seats = state.seats.map((s) => ({ ...s, bet: 0 }))
+  let { board, deck } = state
+  const actors = seats.filter(canAct).length
+
+  if (state.street === 'river' || actors <= 1) {
+    // Showdown, dealing out whatever is left of the board first.
+    const need = 5 - board.length
+    board = [...board, ...deck.slice(0, need)]
+    deck = deck.slice(need)
+    return finishHand({ ...state, seats, board, deck, street: 'river' }, true)
+  }
+
+  const street = STREETS[STREETS.indexOf(state.street) + 1]!
+  const count = street === 'flop' ? 3 : 1
+  board = [...board, ...deck.slice(0, count)]
+  deck = deck.slice(count)
+  const next: HoldemState = {
+    ...state,
+    seats,
+    board,
+    deck,
+    street,
+    currentBet: 0,
+    minRaise: state.bigBlind,
+    pending: seats.map(canAct),
+    mayRaise: seats.map(() => true),
+    toAct: null,
+  }
+  return { ...next, toAct: nextSeat(seats.length, state.button, (i) => canAct(seats[i]!)) }
+}
+
+// ── Settling ─────────────────────────────────────────────────────────────────
+
+/** Main pot and side pots from what each seat committed this hand. */
+export function buildPots(seats: HoldemSeat[]): { amount: number; eligible: number[] }[] {
+  const left = seats.map((s) => s.committed)
+  const pots: { amount: number; eligible: number[] }[] = []
+  for (;;) {
+    const contenders = seats.map((s, i) => i).filter((i) => inHand(seats[i]!) && left[i]! > 0)
+    if (!contenders.length) break
+    const level = Math.min(...contenders.map((i) => left[i]!))
+    let amount = 0
+    left.forEach((c, i) => {
+      const take = Math.min(c, level)
+      amount += take
+      left[i] = c - take
+    })
+    pots.push({ amount, eligible: contenders })
+  }
+  // Chips from folded seats above every live seat's commitment go to the last pot.
+  const dead = left.reduce((a, b) => a + b, 0)
+  if (dead && pots.length) pots[pots.length - 1]!.amount += dead
+  return pots
+}
+
+function finishHand(state: HoldemState, showdown: boolean): HoldemState {
+  const n = state.seats.length
+  const seats = state.seats.map((s) => ({ ...s, bet: 0 }))
+  const scores = seats.map((s) => (showdown && inHand(s) ? evaluate([...s.hole, ...state.board]) : -1))
+  const pots: HoldemPotResult[] = buildPots(seats).map(({ amount, eligible }) => {
+    const best = Math.max(...eligible.map((i) => scores[i]!))
+    const winners = eligible.filter((i) => scores[i] === best)
+    return { amount, eligible, winners, label: showdown && eligible.length > 1 ? labelOf(best) : null }
+  })
+
+  for (const pot of pots) {
+    // Odd chips go one by one to the winners closest to the left of the button.
+    const order = [...pot.winners].sort((a, b) => ((a - state.button + n - 1) % n) - ((b - state.button + n - 1) % n))
+    const share = Math.floor(pot.amount / order.length)
+    let odd = pot.amount - share * order.length
+    for (const w of order) {
+      seats[w]!.stack += share + (odd > 0 ? 1 : 0)
+      odd--
+    }
+  }
+
+  const busted: number[] = []
+  const busts = [...state.busts]
+  seats.forEach((s, i) => {
+    if (!s.out && s.stack === 0) {
+      s.out = true
+      busted.push(i)
+      busts.push({ seat: i, hand: state.hand, startStack: s.startStack })
+    }
+  })
+
+  const result: HoldemHandResult = {
+    hand: state.hand,
+    pots,
+    net: seats.map((s, i) => s.stack - state.seats[i]!.startStack),
+    shown: state.seats.map((s) => (showdown && inHand(s) ? s.hole : null)),
+    labels: scores.map((sc) => (sc >= 0 ? labelOf(sc) : null)),
+    showdown,
+    busted,
+  }
+  const alive = seats.filter((s) => !s.out).length
+  return {
+    ...state,
+    seats,
+    busts,
+    pending: seats.map(() => false),
+    toAct: null,
+    phase: alive <= 1 ? 'over' : 'handOver',
+    lastResult: result,
+  }
+}
+
+// ── Views and the engine contract ────────────────────────────────────────────
+
+export function viewHoldem(state: HoldemState, seat: number): HoldemView {
+  const shown = state.lastResult?.hand === state.hand && state.phase !== 'betting' ? state.lastResult.shown : null
+  return {
+    seat,
+    config: state.config,
+    phase: state.phase,
+    street: state.street,
+    hand: state.hand,
+    button: state.button,
+    smallBlind: state.smallBlind,
+    bigBlind: state.bigBlind,
+    board: state.board,
+    toAct: state.toAct,
+    currentBet: state.currentBet,
+    minRaise: state.minRaise,
+    pot: potOf(state),
+    seats: state.seats.map((s, i) => ({
+      ...s,
+      hole: i === seat ? s.hole : (shown?.[i] ?? null),
+    })),
+    log: state.log,
+    lastResult: state.lastResult,
+    legal: legalFor(state, seat),
+  }
+}
+
+function holdemStandings(state: HoldemState): Standings {
+  const alive = state.seats.map((_, i) => i).filter((i) => !state.seats[i]!.out)
+  return rankSeats(
+    alive,
+    state.busts.map((b) => ({ seat: b.seat, order: b.hand, tiebreak: b.startStack })),
+  )
+}
+
+export const holdemEngine: TableEngine<HoldemState, HoldemView, HoldemAction> = {
+  viewFor: viewHoldem,
+  toAct: (s) => (s.phase === 'betting' ? s.toAct : null),
+  apply: applyHoldem,
+  needsAdvance: (s) => s.phase === 'handOver',
+  advance: (s, rng) => {
+    if (s.phase !== 'handOver') throw new Error("Hold'em: nothing to deal")
+    return startHand(s, rng)
+  },
+  timeoutAction: (s, seat) => (legalFor(s, seat)?.canCheck ? { type: 'check' } : { type: 'fold' }),
+  isOver: (s) => s.phase === 'over',
+  standings: holdemStandings,
+  placeOf: (s, seat) => (s.seats[seat]!.out || s.phase === 'over' ? placeIn(holdemStandings(s), seat) : null),
+}
+
+export type { Card }
