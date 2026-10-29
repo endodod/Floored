@@ -564,7 +564,7 @@ export function GameDockChipPicker({
             onClick={() => onSelect(chip.value)}
             disabled={chip.value > remaining}
             aria-label={`${chip.label} chip`}
-            className={`${CHIP_BTN} m-still g-lift ${chip.label.length > 3 ? 'w-auto min-w-11 px-2 sm:min-w-12' : ''} ${
+            className={`${CHIP_BTN} m-still g-lift ${chip.label.length > 3 ? 'text-[9px] tracking-tight sm:text-[10px]' : ''} ${
               on ? '-translate-y-1 ring-2 ring-gold ring-offset-2 ring-offset-ground' : ''
             }`}
             style={chipStyle(chip.chip, chip.ink)}
