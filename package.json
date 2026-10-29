@@ -41,5 +41,12 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "unrs-resolver"
+    ]
   }
 }

@@ -7,15 +7,13 @@ export interface TierEntry {
   id: TableTier
   label: string
   buyIn: number
-  /** The bots' skill at this tier. */
-  botLabel: string
 }
 
-/** Stakes: the buy-in picks the bots' skill too (Rookie → Regular → Shark). */
+/** Buy-in tiers are separate from the saved opponent difficulty. */
 export const TABLE_TIERS: TierEntry[] = [
-  { id: 'rookie', label: 'Low stakes', buyIn: 100, botLabel: 'Rookie bots' },
-  { id: 'regular', label: 'Mid stakes', buyIn: 500, botLabel: 'Regular bots' },
-  { id: 'shark', label: 'High stakes', buyIn: 2_000, botLabel: 'Shark bots' },
+  { id: 'rookie', label: 'Low stakes', buyIn: 100 },
+  { id: 'regular', label: 'Mid stakes', buyIn: 500 },
+  { id: 'shark', label: 'High stakes', buyIn: 2_000 },
 ]
 
 export const TIER_BY_ID = new Map(TABLE_TIERS.map((t) => [t.id, t]))

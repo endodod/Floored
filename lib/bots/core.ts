@@ -1,4 +1,4 @@
-import type { Rng, TableTier } from '@/lib/tables/types'
+import type { Rng } from '@/lib/tables/types'
 import type { Bot, BotMind, BotProfile, BotSkill, SeatReads } from './types'
 import { BOT_ROSTER } from './roster'
 
@@ -6,9 +6,9 @@ import { BOT_ROSTER } from './roster'
 export const SKILL: Record<BotSkill, { label: string; noise: number; samples: number; reads: number; mistakes: number }> = {
   // noise: spread added to its estimates · samples: Monte Carlo deals per decision
   // reads: weight given to what it has seen opponents do · mistakes: chance of a plain misplay
-  rookie: { label: 'Rookie', noise: 0.16, samples: 120, reads: 0, mistakes: 0.12 },
-  regular: { label: 'Regular', noise: 0.07, samples: 260, reads: 0.5, mistakes: 0.04 },
-  shark: { label: 'Shark', noise: 0.02, samples: 450, reads: 1, mistakes: 0 },
+  rookie: { label: 'For fun', noise: 0.2, samples: 90, reads: 0, mistakes: 0.2 },
+  regular: { label: 'Regular player', noise: 0.065, samples: 320, reads: 0.65, mistakes: 0.025 },
+  shark: { label: 'Expert', noise: 0.012, samples: 800, reads: 1, mistakes: 0 },
 }
 
 /**
@@ -16,7 +16,7 @@ export const SKILL: Record<BotSkill, { label: string; noise: number; samples: nu
  * solid baseline the better it is (a Shark keeps its flavour but plugs the
  * leaks). Rookies drift the other way: looser, more passive, fewer bluffs.
  */
-export const SKILL_BLEND: Record<BotSkill, number> = { rookie: 0, regular: 0.25, shark: 0.55 }
+export const SKILL_BLEND: Record<BotSkill, number> = { rookie: 0, regular: 0.3, shark: 0.72 }
 
 export function playingProfile(bot: Bot, ideal: Pick<BotProfile, 'tightness' | 'aggression' | 'bluff' | 'risk'>): BotProfile {
   const w = SKILL_BLEND[bot.skill]
@@ -36,7 +36,7 @@ export function emptyReads(): SeatReads {
 }
 
 export function createMind(seat: number, seats: number): BotMind {
-  return { seat, reads: Array.from({ length: seats }, emptyReads), tilt: 0, seen: 0, lastCounted: 0, marks: {} }
+  return { seat, reads: Array.from({ length: seats }, emptyReads), tilt: 0, seen: 0, lastCounted: 0, shoeCount: 0, lastCardsLeft: 0, marks: {} }
 }
 
 /** Roughly normal noise in about [-1, 1]. */
@@ -53,13 +53,13 @@ export function shrunk(hits: number, total: number, prior: number, weight = 6): 
   return (hits + prior * weight) / (total + weight)
 }
 
-/** Draws `count` distinct bots for a table; the tier sets their skill. */
-export function seatBots(count: number, tier: TableTier, rng: Rng): Bot[] {
+/** Draws distinct personalities for one table; difficulty is independent of stakes. */
+export function seatBots(count: number, skill: BotSkill, rng: Rng): Bot[] {
   const pool = [...BOT_ROSTER]
   const bots: Bot[] = []
   for (let i = 0; i < count && pool.length; i++) {
     const j = Math.floor(rng() * pool.length)
-    bots.push({ profile: pool.splice(j, 1)[0]!, skill: tier })
+    bots.push({ profile: pool.splice(j, 1)[0]!, skill })
   }
   return bots
 }

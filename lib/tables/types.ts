@@ -5,8 +5,9 @@
  */
 export type TableGameName = 'holdem' | 'liars-dice' | 'blackjack-showdown'
 
-/** Stakes tier; bot skill follows it (Rookie → Regular → Shark). */
+/** Buy-in tier; independent from bot difficulty. */
 export type TableTier = 'rookie' | 'regular' | 'shark'
+export type TableDifficulty = 'rookie' | 'regular' | 'shark'
 
 /** A source of uniform numbers in [0, 1) — `createRng(seed)` from utils/rng.ts. */
 export type Rng = () => number
