@@ -16,6 +16,8 @@ const config = {
       screens: { "2xl": "1400px" },
     },
     extend: {
+      // Viewports with room to spare in height; short ones (720p, zoomed laptops) keep the compact chrome.
+      screens: { tall: { raw: "(min-height: 721px)" } },
       fontFamily: {
         sans: ["var(--font-floored-sans)", "Inter", "system-ui", "sans-serif"],
         mono: ["var(--font-floored-mono)", "ui-monospace", "monospace"],

@@ -19,6 +19,8 @@ Read the one that matches the task before changing code:
 - [.md/ACTIVE_ITEMS_SPEC.md](.md/ACTIVE_ITEMS_SPEC.md): design for survival active items.
   Not built yet; it says what scaffolding exists.
 - [.md/TODO.md](.md/TODO.md): the owner's current to-do list.
+- [.md/NAVBAR_HANDOFF.md](.md/NAVBAR_HANDOFF.md): the bigger-navbar change (64px on tall
+  screens) and the check still to run on it.
 
 ## Working rules
 
