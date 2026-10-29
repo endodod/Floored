@@ -37,6 +37,23 @@ Climb 18 rungs with an all-in pot — one game per rung, and every game only onc
 Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`localStorage`). Toggle with
 `LADDER_ENABLED` in `lib/features.ts`.
 
+## Tables
+
+Tables is a separate play-money mode for casino games against bots. It has its own
+10,000-chip refillable wallet and is kept outside the solo-game catalog, Daily,
+Survival and Ladder.
+
+- **Texas Hold’em:** six-seat no-limit Sit & Go; 1,500 starting chips, rising
+  blinds, side pots, and a 65/35 prize split for the top two.
+- **Liar’s Dice:** four players, five dice each; ones are wild, and the last
+  player with dice wins the table pot.
+- **Blackjack Showdown:** four seats, 12 hands against one shared dealer and
+  shoe; the final hand’s bets are secret and the winner takes the prize.
+
+Buy-ins are 100 / 500 / 2,000 chips. The Tables mode and routes are controlled
+by `TABLES_ENABLED` in `lib/features.ts`; its catalog and registry are in
+`lib/tables/` and persisted state is in `store/tables-store.ts`.
+
 ## Freeplay
 
 Choose any game, start with a healthy balance, and play without pressure or minimum bets.

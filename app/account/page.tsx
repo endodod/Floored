@@ -7,6 +7,7 @@ import { LADDER_ENABLED } from '@/lib/features'
 import { useLadderStore } from '@/store/ladder-store'
 import { ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
+import { useTablesStore } from '@/store/tables-store'
 import { useSettingsStore, type MotionPreference } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips, parseChips } from '@/utils/format'
@@ -105,6 +106,9 @@ export default function AccountPage() {
 
   const freeplayPeakBankroll = useFreeplayStore((s) => s.peakBankroll)
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
+  const tablesPeakWallet = useTablesStore((s) => s.peakWallet)
+  const tablesWalletResetCount = useTablesStore((s) => s.walletResetCount)
+  const tableGameStats = useTablesStore((s) => s.gameStats)
   const hydrated = useHydrated()
   const dailyHistory = useDailyStore((s) => s.history)
   const dailiesPlayed = Object.keys(dailyHistory).length
@@ -198,6 +202,23 @@ export default function AccountPage() {
           <Stat label="Best daily" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '—'} />
           <Stat label="Peak freeplay balance" value={formatChips(freeplayPeakBankroll)} />
           <Stat label="Freeplay resets" value={String(freeplayResetCount)} />
+          <Stat label="Peak Tables wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
+          <Stat label="Tables wallet resets" value={hydrated ? String(tablesWalletResetCount) : '—'} />
+          <div className="col-span-full border-t border-rule pt-2"><dt className="text-xs font-semibold uppercase tracking-wider text-dim">Blackjack Showdown</dt><dd /></div>
+          <Stat label="Played" value={hydrated ? String(tableGameStats['blackjack-showdown'].played) : '—'} />
+          <Stat label="Wins" value={hydrated ? String(tableGameStats['blackjack-showdown'].wins) : '—'} />
+          <Stat label="Best finish" value={hydrated && tableGameStats['blackjack-showdown'].bestFinish !== null ? `#${tableGameStats['blackjack-showdown'].bestFinish}` : '—'} />
+          <Stat label="Net" value={hydrated ? `${tableGameStats['blackjack-showdown'].net > 0 ? '+' : tableGameStats['blackjack-showdown'].net < 0 ? '−' : ''}${formatChips(Math.abs(tableGameStats['blackjack-showdown'].net))}` : '—'} />
+          <div className="col-span-full border-t border-rule pt-2"><dt className="text-xs font-semibold uppercase tracking-wider text-dim">Liar’s Dice</dt><dd /></div>
+          <Stat label="Played" value={hydrated ? String(tableGameStats['liars-dice'].played) : '—'} />
+          <Stat label="Wins" value={hydrated ? String(tableGameStats['liars-dice'].wins) : '—'} />
+          <Stat label="Best finish" value={hydrated && tableGameStats['liars-dice'].bestFinish !== null ? `#${tableGameStats['liars-dice'].bestFinish}` : '—'} />
+          <Stat label="Net" value={hydrated ? `${tableGameStats['liars-dice'].net > 0 ? '+' : tableGameStats['liars-dice'].net < 0 ? '−' : ''}${formatChips(Math.abs(tableGameStats['liars-dice'].net))}` : '—'} />
+          <div className="col-span-full border-t border-rule pt-2"><dt className="text-xs font-semibold uppercase tracking-wider text-dim">Texas Hold’em</dt><dd /></div>
+          <Stat label="Played" value={hydrated ? String(tableGameStats.holdem.played) : '—'} />
+          <Stat label="Wins" value={hydrated ? String(tableGameStats.holdem.wins) : '—'} />
+          <Stat label="Best finish" value={hydrated && tableGameStats.holdem.bestFinish !== null ? `#${tableGameStats.holdem.bestFinish}` : '—'} />
+          <Stat label="Net" value={hydrated ? `${tableGameStats.holdem.net > 0 ? '+' : tableGameStats.holdem.net < 0 ? '−' : ''}${formatChips(Math.abs(tableGameStats.holdem.net))}` : '—'} />
           {LADDER_ENABLED && (
             <>
               <Stat label="Best ladder pot" value={hydrated && ladder.runs > 0 ? formatChips(ladder.bestPot) : '—'} />

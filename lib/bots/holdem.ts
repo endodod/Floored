@@ -14,10 +14,14 @@ export function decideHoldem(view:View,seat:number,mind:BotMind,profile:BotProfi
   const confidence=Math.min(.96,.2+strength*.08+(pair ? .16 : 0)+(high ? .06 : 0)+profile.aggression*.1+mind.raisesSeen*.01)
   const noise=noiseFor(profile.tier)
   const check=actions.find(a=>a.type==='check')
-  if(check){const raise=actions.find(a=>a.type==='raise');return raise&&rng()<confidence*profile.aggression*(1-noise*.4)?raise:check}
+  let best:Action
+  if(check){const raise=actions.find(a=>a.type==='raise');best=raise&&rng()<confidence*profile.aggression?raise:check}
+  else {
   const call=actions.find(a=>a.type==='call')
   const fold=actions.find(a=>a.type==='fold')
   const raise=actions.find(a=>a.type==='raise')
-  if(raise&&rng()<confidence*profile.aggression*(1-noise*.4))return raise
-  return call&&rng()<confidence*(1-profile.tightness*.12-noise*.25)?call:fold??{type:'fold'}
+  if(raise&&rng()<confidence*profile.aggression)best=raise
+  else best=call&&rng()<confidence*(1-profile.tightness*.12)?call:fold??{type:'fold'}
+  }
+  return rng()<noise ? actions[Math.floor(rng()*actions.length)]! : best!
 }

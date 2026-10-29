@@ -122,13 +122,25 @@ No rake.
 - **Board:** dealer at the top, four seat arcs below with each player's stack,
   bet chips and cards; a standings strip (rank, stack, hands left).
 
-**Blackjack Showdown implementation:** The owner approved the handoff defaults
-and winner-takes-all payout. Implemented a separate Tables hub and route, a
-refillable 10,000-chip play-money wallet, the 4-seat / 12-hand shared-shoe engine, per-seat
-views, a basic-strategy bot policy, and the blackjack table board. The wallet
-uses buy-ins of 100 / 500 / 2,000; the four-seat prize is 4× the buy-in. The
-browser and responsive checks remain pending. This does not implement Hold'em,
-Liar's Dice, the cross-game bot core, or the simulation harness.
+**Implementation status:** The owner approved the proposed Tables name, own
+refillable wallet, Hold’em Sit & Go, buy-in difficulty tiers, forfeits on leave,
+and winner-takes-all payouts for Blackjack Showdown and Liar’s Dice. Implemented
+the independent Tables catalog/routes, persisted 10,000-chip wallet, all three
+table engines and boards, per-seat hidden-information views, bot profiles and
+policies, per-game account records, and `scripts/bots/simulate.cjs`. Buy-ins are
+100 / 500 / 2,000. The simulation harness runs fixed-seed tables and checks chip
+conservation, hand-rank categories, legal actions, and hidden-view boundaries.
+TypeScript validation passes. The 10,000-table simulation completed with no
+illegal actions and an average of 285 Hold’em actions; combined tournament wins
+were 11,108 for Shark profiles and 10,359 for Rookie profiles. Responsive
+browser checks remain pending. Production build is blocked in the local environment:
+Next.js workspace-root discovery selects the parent user directory and build
+fails on `EPERM` while resolving it.
+
+The harness uses the repository's TypeScript compiler as a local CommonJS
+loader, so it does not add `tsx` or another runtime dependency. Bots use names
+and styles without chat or emotes. Hold’em currently uses six seats at all
+viewport sizes; the phone fit check will determine whether to switch to four.
 
 ### Phase 1 deliverables
 
@@ -218,12 +230,12 @@ Use the harness to tune bot tiers, blinds, hand counts and buy-ins; add a
    shared with the Freeplay balance?
 3. **Hold'em format:** Sit & Go (proposed), or a cash table you can join and
    leave at any time, or both?
-4. **Difficulty:** tied to the buy-in tier, or picked separately?
-5. **Phones:** 6-max Hold'em is cramped on a phone — 4-max there, or desktop
-   only like Survival?
-6. **Tooling:** OK to add `tsx` (dev only) for the simulation harness?
-7. **Leaving mid-table:** forfeit the buy-in (proposed), or save and resume?
-8. **Bot personality:** names / avatars only, or short chat lines and emotes
-   too?
-9. **Payout splits** for Liar's Dice and Blackjack Showdown (winner-takes-all
-   vs. top-2).
+4. **Difficulty:** resolved to follow buy-in tiers.
+5. **Phones:** 6-max Hold’em fit still needs a phone check; use 4-max if it
+   cannot fit without scrolling.
+6. **Tooling:** resolved without a new dependency using TypeScript's compiler.
+7. **Leaving mid-table:** resolved to forfeit the buy-in; tables can be resumed
+   while the player remains in the session.
+8. **Bot personality:** resolved to distinct names and styles, without chat.
+9. **Payout splits:** resolved to winner-takes-all for Liar's Dice and Blackjack
+   Showdown; Hold’em keeps its specified 65 / 35 top-two payout.

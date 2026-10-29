@@ -28,7 +28,7 @@ export function LiarsDiceGame() {
   const rng = useRef<() => number>(Math.random)
   const minds = useRef(names.map(() => freshBotMind()))
   useEffect(() => {
-    if(state?.winner!==null&&state?.winner!==undefined){settleMini('liars-dice',state.winner===0?buyIn*4:0);return}
+    if(state?.winner!==null&&state?.winner!==undefined){const place=Math.max(1,state.finishOrder.slice().reverse().indexOf(0)+1);settleMini('liars-dice',place===1?buyIn*4:0,place);return}
     if (!state || state.reveal || state.seat === 0 || state.winner !== null) return
     const view = viewFor(state, state.seat)
     const delay = thinkDelay(rng.current, Boolean(state.bid))
@@ -43,7 +43,7 @@ export function LiarsDiceGame() {
   if (!state) return <div className="mx-auto max-w-3xl py-12"><h1 className="text-3xl">Liar’s Dice</h1><p className="my-4 text-dim">Four players, five dice each. Bid on the total dice showing a face, or call Liar.</p><Button onClick={begin}>Sit at the table</Button></div>
 
   return <section className="board-fit mx-auto flex min-h-[min(680px,calc(100dvh-9rem))] w-full max-w-4xl flex-col rounded-3xl border border-[#70623f] bg-[#153b31] p-4 text-[#f5eedc] sm:p-6" aria-label="Liar's Dice table">
-    <header className="flex items-center justify-between border-b border-white/15 pb-3"><h1 className="font-semibold tracking-wide">LIAR’S DICE</h1><div className="flex items-center gap-3"><span className="text-sm text-white/70">Four seats · five dice</span><Button variant="ghost" onClick={()=>{leave();router.push('/tables')}}>Forfeit buy-in</Button></div></header>
+    <header className="flex items-center justify-between border-b border-white/15 pb-3"><div><h1 className="font-semibold tracking-wide">LIAR’S DICE</h1><p className="text-xs text-white/65">Four seats · five dice · {buyIn} buy-in · {buyIn*4} prize</p></div><Button variant="ghost" onClick={()=>{leave();router.push('/tables')}}>Forfeit buy-in</Button></header>
     <div className="grid flex-1 grid-cols-2 gap-3 py-5 sm:grid-cols-4">{names.map((name, i) => <article key={name} className={`rounded-xl border p-3 text-center ${state.seat === i && !state.reveal ? 'border-[#edc96d]' : 'border-white/15'}`}><p className="font-medium">{name}{state.winner === i ? ' · Winner' : ''}</p><p className="mt-1 text-xs text-white/65">{state.active[i] ? `${state.dice[i]!.length} dice` : 'Out'}</p><div className="mt-4 flex min-h-10 flex-wrap justify-center gap-1">{(state.reveal || i === 0 ? state.dice[i]! : []).map((die, n) => <span key={n} className="text-2xl" aria-label={`${die}`}>{faces[die - 1]}</span>)}{!state.reveal && i !== 0 && state.active[i] && <span className="text-white/50">● ● ● ● ●</span>}</div></article>)}</div>
     <div className="rounded-xl border border-white/15 bg-black/15 p-4">
       <p className="text-center text-sm text-white/75">{state.winner !== null ? `${names[state.winner]} wins the table.` : state.reveal ? `${names[state.seat]} called Liar · ${names[state.bid!.seat]} bid ${state.bid!.count} ${state.bid!.face}s` : state.bid ? `${names[state.bid.seat]} bid ${state.bid.count} ${state.bid.face}s` : 'First bid of the round'}</p>

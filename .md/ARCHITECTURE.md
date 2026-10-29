@@ -24,8 +24,11 @@ Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zu
 | `lib/game-catalog.ts` | `GAMES[]` — label, subtitle and mode availability for every game. |
 | `lib/game-registry.tsx` | `GAME_REGISTRY` — the only file that imports all 18 game components. |
 | `lib/daily/`, `lib/ladder/`, `lib/survival/` | Mode rules. `lib/ladder/rules.ts` also holds `GAME_MAX_MULT` (the "up to …×" captions). |
-| `lib/features.ts` | `SURVIVAL_ENABLED`, `LADDER_ENABLED` — turning one off hides its entry points and 404s its routes. |
-| `store/` | Zustand stores: `freeplay`, `daily`, `ladder`, `survival`, `settings`; shared types in `store/types.ts`. |
+| `lib/features.ts` | `SURVIVAL_ENABLED`, `LADDER_ENABLED`, `TABLES_ENABLED` — turning a mode off hides its entry points and 404s its routes. |
+| `store/` | Zustand stores: `freeplay`, `daily`, `ladder`, `survival`, `tables`, `settings`; shared solo-game types in `store/types.ts`. |
+| `lib/tables/` | Independent TableGameName, catalog and registry; these games must stay out of `GameName` / `GAME_REGISTRY`. |
+| `games/holdem`, `games/liars-dice`, `games/blackjack-showdown` | Pure multiplayer table engines; `viewFor(state, seat)` strips hidden state before bot decisions. |
+| `lib/bots/` | Shared profiles / mind / pacing plus one policy per table game. |
 | `hooks/use-game-bankroll.ts` | `use{Freeplay,Survival,Daily,Ladder}GameBankroll` — each mode's bankroll math for the `[game]` pages. |
 | `utils/format.ts` | `formatChips`, `formatMultiplier` — always use these for money and multipliers. |
 | `utils/rng.ts` | Seeded RNG (`createRng`, `seedFromString`) for anything that must be reproducible (daily challenge, survival floors and missions). |

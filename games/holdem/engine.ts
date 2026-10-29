@@ -46,8 +46,11 @@ export function legalActions(state:State,seat:number):Action[] {
   const actions:Action[]=[{type:'fold'}]
   if(toCall===0)actions.push({type:'check'});else actions.push({type:'call'})
   const maxTo=p.bet+p.stack
-  if(maxTo>state.currentBet&&p.stack>0)actions.push({type:'raise',to:Math.min(maxTo,state.currentBet+Math.max(state.minRaise,state.bigBlind))})
-  if(maxTo>state.currentBet&&p.stack>0)actions.push({type:'raise',to:maxTo})
+  if(maxTo>state.currentBet&&p.stack>0){
+    const toCall=Math.max(0,state.currentBet-p.bet)
+    const targets=[state.currentBet+Math.max(state.minRaise,state.bigBlind),state.currentBet+Math.max(state.bigBlind,Math.floor((state.pot+toCall)/2)),state.currentBet+Math.max(state.bigBlind,state.pot+toCall),maxTo]
+    for(const target of [...new Set(targets)].map(n=>Math.min(maxTo,n)).filter(n=>n>state.currentBet))actions.push({type:'raise',to:target})
+  }
   return actions
 }
 

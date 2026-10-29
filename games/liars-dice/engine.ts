@@ -1,11 +1,11 @@
 import type { Action, Bid, State, View } from './types'
 
 export function startGame(rng: () => number, names = 4): State {
-  return { dice: Array.from({ length: names }, () => Array.from({ length: 5 }, () => 1 + Math.floor(rng() * 6))), active: Array(names).fill(true), bid: null, history: [], seat: 0, reveal: false, winner: null }
+  return { dice: Array.from({ length: names }, () => Array.from({ length: 5 }, () => 1 + Math.floor(rng() * 6))), active: Array(names).fill(true), bid: null, history: [], seat: 0, reveal: false, winner: null, finishOrder:[] }
 }
 
 export function viewFor(state: State, seat: number): View {
-  return { active: [...state.active], bid: state.bid && { ...state.bid }, history: [...state.history], seat: state.seat, reveal: state.reveal, winner: state.winner, ownDice: [...state.dice[seat]!], diceCounts: state.dice.map((d, i) => state.reveal || i === seat ? d.length : d.length) }
+  return { active: [...state.active], bid: state.bid && { ...state.bid }, history: [...state.history], seat: state.seat, reveal: state.reveal, winner: state.winner, finishOrder:[...state.finishOrder], ownDice: [...state.dice[seat]!], diceCounts: state.dice.map((d, i) => state.reveal || i === seat ? d.length : d.length) }
 }
 
 export function legalActions(state: State, seat: number): Action[] {
@@ -45,7 +45,8 @@ export function apply(state: State, seat: number, action: Action): State {
   const remaining = active.map((a, i) => a ? i : -1).filter(i => i >= 0)
   const winner = remaining.length === 1 ? remaining[0]! : null
   const roundStarter = active[loser] ? loser : nextActive(active, loser)
-  return { dice, active, bid: state.bid, history: state.history, seat: roundStarter, reveal: true, winner }
+  const finishOrder=[...state.finishOrder,...(!active[loser]?[loser]:[]),...(winner!==null?[winner]:[])]
+  return { dice, active, bid: state.bid, history: state.history, seat: roundStarter, reveal: true, winner, finishOrder }
 }
 
 export function nextRound(state: State, rng: () => number): State {

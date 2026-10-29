@@ -807,3 +807,14 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Freeplay bust threshold | Constant | ≤10 | chips | markBust |
 | Bust survival trigger | Rule | bankroll < floorMinBet | chips | After resolve |
 | Cursed/blessed | Dev | navbar | flag | Not production |
+
+## Tables
+
+| Parameter | Value | Source |
+|---|---:|---|
+| Tables starting / refill wallet | 10,000 chips | `store/tables-store.ts` |
+| Buy-in tiers | 100 / 500 / 2,000 | `lib/tables/catalog.ts`, Tables hub |
+| Blackjack Showdown | 4 seats, 1,000 chips each, 12 hands, bets 10–500, 3:2 natural blackjack, winner receives 4× buy-in | `games/blackjack-showdown/engine.ts` |
+| Liar’s Dice | 4 players, 5 dice each; winner receives 4× buy-in | `games/liars-dice/engine.ts`, Tables store |
+| Hold’em | 6 seats, 1,500 starting chips, blinds 10/20 → 15/30 → 25/50 → 50/100 → 100/200 every 10 hands | `games/holdem/engine.ts` |
+| Hold’em prize | 6 buy-ins; 65% / 35% to first / second | `games/holdem/engine.ts`, Tables store |
