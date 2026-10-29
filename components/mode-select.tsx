@@ -7,7 +7,10 @@ import { useSurvivalStore } from '@/store/survival-store'
 import { FLOOR_BET_LIMIT, MAX_FLOORS, STARTING_BANKROLL } from '@/lib/survival/balance'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useHydrated } from '@/hooks/use-hydrated'
-import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
+import { useTablesStore } from '@/store/tables-store'
+import { TABLE_GAMES } from '@/lib/tables/catalog'
+import { TABLES_START_WALLET } from '@/lib/tables/stakes'
 import { useLadderStore } from '@/store/ladder-store'
 import { CHECKPOINT_EVERY, LADDER_LIVES, LADDER_RUNGS, START_POT } from '@/lib/ladder/rules'
 import { dailyDateKey, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
@@ -83,6 +86,8 @@ export function ModeSelect() {
   const ladderPot = useLadderStore((s) => s.pot)
   const ladderLives = useLadderStore((s) => s.lives)
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
+  const tablesWallet = useTablesStore((s) => s.wallet)
+  const tablesPlayed = useTablesStore((s) => s.history.length)
   const ladderClimbing = hydrated && ladderStatus === 'climbing'
   const survivalLive = hydrated && runActive
 
@@ -209,9 +214,27 @@ export function ModeSelect() {
           />
         )}
 
+        {/* ── Tables (toggle in lib/features.ts) ── */}
+        {TABLES_ENABLED && (
+          <ModeRow
+            index={3}
+            name="Tables"
+            description="Sit down with bots at Hold'em and Liar's Dice. Buy in, outlast the table, take the prize pool."
+            track={<UnitTrack total={TABLE_GAMES.length} done={TABLE_GAMES.length} label={`${TABLE_GAMES.length} table games`} />}
+            trackCaption={`${TABLE_GAMES.length} games · ${hydrated ? tablesPlayed : 0} tables played`}
+            figureLabel="Wallet"
+            figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
+            action={
+              <Button asChild variant="outline" className="w-full lg:w-auto">
+                <Link href="/tables">Take a seat</Link>
+              </Button>
+            }
+          />
+        )}
+
         {/* ── Freeplay ── */}
         <ModeRow
-          index={3}
+          index={4}
           name="Freeplay"
           description="Every game, no floors and no quotas. Practise anything and reset your balance whenever you like."
           track={<UnitTrack total={GAMES.length} done={GAMES.length} label={`${GAMES.length} games open`} />}

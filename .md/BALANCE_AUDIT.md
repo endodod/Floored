@@ -807,3 +807,18 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Freeplay bust threshold | Constant | ≤10 | chips | markBust |
 | Bust survival trigger | Rule | bankroll < floorMinBet | chips | After resolve |
 | Cursed/blessed | Dev | navbar | flag | Not production |
+
+## Tables
+
+Numbers live in `lib/tables/stakes.ts` and the engines.
+
+| Item | Value |
+|---|---|
+| Wallet | 10,000; refill to 10,000 when below 100 |
+| Buy-ins | 100 (Rookie bots) · 500 (Regular) · 2,000 (Shark) |
+| Prize pool | all buy-ins, no rake; 65/35 at 6 seats, 70/30 at 4 |
+| Hold'em | 1,500 stack; blinds 10/20, 15/30, 25/50, 50/100, 75/150, 100/200, 150/300, 200/400, 300/600, 500/1000, 800/1600, 1200/2400; up every 5 hands |
+| Liar's Dice | 5 dice each, 1s wild, opening bid not on 1s |
+| Turn timer | 30 s (stall = check / fold, or call liar) |
+
+Player EV with equal skill is 0 (no rake).

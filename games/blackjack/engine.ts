@@ -43,7 +43,7 @@ function cardValues(card: BlackjackCard): number[] {
   return [parseInt(card.rank, 10)]
 }
 
-function handTotals(cards: BlackjackCard[]): number[] {
+export function handTotals(cards: BlackjackCard[]): number[] {
   const totals = cards.reduce<number[]>((acc, card) => {
     const values = cardValues(card)
     return acc.flatMap((total) => values.map((value) => total + value))
@@ -58,15 +58,15 @@ export function calculateHandValue(cards: BlackjackCard[]): number {
   return validTotals.length > 0 ? Math.max(...validTotals) : Math.min(...totals)
 }
 
-function isBust(cards: BlackjackCard[]): boolean {
+export function isBust(cards: BlackjackCard[]): boolean {
   return handTotals(cards).every((total) => total > 21)
 }
 
-function isBlackjack(cards: BlackjackCard[]): boolean {
+export function isBlackjack(cards: BlackjackCard[]): boolean {
   return cards.length === 2 && handTotals(cards).includes(21)
 }
 
-function dealerShouldHit(cards: BlackjackCard[]): boolean {
+export function dealerShouldHit(cards: BlackjackCard[]): boolean {
   const totals = handTotals(cards).filter((total) => total <= 21)
   if (totals.length === 0) return false
   return Math.max(...totals) < 17
