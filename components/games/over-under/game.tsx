@@ -90,7 +90,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
   const [quoteIdx, setQuoteIdx] = useState(() => pickQuote())
 
   const [markerAt, setMarkerAt] = useState<number | null>(null)
-  const [markerOutcome, setMarkerOutcome] = useState<'win' | 'loss' | null>(null)
+  const [markerOutcome, setMarkerOutcome] = useState<'win' | 'loss' | 'push' | null>(null)
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const isBetting    = round.stage === 'betting'
@@ -139,15 +139,19 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
     const shieldActive = shieldProc.rollForBet()
 
     const t2 = setTimeout(() => {
-      setMarkerOutcome(outcome)
-      setRound(settled)
-
       let finalOutcome: 'win' | 'loss' | 'push' = outcome
       let po = getOverUnderPayout(settled)
       if (shieldActive && outcome === 'loss') {
         po = bet
         finalOutcome = 'push'
       }
+      // A shielded loss lands as a push: neutral marker, no bust shake.
+      setMarkerOutcome(finalOutcome)
+      setRound(
+        finalOutcome === 'push'
+          ? { ...settled, message: `Rolled ${rollPos}: Safe Opening Roll refunds your bet.` }
+          : settled,
+      )
 
       const resolved = resolveGame(onResolve, {
         outcome: finalOutcome,

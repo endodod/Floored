@@ -243,7 +243,6 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
     const t6 = setTimeout(() => {
       setLandedReels([false, false, false])
       setIsSpinning(false)
-      setRound(result)
 
       let payout = getSlotsResultPayout(result)
       let finalOutcome: 'win' | 'loss' | 'push' =
@@ -252,6 +251,11 @@ export function SlotsGame({ mode, bankroll, onBet, onResolve }: SlotsGameProps) 
         payout = bet
         finalOutcome = 'push'
       }
+      setRound(
+        finalOutcome === 'push'
+          ? { ...result, message: 'First Spin Shield refunds your bet.' }
+          : result,
+      )
 
       const resolved = resolveGame(onResolve, {
         outcome: finalOutcome,
