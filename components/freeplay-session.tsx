@@ -3,10 +3,9 @@
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useHydrated } from '@/hooks/use-hydrated'
 import { formatChips } from '@/utils/format'
-import { Rail } from '@/components/mode-intro'
 import { signed } from '@/components/ui/terminal'
 
-/** Freeplay's rail: the balance against the 10K start, the peak and the resets. */
+/** Compact Freeplay session figures for the page title row. */
 export function FreeplaySession() {
   const hydrated = useHydrated()
   const bankroll = useFreeplayStore((s) => s.bankroll)
@@ -16,31 +15,31 @@ export function FreeplaySession() {
   const net = bankroll - START
 
   return (
-    <Rail
-      title="Your session"
-      note="Play money"
-      footer="Go broke and a game offers to refill you to 10K. Nothing here costs or pays real money."
-    >
-      <div className="py-3">
-        <p className="text-xs text-dim">Balance</p>
-        <p className="num mt-0.5 text-[28px] leading-9 text-ink">{hydrated ? formatChips(bankroll) : '—'}</p>
-        {hydrated && (
-          <p className={`num text-xs ${net > 0 ? 'text-felt glow-felt' : net < 0 ? 'text-loss' : 'text-dim'}`}>
-            {signed(net, formatChips)} <span className="font-sans text-dim">since the 10K start</span>
-          </p>
-        )}
+    <section className="rise flex min-w-0 flex-col gap-1.5" aria-label="Your session">
+      <div className="flex items-baseline justify-between gap-3 px-1">
+        <h2 className="text-xs font-semibold text-ink">Your session</h2>
+        <p className="text-[11px] text-dim">Play money</p>
       </div>
-      <dl className="divide-y divide-rule border-t border-rule">
-        {[
-          { label: 'Peak balance', value: hydrated ? formatChips(peak) : '—' },
-          { label: 'Resets', value: hydrated ? String(resets) : '—' },
-        ].map((r) => (
-          <div key={r.label} className="flex items-baseline justify-between gap-3 py-2.5">
-            <dt className="text-[13px] text-dim">{r.label}</dt>
-            <dd className="num text-[13px] text-ink">{r.value}</dd>
-          </div>
-        ))}
+      <dl className="grid grid-cols-3 gap-3 rounded-md bg-surface px-3 py-2">
+        <div>
+          <dt className="text-[10px] text-dim">Balance</dt>
+          <dd className="num mt-0.5 text-base leading-5 text-ink">{hydrated ? formatChips(bankroll) : '—'}</dd>
+          {hydrated && (
+            <dd className={net > 0 ? 'num text-[10px] text-felt glow-felt' : net < 0 ? 'num text-[10px] text-loss' : 'num text-[10px] text-dim'}>
+              {signed(net, formatChips)} since start
+            </dd>
+          )}
+        </div>
+        <div>
+          <dt className="text-[10px] text-dim">Peak balance</dt>
+          <dd className="num mt-0.5 text-base leading-5 text-ink">{hydrated ? formatChips(peak) : '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-[10px] text-dim">Resets</dt>
+          <dd className="num mt-0.5 text-base leading-5 text-ink">{hydrated ? String(resets) : '—'}</dd>
+        </div>
       </dl>
-    </Rail>
+      <p className="px-1 text-[10px] leading-4 text-dim">Go broke and a game offers a refill to 10K. Nothing here costs or pays real money.</p>
+    </section>
   )
 }
