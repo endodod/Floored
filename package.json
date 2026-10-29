@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "sim:bots": "tsx scripts/bots/simulate.ts",
+    "check:tables": "tsx scripts/bots/check-engines.ts"
   },
   "dependencies": {
     "@neondatabase/auth": "0.5.0-beta",
@@ -44,6 +46,7 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

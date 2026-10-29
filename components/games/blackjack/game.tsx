@@ -35,12 +35,12 @@ function fan(i: number, len: number): React.CSSProperties | undefined {
 /** A hand's label with its total as a mono pill; the pill lights up on 21. */
 function HandLabel({ who, total }: { who: string; total: number | null }) {
   return (
-    <p className="mb-2 flex items-center justify-center gap-2 text-[13px] text-soft">
-      {who}
+    <p className="mb-2 flex items-center justify-center gap-2">
+      <span className="felt-print">{who}</span>
       {total != null && (
         <span
           className={`num rounded-full px-2 py-0.5 text-[13px] ${
-            total === 21 ? 'bg-felt-tint text-felt glow-felt' : total > 21 ? 'bg-loss-tint text-loss' : 'bg-black/45 text-ink'
+            total === 21 ? 'bg-felt-tint text-felt glow-felt' : total > 21 ? 'bg-loss-tint text-loss' : 'plaque text-ink'
           }`}
         >
           {total}

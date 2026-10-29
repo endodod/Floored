@@ -396,7 +396,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
         {/* Setup phase: case selector */}
         {isSetup && (
           <div className="cb-pick flex flex-col gap-3">
-            <p className="cb-pick-title text-center text-xs font-semibold uppercase tracking-wider text-dim">
+            <p className="cb-pick-title felt-print text-center">
               {ladder ? 'One of each case — all five open' : <>Select up to 5 cases — <span className="num">{numCases}/5</span></>}
             </p>
             <div className="grid grid-cols-5 gap-2 sm:gap-3">
@@ -422,7 +422,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                         'g-lift m-still relative flex w-full items-center justify-center rounded-xl border py-1.5 transition-[border-color,background-color,box-shadow,transform] duration-150 active:scale-95',
                         count > 0
                           ? 'border-felt bg-felt-tint -translate-y-1 shadow-[0_0_18px_-6px_rgba(79,174,132,0.7)]'
-                          : 'border-line bg-surface/60 hover:border-control',
+                          : 'plaque border-transparent hover:border-control',
                         atMax ? 'opacity-30 cursor-not-allowed' : ladder ? 'cursor-default' : 'cursor-pointer',
                       ].join(' ')}
                     >
@@ -470,7 +470,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
           return (
             <div className="cb-duel flex gap-2.5 sm:gap-3">
               {/* Which case each row opened: both sides open the same case per row. */}
-              <div className="cb-cases order-1 flex shrink-0 flex-col items-center gap-1.5" aria-label="Cases">
+              <div className="cb-cases plaque order-1 flex shrink-0 flex-col items-center gap-1.5 rounded-xl p-1" aria-label="Cases">
                 <span className="cb-head-gap block h-4" aria-hidden />
                 {state.userItems.map((oc, i) => (
                   <span
@@ -483,8 +483,8 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                 ))}
               </div>
               {sides.map(side => (
-                <div key={side.label} className={`cb-side ${side.user ? 'order-0' : 'order-2'} flex min-w-0 flex-1 flex-col gap-1.5`}>
-                  <p className={`cb-head shrink-0 text-center text-xs font-semibold uppercase tracking-wider ${side.wins ? (side.user ? 'text-felt' : 'text-loss') : tied ? 'text-soft' : 'text-dim'}`}>
+                <div key={side.label} className={`cb-side ${side.user ? 'order-0' : 'order-2'} plaque flex min-w-0 flex-1 flex-col gap-1.5 rounded-xl p-1`}>
+                  <p className={`cb-head shrink-0 text-center text-xs font-semibold uppercase tracking-wider ${side.wins ? (side.user ? 'text-felt' : 'text-loss') : tied ? 'text-soft' : 'gold-print'}`}>
                     {side.label} {side.wins && <WinnerCrown />}
                   </p>
                   <div className="cb-items flex flex-col gap-1.5">
@@ -521,7 +521,7 @@ export function CaseBattlesGame({ mode, bankroll, onBet, onResolve }: CaseBattle
                   {showTotals && (
                     <p
                       key={isSettled ? 'final' : 'live'}
-                      className={`cb-total g-fade num mt-0.5 shrink-0 border-t-2 border-line pt-1.5 text-right text-sm font-semibold ${side.wins ? (side.user ? 'text-felt glow-felt' : 'text-loss') : tied ? 'text-soft' : 'text-ink'}`}
+                      className={`cb-total g-fade num mt-0.5 shrink-0 border-t-2 border-[rgba(217,164,65,0.3)] pt-1.5 text-right text-sm font-semibold ${side.wins ? (side.user ? 'text-felt glow-felt' : 'text-loss') : tied ? 'text-soft' : 'text-ink'}`}
                     >
                       {formatChips(side.total)}
                     </p>
