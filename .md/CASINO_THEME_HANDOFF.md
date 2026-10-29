@@ -35,14 +35,13 @@ outcome glows; the table colours above are for surfaces.
 
 ## Per game
 
-Done: Roulette, Fortune Wheel, Slots, Over-Under, Run Dice, Plinko (brass pegs), Mines, Keno.
+Done: Roulette, Fortune Wheel, Slots, Over-Under, Run Dice, Plinko (brass pegs), Mines, Keno, Dragon Tower.
 
 | Game | Suggested change |
 |---|---|
 | Blackjack | Gold-print the rules arc if it isn't already; wood-and-gold rim on the card shoe / dealer area if there is one. Cards stay as they are. |
 | HiLo | Higher / Lower guess buttons on the board: table green / red fills with gold hairline; felt-print labels. |
 | 1-Player Poker | Pay table already gold: put it in a wood frame (`.rd-layout` look). |
-| Dragon Tower | Same tile treatment; tower in a thin wood-and-gold frame; floor multipliers in gold print. |
 | Chicken Road | Lane tiles get the dark outline + gold hairline; curb in wood tone. |
 | Coin Flip | Coin to brass/gold metal gradient if it isn't; Heads / Tails picks as table chips (green / red with gold rim). |
 | Street Cups | Cups already drawn: add a wood-and-gold base strip under them (a table rail). |
