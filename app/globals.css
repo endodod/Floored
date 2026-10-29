@@ -2123,6 +2123,16 @@ body > div.neon-auth-ui {
 .sc-body {
   filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.45));
 }
+.sc-out {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--cup) * 0.28);
+  width: calc(var(--cup) * 0.42);
+  height: calc(var(--cup) * 0.42);
+  translate: -50% 0;
+  color: var(--loss);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
 .sc-knob {
   width: 26%;
   height: calc(var(--cup) * 0.12);

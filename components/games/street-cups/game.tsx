@@ -95,7 +95,7 @@ function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wr
         data-lifted={lifted}
         data-tone={tone}
         disabled={!pickable || eliminated}
-        aria-label={`Cup ${slot + 1}`}
+        aria-label={eliminated ? `Cup ${slot + 1}: empty` : `Cup ${slot + 1}`}
         onClick={() => pickable && !eliminated && onPick(cupId)}
       >
         {/* What is under the cup, on the table; the cup lifts away to show it. */}
@@ -105,6 +105,12 @@ function Cup({ cupId, slot, lifted, hasCrown, pickable, eliminated, selected, wr
         <span className="sc-body">
           <span className="sc-knob" />
           <span className="sc-shell" />
+          {/* Cup Truth: the cup the perk rules out is crossed off. */}
+          {eliminated && (
+            <svg viewBox="0 0 24 24" className="sc-out" aria-hidden>
+              <path d="M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          )}
         </span>
       </button>
     </div>
