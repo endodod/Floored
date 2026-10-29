@@ -8,9 +8,9 @@ import { useHydrated } from '@/hooks/use-hydrated'
 import { useTablesStore, type OpenTable } from '@/store/tables-store'
 
 /**
- * One table. You only get here through the hub's Sit down (which pays the
+ * One table. You only get here through the lobby's Sit down (which pays the
  * buy-in); a table already dealt on an earlier visit was left, so it is
- * forfeited and you go back to the hub.
+ * forfeited and you go back to the lobby.
  */
 export default function TableGamePage({ params }: { params: Promise<{ game: string }> }) {
   const { game } = use(params)
@@ -24,12 +24,12 @@ export default function TableGamePage({ params }: { params: Promise<{ game: stri
     started.current = true
     const s = useTablesStore.getState()
     if (!isTableGame(game) || !s.open || s.open.game !== game) {
-      router.replace('/tables')
+      router.replace('/tables/lobby')
       return
     }
     if (s.open.seated) {
       s.forfeit()
-      router.replace('/tables')
+      router.replace('/tables/lobby')
       return
     }
     s.markSeated()

@@ -34,7 +34,7 @@ export default async function TableHowToPlayPage({ params }: { params: Params })
 
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-10 pb-12">
-      <PageTitle title={`How to play ${entry.label}`} sub={tutorial.intro} aside={<BackButton fallback="/tables" />} />
+      <PageTitle title={`How to play ${entry.label}`} sub={tutorial.intro} aside={<BackButton fallback="/tables/lobby" />} />
 
       <StartPanel
         figures={[
@@ -44,7 +44,7 @@ export default async function TableHowToPlayPage({ params }: { params: Params })
         ]}
         action={
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/tables">Go to Tables →</Link>
+            <Link href="/tables/lobby">Choose a table →</Link>
           </Button>
         }
         note={`${entry.skill}. Play money from your Tables wallet; the bots only see what a player in their seat could.`}

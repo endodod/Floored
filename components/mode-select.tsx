@@ -230,7 +230,7 @@ export function ModeSelect() {
             figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
             action={
               <Button asChild variant="outline" className="w-full lg:w-auto">
-                <Link href="/tables">Take a seat</Link>
+                <Link href="/tables">Explore Tables</Link>
               </Button>
             }
           />
