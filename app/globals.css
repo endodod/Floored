@@ -414,6 +414,13 @@ body > div.neon-auth-ui {
   font-weight: 600;
 }
 
+/* Plaque: a figure or picker panel on the felt, ruled in gold (casino trim).
+   Labels inside it use .felt-print. */
+.plaque {
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3);
+}
+
 /* Board tile (components/games/board-tile.tsx): the grid games' tile, sized
    by --tile. Face down it is a raised slab on the felt; face up it is tinted
    by what it turned out to be. data-state picks the look. */
@@ -430,9 +437,12 @@ body > div.neon-auth-ui {
   font-size: calc(var(--tile, 3.5rem) * 0.32);
   color: var(--soft);
   background: linear-gradient(180deg, #2a292d, #1f1e22);
+  /* Casino trim: every tile has the same dark outline (a border, so the
+     state looks below can keep their own glows) and a gold hairline. */
+  border: 2px solid #0a0806;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(217, 164, 65, 0.3),
     0 2px 0 rgba(0, 0, 0, 0.35),
     0 6px 14px -8px rgba(0, 0, 0, 0.7);
   transition:
@@ -459,7 +469,7 @@ body > div.neon-auth-ui {
   cursor: default;
   color: var(--dim);
   background: rgba(0, 0, 0, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.18);
 }
 .btile[data-state='selected'] {
   color: var(--ground);
@@ -493,7 +503,7 @@ body > div.neon-auth-ui {
   cursor: default;
   color: var(--dim);
   background: rgba(0, 0, 0, 0.2);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.18);
   opacity: 0.75;
 }
 .btile[data-state='dormant'].btile-bad {

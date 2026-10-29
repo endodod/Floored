@@ -221,7 +221,7 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
           {/* One slot: difficulty while betting, the round's figures after. */}
           <div className="grid5-top flex h-9 shrink-0 items-center justify-center gap-2">
             {isBetting ? (
-              <div className="flex rounded-full bg-black/25 p-1" role="radiogroup" aria-label="Difficulty">
+              <div className="plaque flex rounded-full p-1" role="radiogroup" aria-label="Difficulty">
                 {DIFFICULTIES.map((level) => (
                   <button
                     key={level}
@@ -239,12 +239,12 @@ export function MinesGame({ mode, bankroll, onBet, onResolve }: MinesGameProps) 
               </div>
             ) : (
               <>
-                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-                  <span className="text-dim">Safe left</span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Safe left</span>
                   <span className="num text-ink">{round.remainingSafe}</span>
                 </span>
-                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-                  <span className="text-dim">Multiplier</span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Multiplier</span>
                   <span key={round.multiplier} className={`num g-pop ${isSettled && round.outcome === 'loss' ? 'text-loss' : 'text-gold glow-gold'}`}>
                     {formatMultiplier(round.multiplier)}
                   </span>

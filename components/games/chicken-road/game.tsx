@@ -215,12 +215,12 @@ export function ChickenGame({ mode, bankroll, onBet, onResolve }: ChickenGamePro
 
         <div className="cr-board flex h-full w-full flex-col items-center justify-center gap-[clamp(0.4rem,2.4cqh,1rem)] px-4 py-3">
           <div className={`cr-stats flex h-9 shrink-0 items-center justify-center gap-2 ${isBetting ? 'invisible' : ''}`}>
-            <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-              <span className="text-dim">Step</span>
+            <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+              <span className="felt-print">Step</span>
               <span className="num text-ink">{currentStep}</span>
             </span>
-            <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-              <span className="text-dim">Multiplier</span>
+            <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+              <span className="felt-print">Multiplier</span>
               <span
                 key={round.multiplier}
                 className={`num g-pop ${isSettled && round.outcome === 'loss' ? 'text-loss' : 'text-gold glow-gold'}`}

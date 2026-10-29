@@ -260,19 +260,19 @@ export function KenoGame({ mode, bankroll, onBet, onResolve }: KenoGameProps) {
                 <button
                   type="button"
                   onClick={handleClearPicks}
-                  className="m-still h-8 rounded-full bg-black/25 px-3.5 text-[12px] font-semibold text-dim transition-colors hover:text-ink"
+                  className="m-still plaque h-8 rounded-full px-3.5 text-[12px] font-semibold text-dim transition-colors hover:text-ink"
                 >
                   Clear picks
                 </button>
               </>
             ) : (
               <>
-                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-                  <span className="text-dim">Hits</span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Hits</span>
                   <span key={round.hits} className="num g-pop text-gold">{hasRevealedStats ? round.hits : '—'}</span>
                 </span>
-                <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/25 px-3 text-[12px]">
-                  <span className="text-dim">Multiplier</span>
+                <span className="flex h-8 items-center gap-1.5 plaque rounded-full px-3 text-[12px]">
+                  <span className="felt-print">Multiplier</span>
                   <span key={round.multiplier} className="num g-pop text-ink">
                     {hasRevealedStats ? formatMultiplier(round.multiplier) : '—'}
                   </span>
