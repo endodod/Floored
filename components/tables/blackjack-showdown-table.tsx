@@ -138,7 +138,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
           {me.cards.length === 0 && [0, 1].map((k) => <PlayingCard key={`you-slot-${k}`} variant="slot" />)}
         </div>
         {me.cards.length > 0 && <span className="num h-4 text-[10px] leading-4 text-dim">Hand {handValue(me.cards)}</span>}
-        <span className="num h-4 text-[10px] leading-4 text-dim">{me.bet > 0 ? `Bet ${formatChips(me.bet)}` : ''}</span>
+        <span className="num h-4 text-[10px] leading-4 text-dim">{me.bet != null && me.bet > 0 ? `Bet ${formatChips(me.bet)}` : ''}</span>
       </div>
     </div>
   )
