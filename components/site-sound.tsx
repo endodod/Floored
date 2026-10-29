@@ -9,12 +9,57 @@ type SoundKind =
   | 'tower-safe' | 'tower-hit' | 'crash-rise' | 'crash-hit' | 'coin' | 'ball'
   | 'step-safe' | 'step-hit' | 'race' | 'cashout' | 'cups'
 
+type Sample = {
+  files: string[]
+  rate: number
+  cutoff: number
+  level: number
+  offset?: number
+  duration?: number
+}
+
+const kenney = '/audio/kenney-casino/Audio/'
+const recorded = '/audio/recorded/'
+const files = (...names: string[]) => names.map((name) => `${kenney}${name}.ogg`)
+
+// CC0 field recordings and Kenney's recorded card, chip, and dice foley.
+// Slower playback and low-pass filtering keep transient sounds warm and restrained.
+const samples: Record<SoundKind, Sample> = {
+  tap: { files: files('chip-lay-1', 'chip-lay-2'), rate: 0.72, cutoff: 1700, level: 0.17 },
+  chip: { files: files('chips-handle-1', 'chips-handle-3', 'chips-collide-1'), rate: 0.76, cutoff: 2200, level: 0.34 },
+  deal: { files: files('card-place-1', 'card-place-2', 'card-place-3', 'card-place-4'), rate: 0.78, cutoff: 2100, level: 0.32 },
+  card: { files: files('card-slide-1', 'card-slide-2', 'card-slide-3', 'card-slide-4', 'card-slide-5', 'card-slide-6', 'card-slide-7', 'card-slide-8'), rate: 0.78, cutoff: 2400, level: 0.37 },
+  dice: { files: files('dice-throw-1', 'dice-throw-2', 'dice-throw-3', 'die-throw-1', 'die-throw-2'), rate: 0.78, cutoff: 2700, level: 0.42 },
+  wheel: { files: [`${recorded}roulette-wheel.mp3`], rate: 0.86, cutoff: 3400, level: 0.48 },
+  spin: { files: [`${recorded}slot-reels.mp3`], rate: 0.9, cutoff: 3000, level: 0.44, duration: 3.6 },
+  win: { files: [`${recorded}slot-payout.mp3`], rate: 0.82, cutoff: 2200, level: 0.52, duration: 3.2 },
+  loss: { files: [`${recorded}roulette-wheel.mp3`], rate: 0.7, cutoff: 1250, level: 0.4, offset: 2.1, duration: 0.48 },
+  case: { files: [`${recorded}slot-reels.mp3`], rate: 0.78, cutoff: 2600, level: 0.45, duration: 2.4 },
+  'case-tick': { files: files('chips-collide-1', 'chips-collide-2', 'chips-collide-3', 'chips-collide-4'), rate: 0.72, cutoff: 1800, level: 0.25 },
+  'mine-safe': { files: files('chip-lay-1', 'chip-lay-2', 'chip-lay-3'), rate: 0.76, cutoff: 1900, level: 0.3 },
+  'mine-hit': { files: files('die-throw-1', 'die-throw-2', 'die-throw-3', 'die-throw-4'), rate: 0.58, cutoff: 1050, level: 0.55 },
+  'keno-pick': { files: files('chip-lay-1', 'chip-lay-2', 'chip-lay-3'), rate: 0.72, cutoff: 1750, level: 0.26 },
+  'keno-ball': { files: files('dice-grab-1', 'dice-grab-2', 'dice-throw-1'), rate: 0.76, cutoff: 2200, level: 0.34 },
+  'tower-safe': { files: files('card-place-1', 'card-place-2', 'card-place-3', 'card-place-4'), rate: 0.72, cutoff: 1900, level: 0.3 },
+  'tower-hit': { files: files('die-throw-1', 'die-throw-2', 'die-throw-3', 'die-throw-4'), rate: 0.55, cutoff: 950, level: 0.55 },
+  'crash-rise': { files: [`${recorded}roulette-wheel.mp3`], rate: 0.74, cutoff: 1800, level: 0.32, duration: 2.3 },
+  'crash-hit': { files: files('chips-collide-1', 'chips-collide-2', 'chips-collide-3', 'chips-collide-4'), rate: 0.56, cutoff: 900, level: 0.58 },
+  coin: { files: files('chips-collide-1', 'chips-collide-2', 'chips-collide-3', 'chips-stack-1'), rate: 0.72, cutoff: 1800, level: 0.36 },
+  ball: { files: files('dice-throw-1', 'dice-throw-2', 'dice-throw-3'), rate: 0.72, cutoff: 2300, level: 0.35 },
+  'step-safe': { files: files('card-place-1', 'card-place-2', 'card-place-3', 'card-place-4'), rate: 0.74, cutoff: 1850, level: 0.3 },
+  'step-hit': { files: files('chips-collide-1', 'chips-collide-2', 'chips-collide-3'), rate: 0.56, cutoff: 950, level: 0.52 },
+  race: { files: files('dice-shake-1', 'dice-shake-2', 'dice-shake-3'), rate: 0.8, cutoff: 2600, level: 0.3, duration: 1.1 },
+  cashout: { files: files('chips-stack-1', 'chips-stack-2', 'chips-stack-3', 'chips-stack-4', 'chips-stack-5', 'chips-stack-6'), rate: 0.78, cutoff: 2300, level: 0.42 },
+  cups: { files: files('card-slide-1', 'card-slide-3', 'card-slide-5', 'card-slide-7'), rate: 0.72, cutoff: 1800, level: 0.32 },
+}
+
+const soundKinds = new Set<SoundKind>(Object.keys(samples) as SoundKind[])
+const decodedSamples = new Map<string, AudioBuffer>()
+const pendingSamples = new Map<string, Promise<AudioBuffer | null>>()
 let audio: AudioContext | null = null
 let musicGain: GainNode | null = null
 let musicMotionGain: GainNode | null = null
 let musicStarted = false
-let musicStepTimer: ReturnType<typeof setInterval> | null = null
-let musicStep = 0
 let crashOscillator: OscillatorNode | null = null
 let crashFilter: BiquadFilterNode | null = null
 let crashEnvelope: GainNode | null = null
@@ -27,6 +72,68 @@ function getAudioContext() {
   return audio
 }
 
+function loadSample(url: string, context: AudioContext): Promise<AudioBuffer | null> {
+  const cached = decodedSamples.get(url)
+  if (cached) return Promise.resolve(cached)
+  const pending = pendingSamples.get(url)
+  if (pending) return pending
+
+  const request = fetch(url)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Audio request failed: ${response.status}`)
+      return response.arrayBuffer()
+    })
+    .then((data) => context.decodeAudioData(data))
+    .then((buffer) => {
+      decodedSamples.set(url, buffer)
+      return buffer
+    })
+    .catch(() => null)
+    .finally(() => pendingSamples.delete(url))
+  pendingSamples.set(url, request)
+  return request
+}
+
+async function playSample(kind: SoundKind, context: AudioContext, volume: number) {
+  const sample = samples[kind]
+  const url = sample.files[Math.floor(Math.random() * sample.files.length)]
+  const buffer = await loadSample(url, context)
+  if (!buffer || audio !== context) return
+
+  const offset = Math.min(sample.offset ?? 0, Math.max(0, buffer.duration - 0.04))
+  const duration = Math.min(sample.duration ?? buffer.duration - offset, buffer.duration - offset)
+  if (duration <= 0.035) return
+
+  const now = context.currentTime
+  const source = context.createBufferSource()
+  const filter = context.createBiquadFilter()
+  const envelope = context.createGain()
+  const playbackRate = Math.max(0.5, Math.min(1.2, sample.rate))
+  const end = now + duration / playbackRate
+  const level = sample.level * volume
+
+  source.buffer = buffer
+  source.playbackRate.setValueAtTime(playbackRate, now)
+  filter.type = 'lowpass'
+  filter.frequency.setValueAtTime(sample.cutoff, now)
+  filter.Q.value = 0.55
+  envelope.gain.setValueAtTime(0.001, now)
+  envelope.gain.linearRampToValueAtTime(level, now + 0.012)
+  if (end > now + 0.05) {
+    envelope.gain.setValueAtTime(level, end - 0.035)
+    envelope.gain.linearRampToValueAtTime(0.001, end)
+  }
+  source.connect(filter)
+  filter.connect(envelope)
+  envelope.connect(context.destination)
+  source.onended = () => {
+    source.disconnect()
+    filter.disconnect()
+    envelope.disconnect()
+  }
+  source.start(now, offset, duration)
+}
+
 function syncMusic() {
   const { musicEnabled, musicVolume } = useSettingsStore.getState()
   if (!audio && !musicEnabled) return
@@ -36,52 +143,33 @@ function syncMusic() {
     musicStarted = true
     musicGain = context.createGain()
     musicGain.gain.value = 0
+    const filter = context.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 360
+    filter.Q.value = 0.35
+    filter.connect(musicGain)
     musicGain.connect(context.destination)
-    // A quiet, warm sustained chord gives the room a little life without competing with play.
-    for (const [frequency, level] of [[110, 0.24], [164.81, 0.13], [220, 0.08]] as const) {
+    // A dim, low-register room tone replaces the bright arpeggio.
+    for (const [frequency, level] of [[55, 0.18], [82.41, 0.09], [110, 0.035]] as const) {
       const oscillator = context.createOscillator()
       const voice = context.createGain()
       oscillator.type = 'sine'
       oscillator.frequency.value = frequency
       voice.gain.value = level
       oscillator.connect(voice)
-      voice.connect(musicGain)
+      voice.connect(filter)
       oscillator.start()
     }
     const lfo = context.createOscillator()
     musicMotionGain = context.createGain()
-    lfo.frequency.value = 0.09
+    lfo.frequency.value = 0.055
     musicMotionGain.gain.value = 0
     lfo.connect(musicMotionGain)
     musicMotionGain.connect(musicGain.gain)
     lfo.start()
   }
-  musicGain?.gain.setTargetAtTime(musicEnabled ? musicVolume : 0, context.currentTime, 0.8)
-  musicMotionGain?.gain.setTargetAtTime(musicEnabled ? musicVolume * 0.075 : 0, context.currentTime, 0.8)
-  if (musicEnabled && musicVolume > 0 && !musicStepTimer) {
-    const notes = [440, 523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 392]
-    const playNote = () => {
-      if (!musicGain) return
-      const oscillator = context.createOscillator()
-      const envelope = context.createGain()
-      const start = context.currentTime
-      oscillator.type = 'triangle'
-      oscillator.frequency.value = notes[musicStep % notes.length]
-      envelope.gain.setValueAtTime(0.001, start)
-      envelope.gain.exponentialRampToValueAtTime(0.12, start + 0.025)
-      envelope.gain.exponentialRampToValueAtTime(0.001, start + 0.38)
-      oscillator.connect(envelope)
-      envelope.connect(musicGain)
-      oscillator.start(start)
-      oscillator.stop(start + 0.4)
-      musicStep += 1
-    }
-    playNote()
-    musicStepTimer = setInterval(playNote, 420)
-  } else if ((!musicEnabled || musicVolume <= 0) && musicStepTimer) {
-    clearInterval(musicStepTimer)
-    musicStepTimer = null
-  }
+  musicGain?.gain.setTargetAtTime(musicEnabled ? musicVolume : 0, context.currentTime, 0.9)
+  musicMotionGain?.gain.setTargetAtTime(musicEnabled ? musicVolume * 0.035 : 0, context.currentTime, 0.9)
 }
 
 export function startCrashCurveSound() {
@@ -95,16 +183,16 @@ export function startCrashCurveSound() {
     crashOscillator = context.createOscillator()
     crashFilter = context.createBiquadFilter()
     crashEnvelope = context.createGain()
-    crashOscillator.type = 'sawtooth'
-    crashOscillator.frequency.value = 95
+    crashOscillator.type = 'sine'
+    crashOscillator.frequency.value = 38
     crashFilter.type = 'lowpass'
-    crashFilter.frequency.value = 420
+    crashFilter.frequency.value = 150
     crashEnvelope.gain.value = 0.001
     crashOscillator.connect(crashFilter)
     crashFilter.connect(crashEnvelope)
     crashEnvelope.connect(context.destination)
     crashOscillator.start()
-    crashEnvelope.gain.setTargetAtTime(0.018 * soundVolume, context.currentTime, 0.2)
+    crashEnvelope.gain.setTargetAtTime(0.013 * soundVolume, context.currentTime, 0.24)
   } catch {
     stopCrashCurveSound()
   }
@@ -118,10 +206,10 @@ export function updateCrashCurveSound(multiplier: number) {
     return
   }
   const now = audio.currentTime
-  const level = Math.min(16, Math.max(1, multiplier))
-  crashOscillator.frequency.setTargetAtTime(95 + level * 19, now, 0.12)
-  crashFilter.frequency.setTargetAtTime(420 + level * 90, now, 0.12)
-  crashEnvelope.gain.setTargetAtTime((0.012 + level * 0.0012) * soundVolume, now, 0.12)
+  const level = Math.min(12, Math.max(1, multiplier))
+  crashOscillator.frequency.setTargetAtTime(38 + level * 3.2, now, 0.2)
+  crashFilter.frequency.setTargetAtTime(150 + level * 11, now, 0.2)
+  crashEnvelope.gain.setTargetAtTime((0.009 + level * 0.00055) * soundVolume, now, 0.2)
 }
 
 export function stopCrashCurveSound() {
@@ -134,82 +222,40 @@ export function stopCrashCurveSound() {
   const now = audio.currentTime
   try {
     envelope.gain.cancelScheduledValues(now)
-    envelope.gain.setTargetAtTime(0.001, now, 0.04)
-    oscillator.stop(now + 0.18)
+    envelope.gain.setTargetAtTime(0.001, now, 0.05)
+    oscillator.stop(now + 0.2)
   } catch {
     // A sound can finish while a round is being reset.
   }
 }
 
-/** Short synthesized UI cues keep the app self-contained and need no downloaded assets. */
+/** Play recorded casino foley, with separate UI and game-sound controls. */
 export function playSiteSound(kind: SoundKind = 'tap') {
   if (typeof window === 'undefined') return
   const { uiSoundsEnabled, gameSoundsEnabled, soundVolume } = useSettingsStore.getState()
-  const gameSound = kind !== 'tap'
-  if ((gameSound ? !gameSoundsEnabled : !uiSoundsEnabled) || soundVolume <= 0) return
-
+  if ((kind === 'tap' ? !uiSoundsEnabled : !gameSoundsEnabled) || soundVolume <= 0) return
   try {
     const context = getAudioContext()
     if (!context) return
-
-    const now = context.currentTime
-    const tone = (frequency: number, duration: number, level: number, type: OscillatorType = 'sine', endFrequency?: number, delay = 0) => {
-      const oscillator = context.createOscillator()
-      const envelope = context.createGain()
-      const start = now + delay
-      oscillator.type = type
-      oscillator.frequency.setValueAtTime(frequency, start)
-      if (endFrequency) oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + duration)
-      envelope.gain.setValueAtTime(0.001, start)
-      envelope.gain.exponentialRampToValueAtTime(Math.max(0.001, level * soundVolume), start + 0.012)
-      envelope.gain.exponentialRampToValueAtTime(0.001, start + duration)
-      oscillator.connect(envelope)
-      envelope.connect(context.destination)
-      oscillator.start(start)
-      oscillator.stop(start + duration)
-    }
-
-    switch (kind) {
-      case 'tap': tone(520, 0.04, 0.025); break
-      case 'chip': tone(1450, 0.055, 0.055, 'triangle', 780); tone(920, 0.07, 0.035, 'sine', 620, 0.025); break
-      case 'deal': tone(380, 0.08, 0.045, 'triangle', 220); break
-      case 'card': tone(760, 0.085, 0.045, 'triangle', 420); tone(1180, 0.035, 0.018, 'sine', undefined, 0.035); break
-      case 'dice': tone(220, 0.22, 0.06, 'triangle', 85); tone(510, 0.06, 0.028, 'square', 300, 0.11); tone(350, 0.05, 0.024, 'square', 220, 0.19); break
-      case 'wheel': tone(180, 0.75, 0.045, 'sawtooth', 75); tone(880, 0.04, 0.025, 'triangle', 450, 0.65); break
-      case 'spin': tone(420, 0.45, 0.035, 'triangle', 950); break
-      case 'case': tone(90, 0.55, 0.07, 'sawtooth', 54); tone(280, 0.08, 0.035, 'square', 180, 0.08); tone(215, 0.1, 0.03, 'square', 140, 0.2); tone(150, 0.09, 0.025, 'square', 90, 0.34); break
-      case 'case-tick': tone(1120, 0.045, 0.04, 'triangle', 660); break
-      case 'mine-safe': tone(620, 0.1, 0.045, 'triangle', 880); tone(1320, 0.11, 0.025, 'sine', undefined, 0.045); break
-      case 'mine-hit': tone(105, 0.42, 0.11, 'sawtooth', 38); tone(72, 0.34, 0.075, 'triangle', 42, 0.035); tone(165, 0.12, 0.055, 'square', 55, 0.08); break
-      case 'keno-pick': tone(880, 0.055, 0.035, 'sine'); break
-      case 'keno-ball': tone(410, 0.22, 0.045, 'triangle', 235); tone(960, 0.1, 0.035, 'sine', undefined, 0.12); break
-      case 'tower-safe': tone(510, 0.08, 0.04, 'triangle', 700); tone(920, 0.12, 0.025, 'sine', undefined, 0.045); break
-      case 'tower-hit': tone(165, 0.45, 0.09, 'sawtooth', 48); tone(92, 0.32, 0.06, 'triangle', 40, 0.05); break
-      case 'crash-rise': tone(110, 0.9, 0.045, 'sawtooth', 460); tone(220, 0.85, 0.022, 'sine', 920); break
-      case 'crash-hit': tone(210, 0.55, 0.1, 'sawtooth', 45); tone(95, 0.42, 0.07, 'square', 32, 0.06); break
-      case 'coin': tone(520, 0.34, 0.05, 'sine', 1560); tone(980, 0.08, 0.035, 'triangle', 420, 0.28); break
-      case 'ball': tone(680, 0.09, 0.04, 'triangle', 400); tone(370, 0.065, 0.03, 'sine', 220, 0.11); break
-      case 'step-safe': tone(300, 0.07, 0.04, 'triangle', 390); tone(530, 0.08, 0.025, 'sine', undefined, 0.055); break
-      case 'step-hit': tone(190, 0.36, 0.085, 'triangle', 55); tone(88, 0.26, 0.055, 'sawtooth', 36, 0.06); break
-      case 'race': tone(130, 0.65, 0.04, 'sawtooth', 300); tone(260, 0.54, 0.02, 'triangle', 520); break
-      case 'cashout': tone(660, 0.16, 0.055, 'triangle', 990); tone(990, 0.22, 0.045, 'sine', 1320, 0.1); break
-      case 'cups': tone(420, 0.075, 0.04, 'triangle', 220); tone(690, 0.055, 0.025, 'sine', 340, 0.08); break
-      case 'win': [523, 659, 784, 1047].forEach((n, i) => tone(n, 0.32, 0.07, 'sine', undefined, i * 0.09)); break
-      case 'loss': tone(330, 0.48, 0.07, 'triangle', 145); tone(220, 0.38, 0.045, 'sine', 110, 0.13); break
-    }
+    void playSample(kind, context, soundVolume).catch(() => undefined)
   } catch {
-    // Audio is an enhancement; autoplay/device restrictions should never affect gameplay.
+    // Audio is an enhancement; device or autoplay restrictions must never affect gameplay.
   }
 }
 
 function kindFor(target: HTMLElement): SoundKind {
   const explicit = target.closest<HTMLElement>('[data-sound]')?.dataset.sound
-  if (explicit === 'chip' || explicit === 'deal' || explicit === 'card' || explicit === 'dice' || explicit === 'wheel' || explicit === 'spin' || explicit === 'win' || explicit === 'loss' || explicit === 'case' || explicit === 'case-tick' || explicit === 'mine-safe' || explicit === 'mine-hit' || explicit === 'keno-pick' || explicit === 'keno-ball' || explicit === 'tower-safe' || explicit === 'tower-hit' || explicit === 'crash-rise' || explicit === 'crash-hit' || explicit === 'coin' || explicit === 'ball' || explicit === 'step-safe' || explicit === 'step-hit' || explicit === 'race' || explicit === 'cashout' || explicit === 'cups') return explicit
+  if (explicit && soundKinds.has(explicit as SoundKind)) return explicit as SoundKind
   if (target.closest('[data-sound="silent"]')) return 'tap'
   const button = target.closest<HTMLElement>('button, a, [role="button"]')
   if (!button) return 'tap'
   const label = `${button.getAttribute('aria-label') ?? ''} ${button.textContent ?? ''}`.toLowerCase()
-  if (/chip|bet|raise|call|check|fold|bid|dice|pick|tile|cup|hit|stand|double|spin|deal|draw|drop|roll|flip|cash out|next/.test(label)) return 'deal'
+  if (/roulette|wheel/.test(label)) return 'wheel'
+  if (/slots?|reel|spin/.test(label)) return 'spin'
+  if (/dice|roll/.test(label)) return 'dice'
+  if (/cash out|cashout|withdraw/.test(label)) return 'cashout'
+  if (/draw|deal|card|hit|stand|double|fold/.test(label)) return 'card'
+  if (/chip|bet|raise|call|check|fold|bid|pick|tile|cup|drop|flip|next/.test(label)) return 'chip'
   return 'tap'
 }
 
@@ -217,6 +263,7 @@ function kindFor(target: HTMLElement): SoundKind {
 export function SiteSound() {
   useEffect(() => {
     const unsubscribe = useSettingsStore.subscribe(syncMusic)
+    syncMusic()
     const onClick = (event: MouseEvent) => {
       syncMusic()
       const target = event.target

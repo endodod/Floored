@@ -1,0 +1,18 @@
+Casino audio credits
+
+Kenney Casino Audio 1.1 — Kenney Vleugels (Kenney.nl)
+License: Creative Commons Zero 1.0 (CC0)
+Source: https://kenney.nl/assets/casino-audio
+Includes recorded card, chip, and dice foley in public/audio/kenney-casino/Audio/.
+
+Roulette spin — takecoins, Freesound sound 588351
+License: Creative Commons Zero 1.0 (CC0)
+Source: https://freesound.org/people/takecoins/sounds/588351/
+
+Slot machine reels — aghirlandaio, Freesound sound 415074
+License: Creative Commons Zero 1.0 (CC0)
+Source: https://freesound.org/people/aghirlandaio/sounds/415074/
+
+Slot machine payout — jack126guy, Freesound sound 361346
+License: Creative Commons Zero 1.0 (CC0)
+Source: https://freesound.org/people/jack126guy/sounds/361346/
