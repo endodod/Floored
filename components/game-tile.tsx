@@ -24,6 +24,7 @@ export function GameTile({
   children,
   index = 0,
   className,
+  roomy = false,
 }: {
   label: string
   sub?: ReactNode
@@ -43,6 +44,8 @@ export function GameTile({
   /** Position in its grid: staggers the entrance and picks the suit. */
   index?: number
   className?: string
+  /** Larger lobby card with room for longer descriptions and details. */
+  roomy?: boolean
 }) {
   const suitIndex = index % 4
   const red = suitIndex === 1 || suitIndex === 2
@@ -64,7 +67,7 @@ export function GameTile({
         disabled={disabled}
         aria-busy={loading || undefined}
         className={cn(
-          'tile group flex h-full min-h-[96px] w-full flex-col rounded-md bg-surface p-4 text-left sm:min-h-[132px] sm:p-5',
+          cn('tile group flex h-full w-full flex-col rounded-md bg-surface text-left', roomy ? 'min-h-[190px] p-5 sm:min-h-[220px] sm:p-6' : 'min-h-[96px] p-4 sm:min-h-[132px] sm:p-5'),
           disabled ? 'cursor-default' : 'hover:bg-[#17161c]',
           faded && 'opacity-45',
         )}
@@ -77,10 +80,10 @@ export function GameTile({
         </span>
         {sub && <span className="mt-1 block text-[13px] leading-5 text-dim">{sub}</span>}
         {children && <span className="mt-3 block">{children}</span>}
-        <span className="mt-auto flex items-baseline justify-between gap-3 pt-3 sm:pt-4">
-          <span className="truncate text-xs text-soft">{meta}</span>
+        <span className={cn('mt-auto flex gap-3 pt-3 sm:pt-4', roomy ? 'flex-col items-start' : 'items-baseline justify-between')}>
+          <span className={cn('text-xs text-soft', roomy ? 'whitespace-normal leading-5' : 'truncate')}>{meta}</span>
           <span
-            className="mark-line flex shrink-0 items-center gap-1 text-[13px] font-medium text-ink"
+            className={cn('mark-line flex shrink-0 items-center gap-1 font-medium text-ink', roomy ? 'text-[14px]' : 'text-[13px]')}
             data-active={loading || undefined}
           >
             {loading ? 'Dealing…' : action}

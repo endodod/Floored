@@ -14,6 +14,7 @@ export function SeatPlate({
   tag,
   stack,
   stackLabel,
+  stackCaption,
   you = false,
   timer,
   dealer = false,
@@ -30,6 +31,8 @@ export function SeatPlate({
   stack: number | null
   /** Replaces the stack figure ("Out", "3 dice"). */
   stackLabel?: ReactNode
+  /** Small descriptor for the stack display, e.g. the player's tournament bankroll. */
+  stackCaption?: string
   you?: boolean
   /** The seat is on the clock: the ring drains over `ms`. */
   timer?: { ms: number; key: string | number } | null
@@ -64,7 +67,9 @@ export function SeatPlate({
             {you ? 'You' : name}
             {tag && <span className="tb-tag ml-1.5 font-normal text-dim">{tag}</span>}
           </span>
-          <span className="num truncate text-[12px] text-soft">{stackLabel ?? (stack != null ? formatChips(stack) : '')}</span>
+          <span className="num truncate text-[12px] text-soft">
+            {stackLabel ?? (stack != null ? <>{stackCaption && <span className="mr-1 text-dim">{stackCaption}</span>}{formatChips(stack)}</> : '')}
+          </span>
         </span>
       </div>
       <span

@@ -81,7 +81,7 @@ export default function TablesPage() {
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
       <PageTitle
         title="Tables"
-        sub="Sit down with bots at poker, dice and blackjack. Buy in, play it out, take the prize pool."
+        sub="Your buy-in goes into the prize pool; it is separate from your playing bankroll. In Hold’em and Blackjack, everyone starts with the same table bankroll. Play it out and take your share of the pool."
         aside={
           totals.played > 0 && (
             <p className="text-[13px] text-dim">
@@ -186,10 +186,10 @@ export default function TablesPage() {
         </section>
 
         <section className="flex flex-col gap-4" aria-labelledby="tables-games">
-          <SectionTitle suit={3} note={`Buy-in ${formatChips(chosen.buyIn)}`}>
+          <SectionTitle suit={3} note={`Buy-in ${formatChips(chosen.buyIn)} · paid into prize pool`}>
             <span id="tables-games">Pick a table</span>
           </SectionTitle>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {TABLE_GAMES.map((g, i) => {
               const seats = isMobile ? g.phoneSeats : g.seats
               const prize = prizes(chosen.buyIn, seats)
@@ -198,6 +198,7 @@ export default function TablesPage() {
                 <li key={g.name}>
                   <GameTile
                     index={i}
+                    roomy
                     label={g.label}
                     sub={g.sub}
                     meta={
@@ -219,22 +220,29 @@ export default function TablesPage() {
               )
             })}
           </ul>
+          <p className="text-xs leading-5 text-dim">
+            The buy-in comes from your Tables wallet and contributes to the prize pool. It is not your playing bankroll. In Hold’em and Blackjack, every player starts with the same tournament bankroll, shown below your name; in Liar’s Dice, everyone starts with the same number of dice.
+          </p>
         </section>
 
         <section className="flex flex-col gap-4" aria-labelledby="tables-rules">
           <SectionTitle suit={2} note="How to play">
             <span id="tables-rules">Game rules</span>
           </SectionTitle>
-          <p className="text-[13px] text-soft">
-            {TABLE_GAMES.map((g, i) => (
-              <span key={g.name}>
-                {i > 0 && ' · '}
-                <a href={`/how-to-play/tables/${g.name}`} className="text-soft underline-offset-4 hover:text-ink hover:underline">
-                  {g.label}
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {TABLE_GAMES.map((g) => (
+              <li key={g.name}>
+                <a
+                  href={`/how-to-play/tables/${g.name}`}
+                  className="group flex h-full min-h-28 flex-col justify-between rounded-md border border-line bg-surface p-4 transition-colors hover:border-felt hover:bg-felt-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-felt"
+                >
+                  <span className="text-[15px] font-semibold text-ink group-hover:text-felt">{g.label}</span>
+                  <span className="mt-2 text-[13px] leading-5 text-soft">{g.skill}</span>
+                  <span className="mt-3 text-xs text-dim">Read the rules <span aria-hidden>→</span></span>
                 </a>
-              </span>
+              </li>
             ))}
-          </p>
+          </ul>
         </section>
 
         <HowItWorks steps={TABLES_STEPS} delay={200} />
