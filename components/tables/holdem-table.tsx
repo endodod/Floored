@@ -45,11 +45,7 @@ function actionText(view: HoldemView, seat: number): { text: string; tone: 'neut
   if (s.lastAction === 'fold') return { text: 'Fold', tone: 'dim' }
   if (s.lastAction === 'check') return { text: 'Check', tone: 'neutral' }
   if (s.lastAction === 'all-in') return { text: 'All in', tone: 'gold' }
-  if (s.lastAction === 'small-blind' || s.lastAction === 'big-blind') {
-    return { text: KIND_LABEL[s.lastAction], tone: 'neutral' }
-  }
-  const last = [...view.log].reverse().find((e) => e.seat === seat && e.hand === view.hand)
-  return { text: `${KIND_LABEL[s.lastAction]} ${formatChips(last?.amount ?? s.bet)}`, tone: 'neutral' }
+  return { text: KIND_LABEL[s.lastAction], tone: 'neutral' }
 }
 
 function cardKey(c: Card) {
