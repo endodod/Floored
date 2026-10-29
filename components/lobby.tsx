@@ -79,6 +79,7 @@ export function Lobby({ mode }: Props) {
             <GameTile
               index={i}
               label={g.label}
+              symbol={g.symbol}
               sub={g.sub}
               meta={<PayoutCaption game={g.name} />}
               action={available ? 'Play' : 'Coming soon'}

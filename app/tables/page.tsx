@@ -200,6 +200,7 @@ export default function TablesPage() {
                     index={i}
                     roomy
                     label={g.label}
+                    symbol={g.symbol}
                     sub={g.sub}
                     meta={
                       <span className="num text-xs text-gold">

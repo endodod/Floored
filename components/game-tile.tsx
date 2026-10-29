@@ -12,6 +12,7 @@ import { SUITS } from '@/components/ui/terminal'
  */
 export function GameTile({
   label,
+  symbol,
   sub,
   meta,
   action = 'Play',
@@ -27,6 +28,8 @@ export function GameTile({
   roomy = false,
 }: {
   label: string
+  /** A game-specific symbol shown by the title and used as the tile watermark. */
+  symbol?: string
   sub?: ReactNode
   /** Figure at the foot, left: "up to ×1,000". */
   meta?: ReactNode
@@ -49,6 +52,7 @@ export function GameTile({
 }) {
   const suitIndex = index % 4
   const red = suitIndex === 1 || suitIndex === 2
+  const tileSymbol = symbol ?? SUITS[suitIndex]
 
   function handleMove(e: MouseEvent<HTMLButtonElement>) {
     const r = e.currentTarget.getBoundingClientRect()
@@ -72,10 +76,11 @@ export function GameTile({
           faded && 'opacity-45',
         )}
       >
-        <span aria-hidden className={cn('tile-suit', red ? 'text-loss' : 'text-ink')}>
-          {SUITS[suitIndex]}
+        <span aria-hidden className={cn('tile-suit', !symbol && red ? 'text-loss' : 'text-ink')}>
+          {tileSymbol}
         </span>
-        <span className={cn('block text-[17px] font-semibold leading-snug text-ink', corner && 'pr-24')}>
+        <span className={cn('flex items-baseline gap-2 text-[17px] font-semibold leading-snug text-ink', corner && 'pr-24')}>
+          <span aria-hidden className="shrink-0 text-[15px] text-gold">{tileSymbol}</span>
           {label}
         </span>
         {sub && <span className="mt-1 block text-[13px] leading-5 text-dim">{sub}</span>}

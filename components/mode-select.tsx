@@ -20,11 +20,12 @@ import { useFreeplayStore } from '@/store/freeplay-store'
 import { GAMES } from '@/lib/game-catalog'
 import { formatChips } from '@/utils/format'
 import { Button } from '@/components/ui/button'
-import { SectionTitle, Suit, UnitTrack } from '@/components/ui/terminal'
+import { SectionTitle, UnitTrack } from '@/components/ui/terminal'
 import { PayoutCaption } from '@/components/game-payout'
 
 interface ModeRowProps {
   name: string
+  symbol: string
   description: string
   track: ReactNode
   trackCaption: ReactNode
@@ -36,7 +37,7 @@ interface ModeRowProps {
 }
 
 /** One mode as a ledger row: what it is, where you are on its track, its money, the way in. */
-function ModeRow({ name, description, track, trackCaption, figureLabel, figure, figureSub, action, index }: ModeRowProps) {
+function ModeRow({ name, symbol, description, track, trackCaption, figureLabel, figure, figureSub, action, index }: ModeRowProps) {
   return (
     <li
       className="rise group relative grid grid-cols-1 gap-4 px-4 py-5 transition-colors duration-300 hover:bg-[#17161c] sm:px-6 lg:grid-cols-[minmax(0,1fr)_220px_168px_148px] lg:items-center lg:gap-8"
@@ -49,7 +50,7 @@ function ModeRow({ name, description, track, trackCaption, figureLabel, figure, 
       />
       <div className="min-w-0">
         <h2 className="flex items-baseline gap-2 text-[17px] font-semibold leading-snug text-ink">
-          <Suit index={index} className="text-[13px] opacity-70 transition-opacity group-hover:opacity-100" />
+          <span aria-hidden className="text-[15px] leading-none opacity-85">{symbol}</span>
           {name}
         </h2>
         <p className="mt-1 max-w-[52ch] text-[13px] leading-5 text-dim">{description}</p>
@@ -114,6 +115,7 @@ export function ModeSelect() {
         <ModeRow
           index={0}
           name={challenge ? `Daily #${challenge.number}` : 'Daily'}
+            symbol="🗓️"
           description="The same challenge for everyone, one attempt. Place every bet across three games and finish with as much as you can."
           track={
             <UnitTrack
@@ -153,6 +155,7 @@ export function ModeSelect() {
           <ModeRow
             index={1}
             name="Ladder"
+            symbol="🪜"
             description="Go all-in rung after rung. Any profit climbs, every game once per run; lose and you fall to the last checkpoint."
             track={
               <UnitTrack
@@ -183,6 +186,7 @@ export function ModeSelect() {
           <ModeRow
             index={2}
             name="Survival"
+            symbol="🛡️"
             description={`Reach each floor's bankroll quota within ${FLOOR_BET_LIMIT} bets or the run ends. Sparks from each floor buy upgrades.`}
             track={
               <UnitTrack
@@ -219,6 +223,7 @@ export function ModeSelect() {
           <ModeRow
             index={3}
             name="Tables"
+            symbol="🃏"
             description="Sit down with bots at Hold'em and Liar's Dice. Buy in, outlast the table, take the prize pool."
             track={<UnitTrack total={TABLE_GAMES.length} done={TABLE_GAMES.length} label={`${TABLE_GAMES.length} table games`} />}
             trackCaption={`${TABLE_GAMES.length} games · ${hydrated ? tablesPlayed : 0} tables played`}
@@ -236,6 +241,7 @@ export function ModeSelect() {
         <ModeRow
           index={4}
           name="Freeplay"
+          symbol="🎮"
           description="Every game, no floors and no quotas. Practise anything and reset your balance whenever you like."
           track={<UnitTrack total={GAMES.length} done={GAMES.length} label={`${GAMES.length} games open`} />}
           trackCaption={`${GAMES.length} games open`}
@@ -261,7 +267,10 @@ export function ModeSelect() {
                 className="m-instant group flex items-baseline justify-between gap-4 py-3 transition-[padding] duration-200 hover:pl-1.5"
               >
                 <span className="min-w-0">
-                  <span className="mark-line text-[14px] font-medium text-ink">{g.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className="w-4 shrink-0 text-center text-[13px]">{g.symbol}</span>
+                    <span className="mark-line text-[14px] font-medium text-ink">{g.label}</span>
+                  </span>
                   <span className="mt-0.5 block truncate text-[13px] text-dim">{g.sub}</span>
                 </span>
                 <PayoutCaption game={g.name} />

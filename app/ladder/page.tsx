@@ -295,6 +295,7 @@ export default function LadderPage() {
                     <GameTile
                       index={i}
                       label={entry.label}
+                      symbol={entry.symbol}
                       sub={entry.sub}
                       meta={<PayoutCaption game={game} />}
                       action={usedOn !== -1 ? `Used on rung ${usedOn + 1}` : 'Play'}

@@ -259,6 +259,7 @@ export default function DailyPage() {
                     <GameTile
                       index={i}
                       label={entry.label}
+                      symbol={entry.symbol}
                       sub={entry.sub}
                       disabled={!playable || !!pending}
                       faded={!playable || (!!pending && !isLoading)}

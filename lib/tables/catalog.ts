@@ -4,6 +4,7 @@ import type { TableGameName } from './types'
 export interface TableGameEntry {
   name: TableGameName
   label: string
+  symbol: string
   sub: string
   /** What the game tests. */
   skill: string
@@ -19,6 +20,7 @@ const ALL_TABLE_GAMES: TableGameEntry[] = [
   {
     name: 'holdem',
     label: "Texas Hold'em",
+    symbol: '♠',
     sub: 'No-limit Sit & Go against five bots',
     skill: 'Betting and bluffing',
     seats: 6,
@@ -28,6 +30,7 @@ const ALL_TABLE_GAMES: TableGameEntry[] = [
   {
     name: 'liars-dice',
     label: "Liar's Dice",
+    symbol: '⚄',
     sub: 'Bid on the dice under every cup, or call liar',
     skill: 'Odds and bluffing, no cards',
     seats: 4,
@@ -37,6 +40,7 @@ const ALL_TABLE_GAMES: TableGameEntry[] = [
   {
     name: 'blackjack-showdown',
     label: 'Blackjack Showdown',
+    symbol: '♦',
     sub: 'Twelve hands against one dealer, most chips wins',
     skill: 'Bet sizing against rivals',
     seats: 4,
