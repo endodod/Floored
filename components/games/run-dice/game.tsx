@@ -286,9 +286,9 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
   }
 
   function outcomeColor(val: number, cfg = gameConfig): string {
-    if (cfg.win.includes(val))  return 'bg-[rgba(79,174,132,0.3)] border-black text-ink'
-    if (cfg.loss.includes(val)) return 'bg-loss-tint border-transparent text-loss'
-    return 'bg-black/25 border-transparent text-dim'
+    if (cfg.win.includes(val))  return 'bg-[#2a7a57] text-[#f4f1ea]'
+    if (cfg.loss.includes(val)) return 'bg-[#a92b42] text-[#f4f1ea]'
+    return 'bg-[#141318] text-soft'
   }
 
   function dieTone(total: number): DieTone {
@@ -383,8 +383,10 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
           ) : (
             <div className="flex flex-col items-center gap-2">
               <div className="flex gap-[calc(var(--die)*0.2)]">
-                <div className="rd-total border-dashed border-control text-dim g-pop">?</div>
-                <div className="rd-total border-dashed border-control text-dim g-pop" style={{ '--i': 1 } as React.CSSProperties}>?</div>
+                <Die value={null} className="rd-die-idle g-pop" />
+                <span className="g-pop" style={{ '--i': 1 } as React.CSSProperties}>
+                  <Die value={null} className="rd-die-idle" />
+                </span>
               </div>
               <p className="h-4" />
             </div>
@@ -392,14 +394,15 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
         </div>
 
         <div className="rd-map shrink-0">
-          <p className="text-dim text-[11px] mb-1.5">Outcome map</p>
-          <div className="grid grid-cols-11 gap-1">
+          <p className="felt-print mb-1.5">Outcome map</p>
+          {/* A gold-ruled layout like the Roulette table; every field has the same dark outline. */}
+          <div className="rd-layout grid grid-cols-11 gap-1 rounded-md p-1">
             {Array.from({ length: 11 }, (_, i) => i + 2).map((val) => {
               const isLast = lastRoll === val && !isRolling
               return (
                 <div
                   key={isLast ? `${val}-hit` : val}
-                  className={`relative rounded-md border-2 px-0.5 py-[clamp(0.25rem,1.4cqh,0.5rem)] text-center text-[12px] font-semibold ${outcomeColor(val)} ${
+                  className={`rd-field relative rounded-[5px] border-2 border-black px-0.5 py-[clamp(0.25rem,1.4cqh,0.5rem)] text-center text-[12px] font-semibold ${outcomeColor(val)} ${
                     isLast ? 'g-pop g-gold z-10' : ''
                   }`}
                 >
@@ -414,16 +417,16 @@ export function RunDiceGame({ mode, bankroll, config, onBet, onResolve }: RunDic
         </div>
 
         <div className="rd-stats grid grid-cols-3 gap-2 shrink-0">
-          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
-            <p className="text-dim text-[11px] mb-0.5">Win chance</p>
+          <div className="rd-plaque rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="felt-print mb-1">Win chance</p>
             <p className="num text-ink text-[14px]">{(winChance * 100).toFixed(1)}%</p>
           </div>
-          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
-            <p className="text-dim text-[11px] mb-0.5">Payout</p>
+          <div className="rd-plaque rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="felt-print mb-1">Payout</p>
             <p className="num text-gold glow-gold text-[14px]">{formatMultiplier(round.payoutMultiplier)}</p>
           </div>
-          <div className="bg-black/25 rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
-            <p className="text-dim text-[11px] mb-0.5">Rolls</p>
+          <div className="rd-plaque rounded-xl px-3 py-[clamp(0.35rem,1.8cqh,0.75rem)] text-center">
+            <p className="felt-print mb-1">Rolls</p>
             <p key={round.rollCount} className={`num text-ink text-[14px] ${isBetting ? '' : 'g-pop'}`}>{round.rollCount} / 3</p>
           </div>
         </div>

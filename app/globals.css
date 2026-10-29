@@ -1857,7 +1857,72 @@ body > div.neon-auth-ui {
    column starts below the badge band and the hint (a repeat of the figures)
    is dropped. */
 .ou-bar {
-  height: clamp(2.5rem, 14cqh, 3.5rem);
+  height: clamp(2.75rem, 15cqh, 3.75rem);
+}
+/* The rail is the Slots cabinet's wood and gold; the track inside uses the
+   Roulette table's green and red, ruled with gold ticks every 10. */
+.ou-rail {
+  padding: clamp(0.3rem, 1.2cqh, 0.45rem);
+  background: linear-gradient(#5a3b22, #3a2617 45%, #22160d);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.55),
+    inset 0 1px 0 rgba(255, 220, 160, 0.18),
+    0 0 0 2px #0a0806,
+    0 18px 36px -12px rgba(0, 0, 0, 0.75);
+}
+.ou-track {
+  background: #a92b42;
+  box-shadow:
+    0 0 0 1px rgba(217, 164, 65, 0.6),
+    inset 0 0 0 2px #0a0806,
+    inset 0 6px 10px -4px rgba(0, 0, 0, 0.55),
+    inset 0 -4px 8px -4px rgba(0, 0, 0, 0.45);
+}
+.ou-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    rgba(217, 164, 65, 0.75) 0 18%,
+    transparent 18% 82%,
+    rgba(217, 164, 65, 0.75) 82%
+  );
+}
+.ou-label {
+  color: #f4f1ea;
+  opacity: 0.85;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+/* The handle: a brass lever with grip grooves, standing proud of the rail. */
+.ou-lever {
+  width: clamp(0.85rem, 2.6cqh, 1.1rem);
+  height: 135%;
+  border-radius: 9999px;
+  background:
+    repeating-linear-gradient(transparent 0 4px, rgba(42, 26, 15, 0.45) 4px 5px) center / 45% 40% no-repeat,
+    linear-gradient(90deg, #a87a2e, #f2d48f 45%, #d9a441 60%, #8a6224);
+  box-shadow:
+    0 0 0 1.5px #2a1a0f,
+    0 4px 10px rgba(0, 0, 0, 0.6);
+}
+/* The roll marker: the Roulette ivory ball, lit by the outcome when it stops. */
+.ou-ball {
+  height: 62%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #e7e4dc 55%, #b9b6ae);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 3px 6px rgba(0, 0, 0, 0.55);
+}
+.ou-ball[data-tone='win'] {
+  box-shadow: 0 0 0 2px var(--felt), 0 0 16px 3px rgba(79, 174, 132, 0.75);
+}
+.ou-ball[data-tone='loss'] {
+  box-shadow: 0 0 0 2px var(--loss), 0 0 16px 3px rgba(229, 86, 111, 0.75);
 }
 @container board (max-height: 340px) {
   .ou-board {
@@ -2022,6 +2087,27 @@ body > div.neon-auth-ui {
     0 0 0 2px var(--loss),
     0 0 22px -4px rgba(229, 86, 111, 0.8),
     0 10px 18px -6px rgba(0, 0, 0, 0.55);
+}
+/* The outcome map sits in a wood-and-gold frame (the Slots cabinet); fields
+   use the Roulette table's green, red and black. */
+.rd-layout {
+  background: linear-gradient(#3a2617, #22160d);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.55),
+    0 14px 30px -14px rgba(0, 0, 0, 0.8);
+}
+.rd-field {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(217, 164, 65, 0.25);
+}
+.rd-plaque {
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3);
+}
+/* Before the first roll: blank ivory dice waiting on the felt, a touch dimmed. */
+.rd-die-idle {
+  filter: brightness(0.82);
 }
 .rd-total {
   display: flex;
