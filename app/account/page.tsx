@@ -8,8 +8,6 @@ import { useLadderStore } from '@/store/ladder-store'
 import { ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useTablesStore } from '@/store/tables-store'
-import type { TableGameStats } from '@/store/tables-store'
-import { TABLE_GAMES } from '@/lib/tables/catalog'
 import { useSettingsStore, type MotionPreference } from '@/store/settings-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips, parseChips } from '@/utils/format'
@@ -89,11 +87,6 @@ function RecordGroup({ title, children }: { title: string; children: React.React
   )
 }
 
-function tableNet(stats: TableGameStats) {
-  const sign = stats.net > 0 ? '+' : stats.net < 0 ? '−' : ''
-  return `${sign}${formatChips(Math.abs(stats.net))}`
-}
-
 const FIELD =
   'h-[34px] min-w-0 flex-1 rounded-md border border-control bg-ground px-3 text-[13px] text-ink placeholder:text-dim outline-none focus:border-felt'
 
@@ -124,7 +117,6 @@ export default function AccountPage() {
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
   const tablesPeakWallet = useTablesStore((s) => s.peakWallet)
   const tablesRefills = useTablesStore((s) => s.refills)
-  const tableStats = useTablesStore((s) => s.stats)
   const hydrated = useHydrated()
   const dailyHistory = useDailyStore((s) => s.history)
   const dailiesPlayed = Object.keys(dailyHistory).length
@@ -241,18 +233,6 @@ export default function AccountPage() {
             <Stat label="Wallet refills" value={hydrated ? String(tablesRefills) : '—'} />
           </RecordGroup>
 
-          {TABLE_GAMES.map(({ name, label }) => {
-            const stats = tableStats[name]
-            return (
-              <RecordGroup key={name} title={label}>
-                <Stat label="Played" value={hydrated ? String(stats.played) : '—'} />
-                <Stat label="Won" value={hydrated ? String(stats.won) : '—'} />
-                <Stat label="Cashes" value={hydrated ? String(stats.cashes) : '—'} />
-                <Stat label="Best finish" value={hydrated && stats.bestFinish != null ? `#${stats.bestFinish}` : '—'} />
-                <Stat label="Net" value={hydrated ? tableNet(stats) : '—'} />
-              </RecordGroup>
-            )
-          })}
         </div>
       </Section>
 
