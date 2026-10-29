@@ -121,6 +121,30 @@ For each game in a Ladder climb:
 4. Open questions for the owner listed at the bottom of this file rather than
    guessed.
 
+## Status (2026-10-29)
+
+Checked in a browser at 1440×900 (Survival with every perk at L5, Ladder fresh climb):
+
+- ✅ Roulette: Ball Tracker marks survive Undo; ticket chip (label now fits); Ladder tap moves the pot.
+- ✅ Case Battles: reroll lands its reel (prompt fixed); Ladder prices the five cases off the pot.
+- ✅ Perk pill moved to the status bar for all games (it covered the badges at lg widths).
+- ✅ Fixed: Chicken Road safe lane marked; Street Cups cross on the empty cup; Run Dice / Over-Under /
+  Slots shielded losses read as refunds; Crash cushion shows its real loss; Blackjack felt follows
+  L4/L5; HiLo Hot Streak no longer leaks out of Survival; free bet can't profit on a loss.
+- ✅ Ladder: strip restyled, hints say "whole pot", Plinko shows one ball, coin-flip clear/fall checked.
+- ✅ Seen working: Mines, Dragon Tower, Keno, Poker, Wheel, Chicken Race, Coin Flip, Plinko golden ball.
+
+Still to check:
+
+- Perk levels L1–L4 (only L5 was played), e.g. Blackjack L1 vs L2 preview.
+- Curse / bless on each board (only Crash, Over-Under and Slots were run cursed).
+- Survival shop cards and floor-complete panel; sidebar at 1024 / 720p / zoomed views
+  (`responsive-check.cjs` was not run on this branch).
+- Motion = reduced for the new Street Cups cross and the Over-Under push marker.
+- Ladder push/profit on the other streak games (HiLo, Mines, Chicken Road, Dragon Tower, Crash).
+
 ## Open questions
 
-_(none yet)_
+- Case X-Ray is now a reroll (owner rework 71d3331); keep the name or rename it?
+- Plinko in Ladder: one ball for the whole pot (now labelled), or split the pot across balls?
+- Free-bet fix: a partial return on a free bet now nets 0 (was a profit). Confirm that's intended.
