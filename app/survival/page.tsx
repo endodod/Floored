@@ -20,10 +20,7 @@ import {
   STARTING_BANKROLL,
   STARTING_REROLL_TICKETS,
   STARTING_SPARKS,
-  SURVIVAL_GAME_POOL,
 } from '@/lib/survival/balance'
-import { GAME_BY_NAME } from '@/lib/game-catalog'
-import { PayoutCaption } from '@/components/game-payout'
 import { HowItWorks, ModeColumns, Rail, StartPanel } from '@/components/mode-intro'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { formatChips } from '@/utils/format'
@@ -127,19 +124,6 @@ export default function SurvivalPage() {
             }
           />
           <HowItWorks steps={TUTORIAL} />
-          <section className="rise flex flex-col gap-3 [--d:220ms]" aria-labelledby="survival-pool">
-            <SectionTitle suit={2} note="Each floor deals a handful of them">
-              <span id="survival-pool">The game pool</span>
-            </SectionTitle>
-            <ul className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
-              {SURVIVAL_GAME_POOL.map((g) => (
-                <li key={g} className="flex items-baseline justify-between gap-4 border-t border-rule py-2.5">
-                  <span className="text-[13px] text-ink">{GAME_BY_NAME.get(g)?.label ?? g}</span>
-                  <PayoutCaption game={g} />
-                </li>
-              ))}
-            </ul>
-          </section>
         </ModeColumns>
       </div>
     )

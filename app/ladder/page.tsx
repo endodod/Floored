@@ -170,22 +170,6 @@ export default function LadderPage() {
   const climbing = s.status === 'climbing'
   const finished = s.status === 'over' ? s.history[0] : undefined
 
-  const payoutTable = (
-    <section className="rise flex flex-col gap-3 [--d:220ms]" aria-labelledby="ladder-payouts">
-      <SectionTitle suit={1} note="Safe games climb, big payouts grow the pot">
-        <span id="ladder-payouts">What each game can pay</span>
-      </SectionTitle>
-      <ul className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
-        {GAMES.map((g) => (
-          <li key={g.name} className="flex items-baseline justify-between gap-4 border-t border-rule py-2.5">
-            <span className="text-[13px] text-ink">{g.label}</span>
-            <PayoutCaption game={g.name} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
       <PageTitle
@@ -340,7 +324,6 @@ export default function LadderPage() {
             />
           )}
           <HowItWorks steps={TUTORIAL} />
-          {payoutTable}
         </ModeColumns>
       )}
     </div>
