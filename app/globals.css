@@ -709,8 +709,8 @@ body > div.neon-auth-ui {
   max-width: var(--road-w);
 }
 .btile.cr-curb {
-  background: transparent;
-  box-shadow: inset 0 0 0 1.5px rgba(217, 164, 65, 0.35);
+  background: linear-gradient(#5a3b22, #3a2617 45%, #22160d);
+  box-shadow: inset 0 0 0 1.5px rgba(217, 164, 65, 0.55), 0 8px 18px -10px rgba(0, 0, 0, 0.75);
 }
 @keyframes cr-hop {
   0% {
@@ -1828,10 +1828,10 @@ body > div.neon-auth-ui {
   border-radius: 9999px;
   background: linear-gradient(
     180deg,
-    #fbbf24 0%,
-    #b45309 42%,
-    #92400e 58%,
-    #fbbf24 100%
+    #f2d48f 0%,
+    #a87a2e 42%,
+    #8a6224 58%,
+    #d9a441 100%
   );
   transform: translateZ(-4px);
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.22);
@@ -1853,22 +1853,22 @@ body > div.neon-auth-ui {
 
 .coin-head {
   color: #713f12;
-  border-color: #facc15;
+  border-color: #d9a441;
   background:
     radial-gradient(circle at 38% 28%, rgba(254, 249, 195, 0.9), transparent 24%),
     repeating-radial-gradient(circle, rgba(120, 53, 15, 0.18) 0 2px, transparent 2px 10px),
-    linear-gradient(145deg, #fde047 0%, #f59e0b 58%, #854d0e 100%);
+    linear-gradient(145deg, #f2d48f 0%, #d9a441 58%, #8a6224 100%);
   box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.16), inset 0 -18px 26px rgba(113, 63, 18, 0.3);
   transform: rotateY(0deg) translateZ(4px);
 }
 
 .coin-tail {
-  color: #18181b;
-  border-color: #e4e4e7;
+  color: #30291d;
+  border-color: #a87a2e;
   background:
     radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 0.92), transparent 24%),
     repeating-linear-gradient(135deg, rgba(63, 63, 70, 0.18) 0 3px, transparent 3px 12px),
-    linear-gradient(145deg, #fafafa 0%, #a1a1aa 58%, #3f3f46 100%);
+    linear-gradient(145deg, #fbfaf6 0%, #e7e4dc 58%, #cfcbc1 100%);
   box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.18), inset 0 -18px 26px rgba(24, 24, 27, 0.28);
   transform: rotateY(180deg) translateZ(4px);
 }
@@ -1990,6 +1990,13 @@ body > div.neon-auth-ui {
   box-shadow:
     0 0 0 3px rgba(0, 0, 0, 0.35),
     0 0 14px 2px currentColor;
+}
+.cx-chart {
+  overflow: hidden;
+  border: 1px solid rgba(217, 164, 65, 0.55);
+  border-radius: 0.8rem;
+  background: linear-gradient(#5a3b22, #3a2617 45%, #22160d);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.25), 0 18px 36px -12px rgba(0, 0, 0, 0.75);
 }
 .cx-ready {
   animation: cx-ready 1.6s ease-in-out infinite;
@@ -2203,6 +2210,10 @@ body > div.neon-auth-ui {
 .sc-stage {
   --cup: clamp(3rem, min(25cqw, calc((100cqh - 5rem) / 2.1)), 6.5rem);
   height: calc(var(--cup) * 2.05);
+  border-bottom: 0.55rem solid #3a2617;
+  border-radius: 0 0 0.75rem 0.75rem;
+  background: linear-gradient(180deg, transparent calc(100% - 0.55rem), #5a3b22 calc(100% - 0.55rem));
+  box-shadow: inset 0 -1px 0 rgba(217, 164, 65, 0.75), 0 8px 18px -12px rgba(0, 0, 0, 0.8);
 }
 .sc-slot {
   position: absolute;
