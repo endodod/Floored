@@ -63,7 +63,7 @@ export const GAME_DOCK_LEAVE_BTN =
   'm-still h-10 px-5 rounded-full border border-control text-soft hover:border-dim hover:text-ink font-medium text-[14px] transition-colors active:scale-[0.97]'
 
 export const GAME_DOCK_PRIMARY_BTN =
-  'btn-glow m-still min-w-[10.5rem] h-10 px-7 rounded-full bg-ink text-ground hover:bg-soft disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,box-shadow,transform] active:scale-[0.97]'
+  'btn-glow m-still min-w-[10.5rem] h-10 px-7 rounded-full border border-[rgba(217,164,65,0.45)] bg-[linear-gradient(180deg,#286746,#1b4d34)] text-[#fffaf0] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_2px_0_rgba(0,0,0,0.35)] hover:border-gold hover:bg-[linear-gradient(180deg,#327953,#235d3f)] disabled:border-line disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,border-color,box-shadow,transform] active:scale-[0.97]'
 
 /** Secondary in-round action (Stand, Cash out alternatives): a raised pill. */
 export const GAME_DOCK_SECONDARY_BTN =

@@ -86,7 +86,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 shrink-0 border-b border-line bg-[rgba(23,23,25,0.78)] backdrop-blur-md">
+      <nav className="site-nav sticky top-0 z-50 shrink-0 border-b border-[rgba(217,164,65,0.22)] bg-[rgba(14,21,16,0.88)] shadow-[0_8px_28px_-18px_rgba(0,0,0,0.95)] backdrop-blur-xl">
         <div className="container mx-auto flex h-12 items-center gap-4 px-4 sm:gap-6 sm:px-6 tall:h-16 sm:tall:gap-8">
           <Link href="/" className="group flex shrink-0 items-center gap-2 text-ink" aria-label="Floored, home">
             <FlooredMark className="m-still transition-transform duration-300 group-hover:-rotate-6 tall:h-6 tall:w-6" />

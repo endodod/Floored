@@ -8,11 +8,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary by inversion: a white pill with dark text. One per screen.
-        default: "btn-glow bg-ink text-ground hover:bg-soft",
+        // Casino green felt with warm brass trim for the main action.
+        default: "btn-glow border border-[rgba(217,164,65,0.45)] bg-[linear-gradient(180deg,#286746,#1b4d34)] text-[#fffaf0] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_2px_0_rgba(0,0,0,0.35)] hover:border-gold hover:bg-[linear-gradient(180deg,#327953,#235d3f)]",
         destructive: "border border-loss-tint text-loss hover:bg-loss-tint",
         outline: "border border-control text-ink hover:border-felt hover:bg-felt-tint hover:shadow-[0_0_20px_-6px_rgba(79,174,132,0.6)]",
-        secondary: "bg-raised text-ink hover:bg-control",
+        secondary: "border border-line bg-raised text-ink hover:border-control hover:bg-control",
         ghost: "text-soft hover:text-ink hover:bg-raised",
         link: "text-ink underline-offset-4 hover:underline",
       },
