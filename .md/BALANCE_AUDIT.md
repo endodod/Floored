@@ -528,6 +528,8 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 | L4 | 50 | **22×** |
 | L5 | 60 | **30×** |
 
+The free stake is never deducted, so the bet pays **profit only** (`applyResolveModifiers`): a win pays payout − stake, and a push or a loss that returns part of the stake (Crash Cushion, a Roulette partial, a sub-1× Plinko bucket) nets **0**.
+
 ### Game Boosts (18 × 5 levels) — Game Boost — per game
 Each game: base **14**, costs **14/21/28/35/42**, effects **+5% / +12% / +20% / +30% / +40%** (same as `GAME_PAYOUT_MULT_BY_LEVEL`). Names in `GAME_BOOST_LABELS` (e.g. blackjack → Card Counter, crash → Early Cashout, …).
 
