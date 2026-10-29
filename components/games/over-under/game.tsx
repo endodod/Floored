@@ -242,7 +242,7 @@ export function OverUnderGame({ mode, bankroll, onBet, onResolve }: OverUnderGam
             {/* The rail: a wooden frame trimmed in gold around the 1–100 track. */}
             <div
               key={markerOutcome === 'loss' ? 'bust' : 'bar'}
-              className={`ou-bar ou-rail rounded-full ${markerOutcome === 'loss' ? 'g-shake' : ''} ${markerOutcome === 'win' ? 'g-win' : ''}`}
+              className={`ou-bar ou-rail relative rounded-full ${markerOutcome === 'loss' ? 'g-shake' : ''} ${markerOutcome === 'win' ? 'g-win' : ''}`}
             >
               <div className="relative h-full">
                 <div className="ou-track absolute inset-0 overflow-hidden rounded-full">
