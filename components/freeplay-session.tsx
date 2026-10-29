@@ -24,7 +24,7 @@ export function FreeplaySession() {
         <div>
           <dt className="text-[10px] text-dim">Balance</dt>
           <dd className="num mt-0.5 text-base leading-5 text-ink">{hydrated ? formatChips(bankroll) : '—'}</dd>
-          {hydrated && (
+          {hydrated && net !== 0 && (
             <dd className={net > 0 ? 'num text-[10px] text-felt glow-felt' : net < 0 ? 'num text-[10px] text-loss' : 'num text-[10px] text-dim'}>
               {signed(net, formatChips)} since start
             </dd>
@@ -39,7 +39,6 @@ export function FreeplaySession() {
           <dd className="num mt-0.5 text-base leading-5 text-ink">{hydrated ? String(resets) : '—'}</dd>
         </div>
       </dl>
-      <p className="px-1 text-[10px] leading-4 text-dim">Go broke and a game offers a refill to 10K. Nothing here costs or pays real money.</p>
     </section>
   )
 }

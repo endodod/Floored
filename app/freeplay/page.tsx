@@ -9,7 +9,12 @@ export default function FreeplayPage() {
       <PageTitle
         title="Freeplay"
         className="sm:!items-start"
-        sub={'All ' + GAMES.length + ' games with a 10K balance — no floors, no quotas, no minimum bet.'}
+        sub={
+          <>
+            <span className="block">All {GAMES.length} games with a 10K balance — no floors, no quotas, no minimum bet.</span>
+            <span className="mt-0.5 block text-xs">Go broke and a game offers a refill to 10K. Nothing here costs or pays real money.</span>
+          </>
+        }
         aside={<FreeplaySession />}
       />
       <section className="flex flex-col gap-4" aria-labelledby="freeplay-games">
