@@ -24,6 +24,7 @@ Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zu
 | `lib/game-catalog.ts` | `GAMES[]` — label, subtitle and mode availability for every game. |
 | `lib/game-registry.tsx` | `GAME_REGISTRY` — the only file that imports all 18 game components. |
 | `lib/daily/`, `lib/ladder/`, `lib/survival/` | Mode rules. `lib/ladder/rules.ts` also holds `GAME_MAX_MULT` (the "up to …×" captions). |
+| `lib/tables/`, `lib/bots/`, `components/tables/` | Tables mode: table games against bots, kept apart from `GameName` / `GAMES` / `GAME_REGISTRY` (own catalog, registry, store `store/tables-store.ts`). See [BOT_TABLES_HANDOFF.md](BOT_TABLES_HANDOFF.md). |
 | `lib/features.ts` | `SURVIVAL_ENABLED`, `LADDER_ENABLED` — turning one off hides its entry points and 404s its routes. |
 | `store/` | Zustand stores: `freeplay`, `daily`, `ladder`, `survival`, `settings`; shared types in `store/types.ts`. |
 | `hooks/use-game-bankroll.ts` | `use{Freeplay,Survival,Daily,Ladder}GameBankroll` — each mode's bankroll math for the `[game]` pages. |

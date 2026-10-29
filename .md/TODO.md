@@ -13,5 +13,5 @@
 - [ ] New mode
   - [ ] Multiplayer
     - [ ] 1v1
-  - [ ] Multiplayer casino games against bots (e.g. poker) — branch `claude/bot-tables`, see `.md/BOT_TABLES_HANDOFF.md` there
+  - [ ] Multiplayer casino games against bots — Tables mode: Hold'em and Liar's Dice playable; Blackjack Showdown board still to build (see `.md/BOT_TABLES_HANDOFF.md`)
 - [ ] Sound design

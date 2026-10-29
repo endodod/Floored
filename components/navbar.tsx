@@ -8,7 +8,8 @@ import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
-import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
+import { useTablesStore } from '@/store/tables-store'
 import { useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
 import { FlooredMark } from '@/components/ui/terminal'
@@ -17,6 +18,7 @@ const MODES = [
   { href: '/daily', label: 'Daily', enabled: true },
   { href: '/ladder', label: 'Ladder', enabled: LADDER_ENABLED },
   { href: '/survival', label: 'Survival', enabled: SURVIVAL_ENABLED },
+  { href: '/tables', label: 'Tables', enabled: TABLES_ENABLED },
   { href: '/freeplay', label: 'Freeplay', enabled: true },
 ].filter((m) => m.enabled)
 
@@ -50,6 +52,7 @@ function BarFigure({ label, value }: { label: string; value: number }) {
 export function Navbar() {
   const pathname = usePathname() ?? '/'
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
+  const tablesWallet = useTablesStore((s) => s.wallet)
   const dailyBankroll = useDailyStore((s) => s.bankroll)
   const ladderPot = useLadderStore((s) => s.pot)
   const ladderStatus = useLadderStore((s) => s.status)
@@ -62,6 +65,7 @@ export function Navbar() {
   const inFreeplay = pathname.startsWith('/freeplay')
   const inDaily = pathname.startsWith('/daily')
   const inLadder = pathname.startsWith('/ladder')
+  const inTables = pathname.startsWith('/tables')
   const inAccount = pathname.startsWith('/account')
   const inSurvivalGame = pathname.startsWith('/survival/')
 
@@ -77,6 +81,7 @@ export function Navbar() {
   let figure: React.ReactNode = null
   if (hydrated && inDaily) figure = <BarFigure label="Daily bankroll" value={dailyBankroll} />
   else if (hydrated && inLadder && ladderStatus === 'climbing') figure = <BarFigure label="Pot" value={ladderPot} />
+  else if (hydrated && inTables) figure = <BarFigure label="Wallet" value={tablesWallet} />
   else if (hydrated && inFreeplay) figure = <BarFigure label="Balance" value={freeplayBankroll} />
 
   return (

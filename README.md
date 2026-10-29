@@ -37,6 +37,18 @@ Climb 18 rungs with an all-in pot — one game per rung, and every game only onc
 Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`localStorage`). Toggle with
 `LADDER_ENABLED` in `lib/features.ts`.
 
+## Tables
+
+Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones) and Liar's Dice (four seats).
+
+- Own **Tables wallet** ($10,000, refillable below the smallest buy-in)
+- **Stakes** 100 / 500 / 2,000 pick the bots: Rookies, Regulars or Sharks
+- Every buy-in goes into the prize pool (no rake); top two are paid (65/35 at six seats, 70/30 at four)
+- Leaving a table before your place is decided forfeits the buy-in
+- Bots decide only from what their seat can see; `pnpm sim:bots` and `pnpm check:tables` test them
+
+Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HANDOFF.md`.
+
 ## Freeplay
 
 Choose any game, start with a healthy balance, and play without pressure or minimum bets.
