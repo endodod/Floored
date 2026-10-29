@@ -6,8 +6,9 @@ Built, with the open questions answered by the proposals below (owner asked to
 build to completion): name **Tables**; own wallet (10K, refill below 100);
 Hold'em as a Sit & Go; difficulty tied to the stakes (100 Rookie / 500
 Regular / 2K Shark); Hold'em seats 4 on phones; `tsx` added (dev); leaving
-forfeits the buy-in; bots have names and a style tag, no chat; top two paid
-(65/35 at six seats, 70/30 at four).
+forfeits the buy-in; bots have names and a style tag, no chat; Hold'em pays
+top two (65/35 at six seats, 70/30 at four), while Blackjack Showdown and
+Liar's Dice are winner-takes-all.
 
 - Engines: `games/holdem` (7-card evaluator, side pots, incomplete all-in
   raises, blinds every 5 hands), `games/liars-dice`, `games/blackjack-showdown`.
@@ -21,10 +22,10 @@ forfeits the buy-in; bots have names and a style tag, no chat; top two paid
 - UI: hub `app/tables`, table page `app/tables/[game]`, rules at
   `/how-to-play/tables/[game]`, boards in `components/tables/`, store
   `store/tables-store.ts`, flag `TABLES_ENABLED`, navbar + home row.
-- **Playable:** Hold'em and Liar's Dice (checked at 1440×900, 1280×720,
-  390×844). **Not yet:** Blackjack Showdown has engine and bots but only a
-  placeholder board; it is hidden from the hub (`READY` in
-  `lib/tables/catalog.ts`). Not yet checked: 150/200% zoom, reduced motion.
+- **Playable:** Hold'em, Liar's Dice, and Blackjack Showdown. Existing desktop
+  and phone checks cover Hold'em and Liar's Dice (1440×900, 1280×720,
+  390×844); Blackjack Showdown and account Records still need a browser check.
+  Not yet checked: 150/200% zoom and reduced motion.
 
 Harness results (seed 1): Hold'em Shark +27% / Rookie −27% of buy-in per
 table, ~57 hands; Liar's Dice +26% / −26%, ~17 rounds; Showdown +8% / −8%

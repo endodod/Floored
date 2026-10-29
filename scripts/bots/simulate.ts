@@ -136,7 +136,7 @@ function run<S, V, A>(
     totals.illegal += r.illegal
     totals.leaks += r.leaks
     totals.thinkMs += r.thinkMs
-    const prizes = payoutsFor(r.standings, buyIn, bots.length)
+    const prizes = payoutsFor(r.standings, buyIn, bots.length, game)
     bots.forEach((bot, i) => record(into(bot), placeIn(r.standings, i)!, prizes[i]!, buyIn, habits(r.final, i)))
   }
 

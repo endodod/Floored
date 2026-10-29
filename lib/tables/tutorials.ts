@@ -17,7 +17,7 @@ export interface TableTutorial {
 }
 
 const pct = (n: number) => `${Math.round(n * 100)}%`
-const split = (seats: number) => payoutSplits(seats).map(pct).join(' / ')
+const split = (seats: number, game: TableGameName = 'holdem') => payoutSplits(seats, game).map(pct).join(' / ')
 const [sb0, bb0] = HOLDEM_BLINDS[0]!
 const [sb1, bb1] = HOLDEM_BLINDS[1]!
 const [sb2, bb2] = HOLDEM_BLINDS[2]!
@@ -25,11 +25,11 @@ const [sb2, bb2] = HOLDEM_BLINDS[2]!
 export const TABLES_STEPS: TutorialStep[] = [
   {
     title: 'Pick a game and stakes',
-    body: `Buy in for ${TABLE_TIERS.map((t) => formatChips(t.buyIn)).join(' / ')}. The stakes also pick the bots you face: Rookies, Regulars or Sharks.`,
+    body: `Buy in for ${TABLE_TIERS.map((t) => formatChips(t.buyIn)).join(' / ')}. This comes from your Tables wallet and contributes to the prize pool; it is not your bankroll at the table. The stakes also pick the bots you face: Rookies, Regulars or Sharks.`,
   },
   {
-    title: 'Every buy-in makes the prize pool',
-    body: `No house cut. The top two places are paid: ${split(6)} at a six-seat table, ${split(4)} at four seats.`,
+    title: 'Buy-ins make the prize pool',
+    body: `The buy-in is separate from your playing bankroll. In Hold’em and Blackjack, every player starts with the same tournament bankroll, shown at their seat; in Liar’s Dice, everyone starts with the same number of dice. No house cut. Texas Hold’em pays ${split(6, 'holdem')} / ${split(4, 'holdem')} at six / four seats; Blackjack Showdown and Liar’s Dice are winner-takes-all.`,
   },
   {
     title: 'Play it out',
@@ -64,7 +64,7 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       'All in for less than a full raise: the others may call, but players who already acted can’t raise again.',
       'Side pots: an all-in player can only win what they matched from each opponent.',
       'Six seats; on a phone the table seats four.',
-      `Prizes: ${split(6)} of the pool at six seats, ${split(4)} at four.`,
+      `Prizes: ${split(6, 'holdem')} of the pool at six seats, ${split(4, 'holdem')} at four.`,
       'You have 30 seconds to act; when time runs out you check, or fold if there is a bet.',
     ],
   },
@@ -81,7 +81,7 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       'A raise is more dice, or the same number of a higher face.',
       'Bidding on 1s: at least half the last count, rounded up. Leaving 1s: at least double the count plus one.',
       'The opening bid can’t be on 1s.',
-      `Four seats; the prize pool pays ${split(4)}.`,
+      'Four seats; winner takes the full prize pool.',
       'You have 30 seconds to act; when time runs out you call “Liar!” (or open with one 2).',
     ],
   },
@@ -98,7 +98,7 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       'Blackjack pays 3:2, a win 1:1. The dealer hits 16 or less and stands on all 17s. Double on two cards; no split.',
       'The first bettor moves one seat round the table each hand.',
       `Drop below ${SHOWDOWN_MIN_BET} chips and you are out.`,
-      `Four seats; the prize pool pays ${split(4)}. Equal stacks share their places' prizes.`,
+      'Four seats; the winner takes the full prize pool. Equal stacks share the prize.',
       'You have 30 seconds to act; when time runs out you bet the minimum, or stand.',
     ],
   },

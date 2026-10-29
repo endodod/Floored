@@ -63,7 +63,7 @@ export function TableShell({
   const [resultReady, setResultReady] = useState(false)
   const settled = useRef(false)
   const tier = TIER_BY_ID.get(table.tier)!
-  const prizes = payoutsFor(standings, table.buyIn, table.seats)
+  const prizes = payoutsFor(standings, table.buyIn, table.seats, table.game)
   const prize = place != null ? (prizes[0] ?? 0) : 0
 
   useEffect(() => {
