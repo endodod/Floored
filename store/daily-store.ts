@@ -14,8 +14,8 @@ export interface DailyGameProgress {
   returned: number
 }
 
-/** `complete` = every bet used; `failed` = bankroll fell below the min bet. */
-export type DailyEndReason = 'complete' | 'failed'
+/** `complete` = every bet used; `failed` = bankroll fell below the min bet; `gave-up` = ended by the player. */
+export type DailyEndReason = 'complete' | 'failed' | 'gave-up'
 
 export interface DailyRecord {
   date: string
@@ -31,6 +31,8 @@ interface DailyStore {
   /** UTC date key the in-progress state below belongs to. */
   date: string | null
   bankroll: number
+  /** The player pressed Play daily (or placed a bet) today: the hub shows the games, not the intro. */
+  started: boolean
   progress: Partial<Record<GameName, DailyGameProgress>>
   /** Game with a bet placed but not yet settled. */
   openRound: GameName | null
@@ -41,6 +43,10 @@ interface DailyStore {
 
   /** Reset in-progress state when the UTC day has rolled over. */
   syncToday: () => void
+  /** Leave the intro and open today's games. */
+  startDay: () => void
+  /** End today's attempt now; the bankroll as it stands is the result. */
+  giveUp: () => void
   /** A round left mid-way (navigated away) is forfeited: its stake is gone, its bet stays used. */
   abandonOpenRound: () => void
   placeBet: (game: GameName, amount: number) => void
@@ -52,6 +58,7 @@ function emptyDay(date: string) {
   return {
     date,
     bankroll: generateDailyChallenge(date).bankroll,
+    started: false,
     progress: {},
     openRound: null,
     finished: false,
@@ -84,6 +91,7 @@ export const useDailyStore = create<DailyStore>()(
     (set, get) => ({
       date: null,
       bankroll: 0,
+      started: false,
       progress: {},
       openRound: null,
       finished: false,
@@ -94,6 +102,16 @@ export const useDailyStore = create<DailyStore>()(
         const today = dailyDateKey()
         if (get().date === today) return
         set(emptyDay(today))
+      },
+
+      startDay: () => set({ started: true }),
+
+      giveUp: () => {
+        const s = get()
+        if (s.finished || !s.date) return
+        // A round still open (left mid-way) is forfeited like any other.
+        set({ openRound: null })
+        finish('gave-up')
       },
 
       abandonOpenRound: () => {
@@ -111,6 +129,7 @@ export const useDailyStore = create<DailyStore>()(
         const newRound = s.openRound !== game
         set({
           bankroll: s.bankroll - amount,
+          started: true,
           openRound: game,
           progress: {
             ...s.progress,
@@ -136,7 +155,7 @@ export const useDailyStore = create<DailyStore>()(
     }),
     {
       name: 'floored-daily',
-      version: 1,
+      version: 2,
       migrate: (persisted, version) => {
         const state = persisted as DailyStore
         if (version < 1) {
@@ -146,6 +165,10 @@ export const useDailyStore = create<DailyStore>()(
           for (const rec of Object.values(state.history ?? {})) {
             rec.endReason = legacy(rec.endReason) as DailyEndReason
           }
+        }
+        if (version < 2) {
+          // v1 had no intro screen: a day with a bet placed was already under way.
+          state.started = Object.values(state.progress ?? {}).some((p) => (p?.betsUsed ?? 0) > 0)
         }
         return state
       },

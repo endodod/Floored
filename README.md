@@ -8,11 +8,14 @@ Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
 A new challenge every day at 00:00 UTC — the same for every player, and you get one attempt.
 
+The Daily page opens on an overview of today's challenge (figures, games, rules); **Play daily** starts the attempt and shows the games, with **How to play** and **Give up** above them.
+
 - One **shared bankroll** (randomly $1K–$5K) for the whole day
 - **Three random games**, each with a random number of bets (1–3)
 - A **min bet** per bet (1–3% of the bankroll)
 - You **must place every bet** — play the games in any order and split your bankroll to finish the day with as much as possible
 - If your bankroll drops below the min bet, **today's challenge is failed**
+- **Give up** ends the day early: your bankroll as it stands is the result, but the day counts as not completed (no streak, no best result)
 - Leaving a game mid-round forfeits that round's stake (the bet still counts)
 - Results are shareable as a spoiler-free emoji grid; streaks and best result are kept locally
 

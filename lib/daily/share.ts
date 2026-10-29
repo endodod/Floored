@@ -23,6 +23,8 @@ export function buildShareText(record: DailyRecord, url: string): string {
   const line =
     record.endReason === 'failed'
       ? `${formatChips(record.startBankroll)} → 💀 Failed`
+      : record.endReason === 'gave-up'
+      ? `${formatChips(record.startBankroll)} → 🏳️ Gave up`
       : `${formatChips(record.startBankroll)} → ${formatChips(record.endBankroll)} (${formatMultiplier(m)})`
   return [
     `Floored Daily #${record.number}`,
@@ -32,14 +34,14 @@ export function buildShareText(record: DailyRecord, url: string): string {
   ].join('\n')
 }
 
-/** Best multiplier across completed (not failed) dailies; 0 if none. */
+/** Best multiplier across completed (not failed or given up) dailies; 0 if none. */
 export function bestMultiplier(history: Record<string, DailyRecord>): number {
   return Object.values(history)
     .filter((r) => r.endReason === 'complete')
     .reduce((m, r) => Math.max(m, dailyMultiplier(r)), 0)
 }
 
-/** Consecutive completed (not failed) dailies ending today or yesterday (UTC). */
+/** Consecutive completed (not failed or given up) dailies ending today or yesterday (UTC). */
 export function currentStreak(history: Record<string, DailyRecord>, today: string): number {
   const cleared = (date: string) => history[date]?.endReason === 'complete'
   const day = new Date(`${today}T00:00:00Z`)

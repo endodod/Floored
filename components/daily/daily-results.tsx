@@ -13,7 +13,8 @@ export function DailyResults({ record }: { record: DailyRecord }) {
   const [copied, setCopied] = useState(false)
   const m = dailyMultiplier(record)
   const up = record.endBankroll >= record.startBankroll
-  const failed = record.endReason === 'failed'
+  const failed = record.endReason !== 'complete'
+  const gaveUp = record.endReason === 'gave-up'
 
   async function handleShare() {
     const text = buildShareText(record, window.location.origin)
@@ -34,11 +35,13 @@ export function DailyResults({ record }: { record: DailyRecord }) {
     <section className="rise grid grid-cols-1 gap-6 rounded-md bg-surface p-5 sm:p-6 lg:grid-cols-2 lg:gap-10" aria-labelledby="daily-result">
       <div className="flex flex-col gap-4">
         <div>
-          <h2 id="daily-result" className={`text-[13px] ${failed ? 'text-loss' : 'text-dim'}`}>
-            {failed ? 'Challenge failed' : 'Challenge complete'}
+          <h2 id="daily-result" className={`text-[13px] ${failed && !gaveUp ? 'text-loss' : 'text-dim'}`}>
+            {gaveUp ? 'Gave up' : failed ? 'Challenge failed' : 'Challenge complete'}
           </h2>
           {failed ? (
-            <p className="num glow-loss mt-1 text-[32px] leading-tight text-loss">{formatChips(record.endBankroll)}</p>
+            <p className={`num mt-1 text-[32px] leading-tight ${gaveUp ? 'text-ink' : 'glow-loss text-loss'}`}>
+              {formatChips(record.endBankroll)}
+            </p>
           ) : (
             <p className="mt-1 flex items-baseline gap-3">
               <span className={`num text-[32px] leading-tight ${up ? 'text-felt glow-felt' : 'text-ink'}`}>{formatChips(record.endBankroll)}</span>
@@ -46,7 +49,9 @@ export function DailyResults({ record }: { record: DailyRecord }) {
             </p>
           )}
           <p className="mt-1 text-[13px] text-dim">
-            {failed
+            {gaveUp
+              ? `You ended the day early, from ${formatChips(record.startBankroll)}.`
+              : failed
               ? `The bankroll fell below the min bet.`
               : `Started with ${formatChips(record.startBankroll)}.`}
           </p>

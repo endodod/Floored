@@ -77,6 +77,7 @@ export function ModeSelect() {
   const dailyHistory = useDailyStore((s) => s.history)
   const dailyProgress = useDailyStore((s) => s.progress)
   const dailyBankroll = useDailyStore((s) => s.bankroll)
+  const dailyOpened = useDailyStore((s) => s.started)
   const ladderStatus = useLadderStore((s) => s.status)
   const ladderRung = useLadderStore((s) => s.rung)
   const ladderPot = useLadderStore((s) => s.pot)
@@ -93,7 +94,7 @@ export function ModeSelect() {
   const dailyUsed = dailyIsToday ? Object.values(dailyProgress).reduce((sum, p) => sum + (p?.betsUsed ?? 0), 0) : 0
   const dailyTotal = challenge ? totalDailyBets(challenge) : 6
   const dailyStarted = dailyUsed > 0
-  const dailyCta = todayRecord ? 'See results' : dailyStarted ? 'Continue' : 'Play today'
+  const dailyCta = todayRecord ? 'See results' : dailyStarted || (dailyIsToday && dailyOpened) ? 'Continue' : 'Play today'
 
   function handleSurvivalClick() {
     if (isMobile) return
@@ -127,6 +128,8 @@ export function ModeSelect() {
             todayRecord
               ? todayRecord.endReason === 'failed'
                 ? 'Failed'
+                : todayRecord.endReason === 'gave-up'
+                ? 'Gave up'
                 : formatMultiplier(dailyMultiplier(todayRecord))
               : challenge
                 ? formatChips(dailyStarted ? dailyBankroll : challenge.bankroll)

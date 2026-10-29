@@ -58,7 +58,7 @@ function DailyGame({ game, bets, minBet }: { game: GameName; bets: number; minBe
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-xs rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center shadow-2xl">
             <h2 className="text-2xl font-black text-foreground mb-2">
-              {!finished ? 'Out of bets' : endReason === 'failed' ? 'Challenge failed' : 'Daily complete'}
+              {!finished ? 'Out of bets' : endReason === 'failed' ? 'Challenge failed' : endReason === 'gave-up' ? 'Gave up' : 'Daily complete'}
             </h2>
             <p className="text-zinc-500 text-sm mb-8">
               {finished && endReason === 'failed'

@@ -26,13 +26,15 @@ Checked: `tsc` clean, `next lint` clean on the navbar; screenshots at 1440×900
 (nav 65px incl. border), 1280×720 (49px), 390×844 phone (65px), no horizontal
 scroll.
 
-**Not done:** `scripts/design-check/responsive-check.cjs` over the games was
-interrupted before it ran. Run it on a few games (tall views lost 16px of
-board) before calling this finished:
-
-    node scripts/design-check/responsive-check.cjs ./out /freeplay/blackjack /freeplay/slots /freeplay/case-battles
+**Responsive check (done 2026-10-29):** `responsive-check.cjs` over Blackjack,
+Slots, Case Battles, Roulette, Plinko, Mines and the Daily page at all eight
+views. Every board still fits. It caught one regression: on 360px phones the
+bar's 32px tall-screen gap pushed the menu button 8px off screen (page scrolled
+sideways on game pages). Fixed by keeping the phone gap at 16px and applying
+the wider tall-screen gap only from `sm` up (`gap-4 sm:gap-6 sm:tall:gap-8`);
+re-checked at 360, 390 and 768 — all pass.
 
 ## Next on the TODO
 
-"Game cards on the game page look bland" — waiting for owner feedback on the
-navbar first.
+"Game cards on the game page look bland" was dropped by the owner. Next open
+item: Survival — adjust upgrades / items to the new game designs.

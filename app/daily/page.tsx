@@ -16,7 +16,17 @@ import { GameTile } from '@/components/game-tile'
 import { PayoutCaption } from '@/components/game-payout'
 import { ScreenSkeleton } from '@/components/screen-skeleton'
 import { HowItWorks, ModeColumns, Rail, StartPanel } from '@/components/mode-intro'
-import type { TutorialStep } from '@/components/mode-tutorial'
+import { ModeTutorial, useTutorial, type TutorialStep } from '@/components/mode-tutorial'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 export default function DailyPage() {
   const router = useRouter()
@@ -28,7 +38,13 @@ export default function DailyPage() {
   const progress = useDailyStore((s) => s.progress)
   const finished = useDailyStore((s) => s.finished)
   const history = useDailyStore((s) => s.history)
+  const started = useDailyStore((s) => s.started)
+  const startDay = useDailyStore((s) => s.startDay)
+  const giveUp = useDailyStore((s) => s.giveUp)
   const [pending, setPending] = useState<GameName | null>(null)
+  const [confirmGiveUp, setConfirmGiveUp] = useState(false)
+  // The intro screen lays the rules out, so the dialog only opens from "How to play".
+  const tutorial = useTutorial('daily', { auto: false })
 
   useEffect(() => {
     syncToday()
@@ -49,7 +65,9 @@ export default function DailyPage() {
 
   const totalBets = totalDailyBets(challenge)
   const usedBets = challenge.games.reduce((sum, g) => sum + (progress[g.game]?.betsUsed ?? 0), 0)
-  const started = usedBets > 0
+  const steps = dailySteps(challenge.bankroll, challenge.minBet)
+  // Intro until the player presses Play daily; the games once under way; the result once over.
+  const playing = started && !record
   const net = bankroll - challenge.bankroll
   const records = Object.values(history)
   const best = bestMultiplier(history)
@@ -73,11 +91,59 @@ export default function DailyPage() {
         title={`Daily #${challenge.number}`}
         sub={`${dateLabel} · the same challenge for everyone, one attempt.`}
         aside={
-          <p className="text-[13px] text-dim">
-            New daily in <DailyCountdown className="num text-ink" />
-          </p>
+          <>
+            <p className="text-[13px] text-dim">
+              New daily in <DailyCountdown className="num text-ink" />
+            </p>
+            {playing && (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => tutorial.setOpen(true)}>
+                  How to play
+                </Button>
+                <Button variant="destructive" onClick={() => setConfirmGiveUp(true)}>
+                  Give up
+                </Button>
+              </>
+            )}
+          </>
         }
       />
+
+      <ModeTutorial
+        id="daily"
+        title="Daily"
+        intro="The same challenge for everyone, one attempt."
+        steps={steps}
+        open={tutorial.open}
+        onOpenChange={tutorial.setOpen}
+      />
+
+      <Dialog open={confirmGiveUp} onOpenChange={setConfirmGiveUp}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Give up today&apos;s daily?</DialogTitle>
+            <DialogDescription>
+              Your bankroll of <span className="num text-ink">{formatChips(bankroll)}</span> becomes today&apos;s
+              result. The daily counts as not completed, so it ends your streak, and there is no replay until
+              tomorrow.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Keep playing</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmGiveUp(false)
+                giveUp()
+              }}
+            >
+              Give up
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ModeColumns
         rail={
@@ -142,7 +208,7 @@ export default function DailyPage() {
       >
         {record ? (
           <DailyResults record={record} />
-        ) : started ? (
+        ) : playing ? (
           <FigureStrip
             items={[
               {
@@ -164,56 +230,83 @@ export default function DailyPage() {
               { label: 'Bets to place', value: totalBets },
               { label: 'Min bet', value: formatChips(challenge.minBet) },
             ]}
-            action={<p className="text-[13px] text-soft">Pick any game below to start.</p>}
+            action={
+              <Button onClick={startDay} size="lg">
+                Play daily
+              </Button>
+            }
+            note="One attempt: once you start, the day only ends when every bet is placed, your bankroll drops below the min bet, or you give up."
           />
         )}
 
-        <section className="flex flex-col gap-4" aria-labelledby="daily-games">
-          <SectionTitle suit={1} note={`${totalBets} bets across ${challenge.games.length} games, in any order`}>
-            <span id="daily-games">Today&apos;s games</span>
-          </SectionTitle>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {challenge.games.map(({ game, bets }, i) => {
-              const entry = GAME_BY_NAME.get(game)
-              if (!entry) return null
-              const p = progress[game]
-              const left = betsLeft(progress, game, bets)
-              const playable = !finished && left > 0 && bankroll >= challenge.minBet
-              const gameNet = p && p.betsUsed > 0 ? p.returned - p.wagered : null
-              const isLoading = pending === game
+        {started || record ? (
+          <section className="flex flex-col gap-4" aria-labelledby="daily-games">
+            <SectionTitle suit={1} note={`${totalBets} bets across ${challenge.games.length} games, in any order`}>
+              <span id="daily-games">Today&apos;s games</span>
+            </SectionTitle>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {challenge.games.map(({ game, bets }, i) => {
+                const entry = GAME_BY_NAME.get(game)
+                if (!entry) return null
+                const p = progress[game]
+                const left = betsLeft(progress, game, bets)
+                const playable = !finished && left > 0 && bankroll >= challenge.minBet
+                const gameNet = p && p.betsUsed > 0 ? p.returned - p.wagered : null
+                const isLoading = pending === game
 
-              return (
-                <li key={game}>
-                  <GameTile
-                    index={i}
-                    label={entry.label}
-                    sub={entry.sub}
-                    disabled={!playable || !!pending}
-                    faded={!playable || (!!pending && !isLoading)}
-                    loading={isLoading}
-                    onClick={() => handlePick(game)}
-                    meta={
-                      gameNet != null ? (
-                        <span className={`num ${gameNet > 0 ? 'text-felt' : gameNet < 0 ? 'text-loss' : 'text-soft'}`}>
-                          {signed(gameNet, formatChips)}
-                        </span>
-                      ) : (
-                        <PayoutCaption game={game} />
-                      )
-                    }
-                    action={left === 0 ? 'Done' : finished ? 'Closed' : 'Play'}
-                  >
-                    <span className="block text-xs text-dim">
-                      <span className="num text-soft">{left}</span> of {bets} bet{bets === 1 ? '' : 's'} left
+                return (
+                  <li key={game}>
+                    <GameTile
+                      index={i}
+                      label={entry.label}
+                      sub={entry.sub}
+                      disabled={!playable || !!pending}
+                      faded={!playable || (!!pending && !isLoading)}
+                      loading={isLoading}
+                      onClick={() => handlePick(game)}
+                      meta={
+                        gameNet != null ? (
+                          <span className={`num ${gameNet > 0 ? 'text-felt' : gameNet < 0 ? 'text-loss' : 'text-soft'}`}>
+                            {signed(gameNet, formatChips)}
+                          </span>
+                        ) : (
+                          <PayoutCaption game={game} />
+                        )
+                      }
+                      action={left === 0 ? 'Done' : finished ? 'Closed' : 'Play'}
+                    >
+                      <span className="block text-xs text-dim">
+                        <span className="num text-soft">{left}</span> of {bets} bet{bets === 1 ? '' : 's'} left
+                      </span>
+                    </GameTile>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ) : (
+          <>
+            <section className="rise flex flex-col gap-3 [--d:180ms]" aria-labelledby="daily-preview">
+              <SectionTitle suit={1} note="Play them in any order">
+                <span id="daily-preview">Today&apos;s games</span>
+              </SectionTitle>
+              <ul className="grid grid-cols-1 gap-x-10 sm:grid-cols-3">
+                {challenge.games.map(({ game, bets }) => (
+                  <li key={game} className="flex flex-col gap-0.5 border-t border-rule py-3">
+                    <span className="text-[14px] font-medium text-ink">{GAME_BY_NAME.get(game)?.label ?? game}</span>
+                    <span className="flex items-baseline justify-between gap-3 text-xs text-dim">
+                      <span>
+                        <span className="num text-soft">{bets}</span> bet{bets === 1 ? '' : 's'}
+                      </span>
+                      <PayoutCaption game={game} className="text-xs text-dim" />
                     </span>
-                  </GameTile>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-
-        {!started && !record && <HowItWorks steps={dailySteps(challenge.bankroll, challenge.minBet)} delay={200} />}
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <HowItWorks steps={steps} delay={240} />
+          </>
+        )}
       </ModeColumns>
     </div>
   )
