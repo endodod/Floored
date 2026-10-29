@@ -34,12 +34,17 @@ import { useBless } from '@/hooks/use-bless'
 import type { PlinkoPayoutResult, PlinkoRisk } from '@/games/plinko/types'
 import { PlinkoBoard, type PlinkoBall } from '@/components/plinko-board'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
-import { useLadderAllIn } from '@/hooks/use-ladder-all-in'
 
 const MIN_BALLS = 1
 const MAX_BALLS = 10
 /** Offset each ball's animation start so multi-drops don't stack on one peg. */
 const BALL_STAGGER_MS = 120
+
+function splitPotAcrossBalls(pot: number, count: number): number[] {
+  const baseBet = Math.floor(pot / count)
+  const remainder = pot - baseBet * count
+  return Array.from({ length: count }, (_, i) => baseBet + (i === count - 1 ? remainder : 0))
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -95,7 +100,6 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
   const [ballCount, setBallCount] = useState(MIN_BALLS)
   const [sessions, setSessions] = useState<PlinkoSession[]>([])
   const [currentBet, setCurrentBet] = useState(0)
-  useLadderAllIn(mode, bankroll, currentBet, setCurrentBet)
   const [lastBet, setLastBet] = useState(0)
   const [matchHistory, setMatchHistory] = useState<MatchHistoryEntry[]>([])
   const [quoteIdx, setQuoteIdx] = useState(0)
@@ -123,16 +127,22 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
   modeRef.current = mode
   const dropAccumulatorRef = useRef<PlinkoDropAccumulator | null>(null)
 
+  const isLadder = mode === 'ladder'
   const isDropping = sessions.length > 0
   const { status: runStatus, showGameOver, handleGameOver } = useRunEnd(mode, { idle: !isDropping })
-  const commitBet = currentBet >= minBet ? currentBet : lastBet >= minBet ? lastBet : 0
+  const ladderBets = isLadder ? splitPotAcrossBalls(bankroll, ballCount) : []
+  const commitBet = isLadder
+    ? Math.min(...ladderBets)
+    : currentBet >= minBet ? currentBet : lastBet >= minBet ? lastBet : 0
   const perBallBet = commitBet >= minBet ? commitBet : minBet
   const maxAffordableBalls = Math.max(
     MIN_BALLS,
-    Math.floor((bankroll - inFlightBetRef.current) / perBallBet),
+    isLadder
+      ? Math.floor(bankroll / minBet)
+      : Math.floor((bankroll - inFlightBetRef.current) / perBallBet),
   )
   const maxBalls = Math.min(MAX_BALLS, maxAffordableBalls)
-  const totalCost = commitBet * ballCount
+  const totalCost = isLadder ? ladderBets.reduce((sum, amount) => sum + amount, 0) : commitBet * ballCount
   const canDrop =
     !isDropping &&
     commitBet >= minBet &&
@@ -144,11 +154,14 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
 
   const statusMsg = isDropping
     ? `${sessions.length} ball${sessions.length === 1 ? '' : 's'} in flight`
-    : mode === 'ladder' ? 'Drop for the whole pot.' : 'Place chips and drop.'
+    : isLadder
+      ? `Whole pot split across ${ballCount} ball${ballCount === 1 ? '' : 's'}.`
+      : 'Place chips and drop.'
 
   useEffect(() => {
+    if (isDropping) return
     setBallCount((c) => Math.min(Math.max(MIN_BALLS, c), maxBalls))
-  }, [maxBalls])
+  }, [isDropping, maxBalls])
 
   function addChip(value: number) {
     const cap = Math.max(minBet, Math.floor(bankroll / ballCount))
@@ -158,7 +171,8 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
   function handleDrop() {
     const bet = commitBet
     const count = Math.min(ballCount, maxBalls)
-    const total = bet * count
+    const bets = isLadder ? splitPotAcrossBalls(bankroll, count) : Array.from({ length: count }, () => bet)
+    const total = bets.reduce((sum, amount) => sum + amount, 0)
     if (bet < minBet || total < minBet || total > bankrollRef.current - inFlightBetRef.current) return
     inFlightBetRef.current += total
     onBet?.(total)
@@ -166,13 +180,14 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
     const goldenIndex = goldenProc ? Math.floor(Math.random() * count) : -1
     const baseTime = performance.now()
     const newSessions: PlinkoSession[] = Array.from({ length: count }, (_, i) => {
+      const ballBet = bets[i]!
       const path = blessed ? winGamePath(risk) : cursed ? loseGamePath(risk) : generatePath()
-      const result = computePayout(bet, path, risk)
+      const result = computePayout(ballBet, path, risk)
       return {
         id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`,
         path,
         startedAt: baseTime + i * BALL_STAGGER_MS,
-        bet,
+        bet: ballBet,
         result,
         risk,
         golden: i === goldenIndex,
@@ -187,7 +202,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
       resolved: 0,
     }
     setSessions((prev) => [...prev, ...newSessions])
-    setLastBet(bet)
+    setLastBet(isLadder ? total : bet)
     setCurrentBet(0)
     setQuoteIdx((prev) => pickQuote(prev))
   }
@@ -355,7 +370,11 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
           <div className="flex flex-1 min-h-0 w-full items-center justify-center">
             <GameDockBetRow
               label="Bet per Ball"
-              currentBet={currentBet > 0 ? currentBet : isDropping ? lastBet : 0}
+              currentBet={
+                isLadder
+                  ? (isDropping ? dropAccumulatorRef.current?.totalBet ?? lastBet : bankroll)
+                  : currentBet > 0 ? currentBet : isDropping ? lastBet : 0
+              }
               onClear={() => {
                 if (!isDropping) setCurrentBet(0)
               }}
@@ -363,11 +382,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
           </div>
 
           <div className="flex flex-1 min-h-0 w-full items-center justify-center">
-            {mode === 'ladder' ? (
-              // The whole pot is one stake, so a ladder drop is always a single ball.
-              <p className="flex h-7 items-center text-[13px] text-dim">One ball carries the pot</p>
-            ) : (
-              <div className="flex h-7 items-center gap-1.5 flex-wrap justify-center">
+            <div className="flex h-7 items-center gap-1.5 flex-wrap justify-center">
                 <span className="text-[13px] text-dim">Balls</span>
                 <button
                   type="button"
@@ -390,8 +405,7 @@ export function PlinkoGame({ mode, bankroll, onBet, onResolve }: PlinkoGameProps
                 >
                   +
                 </button>
-              </div>
-            )}
+            </div>
           </div>
 
           <div className="flex flex-1 min-h-0 w-full items-center justify-center gap-2">
