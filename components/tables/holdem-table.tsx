@@ -11,7 +11,7 @@ import {
   GAME_DOCK_SETTLED_SLOT,
 } from '@/components/game-dock-parts'
 import type { MatchHistoryEntry } from '@/components/game-match-history'
-import { evaluate, labelOf } from '@/games/holdem/evaluator'
+import { evaluate, fullDeck, labelOf, sameCard, shuffled } from '@/games/holdem/evaluator'
 import type { Card, HoldemActionKind, HoldemState, HoldemView } from '@/games/holdem/types'
 import { seatBots } from '@/lib/bots/core'
 import { BOT_STYLE_LABEL } from '@/lib/bots/roster'
@@ -77,6 +77,31 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
   const legal = v.legal
   const secs = useSecondsLeft(runner.deadline)
   const result = v.phase !== 'betting' && v.lastResult?.hand === v.hand ? v.lastResult : null
+  const equity = useMemo(() => {
+    if (!me.hole || me.hole.length !== 2 || me.folded || me.out) return null
+    const opponents = v.seats.filter((s, i) => i !== 0 && !s.out && !s.folded).length
+    if (!opponents) return null
+    const known = [...me.hole, ...v.board]
+    const remaining = fullDeck().filter((card) => !known.some((seen) => sameCard(card, seen)))
+    const seedText = known.map((card) => `${card.rank}${card.suit}`).join('') + `${v.hand}:${opponents}`
+    const seed = [...seedText].reduce((n, char) => (Math.imul(n ^ char.charCodeAt(0), 16777619) >>> 0), 2166136261)
+    const rng = createRng(seed)
+    const trials = 500
+    let share = 0
+    for (let trial = 0; trial < trials; trial++) {
+      const cards = shuffled(remaining, rng)
+      let cursor = 0
+      const otherHands = Array.from({ length: opponents }, () => [cards[cursor++]!, cards[cursor++]!])
+      const board = [...v.board]
+      while (board.length < 5) board.push(cards[cursor++]!)
+      const heroScore = evaluate([...me.hole, ...board])
+      const scores = [heroScore, ...otherHands.map((hand) => evaluate([...hand, ...board]))]
+      const best = Math.max(...scores)
+      const winners = scores.filter((score) => score === best).length
+      if (heroScore === best) share += 1 / winners
+    }
+    return Math.round((share / trials) * 100)
+  }, [me.hole, me.folded, me.out, v.seats, v.board, v.hand])
 
   // ── History: one entry per hand you were dealt into ──
   const [history, setHistory] = useState<MatchHistoryEntry[]>([])
@@ -244,6 +269,7 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
         <SeatPlate
           name="You"
           you
+          stackCaption="Bankroll"
           stack={me.out ? null : me.stack}
           stackLabel={me.out ? 'Out' : undefined}
           timer={yourTurn ? { ms: TURN_MS, key: `${v.hand}-${v.log.length}` } : null}
@@ -266,7 +292,13 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
               ))
             : [0, 1].map((k) => <PlayingCard key={`ys${k}`} variant="slot" />)}
         </div>
-        <p className="hd-made w-24 text-[12px] leading-4 text-soft">{madeHand}</p>
+        <div className="hd-made flex w-24 flex-col gap-1 text-[11px] leading-4 text-soft">
+          <span>{madeHand}</span>
+          {equity != null && <span className="w-full" aria-label={`Estimated chance to win or split: ${equity} percent`}>
+            <span className="flex justify-between"><span>Win odds</span><span className="num text-ink">{equity}%</span></span>
+            <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-black/30"><span className="block h-full rounded-full bg-felt" style={{ width: `${equity}%` }} /></span>
+          </span>}
+        </div>
       </div>
     </div>
   )
