@@ -2467,7 +2467,7 @@ body > div.neon-auth-ui {
 }
 .hd-table.bj-table {
   --seat-card-h: clamp(1.35rem, 5cqh, 2.1rem);
-  --you-card-h: clamp(1.5rem, 6cqh, 2.4rem);
+  --you-card-h: var(--card-h);
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas: 'c c c c' 's1 s2 s3 y';
