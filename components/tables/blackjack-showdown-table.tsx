@@ -40,8 +40,8 @@ function handValue(cards: ShowdownView['seats'][number]['cards']) {
 
 export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
   const game = TABLE_GAME_BY_NAME.get('blackjack-showdown')!
-  const bots = useMemo(() => [null, ...seatBots(table.seats - 1, table.tier, createRng(table.seed ^ 0x51ed))], [table])
-  const runner = useTableRunner(showdownDef, { seats: table.seats, human: 0, bots, seed: table.seed, turnMs: TURN_MS, pauseMs: pause })
+  const bots = useMemo(() => [null, ...seatBots(table.seats - 1, table.botSkill ?? table.tier, createRng(table.seed ^ 0xb1ac))], [table])
+  const runner = useTableRunner(showdownDef, { seats: table.seats, human: 0, bots, memoryKey: 'blackjack-showdown', seed: table.seed, turnMs: TURN_MS, pauseMs: pause })
   const { view: v, yourTurn, thinking } = runner
   const names = useMemo(() => ['You', ...bots.slice(1).map((b) => b!.profile.name)], [bots])
   const secs = useSecondsLeft(runner.deadline)
