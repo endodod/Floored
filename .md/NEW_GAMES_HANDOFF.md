@@ -535,7 +535,7 @@ Dice on the left, mat on the right (dice above the mat on portrait boards).
   stagger of 120 ms, then the result total appears under the dome on a `.plaque`. Winning
   dice glow (`tone="win"`).
 - **Mat** (wood-and-gold frame, felt inside, cells with the Roulette dark outline):
-  - Row 1: **Small** `4–10` (wide) · **Any Triple** (centre, gold print) · **Big** `11–17` (wide),
+  - Row 1: **Small** `4–10` (wide) · **Any Triple** (centre) · **Big** `11–17` (wide),
     the three centred over the 14 columns.
   - Row 2: **Doubles** — six cells on the left, each two small drawn pips of the face —
     and **Singles** next to them on the right, six cells, each one drawn die face.
