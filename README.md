@@ -1,6 +1,6 @@
 # Floored
 
-Browser-based casino simulation — no real money. Accounts are optional (sign in to sync survival runs).
+Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: survival runs, Freeplay balance, Daily, Ladder and Tables).
 
 Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
@@ -55,8 +55,8 @@ Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HA
 Choose any game, start with a healthy balance, and play without pressure or minimum bets.
 
 - Starting balance: $10,000
-- No accounts or real-money transactions
-- Instant sessions, local state persisted for convenience
+- No real-money transactions
+- Your balance is kept between visits, and follows your account when you're signed in
 
 ### How to play
 
@@ -133,7 +133,7 @@ All survival numbers are listed in [.md/BALANCE_AUDIT.md](.md/BALANCE_AUDIT.md).
 - Zustand (client-side state)
 - Radix UI (primitives)
 - Framer Motion (animations)
-- Neon Postgres + Prisma, Neon Auth (optional accounts; survival runs sync to your account)
+- Neon Postgres + Prisma, Neon Auth (optional accounts; survival runs and Freeplay / Daily / Ladder / Tables progress sync to your account)
 
 ## Development
 

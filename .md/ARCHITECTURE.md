@@ -5,7 +5,7 @@ what the modes are and how they play, see the [README](../README.md).
 
 Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zustand
 (persisted to `localStorage`) · optional accounts via Neon Auth + Prisma/Postgres
-(only used to sync survival runs).
+(finished survival runs, and Freeplay / Daily / Ladder / Tables progress; see **Account sync**).
 
 ---
 
@@ -17,6 +17,7 @@ Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zu
 | `app/how-to-play/[game]/` | Static rules page per game (content in `lib/game-tutorials.ts`). |
 | `app/account/` | Local settings, motion preference, dev mode, sign-in. |
 | `app/api/run/` | Survival run sync for signed-in players (`lib/survival/run-sync.ts`). |
+| `app/api/state/` | Account sync of the Freeplay, Daily, Ladder and Tables stores (`components/account-sync.tsx`, `lib/sync/keys.ts`). |
 | `games/<name>/` | `types.ts` + `engine.ts` — pure game logic, no React. |
 | `components/games/<name>/game.tsx` | One React component per game, plus sub-components in the same folder. |
 | `components/` | Shared UI: navbar, lobby, game tiles, game chrome, mode intros, tutorials. |
@@ -134,6 +135,36 @@ Constants and formulas live in `lib/survival/balance.ts`; the full numbers are i
   [ACTIVE_ITEMS_SPEC.md](ACTIVE_ITEMS_SPEC.md).
 
 ---
+
+## Account sync
+
+Signed-in players' Freeplay, Daily, Ladder and Tables stores follow the account
+(`components/account-sync.tsx`, mounted in `app/layout.tsx`; route `app/api/state`;
+table `UserState`, one row per user and store holding the store's persisted
+`{ state, version }`). The game stays local-first: the stores still live in
+`localStorage` and the sync only copies them.
+
+- **Pull** once per page load (and when a tab hidden for 30+ minutes comes back).
+  Per store, the newest change wins: the account's copy replaces the local one
+  unless this device changed it more recently. First sign-in on a device: the
+  account wins; stores the account doesn't have are uploaded from the device.
+- **Push** in batches: at most every 15 minutes while playing, plus when the tab
+  is hidden or closed (`keepalive`). The server keeps a store only if its
+  `changedAt` is newer than the stored one.
+- **Why batched:** Neon's free compute stays awake 5 minutes after each query and
+  the Free plan has 100 CU-hours a month. A write per bet would keep the database
+  awake for a whole session; batching keeps it to roughly 15 minutes per 30-minute
+  session (~0.06 CU-hours at 0.25 CU). Ten players with one or two sessions a day
+  come to about 25–55 CU-hours a month at most (less when sessions overlap). If
+  the allowance runs out, Neon suspends the compute until the next month (no
+  charge); the game keeps working locally and syncs again after.
+- Adding a store to the sync: add its key to `SYNCED_STORE_KEYS` and the store to
+  `STORES` in the component. Survival is not synced here (finished runs go to
+  `/api/run`); settings stay per device.
+- The `UserState` table comes from `prisma/migrations/20261030120000_add_user_state`;
+  the build doesn't migrate, so run `npx prisma migrate deploy` against the
+  database when deploying this. Until then `/api/state` fails and the game simply
+  stays local.
 
 ## Dev mode
 
