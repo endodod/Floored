@@ -306,24 +306,29 @@ deck; `loseCall` falls back to `callTower` if every card wins, e.g. never in pra
 
 ### Board
 
-A rising stair of **four card slots**, left to right, each one step higher than the
-last (the "tower"), on wide boards; a 2 × 2 block on narrow ones.
+A rising stair of **four card slots**, left to right, each one `--toc-rise` (1rem) higher
+than the last (the "tower", Colour lowest and Suit highest), on wide boards; a 2 × 2 block
+on narrow ones, where the rise is dropped.
 
 - Each slot: a `PlayingCard variant="slot"` with its question above in `felt-print`
   ("Colour", "Higher / Lower", "Inside / Outside", "Suit") and, once answered, the step
-  multiplier under it in `gold-print`. The current step's slot is ringed in felt.
+  multiplier under it in `gold-print`.
 - A right card deals in (`g-deal`), flips (`g-flip`) and glows (`g-win`); the wrong card
   shakes (`g-shake`) and the cards before it dim (`g-dim`).
 - Steps 2 and 3 need cards 1 and 2 visible at once: the stair keeps all answered
   cards face up.
-- The running multiplier sits above the stair in gold (`num glow-gold`), like HiLo's streak.
+- The running multiplier sits above the stair in gold (`num glow-gold`), like HiLo's streak;
+  it hugs the top of the board and the stair floats in the space below it, so the two never
+  crowd each other.
 - Prefix `toc-*`. Side-by-side layout for short wide boards as in HiLo
   (`hilo-board` pattern: put layout classes on an inner wrapper, not the board).
 
-### Call buttons (on the felt, under the stair)
+### Call buttons (in the dock's action row)
 
-One fixed-height slot (`h-12`), contents swap by step and stage (HiLo pattern; never
-mount/unmount the slot):
+They live in `GAME_DOCK_ACTIONS` with the other dock buttons, and the row swaps by step
+and stage (never mount/unmount the row). The line above the row names the call to make
+(`CALL_PROMPTS`, e.g. "Higher or lower than the first card"); the board itself carries no
+marker for the current step.
 
 - Step 1: **Red** (`toc-red`, fill `#a92b42`, the Roulette red) and **Black**
   (`toc-black`, fill `#141318`), each with a gold hairline like `.hilo-higher`.
@@ -335,11 +340,14 @@ mount/unmount the slot):
   `disabled` and shows "—".
 - Riding: **Cash out `amount`** (`GAME_DOCK_PRIMARY_BTN`) and **Go on** (gold outline,
   as HiLo's Go again), no multiplier on Go on (the next step's options show theirs).
+- Otherwise the row holds **Deal →** (betting), Leave / Next (settled), or the run-ending
+  button, exactly as the other games' docks do.
 
 ### Dock
 
-Betting: `GameDockChipRow`, `GameDockBetRow`, **Deal →**. Playing: quote in the chip row;
-the settled slot says "Cash out now for `amount`" while riding. Settled:
+Betting: `GameDockChipRow`, `GameDockBetRow`, **Deal →**. Playing: quote in the chip row and
+the step's call buttons in the action row; the settled slot says "Cash out now for
+`amount`" while riding. Settled:
 `GameDockSettledRow`, result "Step `n`" + "`mult`" or "Wrong `call`".
 
 ### Tutorial

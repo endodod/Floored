@@ -26,6 +26,16 @@ import type { TowerCall, TowerState } from '@/games/tower-of-cards/types'
 
 const STEP_LABELS = ['Colour', 'Higher / Lower', 'Inside / Outside', 'Suit']
 const CALL_LABELS: Record<string, string> = { red: 'Red', black: 'Black', higher: '↑ Higher', lower: '↓ Lower', inside: 'Inside', outside: 'Outside' }
+/** What the player has to decide, shown in the dock above the call buttons. */
+const CALL_PROMPTS = ['Call the colour of the next card', 'Higher or lower than the first card', 'Inside or outside the first two cards', 'Call the suit of the next card']
+
+/** A step's call button in the dock's action row — the step colours are layered on top. */
+const CALL_BTN =
+  'm-still h-10 min-w-0 flex-1 rounded-full border border-[rgba(217,164,65,0.55)] bg-control px-2 text-[13px] font-semibold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition-[border-color,filter,box-shadow,transform] duration-150 hover:border-gold hover:brightness-110 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 sm:text-[14px]'
+
+/** Go on: the gold-outlined twin of the Cash out button, as HiLo's Go again. */
+const GO_ON_BTN =
+  'm-still h-10 min-w-0 flex-1 rounded-full border border-gold px-4 text-[14px] font-semibold text-gold transition-[background-color,box-shadow,transform] duration-150 hover:bg-gold-tint hover:shadow-[0_0_24px_-6px_rgba(217,164,65,0.8)] active:scale-[0.97]'
 
 export function TowerOfCardsGame({ mode, bankroll, onBet, onResolve }: { mode: GameMode; bankroll: number; onBet?: (amount: number) => void; onResolve: GameResolveFn }) {
   const minBet = useGameMinBet(mode)
@@ -73,27 +83,23 @@ export function TowerOfCardsGame({ mode, bankroll, onBet, onResolve }: { mode: G
   return <div className={GAME_CARD_SHELL}>
     <div className={GAME_STATUS_BAR}><span className="text-[13px] font-semibold text-ink">Tower of Cards</span>{net.perkEffective && <PerkHint>Safety Net active — a wrong call returns your banked amount</PerkHint>}<span className="text-[13px] text-dim">{round.message}</span></div>
     <GameFieldWithHistory className={GAME_BOARD_ARENA} boardClassName="relative" entries={history} gameLabel="Tower of Cards">
-      <div className="toc-board relative flex h-full min-h-0 w-full flex-col items-center justify-center gap-3 px-3 py-3">
+      <div className="toc-board relative flex h-full min-h-0 w-full flex-col items-center gap-3 px-3 pb-3 pt-14">
         <GameDockBackButton mode={mode} visible={betting && !showGameOver}/><GameActiveBetBadge betAmount={!betting ? round.betAmount : 0} visible={!betting}/>
         <div className="toc-multiplier num text-[18px] text-gold glow-gold">{round.multiplier > 0 ? formatMultiplier(round.multiplier) : 'Four calls · cash out between them'}</div>
         <div className="toc-stair grid w-full max-w-3xl grid-cols-2 gap-2 sm:grid-cols-4">{STEP_LABELS.map((label, index) => {
-          const n = index + 1, card = round.cards[index], active = playing && round.step === n, failed = settled && round.outcome === 'loss' && n === round.cards.length
-          return <div key={label} className={`toc-step plaque flex flex-col items-center gap-1 p-2 ${active ? 'ring-2 ring-felt' : ''} ${failed ? 'g-shake' : card && settled ? 'g-dim' : ''}`}>
+          const n = index + 1, card = round.cards[index], failed = settled && round.outcome === 'loss' && n === round.cards.length
+          return <div key={label} className={`toc-step flex flex-col items-center gap-1 p-2 ${failed ? 'g-shake' : card && settled ? 'g-dim' : ''}`}>
             <span className="felt-print">{label}</span>
             {card ? <PlayingCard key={`${card.rank}${card.suit}`} rank={card.rank} suit={card.suit} className={failed ? 'g-shake' : 'g-flip'} style={{ '--i': index } as CSSProperties}/> : <PlayingCard variant="slot"/>}
             {card && (round.stepMultipliers[index] != null || (round.outcome === 'push' && n === 1)) && <span className="gold-print num">{round.outcome === 'push' && n === 1 ? 'Push' : formatMultiplier(round.stepMultipliers[index]!)}</span>}
           </div>
         })}</div>
-        <div className="toc-actions flex min-h-12 w-full max-w-2xl items-center justify-center gap-2">
-          {playing && <div className="flex w-full justify-center gap-2">{choices.map(option => { const callKey = `${round.step}-${option.pick}`; const suit = ['♠','♥','♦','♣'].includes(option.pick); return <button key={callKey} onClick={() => call(option.pick)} disabled={animating || option.mult == null} className={`m-still min-w-0 flex-1 rounded-full border border-line bg-control px-2 py-2 text-sm font-semibold text-ink disabled:opacity-40 ${round.step === 1 ? option.pick === 'red' ? 'toc-red' : 'toc-black' : ''} ${round.step === 2 ? option.pick === 'higher' ? 'hilo-higher' : 'hilo-lower' : ''} ${suit && (option.pick === '♥' || option.pick === '♦') ? 'text-loss' : ''}`}>{CALL_LABELS[option.pick] ?? option.pick} <span className="num ml-1">{option.mult == null ? '—' : formatMultiplier(option.mult)}</span></button> })}</div>}
-          {riding && <><button onClick={cashOut} className={`${GAME_DOCK_PRIMARY_BTN} flex-1`}>Cash out {formatChips(cashout)}</button><button onClick={goOn} className="m-still h-12 flex-1 rounded-full border border-gold text-sm font-semibold text-gold">Go on</button></>}
-        </div>
       </div>
     </GameFieldWithHistory>
     <div className={GAME_CONTROL_DOCK_M}><div className={GAME_DOCK_INNER}>
       <GameDockChipRow visible={betting || playing || riding} bankroll={bankroll} currentBet={bet} onAddChip={v => setBet(p => Math.min(p + v, bankroll))} quoteIdx={quoteIdx} showQuote={playing || riding} minBet={minBet}/>
-      <div className={GAME_DOCK_SETTLED_SLOT}>{betting && <GameDockBetRow currentBet={bet} onClear={() => setBet(0)}/ >}{riding && <p className="text-sm text-soft">Cash out now for <span className="num text-felt">{formatChips(cashout)}</span></p>}{settled && pending && <GameDockSettledRow betSummary={pending.betSummary} resultSummary={pending.resultSummary} profitLabel={pending.profitLabel} tone={pending.tone}/>}</div>
-      <div className={GAME_DOCK_ACTIONS}>{showGameOver ? <GameDockGameOverButton onClick={handleGameOver}/> : betting ? <button onClick={deal} disabled={!canDeal} className={GAME_DOCK_PRIMARY_BTN}>Deal →</button> : settled ? <GameDockSettledActions mode={mode} showGameOver={showGameOver} onGameOver={handleGameOver} onNext={nextRound}/> : <span className="invisible">Deal →</span>}</div>
+      <div className={GAME_DOCK_SETTLED_SLOT}>{betting && <GameDockBetRow currentBet={bet} onClear={() => setBet(0)}/ >}{playing && <p className="text-sm text-soft">{CALL_PROMPTS[round.step - 1]}</p>}{riding && <p className="text-sm text-soft">Cash out now for <span className="num text-felt">{formatChips(cashout)}</span></p>}{settled && pending && <GameDockSettledRow betSummary={pending.betSummary} resultSummary={pending.resultSummary} profitLabel={pending.profitLabel} tone={pending.tone}/>}</div>
+      <div className={GAME_DOCK_ACTIONS}>{showGameOver ? <GameDockGameOverButton onClick={handleGameOver}/> : betting ? <button onClick={deal} disabled={!canDeal} className={GAME_DOCK_PRIMARY_BTN}>Deal →</button> : settled ? <GameDockSettledActions mode={mode} showGameOver={showGameOver} onGameOver={handleGameOver} onNext={nextRound}/> : playing ? <div className="flex w-full max-w-2xl justify-center gap-2">{choices.map(option => { const callKey = `${round.step}-${option.pick}`; const suit = ['♠','♥','♦','♣'].includes(option.pick); return <button key={callKey} onClick={() => call(option.pick)} disabled={animating || option.mult == null} className={`${CALL_BTN} ${round.step === 1 ? option.pick === 'red' ? 'toc-red' : 'toc-black' : ''} ${round.step === 2 ? option.pick === 'higher' ? 'hilo-higher' : 'hilo-lower' : ''} ${suit && (option.pick === '♥' || option.pick === '♦') ? 'text-loss' : ''}`}>{CALL_LABELS[option.pick] ?? option.pick} <span className="num ml-1">{option.mult == null ? '—' : formatMultiplier(option.mult)}</span></button> })}</div> : riding ? <div className="flex w-full max-w-2xl justify-center gap-2"><button onClick={cashOut} className={`${GAME_DOCK_PRIMARY_BTN} min-w-0 flex-1 px-4`}>Cash out {formatChips(cashout)}</button><button onClick={goOn} className={GO_ON_BTN}>Go on</button></div> : <span className="invisible">Deal →</span>}</div>
     </div></div>
   </div>
 }
