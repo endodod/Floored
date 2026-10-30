@@ -540,11 +540,32 @@ export function useOpeningTicketChip(minBet?: number): DockChip | null {
  * then each tap on the table places one chip of it. The picked chip sits raised
  * with a gold ring. `children` go after the chips (Undo and the like).
  */
+/** A stake picked by share of the bankroll instead of by chip: ¼, ½ or everything left. */
+export type StakeFraction = 'quarter' | 'half' | 'all'
+
+const STAKE_FRACTIONS: { value: StakeFraction; label: string }[] = [
+  { value: 'quarter', label: '¼' },
+  { value: 'half', label: '½' },
+  { value: 'all', label: 'All in' },
+]
+
+/**
+ * What one tap places with a fraction picked: that share of `bankroll` (at least `minBet`),
+ * never more than is left to bet. "All in" is everything left.
+ */
+export function stakeForFraction(fraction: StakeFraction, bankroll: number, remaining: number, minBet = 1): number {
+  if (fraction === 'all') return Math.max(remaining, 0)
+  const share = Math.floor(bankroll * (fraction === 'quarter' ? 0.25 : 0.5))
+  return Math.max(Math.min(Math.max(share, minBet), remaining), 0)
+}
+
 export function GameDockChipPicker({
   chips,
   selected,
   onSelect,
   remaining,
+  fraction,
+  onSelectFraction,
   children,
 }: {
   chips: DockChip[]
@@ -552,12 +573,16 @@ export function GameDockChipPicker({
   onSelect: (value: number) => void
   /** What is left to bet; chips worth more are disabled. */
   remaining: number
+  /** The picked share of the bankroll, if any; it overrides the picked chip. */
+  fraction?: StakeFraction | null
+  /** Shows the ¼ / ½ / All in pills after the chips. */
+  onSelectFraction?: (fraction: StakeFraction) => void
   children?: ReactNode
 }) {
   return (
     <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-center gap-1.5 sm:gap-2" role="radiogroup" aria-label="Chip value">
       {chips.map((chip) => {
-        const on = chip.value === selected
+        const on = !fraction && chip.value === selected
         return (
           <button
             key={chip.value}
@@ -576,6 +601,27 @@ export function GameDockChipPicker({
           </button>
         )
       })}
+      {onSelectFraction &&
+        STAKE_FRACTIONS.map((f) => {
+          const on = fraction === f.value
+          return (
+            <button
+              key={f.value}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => onSelectFraction(f.value)}
+              disabled={remaining <= 0}
+              className={`${FRAC_BTN} ${
+                f.value === 'all'
+                  ? 'border-gold text-gold hover:border-gold hover:bg-gold-tint hover:shadow-[0_0_18px_-6px_rgba(217,164,65,0.8)]'
+                  : ''
+              } ${on ? 'ring-2 ring-gold ring-offset-2 ring-offset-ground' : ''}`}
+            >
+              {f.label}
+            </button>
+          )
+        })}
       {children}
     </div>
   )

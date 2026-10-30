@@ -21,7 +21,9 @@ import {
   GAME_DOCK_RACK_BTN,
   dockChips,
   useOpeningTicketChip,
+  stakeForFraction,
   type DockChip,
+  type StakeFraction,
   GameDockGameOverButton,
   GameDockLeaveButton,
   GameDockSettledRow,
@@ -289,6 +291,8 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
   const chips = useMemo(() => (ticketChip ? [ticketChip] : dockChips(minBet)), [ticketChip, minBet])
   const [chipValue, setChipValue] = useState(0)
   const selectedChip = chips.some((c) => c.value === chipValue) ? chipValue : chips[0]!.value
+  // ¼ / ½ / All in: a share of the bankroll per tap instead of one chip. Not offered on the opening ticket.
+  const [fraction, setFraction] = useState<StakeFraction | null>(null)
   const [spinning, setSpinning] = useState(false)
   const [wheelRotation, setWheelRotation] = useState(0)
   const [ballRotation, setBallRotation] = useState(0)
@@ -338,9 +342,10 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
       return
     }
     const cap = ticketChip ? ticketChip.value : bankroll
-    if (currentBet + selectedChip > cap) return
-    setBets((prev) => ({ ...prev, [target]: (prev[target] ?? 0) + selectedChip }))
-    setPlaced((prev) => [...prev, { target, amount: selectedChip }])
+    const stake = fraction && !ticketChip ? stakeForFraction(fraction, bankroll, cap - currentBet, minBet) : selectedChip
+    if (stake <= 0 || currentBet + stake > cap) return
+    setBets((prev) => ({ ...prev, [target]: (prev[target] ?? 0) + stake }))
+    setPlaced((prev) => [...prev, { target, amount: stake }])
   }
 
   function undoChip() {
@@ -633,8 +638,13 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
             <GameDockChipPicker
               chips={chips}
               selected={selectedChip}
-              onSelect={setChipValue}
+              onSelect={(value) => {
+                setChipValue(value)
+                setFraction(null)
+              }}
               remaining={(ticketChip ? ticketChip.value : bankroll) - currentBet}
+              fraction={ticketChip ? null : fraction}
+              onSelectFraction={ticketChip ? undefined : setFraction}
             >
               <button type="button" onClick={undoChip} disabled={placed.length === 0} className={GAME_DOCK_RACK_BTN}>
                 Undo
