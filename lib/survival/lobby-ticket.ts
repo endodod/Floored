@@ -1,5 +1,6 @@
 import { createRng, seedFromString } from '@/utils/rng'
 import type { GameName } from '@/store/types'
+import { pickWeightedGame } from './floor-generator'
 
 export const LOBBY_REROLL_TICKET_ID = 'reroll_floor_game'
 
@@ -46,6 +47,8 @@ export function pickLobbyGameReroll(input: {
   floorGames: GameName[]
   pool: GameName[]
   offeredGames: GameName[]
+  previousFloors?: GameName[][]
+  ownedGames?: GameName[]
 }): GameName | null {
   const available = availableLobbyGamesForSlot(input.pool, input.offeredGames)
   if (available.length === 0) return null
@@ -54,7 +57,7 @@ export function pickLobbyGameReroll(input: {
       `${input.runSeed}:lobby-ticket:${input.floor}:${input.slotIndex}:${input.rollSeq}`,
     ),
   )
-  return available[Math.floor(rng() * available.length)]!
+  return pickWeightedGame(available, input.previousFloors ?? [], input.ownedGames ?? [], rng)
 }
 
 export function applyLobbyGameReroll(

@@ -212,6 +212,17 @@ export const GAMES: GameEntry[] = [
     gradient: 'from-yellow-950 to-yellow-900',
     accent: 'border-yellow-600 hover:border-yellow-500',
   },
+  {
+    // pos 19 — Deck Countdown
+    name: 'deck-countdown',
+    label: 'Deck Countdown',
+    sub: 'Flip until a rank repeats',
+    symbol: '♠',
+    availableFreeplay: true,
+    availableSurvival: true,
+    gradient: 'from-gray-950 to-gray-900',
+    accent: 'border-gray-600 hover:border-gray-500',
+  },
 ]
 
 export const GAME_BY_NAME = new Map(GAMES.map((g) => [g.name, g]))

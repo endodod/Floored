@@ -14,6 +14,16 @@ export interface GameTutorial {
 }
 
 export const GAME_TUTORIALS: Record<GameName, GameTutorial> = {
+  'deck-countdown': {
+    intro: 'Flip cards until a rank comes up twice. Every new rank raises the payout.',
+    steps: [
+      { title: 'Place your bet', body: 'Add chips and deal. The first card is free.' },
+      { title: 'Flip', body: 'Each new rank climbs the pay table: 1.03×, 1.17×, 1.43×, 1.91×, 2.80×, 4.61× and up.' },
+      { title: 'Watch the odds', body: 'The board shows how many cards left would bust you. It grows with every rank you clear.' },
+      { title: 'Cash out', body: 'Take the multiplier any time from the second card. A repeated rank loses the bet.' },
+    ],
+    notes: ['Suits do not matter: only ranks count.', 'Clear all 13 ranks and the round pays the top multiplier.'],
+  },
   blackjack: {
     intro: 'Get closer to 21 than the dealer without going over.',
     steps: [

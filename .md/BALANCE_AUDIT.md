@@ -13,7 +13,7 @@ Source: codebase only (`lib/survival/`, `games/`, `store/`, etc.). Generated fro
 | Games offered per floor (lobby) | **6** (`GAMES_PER_FLOOR` in `lib/survival/floor-generator.ts`) |
 | Bets per floor (hard cap) | **10** (`FLOOR_BET_LIMIT`) | `lib/survival/balance.ts` |
 | Games player may play per floor | Any of the **6 lobby games**, until **10 total bets** are placed across all games (no per-game bet cap in code) | `store/survival-store.ts` `recordResult` / `recordResultPayout` |
-| Full game pool size | **18** games (`SURVIVAL_GAME_POOL`) | `lib/survival/balance.ts` |
+| Full game pool size | **19** games (`SURVIVAL_GAME_POOL`) | `lib/survival/balance.ts` |
 
 ### Win condition (successful run)
 - Reach **floor 10**, meet quota on that floor, then choose **Claim Victory** in `FloorCompleteModal` → `endRun({ victory: true })`.
@@ -109,14 +109,14 @@ Run-scoped currency used to **buy shop upgrades** and **Lobby Reroll Tickets**. 
 | Lucky Charm | `run_payout_boost` | 12 | 12, 18, 24, 30, 36 | +5%, +10%, +15%, +20%, +25% on **all** win payouts (`RUN_PAYOUT_MULT_BY_LEVEL`) |
 | Opening Ticket | `first_bet_free` | 20 | 20, 30, 40, 50, 60 | First bet each floor free up to **10×, 12×, 16×, 22×, 30×** floor min bet (`OPENING_TICKET_CAP_BY_LEVEL`) |
 
-#### Game Boost (×18 games)
+#### Game Boost (×19 games)
 | Item pattern | Family | Base | L1–L5 costs | L1–L5 payout mult |
 |--------------|--------|------|-------------|-------------------|
 | e.g. Card Counter (Blackjack) | `{game}_boost` | 14 | 14, 21, 28, 35, 42 | 1.05, 1.12, 1.20, 1.30, 1.40 |
 
-Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` (18 unique names).
+Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` (19 unique names).
 
-#### Game Perks (×18 games) — base costs (L1); L2–L5 = `levelCost(base, L)`
+#### Game Perks (×19 games) — base costs (L1); L2–L5 = `levelCost(base, L)`
 | Game | Perk name | Base | Rarity |
 |------|-----------|------|--------|
 | blackjack | Hole Card Reader | 24 | epic |
@@ -137,6 +137,7 @@ Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` 
 | poker-1p | Hold Harmony | 20 | rare |
 | keno | Number Heat | 22 | epic |
 | coin-flip | Weighted Edge | 20 | rare |
+| deck-countdown | Burn Card | 22 | rare |
 
 #### Consumable (active shop slot)
 | Item | ID | Base cost | Effect |
@@ -502,6 +503,20 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 
 ---
 
+### deck-countdown
+- **ID:** `deck-countdown`
+- **Rules:** Flip from a shuffled 52-card deck; a repeated rank busts. Cash out after any safe flip from the second card.
+- **Bet range:** min–max.
+- **Win:** Cash out at **1.03×–9178.56×** according to distinct ranks cleared.
+- **Loss:** **0** on a repeated rank.
+- **Optimal EV:** **0.97×** at any fixed stopping point before rounding.
+- **Worst case:** −1× bet.
+- **Game Boost:** Card Memory; standard payout boost.
+- **Game Perk — Burn Card:** First repeated rank is discarded once when proc is active; same flip continues.
+- **TODO:** Browser check and verify the perk in Survival.
+
+---
+
 ## 5. SHOP — ALL ITEMS
 
 **Categories used in code:** `scope: 'run' | 'game' | 'consumable'` → mapped to Overall / Game Boost / Game Perk / Consumable. **Max level:** **5** (`MAX_UPGRADE_LEVEL`). **Permanent:** All upgrades are **run-permanent** (replace lower level in family). **Consumable:** tickets stack and are consumed.
@@ -530,10 +545,10 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 
 The free stake is never deducted, so the bet pays **profit only** (`applyResolveModifiers`): a win pays payout − stake, and a push or a loss that returns part of the stake (Crash Cushion, a Roulette partial, a sub-1× Plinko bucket) nets **0**.
 
-### Game Boosts (18 × 5 levels) — Game Boost — per game
+### Game Boosts (19 × 5 levels) — Game Boost — per game
 Each game: base **14**, costs **14/21/28/35/42**, effects **+5% / +12% / +20% / +30% / +40%** (same as `GAME_PAYOUT_MULT_BY_LEVEL`). Names in `GAME_BOOST_LABELS` (e.g. blackjack → Card Counter, crash → Early Cashout, …).
 
-### Game Perks (18 × 5 levels) — Game Perk — per game
+### Game Perks (19 × 5 levels) — Game Perk — per game
 Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level−1)** capped **75%** unless noted.
 
 | Game | Perk | Mechanical effect (all levels unless scaled) |
@@ -556,6 +571,7 @@ Costs = `levelCost(base, L)` from §2 table. Proc perks: **~30% + 11.25%×(level
 | poker-1p | Hold Harmony | Draw bias to held ranks (proc) |
 | keno | Number Heat | 2 hitting numbers highlighted |
 | coin-flip | Weighted Edge | Win chance 54–65% by level |
+| deck-countdown | Burn Card | Burn first repeated rank once (proc) |
 
 ### Consumable
 | Item | Category | Cost (normal) | Effect | Max |
@@ -613,30 +629,26 @@ Every type is exclusive (`EXCLUSIVE_TYPES`): at most **one variant per type** pe
 
 ## 7. FLOOR GENERATOR & GAME SELECTION
 
-### Selection algorithm (floors 1–10)
-1. `generateRunSchedule(runSeed, SURVIVAL_GAME_POOL)` — pool size **18**, **6** games/floor → **3 floors per shuffle**.
-2. Fisher–Yates shuffle with RNG `seedFromString(runSeed + ':schedule')`.
-3. Take consecutive slices of 6 from each shuffle until **10** floors filled.
-4. **Property (comment in code):** each game appears **3–4 times** across 10 floors; never 0, never >5.
+Each floor draws **6 unique games** from the **19-game** pool, without replacement, using
+`createRng(seedFromString(`${runSeed}:floor:${floor}`))`. The draw is deterministic for a
+given run seed, prior final floor lineups (including lobby rerolls), and owned upgrades.
 
-### Endless (floor > 10)
-- `fisherYates` on full pool with seed `${runSeed}:endless:${floor}`, take first **6**.
+At each draw, weights multiply together: unseen earlier in this run **×3**; the player owns
+that game's boost or perk **×2**; it appeared on the previous floor **×0.5**; already shown
+on **5** floors in the last ten **×0**. If all weights are zero, selection falls back to a
+uniform draw. Endless floors use the same process, with appearance counts limited to the last
+ten floors. Lobby rerolls use the same weights among available candidates.
 
-### Invested-game guarantee
-**Not implemented.** No reference to owned upgrades in `floor-generator.ts`.
-
-### `lastFloorGames`
-**Not implemented** (no matches in repository).
-
-### Priority scoring / tie-breaking
-**N/A** — deterministic schedule + seeded shuffle; no priority scoring.
+The former guaranteed schedule was removed. The replacement prioritizes fresh games and
+owned upgrades while preserving reproducibility; each floor stores its final lineup in
+`floorHistory` for later selection.
 
 ### Pool membership
-All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in generator (uniform shuffle).
+All **19** games in `SURVIVAL_GAME_POOL` have survival routes. Selection is weighted by
+run history and owned game upgrades.
 
 ### Lobby vs generator
-- `lobby.tsx`: all games `availableSurvival: true` (18 playable).
-- `balance.ts` comment: lobby flags decoupled from generator (“Step 13 will flip lobby flags”).
+All 19 games are currently marked `availableSurvival: true` in the catalog.
 
 ### Locked / disabled
 - **Hard / nightmare** difficulty has no UI (runs start on Normal).
@@ -724,8 +736,12 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | REROLL_TICKETS_PER_FLOOR | Constant | 2 | tickets | On floor advance |
 | MAX_FLOORS | Constant | 10 | floors | Standard run |
 | FLOOR_BET_LIMIT | Constant | 10 | bets/floor | Floor ends here |
+| FLOOR_UNSEEN_WEIGHT | Constant | 3 | weight | New games not seen earlier this run |
+| FLOOR_OWNED_WEIGHT | Constant | 2 | weight | Game has an owned boost or perk |
+| FLOOR_REPEAT_WEIGHT | Constant | 0.5 | weight | Appeared on the previous floor |
+| FLOOR_MAX_APPEARANCES | Constant | 5 | floors | Last-ten-floor hard cap |
 | GAMES_PER_FLOOR | Constant | 6 | games | Lobby offerings |
-| SURVIVAL_GAME_POOL | Constant | 18 | games | Generator pool |
+| SURVIVAL_GAME_POOL | Constant | 19 | games | Generator pool |
 | GRANT_ALL_UPGRADES | Constant | false | flag | Dev only |
 | Quota formula | Formula | 2000×500^((f−1)/9) | chips | × difficulty quota mult |
 | Quota floor 1 normal | Quota | 2000 | chips | |
@@ -803,6 +819,8 @@ All **18** games in `SURVIVAL_GAME_POOL` with survival routes; **no weights** in
 | Keno board/draw | Game | 25/5 | numbers | |
 | Keno hit mult 5 | Game | 100 | × | |
 | Coin flip streak | Game | 2^streak | × | |
+| Deck Countdown max multiplier | Game | 9178.56 | × | 13 distinct ranks |
+| Deck Countdown Burn Card | Perk | 30–75 | % proc | Burns first repeat once |
 | Shop slots | Constant | 4 | slots | 2 game, 1 run, 1 active |
 | Shop game offers | Constant | 2 | slots | |
 | Freeplay bankroll | Constant | 10000 | chips | |

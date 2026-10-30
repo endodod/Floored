@@ -22,6 +22,16 @@ export function hasGamePerk(purchasedUpgrades: PurchasedUpgrade[], game: GameNam
   return getPerkLevel(purchasedUpgrades, game, effectKey) > 0
 }
 
+/** Games with any owned game-scoped upgrade, for Survival's floor weighting. */
+export function ownedUpgradeGames(purchasedUpgrades: PurchasedUpgrade[]): GameName[] {
+  const games = new Set<GameName>()
+  for (const upgrade of purchasedUpgrades) {
+    const item = getCatalogItem(normalizeUpgradeId(upgrade.id))
+    if (item?.scope === 'game' && item.game) games.add(item.game)
+  }
+  return [...games]
+}
+
 export function getPerkLevel(
   purchasedUpgrades: PurchasedUpgrade[],
   game: GameName,

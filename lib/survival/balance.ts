@@ -20,12 +20,14 @@ export const OVER_QUOTA_SPARK_MAX = 10
 
 export const MAX_FLOORS = 10
 export const FLOOR_BET_LIMIT = 10
+export const FLOOR_UNSEEN_WEIGHT = 3
+export const FLOOR_OWNED_WEIGHT = 2
+export const FLOOR_REPEAT_WEIGHT = 0.5
+export const FLOOR_MAX_APPEARANCES = 5
 
 /**
- * Games with an existing app/survival/<game>/page.tsx route.
- * Deliberately NOT gated by availableSurvival flag in lobby.tsx — that flag
- * controls what the lobby shows, not what the generator can pick from.
- * Step 13 will flip the lobby flags; this pool is already complete.
+ * Games with a registered survival route. Kept in sync with GAMES and the
+ * game registry; availableSurvival controls lobby display only.
  */
 export const SURVIVAL_GAME_POOL: GameName[] = [
   'blackjack',
@@ -46,6 +48,7 @@ export const SURVIVAL_GAME_POOL: GameName[] = [
   'hilo',
   'keno',
   'coin-flip',
+  'deck-countdown',
 ]
 
 export const DIFFICULTY_QUOTA_MULT: Record<Difficulty, number> = {

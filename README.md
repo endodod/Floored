@@ -23,7 +23,7 @@ The challenge is generated deterministically from the UTC date (`lib/daily/chall
 
 ## Ladder
 
-Climb 18 rungs with an all-in pot — one game per rung, and every game only once per run.
+Climb 18 rungs with an all-in pot — one game per rung, never the same game twice.
 
 - Start with a **$100 pot**; each rung you pick a game and stake the whole pot
 - **Any profit** (round multiplier above 1×) clears the rung and the pot becomes the payout —
@@ -64,7 +64,7 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 
 ### Games
 
-18 games, available in Freeplay, Survival and the Ladder, and drawn from for the Daily:
+19 games, available in Freeplay, Survival and the Ladder, and drawn from for the Daily:
 
 - Blackjack
 - Case Battles
@@ -72,6 +72,7 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 - Chicken Road
 - Coin Flip
 - Crash
+- Deck Countdown
 - Dragon Tower
 - HiLo
 - Keno
@@ -87,7 +88,7 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 
 ## Survival
 
-Survival is a roguelike run mode layered on top of the same 18 games. Each run consists of 10 floors; every floor has a bankroll quota you must reach within 10 bets (`FLOOR_BET_LIMIT`) or the run ends. Clear floor 10 to win, or carry on into endless floors.
+Survival is a roguelike run mode layered on top of the same 19 games. Each run consists of 10 floors; every floor has a bankroll quota you must reach within 10 bets (`FLOOR_BET_LIMIT`) or the run ends. Clear floor 10 to win, or carry on into endless floors.
 
 **Difficulty**
 

@@ -48,6 +48,7 @@ import {
 } from '@/lib/survival/missions'
 import { canPurchaseUpgrade, normalizeUpgradeId } from '@/lib/survival/upgrades-catalog'
 import { canRerollMission, canRerollMissions } from '@/lib/survival/mission-reroll'
+import { ownedUpgradeGames } from '@/lib/survival/survival-perks'
 import {
   EMPTY_SHOP_OFFERED_IDS,
   EMPTY_SHOP_SLOT_ITEM_IDS,
@@ -224,6 +225,8 @@ export const useSurvivalStore = create<SurvivalStore>()(
           floor: 1,
           difficulty,
           survivalGamePool: SURVIVAL_GAME_POOL,
+          previousFloors: [],
+          ownedGames: [],
         })
         set({
           version: 5,
@@ -348,6 +351,8 @@ export const useSurvivalStore = create<SurvivalStore>()(
                   floor: nextFloor,
                   difficulty: s.difficulty,
                   survivalGamePool: SURVIVAL_GAME_POOL,
+                  previousFloors: [...s.floorHistory.filter((record) => record.floor !== s.currentFloor).map((record) => record.floorGames), s.floorGames],
+                  ownedGames: ownedUpgradeGames(s.purchasedUpgrades),
                 })
               : { quotaTarget: s.quotaTarget, floorGames: s.floorGames, missions: s.missions }
 
@@ -419,6 +424,8 @@ export const useSurvivalStore = create<SurvivalStore>()(
                   floor: nextFloor,
                   difficulty: s.difficulty,
                   survivalGamePool: SURVIVAL_GAME_POOL,
+                  previousFloors: [...s.floorHistory.filter((record) => record.floor !== s.currentFloor).map((record) => record.floorGames), s.floorGames],
+                  ownedGames: ownedUpgradeGames(s.purchasedUpgrades),
                 })
               : { quotaTarget: s.quotaTarget, floorGames: s.floorGames, missions: s.missions }
 
@@ -583,6 +590,8 @@ export const useSurvivalStore = create<SurvivalStore>()(
           floorGames: s.floorGames,
           pool: SURVIVAL_GAME_POOL,
           offeredGames: s.lobbyGamesOffered,
+          previousFloors: s.floorHistory.filter((record) => record.floor < s.currentFloor).map((record) => record.floorGames),
+          ownedGames: ownedUpgradeGames(s.purchasedUpgrades),
         })
         if (!replacement) return false
 

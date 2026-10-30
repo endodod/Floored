@@ -19,6 +19,7 @@ import { Poker1pGame } from '@/components/games/poker-1p/game'
 import { HiLoGame } from '@/components/games/hilo/game'
 import { KenoGame } from '@/components/games/keno/game'
 import { CoinFlipGame } from '@/components/games/coin-flip/game'
+import { DeckCountdownGame } from '@/components/games/deck-countdown/game'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyGameComponent = ComponentType<{
@@ -47,6 +48,7 @@ export const GAME_REGISTRY: Record<GameName, AnyGameComponent> = {
   'hilo':         HiLoGame,
   'keno':         KenoGame,
   'coin-flip':    CoinFlipGame,
+  'deck-countdown': DeckCountdownGame,
 }
 
 export const GAME_NAMES = Object.keys(GAME_REGISTRY) as GameName[]

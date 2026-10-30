@@ -22,7 +22,7 @@ Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zu
 | `components/` | Shared UI: navbar, lobby, game tiles, game chrome, mode intros, tutorials. |
 | `components/ui/` | Primitives: shadcn-style `button`, `dialog`, … and `terminal.tsx` (page title, section title, figure strip, unit tracks, suits). |
 | `lib/game-catalog.ts` | `GAMES[]` — label, subtitle and mode availability for every game. |
-| `lib/game-registry.tsx` | `GAME_REGISTRY` — the only file that imports all 18 game components. |
+| `lib/game-registry.tsx` | `GAME_REGISTRY` — the only file that imports all game components. |
 | `lib/daily/`, `lib/ladder/`, `lib/survival/` | Mode rules. `lib/ladder/rules.ts` also holds `GAME_MAX_MULT` (the "up to …×" captions). |
 | `lib/tables/`, `lib/bots/`, `components/tables/` | Tables mode: table games against bots, kept apart from `GameName` / `GAMES` / `GAME_REGISTRY` (own catalog, registry, store `store/tables-store.ts`). See [BOT_TABLES_HANDOFF.md](BOT_TABLES_HANDOFF.md). |
 | `lib/features.ts` | `SURVIVAL_ENABLED`, `LADDER_ENABLED` — turning one off hides its entry points and 404s its routes. |
@@ -70,7 +70,7 @@ game has one — Chicken Race's chicken, Keno's numbers or quick pick) on Next.
 
 ## Game UI conventions
 
-Every game is built from the same shell, so the 18 tables look and behave alike.
+Every game is built from the same shell, so the game tables look and behave alike.
 `components/games/mines/game.tsx` is a good reference.
 
 **Shell** (`components/game-layout.ts`): `GAME_CARD_SHELL` › `GAME_STATUS_BAR`

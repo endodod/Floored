@@ -1,59 +1,62 @@
 import { createRng, seedFromString } from '@/utils/rng'
 import { getFloorMinBet } from '@/utils/math'
-import { calcQuotaTarget, sparkFloorMult, MAX_FLOORS } from './balance'
+import { calcQuotaTarget, sparkFloorMult, FLOOR_MAX_APPEARANCES, FLOOR_OWNED_WEIGHT, FLOOR_REPEAT_WEIGHT, FLOOR_UNSEEN_WEIGHT } from './balance'
 import { generateMissionsForFloor } from './missions'
 import type { GenerateFloorInput, GeneratedFloor } from './types'
 import type { GameName } from '@/store/types'
 
 const GAMES_PER_FLOOR = 6
 
-function fisherYates(arr: GameName[], rng: () => number): GameName[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    const tmp = a[i] as GameName
-    a[i] = a[j] as GameName
-    a[j] = tmp
+export function pickWeightedGame(
+  candidates: GameName[],
+  previousFloors: GameName[][],
+  ownedGames: GameName[],
+  rng: () => number,
+): GameName | null {
+  if (!candidates.length) return null
+  const history = previousFloors.slice(-10)
+  const seen = new Set(history.flat())
+  const previous = new Set(history[history.length - 1] ?? [])
+  const counts = new Map<GameName, number>()
+  for (const game of history.flat()) counts.set(game, (counts.get(game) ?? 0) + 1)
+  const owned = new Set(ownedGames)
+  const weights = candidates.map((game) => {
+    if ((counts.get(game) ?? 0) >= FLOOR_MAX_APPEARANCES) return 0
+    return (seen.has(game) ? 1 : FLOOR_UNSEEN_WEIGHT)
+      * (owned.has(game) ? FLOOR_OWNED_WEIGHT : 1)
+      * (previous.has(game) ? FLOOR_REPEAT_WEIGHT : 1)
+  })
+  let total = weights.reduce((sum, weight) => sum + weight, 0)
+  if (total <= 0) {
+    weights.fill(1)
+    total = weights.length
   }
-  return a
+  let roll = rng() * total
+  const index = weights.findIndex((weight) => (roll -= weight) < 0)
+  return candidates[index < 0 ? candidates.length - 1 : index]!
+}
+
+function weightedFloorGames(input: GenerateFloorInput): GameName[] {
+  const { runSeed, floor, survivalGamePool } = input
+  const remaining = [...survivalGamePool]
+  const result: GameName[] = []
+  const rng = createRng(seedFromString(`${runSeed}:floor:${floor}`))
+  while (result.length < GAMES_PER_FLOOR && remaining.length) {
+    const chosen = pickWeightedGame(remaining, input.previousFloors ?? [], input.ownedGames ?? [], rng)
+    if (!chosen) break
+    result.push(chosen)
+    remaining.splice(remaining.indexOf(chosen), 1)
+  }
+  return result
 }
 
 /**
- * Generates game assignments for all MAX_FLOORS floors from the run seed.
- * Strategy: shuffle the pool in batches — each shuffle covers floor(pool/6)
- * floors, so every game appears in exactly one slot per shuffle.
- * Result: each game appears 3–4 times across 10 floors (never 0, never > 5).
- */
-function generateRunSchedule(runSeed: string, pool: GameName[]): GameName[][] {
-  const rng = createRng(seedFromString(`${runSeed}:schedule`))
-  const floorsPerShuffle = Math.floor(pool.length / GAMES_PER_FLOOR)
-  const schedule: GameName[][] = []
-
-  while (schedule.length < MAX_FLOORS) {
-    const shuffled = fisherYates(pool, rng)
-    for (let f = 0; f < floorsPerShuffle && schedule.length < MAX_FLOORS; f++) {
-      schedule.push(shuffled.slice(f * GAMES_PER_FLOOR, (f + 1) * GAMES_PER_FLOOR) as GameName[])
-    }
-  }
-
-  return schedule
-}
-
-/**
- * Pure, seeded floor generator. Given the same runSeed + floor number, always
- * produces the same result. No React or Zustand imports.
+ * Pure, seeded floor generator. Given the same runSeed, floor, history and upgrades,
+ * always produces the same result. No React or Zustand imports.
  */
 export function generateFloor(input: GenerateFloorInput): GeneratedFloor {
-  const { runSeed, floor, difficulty, survivalGamePool } = input
-
-  let floorGames: GameName[]
-  if (floor <= MAX_FLOORS) {
-    const schedule = generateRunSchedule(runSeed, survivalGamePool)
-    floorGames = schedule[floor - 1] ?? (schedule[0] as GameName[])
-  } else {
-    const rng = createRng(seedFromString(`${runSeed}:endless:${floor}`))
-    floorGames = fisherYates(survivalGamePool, rng).slice(0, GAMES_PER_FLOOR) as GameName[]
-  }
+  const { runSeed, floor, difficulty } = input
+  const floorGames = weightedFloorGames(input)
 
   return {
     quotaTarget: calcQuotaTarget(floor, difficulty),

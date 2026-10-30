@@ -6,6 +6,8 @@ export interface GenerateFloorInput {
   floor: number
   difficulty: Difficulty
   survivalGamePool: GameName[]
+  previousFloors?: GameName[][]
+  ownedGames?: GameName[]
 }
 
 /** Output of the floor generator. */

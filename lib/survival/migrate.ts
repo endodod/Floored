@@ -59,6 +59,8 @@ export function migratePersistedState(raw: unknown, fromVersion: number): unknow
           floor,
           difficulty,
           survivalGamePool: SURVIVAL_GAME_POOL,
+          previousFloors: [],
+          ownedGames: [],
         })
         quotaTarget = generated.quotaTarget
         floorGames = generated.floorGames

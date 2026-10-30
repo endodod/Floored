@@ -1,6 +1,6 @@
 import type { GameName } from '@/store/types'
 
-/** One rung per game — reaching the top uses every game exactly once. */
+/** 18 rungs, one game each; with more games than rungs, some are left over each climb. */
 export const LADDER_RUNGS = 18
 export const CHECKPOINT_EVERY = 3
 export const START_POT = 100
@@ -32,6 +32,7 @@ export const GAME_MAX_MULT: Record<GameName, number | null> = {
   'hilo':         Infinity,
   'keno':         100,
   'coin-flip':    Infinity,
+  'deck-countdown': 9178.56,
 }
 
 export function isCheckpoint(rung: number): boolean {

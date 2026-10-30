@@ -55,6 +55,8 @@ export function useSurvivalPerks(game: GameName) {
     kenoHeatLevel: perkLevel('perk_keno_heat'),
     coinBias: hasGamePerk(purchasedUpgrades, game, 'perk_coin_bias'),
     coinBiasLevel: perkLevel('perk_coin_bias'),
+    deckBurn: hasGamePerk(purchasedUpgrades, game, 'perk_deck_burn'),
+    deckBurnLevel: perkLevel('perk_deck_burn'),
   }
 }
 
