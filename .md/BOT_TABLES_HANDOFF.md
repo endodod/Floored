@@ -100,7 +100,7 @@ Showdown).
 
 Shared shape: the player sits at a table with bots, pays a **buy-in** from the
 Tables wallet into a prize pool, and plays until the table is decided. Buy-in
-  tiers (e.g. 100 / 500 / 2,000) choose only the stakes; bot skill is drawn
+  tiers (100 / 1,000 / 10,000) choose only the stakes; bot skill is drawn
   separately for each bot at each table.
 No rake.
 

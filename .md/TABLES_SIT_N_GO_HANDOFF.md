@@ -32,33 +32,40 @@ RNG). Nothing here touches `GameName`, Freeplay, Survival, Ladder or Daily.
 
 | | Tournaments (today) | Sit n Go (new) |
 |---|---|---|
-| Entry | Fixed buy-in per stake (100 / 500 / 2,000) into a prize pool | **Any amount** between the stake's min and max, taken from the wallet |
+| Entry | Fixed buy-in per stake (100 / 1,000 / 10,000) into a prize pool | **Any amount you like** from the wallet, no maximum (default: the whole wallet) |
 | Chips at the table | Tournament chips (1,500 / 1,000 / 5 dice) | **Your real wallet chips** |
-| Ends | When your place is decided | **When you leave** (or bust) |
+| Ends | When your place is decided | **When you leave, or when you are out of chips** (stack 0) |
 | Pay | Prizes by place | **Your stack goes back to the wallet** when you leave |
 | Leaving early | Forfeits the buy-in | **Allowed any time**; in a hand you fold first (see 1.2) |
 | Opponents | Fixed for the table | Bots **come and go**: a busted or departing bot is replaced |
 | Blinds / bets | Rise over time | **Fixed** for the stake |
 
-### 1.1 Stakes (owner question 2 confirms the numbers)
+### 1.1 Stakes (owner-decided: unlimited bankroll, play until out of chips)
 
-Wallet stays as today: 10,000 start, refill to 10,000 when it can't cover the
-smallest entry of **either** category.
+The stake sets only the table's limits. **There is no buy-in range:** you bring
+any amount from the Tables wallet (the dialog defaults to the whole wallet), as
+little as one chip, and you play until you leave or have no chips left. Bots'
+bankrolls are unlimited too (1.4).
 
-| Game | Stake | Table limits | Sit down with (min – max) |
-|---|---|---|---|
-| Hold'em | Low | blinds 5 / 10 | 400 – 1,000 (40–100 big blinds) |
-| Hold'em | Mid | blinds 25 / 50 | 2,000 – 5,000 |
-| Hold'em | High | blinds 100 / 200 | 8,000 – 20,000 |
-| Liar's Dice | Low | ante 50 a game | 200 – 1,000 (4–20 antes) |
-| Liar's Dice | Mid | ante 250 | 1,000 – 5,000 |
-| Liar's Dice | High | ante 1,000 | 4,000 – 20,000 |
-| Blackjack | Low | bets 10 – 200 | 200 – 2,000 |
-| Blackjack | Mid | bets 50 – 1,000 | 1,000 – 10,000 |
-| Blackjack | High | bets 200 – 4,000 | 4,000 – 40,000 |
+Wallet stays as today: 10,000 start, refilled to 10,000 when it is below the
+smallest tournament buy-in (100) and no table is open.
 
-The max is also capped by the wallet. A stake whose min is above the wallet is
-shown disabled with "Needs `min`".
+| Game | Stake | Table limits |
+|---|---|---|
+| Hold'em | Low | blinds 5 / 10 |
+| Hold'em | Mid | blinds 50 / 100 |
+| Hold'em | High | blinds 500 / 1,000 |
+| Liar's Dice | Low | ante 50 a game |
+| Liar's Dice | Mid | ante 500 |
+| Liar's Dice | High | ante 5,000 |
+| Blackjack | Low | bets 10 – 500 |
+| Blackjack | Mid | bets 100 – 5,000 |
+| Blackjack | High | bets 1,000 – no max (your stack) |
+
+The three levels follow the tournament buy-ins (100 / 1,000 / 10,000): each step
+is ×10. Blackjack's High table has no maximum bet; Low and Mid keep one so a
+small table stays a small table. Nothing is disabled by the wallet: a short stack
+just plays its chips all in (1.2).
 
 ### 1.2 Leaving, busting, topping up
 
@@ -74,10 +81,19 @@ shown disabled with "Needs `min`".
 - **Closing the tab** counts as leaving at that moment, with the same rules: the
   store always holds your current chips behind (section 3), so a reload returns
   exactly that to the wallet. No way to dodge a hand by closing the tab.
-- **Bust:** stack 0 (Hold'em) or below the ante / min bet (Liar's Dice /
-  Blackjack): a panel offers **Top up** (from the wallet) or **Leave**.
-- **Top up** between hands / games: add chips from the wallet up to the stake's
-  max. Not allowed during a hand.
+- **Out of chips:** the session ends only at **stack 0**. Until then a short
+  stack always plays (the all-in rules below). At 0 a panel offers **Top up**
+  (from the wallet) or **Leave**.
+- **Short stacks (all in for less):**
+  - Hold'em: standard all in for less, side pots (the engine already does this);
+    a stack smaller than the blind posts what it has.
+  - Liar's Dice: a stack smaller than the ante antes all it has. It can win at most
+    that much from each other player; the rest of each bigger ante goes back to its
+    owner at the end of the game (a side pot, one level deep).
+  - Blackjack: below the table minimum you may bet your whole stack; a double with
+    too few chips doubles for what you have.
+- **Top up** between hands / games: add any amount from the wallet, no maximum.
+  Not allowed during a hand.
 
 ### 1.3 Per game
 
@@ -91,8 +107,9 @@ simple). No rake.
 seated player antes the stake into the pot, then a normal game of Liar's Dice is
 played with the existing rules; the **last player with dice takes the whole
 pot**. Between games players may leave, top up, and bots come and go. Dice per
-player: 5 as today (owner question 5: 3 for faster games). A player who can't
-cover the ante sits out the next game (the human gets the Top up / Leave panel).
+player: 5 as today (owner question 5: 3 for faster games). A player short of the
+ante antes all it has (1.2); a player with 0 chips sits out (the human gets the
+Top up / Leave panel).
 
 **Blackjack (cash).** The Showdown table without the tournament: every seat
 plays its own hand against the house dealer from a shared shoe, every hand, for
@@ -107,10 +124,12 @@ table"), since "Showdown" names the tournament.
 ### 1.4 Bots at a Sit n Go table
 
 - Seated at start like today (`seatBots(count, rng)` from the table seed), each
-  with a random skill and a buy-in drawn uniformly in the stake's range
-  (rounded to the big blind / ante / min bet).
+  with a random skill and a stack of 40–200 big blinds (Hold'em), 5–25 antes
+  (Liar's Dice) or 20–100 minimum bets (Blackjack), drawn uniformly and rounded
+  to that unit. Bots' bankrolls are unlimited: these numbers only set what a bot
+  brings to this seat.
 - **Churn** (between hands / games only, all from the table RNG so a seed
-  replays): a bot with no chips (or below the ante / min bet) leaves; a bot up
+  replays): a bot with no chips leaves; a bot up
   more than 2× its buy-in leaves with probability 0.06 a hand (0.15 a game in
   Liar's Dice); any bot leaves with probability 0.01 a hand. An empty seat is
   filled after 1–3 hands (games) by a new bot from the roster not already at the
@@ -147,9 +166,8 @@ export interface CashTableOps<State> {
   inPlay: (state: State, seat: number) => boolean
   /** The fold / stand / forfeit a seat makes when it leaves in play. */
   leaveAction: (state: State, seat: number) => State
-  /** Seats that are empty, and the smallest stack that can play the next hand (BB, ante, min bet). */
+  /** Seats that are empty. Any seat with chips plays the next hand (short stacks go all in, 1.2). */
   emptySeats: (state: State) => number[]
-  minToPlay: (state: State) => number
 }
 ```
 
@@ -169,8 +187,8 @@ seeds before and after.
 | Engine | Cash config | Changes |
 |---|---|---|
 | `games/holdem` | `holdemCashConfig(seats, [sb, bb])`: `blinds: [[sb, bb]]`, `handsPerLevel: Infinity`, `startingStack: 0` (seats start empty), `format: 'cash'` | `isOver` is never true in cash. `out` (no chips) means "waiting for a top up or to leave", not "busted from the tournament"; no busts / standings in cash (`standings` returns `[]`, `placeOf` null). `startHand` skips empty seats and seats with 0 chips; a seat that joined since the last hand posts the big blind (flag `newcomer` cleared after it posts). `advance` needs ≥ 2 seats with chips; otherwise it waits (`needsAdvance` false) and the runner fills seats. `HoldemView` gets `format`. |
-| `games/liars-dice` | `liarsCashConfig(seats, ante)`, `format: 'cash'` | Wrap, don't rewrite: a cash state holds `stacks`, `pot`, `ante`, `game: LiarsState | null` and a `games` counter. `advance` between games takes the antes (seats that can cover it), starts a fresh `LiarsState` for those seats (`createLiars` + the existing first roll), and when that game is over pays the pot to the winner. `toAct` / `apply` / `viewFor` delegate to the inner game, mapping seat numbers. Put it in `games/liars-dice/cash.ts`. |
-| `games/blackjack-showdown` | `showdownCashConfig(seats, minBet, maxBet)`: `hands: Infinity`, fixed `minBet`, `format: 'cash'` | No rising min bet (`showdownMinBetForHand` returns the config min in cash), no secret final hand (`secretBets` false), never over, no standings. Shoe reshuffles at the existing cut-card rule. Seats below `minBet` don't get a betting turn. |
+| `games/liars-dice` | `liarsCashConfig(seats, ante)`, `format: 'cash'` | Wrap, don't rewrite: a cash state holds `stacks`, `pot`, `ante`, `game: LiarsState | null` and a `games` counter. `advance` between games takes the antes (a short stack antes all it has; keep the excess of each bigger ante aside and return it after the game, 1.2) from every seat with chips, starts a fresh `LiarsState` for those seats (`createLiars` + the existing first roll), and when that game is over pays the pot to the winner. `toAct` / `apply` / `viewFor` delegate to the inner game, mapping seat numbers. Put it in `games/liars-dice/cash.ts`. |
+| `games/blackjack-showdown` | `showdownCashConfig(seats, minBet, maxBet | null)`: `hands: Infinity`, fixed `minBet`, `format: 'cash'` | No rising min bet (`showdownMinBetForHand` returns the config min in cash), no secret final hand (`secretBets` false), never over, no standings. Shoe reshuffles at the existing cut-card rule. A seat below `minBet` may bet only its whole stack (legal bets: `[minBet, maxBet ?? stack]` or exactly `stack` when `stack < minBet`); a double with too few chips doubles for the rest of the stack. |
 
 Each engine exports a `…CashOps: CashTableOps<State>`.
 
@@ -191,14 +209,11 @@ export type CashStakeId = 'low' | 'mid' | 'high'
 export interface CashStake {
   id: CashStakeId
   label: string          // 'Low stakes' …
-  /** Hold'em [sb, bb]; Liar's Dice ante; Blackjack [min, max] bet. */
-  limits: { blinds?: [number, number]; ante?: number; bets?: [number, number] }
-  minSit: number
-  maxSit: number
+  /** Hold'em [sb, bb]; Liar's Dice ante; Blackjack [min, max | null] bet (null = no max). */
+  limits: { blinds?: [number, number]; ante?: number; bets?: [number, number | null] }
 }
 export const CASH_STAKES: Record<TableGameName, CashStake[]>   // the table in 1.1
-export const MIN_ENTRY = Math.min(MIN_BUY_IN, ...all minSit)    // refill threshold
-export function limitsLabel(game, stake): string               // '5 / 10', 'Ante 50', 'Bets 10–200'
+export function limitsLabel(game, stake): string               // '5 / 10', 'Ante 50', 'Bets 10–500', 'Bets from 1,000'
 ```
 
 Catalog: give `TableGameEntry` a `cash: { label: string; sub: string; format: string }`
@@ -225,14 +240,14 @@ hands?: number
 New actions (tournament actions unchanged):
 
 - `sitDownCash(game, stake, amount, seats)` — takes `amount` from the wallet
-  (must be within the stake's range and the wallet), opens the table with
+  (1 ≤ amount ≤ wallet; no other limit), opens the table with
   `stack = broughtIn = amount`.
 - `syncCashStack(stack, hands)` — called by the table on every state change that
   moves the human's chips behind. Writes `open.stack`.
-- `topUp(amount)` — wallet → `broughtIn` and `stack`; only up to the stake max.
+- `topUp(amount)` — wallet → `broughtIn` and `stack`; any amount up to the wallet.
 - `cashOut()` — `wallet += open.stack`, closes the table, writes a
   `CashSessionRecord` and the stats.
-- `refill` uses `MIN_ENTRY`.
+- `refill` unchanged (wallet below `MIN_BUY_IN`, no open table).
 - On the lobby's mount (today's forfeit logic): an open **cash** table is
   **cashed out** (`cashOut()`), never forfeited.
 
@@ -281,9 +296,10 @@ localStorage like the tier, key `floored-tables-format`). Under it:
 - Sit n Go: a stakes radiogroup Low / Mid / High (each card shows the game's
   limits once a game is focused, or "Blinds from 5 / 10" generic), the three game
   tiles (labels from `catalog.cash`), and on a tile's **Sit down**, a dialog
-  (`components/ui/dialog`) "Bring chips to the table": a stepper plus pills
-  **Min · Half · Max** (styled with the dock pill classes; Max = min(stake max,
-  wallet)), the limits line, and **Sit down**. Disabled stake → "Needs `min`".
+  (`components/ui/dialog`) "Bring chips to the table": an amount field with a
+  stepper, pills **¼ · ½ · All** of the wallet (styled with the dock pill
+  classes), preset to **All**, the limits line, and **Sit down**. Nothing is
+  disabled: any amount from 1 to the wallet plays.
 - Last-result banner for a cash session: "Left the Hold'em table up `+x`" /
   "down `−x`", with hands played.
 
@@ -303,8 +319,7 @@ cash.
 - A **session strip** on the felt edge or in the status bar: brought in, stack,
   net (`num`, felt / loss tone).
 - Dock: between hands, a **Top up** secondary button
-  (`GAME_DOCK_SECONDARY_BTN`) opening the same chips dialog (max = stake max −
-  stack, and the wallet).
+  (`GAME_DOCK_SECONDARY_BTN`) opening the same chips dialog (up to the wallet).
 - Seats: an empty seat shows a dashed `seat` outline with "Empty"; a bot sitting
   down uses `g-pop`, leaving `g-clear` (both already in the motion kit with
   reduced-motion rules).
@@ -339,8 +354,9 @@ rules page `/how-to-play/tables/[game]` shows both formats under two headings.
 - `pnpm check:tables`: add cash checks per engine — chip conservation across
   sit / stand / top up / churn (sum of stacks + pots = chips brought in total
   for Hold'em and Liar's Dice; Blackjack tracks house net separately), empty seats
-  never act, a newcomer posts the big blind once, an ante is taken only from seats
-  that can cover it.
+  never act, a newcomer posts the big blind once, a short ante wins at most its own
+  size from each player and the excess goes back, a stack of 0 never antes or bets,
+  a blackjack bet below the minimum is allowed only as the whole stack.
 - `pnpm sim:bots [game] [tables] --cash [--stake low|mid|high]`: bot-only cash
   sessions of N hands with churn on; report hands per hour equivalent, bot win
   rates by skill in big blinds per 100 hands (Hold'em), antes won per game
@@ -380,11 +396,13 @@ rules page `/how-to-play/tables/[game]` shows both formats under two headings.
    today's tables "Tournaments"? Or "Cash tables" for the new category and keep
    "Sit & Go" for today's? (Recommendation: **Tournaments** and **Cash tables**,
    the poker terms; the code uses `'tournament'` / `'cash'` either way.)
-2. **Stakes** in 1.1: OK as proposed (min entry 200, max 40,000)?
+2. **Stakes — decided:** unlimited bankroll (bring any amount, no max), play until
+   out of chips. Still to confirm: the table limits in 1.1 (×10 per level, matching
+   the 100 / 1,000 / 10,000 tournament buy-ins).
 3. **Separate wallets?** Proposal: one Tables wallet for both categories.
 4. **Hold'em newcomers:** post a big blind to join at once (proposal), or wait
    for the big blind to reach them?
 5. **Liar's Dice dice count** in cash: 5 (as today) or 3 for quicker games?
 6. **Rejoin:** leaving always ends the session (proposal). A "sit back down at the
    same table" option could come later.
-7. **Bot bankrolls:** unlimited (proposal), so a table never runs out of opponents.
+7. **Bot bankrolls — decided:** unlimited, so a table never runs out of opponents.

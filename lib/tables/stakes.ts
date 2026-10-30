@@ -13,8 +13,8 @@ export interface TierEntry {
 /** Buy-in tiers are independent of each bot's randomized skill. */
 export const TABLE_TIERS: TierEntry[] = [
   { id: 'rookie', label: 'Low stakes', symbol: '🪙', buyIn: 100 },
-  { id: 'regular', label: 'Mid stakes', symbol: '💰', buyIn: 500 },
-  { id: 'shark', label: 'High stakes', symbol: '💎', buyIn: 2_000 },
+  { id: 'regular', label: 'Mid stakes', symbol: '💰', buyIn: 1_000 },
+  { id: 'shark', label: 'High stakes', symbol: '💎', buyIn: 10_000 },
 ]
 
 export const TIER_BY_ID = new Map(TABLE_TIERS.map((t) => [t.id, t]))
