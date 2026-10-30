@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { TABLES_ENABLED } from '@/lib/features'
 import { TABLE_GAMES, TABLE_GAME_BY_NAME, isTableGame } from '@/lib/tables/catalog'
-import { TABLE_TIERS, payoutSplits } from '@/lib/tables/stakes'
+import { CASH_STAKES, TABLE_TIERS, limitsLabel, payoutSplits } from '@/lib/tables/stakes'
 import { TABLE_TUTORIALS } from '@/lib/tables/tutorials'
 import type { TableGameName } from '@/lib/tables/types'
 import { formatChips } from '@/utils/format'
@@ -40,7 +40,8 @@ export default async function TableHowToPlayPage({ params }: { params: Params })
         figures={[
           { label: 'Seats', value: entry.seats },
           { label: 'Buy-ins', value: TABLE_TIERS.map((t) => formatChips(t.buyIn)).join(' / ') },
-          { label: 'Paid places', value: payoutSplits(entry.seats).length },
+          { label: 'Paid places', value: payoutSplits(entry.seats, entry.name).length },
+          { label: 'Cash limits', value: CASH_STAKES[entry.name].map((s) => limitsLabel(entry.name, s)).join(' · ') },
         ]}
         action={
           <Button asChild size="lg" className="w-full sm:w-auto">
@@ -60,6 +61,23 @@ export default async function TableHowToPlayPage({ params }: { params: Params })
           {tutorial.notes.map((note, i) => (
             <li key={note} className="flex gap-3 border-t border-rule py-3 text-[13px] leading-5 text-soft">
               <Suit index={i + 1} className="w-4 shrink-0 pt-0.5 text-center text-[11px] opacity-70" />
+              {note}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rise flex flex-col gap-4 [--d:270ms]" aria-labelledby="cash-table">
+        <SectionTitle suit={2} note={entry.cash.label}>
+          <span id="cash-table">At a cash table</span>
+        </SectionTitle>
+        <p className="text-[13px] leading-5 text-dim">
+          Sit down with any amount from your wallet, play as long as you like, and leave with your stack. No prize pool.
+        </p>
+        <ul className="flex flex-col">
+          {tutorial.cash.map((note, i) => (
+            <li key={note} className="flex gap-3 border-t border-rule py-3 text-[13px] leading-5 text-soft">
+              <Suit index={i + 2} className="w-4 shrink-0 pt-0.5 text-center text-[11px] opacity-70" />
               {note}
             </li>
           ))}

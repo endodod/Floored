@@ -48,11 +48,12 @@ export function Rail({
 }
 
 /** "How it works": the tutorial's steps laid out in two columns so they fill the width. */
-export function HowItWorks({ steps, delay = 60 }: { steps: TutorialStep[]; delay?: number }) {
+export function HowItWorks({ steps, delay = 60, title = 'How it works' }: { steps: TutorialStep[]; delay?: number; title?: string }) {
+  const id = `how-it-works-${title.toLowerCase().replace(/[^a-z]+/g, '-')}`
   return (
-    <section className="rise flex flex-col gap-4" style={{ '--d': `${delay}ms` } as CSSProperties} aria-labelledby="how-it-works">
+    <section className="rise flex flex-col gap-4" style={{ '--d': `${delay}ms` } as CSSProperties} aria-labelledby={id}>
       <SectionTitle suit={0}>
-        <span id="how-it-works">How it works</span>
+        <span id={id}>{title}</span>
       </SectionTitle>
       <ol className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
         {steps.map((step, i) => (

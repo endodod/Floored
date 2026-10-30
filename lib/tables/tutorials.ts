@@ -3,7 +3,7 @@ import { HOLDEM_BLINDS, HOLDEM_HANDS_PER_LEVEL, HOLDEM_STARTING_STACK } from '@/
 import { LIARS_DICE_PER_SEAT } from '@/games/liars-dice/engine'
 import { SHOWDOWN_HANDS, SHOWDOWN_MAX_BET, SHOWDOWN_MIN_BET, SHOWDOWN_STARTING_STACK } from '@/games/blackjack-showdown/engine'
 import { formatChips } from '@/utils/format'
-import { MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, payoutSplits } from './stakes'
+import { CASH_STAKES, MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, limitsLabel, payoutSplits } from './stakes'
 import type { TableGameName } from './types'
 
 /**
@@ -14,7 +14,12 @@ export interface TableTutorial {
   intro: string
   steps: TutorialStep[]
   notes: string[]
+  /** How the game differs at a cash table (TABLES_CASH_HANDOFF.md 1.3). */
+  cash: string[]
 }
+
+/** The three cash limits of a game, low to high: "5 / 10 · 50 / 100 · 500 / 1000". */
+const cashLimits = (game: TableGameName) => CASH_STAKES[game].map((stake) => limitsLabel(game, stake)).join(' · ')
 
 const pct = (n: number) => `${Math.round(n * 100)}%`
 const split = (seats: number, game: TableGameName = 'holdem') => payoutSplits(seats, game).map(pct).join(' / ')
@@ -48,6 +53,26 @@ export const TABLES_STEPS: TutorialStep[] = [
     body: `Tables has its own play money, ${formatChips(TABLES_START_WALLET)} to start. Below ${formatChips(MIN_BUY_IN)} you can refill it.`,
   },
 ]
+/** Cash tables: the other way to play the same games (the lobby's second category). */
+export const TABLES_CASH_STEPS: TutorialStep[] = [
+  {
+    title: 'Bring your own chips',
+    body: 'Pick Cash tables in the lobby, a stake and a game, then sit down with any amount from your Tables wallet. There is no prize pool: the chips in front of you are real wallet chips.',
+  },
+  {
+    title: 'Play as long as you like',
+    body: 'Blinds, antes and bet limits stay fixed for the stake. Bots come and go between hands: one who busts or wins big may leave, and a new player sits down.',
+  },
+  {
+    title: 'Top up, or leave any time',
+    body: 'Between hands you can add chips from your wallet. Leave whenever you want and your stack goes back to the wallet; leaving mid-hand folds it first (Hold’em), gives up your dice (Liar’s Dice), or stands and goes when the hand settles (Blackjack).',
+  },
+  {
+    title: 'Out of chips ends the session',
+    body: 'A short stack plays all in until it has nothing left; then top up or leave. Closing the tab counts as leaving.',
+  },
+]
+
 export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
   holdem: {
     intro: "No-limit Texas Hold'em as a Sit & Go: everyone starts even, last one with chips wins.",
@@ -67,6 +92,11 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       `Prizes: ${split(6, 'holdem')} of the pool at six seats, ${split(4, 'holdem')} at four.`,
       'You have 30 seconds to act; when time runs out you check, or fold if there is a bet.',
     ],
+    cash: [
+      `Fixed blinds by stake: ${cashLimits('holdem')}. No blind levels, no rake.`,
+      'Sit down between hands and you post a big blind to play the next hand straight away.',
+      'Run out of chips and you sit out until you top up or leave.',
+    ],
   },
   'liars-dice': {
     intro: 'Bid on the dice hidden under every cup, or call the last bid a lie.',
@@ -84,6 +114,11 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       'Four seats; winner takes the full prize pool.',
       'You have 30 seconds to act; when time runs out you call “Liar!” (or open with one 2).',
     ],
+    cash: [
+      `Every game, everyone with chips antes (${cashLimits('liars-dice')} by stake). The last cup standing takes the pot.`,
+      'Short of the ante, you put in what you have and can win at most that much from each player; the rest of their antes goes back to them.',
+      'Five dice each, as in tournaments. Leave mid-game and your ante stays in the pot; the round is rolled again without you.',
+    ],
   },
   'blackjack-showdown': {
     intro: `Tournament blackjack: ${SHOWDOWN_HANDS} hands against one dealer, and the most chips wins.`,
@@ -100,6 +135,11 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       `Drop below ${SHOWDOWN_MIN_BET} chips and you are out.`,
       'Four seats; the winner takes the full prize pool. Equal stacks share the prize.',
       'You have 30 seconds to act; when time runs out you bet the minimum, or stand.',
+    ],
+    cash: [
+      `Plain Blackjack against the house at a shared table (${cashLimits('blackjack-showdown')} by stake). No hand limit, no rising minimum, no secret last bet.`,
+      'Below the minimum you can still bet your whole stack, and double for whatever you have left.',
+      'The house pays every win, so it keeps a small edge, as in solo Blackjack.',
     ],
   },
 }
