@@ -5,6 +5,11 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 
 ## Docs
 
+**Planned work, ready to build** (both designs are owner-approved; each file says where to
+start and how to check it): the four new house games in `.md/NEW_GAMES_HANDOFF.md` (start
+with Deck Countdown), and Cash tables in `.md/TABLES_CASH_HANDOFF.md` (start at Phase 2).
+The two are independent and can be built in either order.
+
 Read the one that matches the task before changing code:
 
 - [.md/MODE_ADJUSTMENTS_HANDOFF.md](.md/MODE_ADJUSTMENTS_HANDOFF.md): Survival perks and Ladder
@@ -15,8 +20,9 @@ Read the one that matches the task before changing code:
 - [.md/NEW_GAMES_HANDOFF.md](.md/NEW_GAMES_HANDOFF.md): four new house games to build (Sic Bo,
   Tower of Cards, Deck Countdown, Baccarat): rules, exact pay tables, boards, wiring, perks, and the new Survival floor
   selection that favours games not offered yet.
-- [.md/TABLES_SIT_N_GO_HANDOFF.md](.md/TABLES_SIT_N_GO_HANDOFF.md): a Sit n Go (bring-your-own-bankroll)
-  category in Tables for Hold'em, Liar's Dice and Blackjack: rules, stakes, engine/store/UI plan.
+- [.md/TABLES_CASH_HANDOFF.md](.md/TABLES_CASH_HANDOFF.md): Cash tables, a second Tables category
+  (sit down with any amount of your wallet, play until you leave or run out): rules, stakes,
+  engine/store/UI plan in phases.
 
 - [README.md](README.md): what each mode is and how it plays; the game list.
 - [.md/ARCHITECTURE.md](.md/ARCHITECTURE.md): code layout, the game/engine contract, the

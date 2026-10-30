@@ -1,6 +1,6 @@
 # New games — handoff
 
-Status as of 2026-10-30: **planned, nothing built.** Four new house games for Freeplay,
+Status as of 2026-10-30: **designed and owner-approved, nothing built.** Four new house games for Freeplay,
 Daily, Ladder and Survival (not Tables):
 
 | ID | Label | Kind | Closest existing game to copy from |
@@ -16,7 +16,7 @@ read both first (the redesign doc's **Lessons from Phase 0**, **Short screens** 
 **Motion** sections apply to every board below).
 
 All numbers in this file were checked by exact enumeration or dynamic programming
-(scripts in the **Checking the numbers** section). If you change a number, re-run the
+(Python sketches in `scripts/new-games/`, see section 9). If you change a number, re-run the
 check and update this file, the engine, `lib/game-tutorials.ts` and `BALANCE_AUDIT.md`
 together.
 
@@ -24,18 +24,17 @@ together.
 
 ## 0. Before you start
 
-1. **Base branch.** Work from `main`. The ¼ / ½ / All in pills for the chip rack
-   (`GameDockChipPicker`'s `fraction` / `onSelectFraction` props and `stakeForFraction()`)
-   are on `claude/jolly-pasteur-jlp14r` (commit `8ad6fd5`). Sic Bo and Baccarat use
-   them. If that branch is not merged when you start, cherry-pick `8ad6fd5` first.
+1. **Base branch.** Work on top of `claude/new-games-handoff` (this branch), or `main`
+   once it is merged. It already contains the ¼ / ½ / All in pills for the chip rack
+   (`GameDockChipPicker`'s `fraction` / `onSelectFraction` props and
+   `stakeForFraction()`), which Sic Bo and Baccarat use.
 2. **One game per session, one commit per game.** Order: **Deck Countdown → Tower of
    Cards → Baccarat → Sic Bo** (cheapest first; the two chip-on-mat games come last
    because Baccarat extracts the shared chip layer that Sic Bo then reuses).
 3. **The shared wiring (section 1) is the same for all four.** Do it per game as part
    of that game's commit, not all at once. A `GameName` without an entry in every
    `Record<GameName, …>` fails `tsc`, so add the name and its entries together.
-4. **Owner questions (section 7) block nothing**, but Ladder rung count and the Deck
-   Countdown top prize need an answer before the last of the four is merged.
+4. **Every owner question is answered** (section 7). Nothing is waiting on the owner.
 5. **Survival floor selection (section 6.1)** changes with the first game's commit,
    because that commit grows the pool past 18.
 
@@ -50,7 +49,7 @@ Do every line for each game. File paths are from the repo root.
 | 1 | `games/<id>/types.ts`, `games/<id>/engine.ts` | Pure engine (section 2–5 of this file). No React, no `Math.random` outside the engine. |
 | 2 | `store/types.ts` | `'<id>'` in `GameName`. |
 | 3 | `lib/game-catalog.ts` | A `GAMES[]` entry at the end (pos 19–22). Fields in the table below. |
-| 4 | `lib/ladder/rules.ts` | `GAME_MAX_MULT['<id>']` (values below). Also see owner question 1 about `LADDER_RUNGS`. |
+| 4 | `lib/ladder/rules.ts` | `GAME_MAX_MULT['<id>']` (values below). `LADDER_RUNGS` stays 18 (section 7, decision 1): in the first game's commit, change its comment to "18 rungs, one game each; with more games than rungs, some are left over each climb". |
 | 5 | `components/games/<id>/game.tsx` | The component, exported as `<Pascal>Game`, same props as every game: `{ mode, bankroll, onBet?, onResolve }`. |
 | 6 | `lib/game-registry.tsx` | Import it and add it to `GAME_REGISTRY`. |
 | 7 | `lib/game-tutorials.ts` | `GAME_TUTORIALS['<id>']` (text below; keep the figures equal to the engine). |
@@ -75,7 +74,7 @@ rendered anywhere today but are required fields, so use unused palette names):
 All four: `availableFreeplay: true`, `availableSurvival: true`.
 
 `GAME_MAX_MULT`: `sic-bo: 70`, `tower-of-cards: 756.92` (re-check with the script),
-`deck-countdown: 9178.56` (or the cap from owner question 3), `baccarat: 12`.
+`deck-countdown: 9178.56` (no cap, section 7 decision 3), `baccarat: 12`.
 
 Mission variance lists: `sic-bo` → LOW (Small/Big are near coin flips), `baccarat` → LOW,
 `tower-of-cards` → HIGH, `deck-countdown` → HIGH.
@@ -166,7 +165,7 @@ matches these values:
 | 10 | 43 | 27 | 62.8% | 51.16× |
 | 11 | 42 | 30 | 71.4% | 179.09× |
 | 12 | 41 | 33 | 80.5% | 917.85× |
-| 13 | 40 | 36 | 90.0% | 9178.56× (see owner question 3) |
+| 13 | 40 | 36 | 90.0% | 9178.56× (top prize, no cap) |
 
 RTP: **97%** for any stopping point (less the rounding). Payout =
 `Math.round(bet × multiplier)` (as HiLo). Worst case −1× bet.
@@ -209,7 +208,7 @@ the last flipped card above it.
   `.plaque` count "40 left"), on the right the last flipped card (`PlayingCard`, new card
   `g-deal` then `g-flip`).
 - Middle: the 13 slots, each a small `.plaque` with the rank in `felt-print`. A seen
-  rank lights felt with its suit glyph (`Suit`) and `g-pop`. The bust card's slot turns
+  rank lights felt with the flipped card's suit glyph (`<Suit index={…} />` from `components/ui/terminal.tsx`, index order ♠ ♥ ♦ ♣) and `g-pop`. The bust card's slot turns
   `loss` and the board `g-shake`s.
 - Under the slots: two figures on `.plaque` panels: **Next flip busts** `xx%`
   (`bustChance`, `num`) and **Next flip pays** `xx×` (gold-print). They update live and
@@ -330,7 +329,7 @@ mount/unmount the slot):
   (`toc-black`, fill `#141318`), each with a gold hairline like `.hilo-higher`.
 - Step 2: reuse `.hilo-higher` / `.hilo-lower` with ↑ / ↓.
 - Step 3: neutral outlined pills **Inside** / **Outside**.
-- Step 4: four round pills with the suit glyph (`Suit` from `components/ui/terminal.tsx`;
+- Step 4: four round pills with the suit glyph (`<Suit index={0…3} />` from `components/ui/terminal.tsx`, order ♠ ♥ ♦ ♣;
   hearts and diamonds in the card red).
 - Every option shows its multiplier (`num`) after the label; a zero-chance option is
   `disabled` and shows "—".
@@ -647,23 +646,18 @@ Implementation:
 
 ---
 
-## 7. Open questions for the owner (ask once, early)
+## 7. Owner decisions (all answered, 2026-10-30)
 
-1. **Ladder length.** `LADDER_RUNGS = 18` with the comment "one rung per game; reaching
-   the top uses every game exactly once". With 22 games, either keep 18 rungs (four games
-   left over each climb, more choice; update the comment) or set it to 22 (`GAMES.length`).
-   Recommendation: **keep 18**, update the comment and the picker note.
-2. **Survival schedule — decided.** The owner accepted that runs in progress get
-   different later floors, and asked for a higher chance for games not yet offered
-   this run. Build section 6.1 below (in the first game's commit, since the pool grows
-   then).
-3. **Deck Countdown top prize.** Clearing all 13 ranks pays 9178.56× (about 1 in 9,500
-   rounds for someone who never stops). Keep, or cap at 1,000× (then flip 13 is a bad bet
-   and few will take it)? Recommendation: **keep** the exact table, it is play money and
-   the rarity is the fun.
-4. **Daily.** Adding games to `GAMES` changes the daily shuffle (`lib/daily/challenge.ts`)
-   for every date, including today's challenge mid-day. Ship at a UTC midnight, or
-   accept a one-off change. Recommendation: merge just after 00:00 UTC.
+1. **Ladder length: keep 18 rungs.** With 22 games, four are left over each climb.
+   Update the `LADDER_RUNGS` comment in `lib/ladder/rules.ts` (first game's commit) and
+   the README's Ladder line "every game once per run" → "one game per rung, never the
+   same game twice". The picker's "`n` of `GAMES.length` games left" already adapts.
+2. **Survival floors: weighted draw (section 6.1).** Runs in progress may get different
+   later floors; accepted.
+3. **Deck Countdown top prize: keep 9178.56×**, no cap.
+4. **Daily: merge just after 00:00 UTC.** Adding games changes the daily shuffle for
+   every date. Whoever opens the PR says so in its description, so the owner merges at
+   the right time. Nothing to build for it.
 
 ---
 
@@ -696,13 +690,13 @@ Per game, before the commit:
    - Baccarat: exact infinite-shoe enumeration of P(Player), P(Banker), P(Tie) (44.615% /
      45.843% / 9.543%) using the engine's `bankerDraws`.
    - Sic Bo: enumerates the 216 rolls and prints every spot's RTP (table above).
-   The Python sketches used for this plan were: Deck Countdown table by the formula
-   above; Baccarat by full enumeration over card values with weights 4/13 for 0 and 1/13
-   for 1–9; Sic Bo over `itertools.product(range(1, 7), repeat=3)`.
+   The Python sketches that produced this plan's figures are in `scripts/new-games/`
+   (see its README); port the logic, then delete nothing: they stay as references.
 3. **Board fit.** `node scripts/design-check/responsive-check.cjs ./out /freeplay/<id>` and
    `play-responsive-check.cjs` into a round (steps in `GAME_REDESIGN_HANDOFF.md`). No
    `FAIL` lines; look at phone, 720p, 1440p and one Motion = reduced screenshot.
-4. **Modes.** Play one round each in Freeplay, Daily (via dev or a date that draws it),
-   Ladder (whole pot; a push replays the rung; Baccarat Tie on Player is a push), and
+4. **Modes.** Play one round each in Freeplay, Ladder (whole pot; a push replays the rung; Baccarat Tie on Player is a push), and
    Survival (min bet, opening ticket, the perk with dev Grant upgrades, curse and bless).
+   Daily can't be forced to a game; it uses the same component with `mode="daily"`, so
+   read the code paths instead: min bet from `useGameMinBet`, curse / bless off, autoReBet.
 5. Update this file's status table and the docs in the wiring checklist.

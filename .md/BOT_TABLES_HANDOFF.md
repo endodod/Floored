@@ -1,12 +1,12 @@
 # Bot Tables — handoff
 
-**Next:** a Sit n Go category (bring your own bankroll, no prizes) is planned in
-[TABLES_SIT_N_GO_HANDOFF.md](TABLES_SIT_N_GO_HANDOFF.md).
+**Next:** a Cash tables category (bring your own bankroll, no prizes) is planned in
+[TABLES_CASH_HANDOFF.md](TABLES_CASH_HANDOFF.md).
 
 ## Status (2026-10-29)
 
 Built, with the open questions answered by the proposals below (owner asked to
-build to completion): name **Tables**; own wallet (10K, refill below 100);
+build to completion): name **Tables**; own wallet (10K, refill below 100); buy-ins later changed to 100 / 1,000 / 10,000;
 Hold'em as a Sit & Go; each bot gets a random skill independently of stakes
 when a table is seated; Hold'em seats 4 on phones; `tsx` added (dev); leaving
 forfeits the buy-in; bots have names and a style tag, no chat; Hold'em pays
