@@ -884,3 +884,28 @@ Numbers live in `lib/tables/stakes.ts` and the engines.
 | Turn timer | 30 s (stall = check / fold, or call liar) |
 
 Player EV with equal skill is 0 (no rake).
+
+### Cash tables
+
+`CASH_STAKES`, `BOT_SIT_RANGE` and `CHURN` in `lib/tables/stakes.ts`; churn in `lib/tables/cash-session.ts`.
+
+| Item | Value |
+|---|---|
+| Sit down / top up | any amount from 1 to the wallet; top up between hands only |
+| Hold'em blinds | 5/10 · 50/100 · 500/1,000 (fixed); a newcomer posts one big blind |
+| Liar's Dice ante | 50 · 500 · 5,000 a game, 5 dice each; winner takes `min(ante, own ante)` from each player (`settleLiarsPot`) |
+| Blackjack bets | 10–500 · 100–5,000 · 1,000–no max; short stacks bet / double all in; house pays 3:2 / 1:1 |
+| Bot stacks | Hold'em 40–200 big blinds, Liar's Dice 5–25 antes, Blackjack 20–100 minimum bets |
+| Churn (between hands) | 0 chips leaves; up >2× its stack leaves 6% a hand (15% a game); any bot 1% a hand (3% a game); below half its stack tops up 50%; empty seat refills after 1–3 hands; never fewer than 2 bots |
+| Rake | none |
+
+`pnpm sim:bots --cash`, seed 1 (20 Hold'em tables × 300 hands, 40 Liar's Dice tables × 40 games, 60 Blackjack tables × 300 hands):
+
+| Game | Stake | Rookie | Regular | Shark |
+|---|---|---|---|---|
+| Hold'em (big blinds / 100 hands) | low | −108.9 | +34.0 | +45.3 |
+| Hold'em | high | −148.5 | +38.5 | +60.5 |
+| Liar's Dice (antes / game) | low and high | −0.352 | +0.070 | +0.198 |
+| Blackjack (minimum bets / 100 hands) | low | −13.8 | −0.9 | −4.3 |
+
+Blackjack house edge over all bots: 2.07% (low), 2.61% (high). Above the ~1% basic-strategy edge because Rookies stand on every hard 12+ half the time; a player using basic strategy faces about 1%. Zero illegal actions and zero chip leaks in every run.

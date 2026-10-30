@@ -1,6 +1,6 @@
 # New games — handoff
 
-Status as of 2026-10-30: **implemented; browser verification still pending.** Four new house games for Freeplay,
+Status as of 2026-10-30: **built; browser, responsive and reduced-motion checks still to run.** Four new house games for Freeplay,
 Daily, Ladder and Survival (not Tables):
 
 | ID | Label | Kind | Closest existing game to copy from |

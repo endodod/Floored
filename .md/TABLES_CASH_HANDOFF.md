@@ -1,8 +1,31 @@
 # Tables: Cash tables — handoff
 
-Status as of 2026-10-30: **designed and owner-approved, nothing built.** Branch
-`claude/new-games-handoff`. Every owner question is answered (section 5); start at
-Phase 2 (section 3).
+Status as of 2026-10-30: **built (phases 1–6 done); the browser check is the one step
+left** (section 3, phase 5's "Done when", and the list in 2.10). Every owner question is
+answered (section 5).
+
+### Where things live now
+
+| Piece | File |
+|---|---|
+| Cash ops per engine | `holdemCashOps` (`games/holdem/engine.ts`), `showdownCashOps` (`games/blackjack-showdown/engine.ts`), `games/liars-dice/cash.ts` (wrapper, `settleLiarsPot`, `liarsCashOps`); `removeLiarsSeat` in the Liar's Dice engine |
+| Seating and churn (pure, seeded) | `lib/tables/cash-session.ts` (`openCashTable`, `churnCash`, `botSitStack`, `stakeUnit`) |
+| Defs | `holdemCashDef`, `liarsCashDef`, `showdownCashDef` in `lib/tables/defs.ts` |
+| Runner | `components/tables/use-table-runner.ts` (`cash` option → `runner.cash`: bots, stack, leave, topUp, broke, log); `components/tables/use-cash-table.ts` builds the option from the open table |
+| UI | `TableShell` (status-bar limits, session strip, Top up, leave confirmations, out-of-chips panel, session summary, arrivals/departures in the history; `CashChipsDialog` also used by the lobby); empty seats in `SeatPlate` (`empty`) |
+| Store | `store/tables-store.ts`: `sitDownCash`, `syncCashStack`, `topUp`, `cashOut`, `cashStats`, `cashHistory`, `lastCashResult` |
+| Bots | `lib/bots/holdem.ts` (push / fold under 10 bb at cash), `lib/bots/blackjack-showdown.ts` (`decideCashBet`, no standings deviations) |
+| Checks | `scripts/bots/check-engines.ts` (cash section), `playCashTable` in `lib/tables/simulate.ts`, `pnpm sim:bots --cash [--stake]` |
+
+### Behaviour worth knowing (decided while building)
+
+- Closing the tab mid-hand counts as leaving: Hold'em and Liar's Dice keep only the chips
+  behind (what's in the pot stays); at Blackjack a bet already down is forfeited, because
+  `stackBehind` leaves out the bet at risk (otherwise a reload would refund a losing hand).
+- Leaving Liar's Dice mid-game voids the round in progress; it is rolled again without
+  you. A leaver's ante refund (if any) goes to the winner.
+- The final reveal of a Liar's Dice game stays on the table until the next game starts.
+- No churn before the first hand: the table opens as it was seated.
 
 ## What the owner asked for
 
@@ -21,8 +44,7 @@ its **Ground rules**: bots decide only from their seat's view; engines are pure 
 an injected RNG), and [ARCHITECTURE.md](ARCHITECTURE.md). Nothing here touches
 `GameName`, Freeplay, Survival, Ladder or Daily.
 
-Already done on this branch (don't redo): tournament buy-ins are **100 / 1,000 /
-10,000** (`TABLE_TIERS` in `lib/tables/stakes.ts`).
+Tournament buy-ins are **100 / 1,000 / 10,000** (`TABLE_TIERS` in `lib/tables/stakes.ts`).
 
 ---
 
@@ -382,23 +404,35 @@ per game, short antes get excess back; Blackjack: house edge ~1%). The rules pag
 | Phase | What | Done when |
 |---|---|---|
 | 1 | Design and owner answers | **Done** (this file) |
-| 2 | Types, empty seats, cash configs and ops in the three engines, `games/liars-dice/cash.ts`, `settleLiarsPot`, defs; cash checks in `check:tables` | Cash checks pass; tournament `check:tables` / `sim:bots` output identical to before |
-| 3 | Bot changes, `sim:bots --cash` | Zero illegal actions; section 4 filled in |
-| 4 | Stakes, catalog, store (with migration), tutorials | `tsc` / lint clean; an old save loads (test by pasting an old `floored-tables` value into localStorage) |
-| 5 | Runner, lobby category and dialog, table shell, the three cash tables, account records | Browser checks in 2.10 pass |
-| 6 | Docs: `README.md` Tables section, `ARCHITECTURE.md` Tables row, `BOT_TABLES_HANDOFF.md` status, `BALANCE_AUDIT.md` Tables section (cash stakes, blackjack edge), `TODO.md` tick | Docs match the code |
+| 2 ✓ | Types, empty seats, cash configs and ops in the three engines, `games/liars-dice/cash.ts`, `settleLiarsPot`, defs; cash checks in `check:tables` | Cash checks pass; tournament `check:tables` / `sim:bots` output identical to before |
+| 3 ✓ | Bot changes, `sim:bots --cash` | Zero illegal actions; section 4 filled in |
+| 4 ✓ | Stakes, catalog, store (with migration), tutorials | `tsc` / lint clean; an old save loads (test by pasting an old `floored-tables` value into localStorage) |
+| 5 (built; browser check left) | Runner, lobby category and dialog, table shell, the three cash tables, account records | Browser checks in 2.10 pass |
+| 6 ✓ | Docs: `README.md` Tables section, `ARCHITECTURE.md` Tables row, `BOT_TABLES_HANDOFF.md` status, `BALANCE_AUDIT.md` Tables section (cash stakes, blackjack edge), `TODO.md` tick | Docs match the code |
 
 Update this file's status line and section 4 as phases land.
 
 ---
 
-## 4. Results (fill in during Phase 3)
+## 4. Results
+
+`pnpm sim:bots --cash` (and `--stake high`), seed 1: 20 Hold'em tables × 300 hands, 40
+Liar's Dice tables × 40 games, 60 Blackjack tables × 300 hands, with churn. Zero illegal
+actions, zero chip leaks. `pnpm check:tables` passes, and tournament `check:tables` /
+`sim:bots` output is identical to `main` before this work (only the compute-time figure differs).
 
 | Game | Stake | Rookie | Regular | Shark | Notes |
 |---|---|---|---|---|---|
-| Hold'em (bb/100) | | | | | |
-| Liar's Dice (antes/game) | | | | | |
-| Blackjack (house edge) | | | | | |
+| Hold'em (bb/100) | low | −108.9 | +34.0 | +45.3 | 11 arrivals / 11 departures / 3.5 top-ups per 100 hands |
+| Hold'em (bb/100) | high | −148.5 | +38.5 | +60.5 | |
+| Liar's Dice (antes/game) | low, high | −0.352 | +0.070 | +0.198 | same seeds, same play: the ante only scales |
+| Blackjack (min bets/100 hands) | low | −13.8 | −0.9 | −4.3 | house edge 2.07% (high: 2.61%); Rookies' "never bust" play pushes it above basic strategy's ~1% |
+
+## 4b. Left to do
+
+- **Browser check** (2.10): each cash table at 1440×900, 1280×720, 390×844, 150% zoom and
+  Motion = reduced; leave in play; reload mid-hand (stack correct in the lobby); top up;
+  play to 0. Not run yet (the owner asked to skip it for now).
 
 ---
 

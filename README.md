@@ -39,14 +39,26 @@ Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`loca
 
 ## Tables
 
-Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones), Liar's Dice, or Blackjack Showdown.
+Sit down with bots at Texas Hold'em (six seats, four on phones), Liar's Dice, or Blackjack. The lobby has two categories:
+
+**Tournaments**: a fixed buy-in into a prize pool, everyone starts even, play until the table is decided.
 
 - Own **Tables wallet** ($10,000, refillable below the smallest buy-in)
 - **Stakes:** buy-ins of 100 / 1,000 / 10,000; each bot's skill is drawn at random per table
 - Every buy-in goes into the prize pool (no rake); Hold'em pays the top two, while Blackjack Showdown and Liar's Dice are winner-takes-all
 - Account Records track the Tables peak wallet, refills, and each game's results
 - Leaving a table before your place is decided forfeits the buy-in
-- Bots decide only from what their seat can see; `pnpm sim:bots` and `pnpm check:tables` test them
+
+**Cash tables**: bring any amount from the wallet, play as long as you like, leave with your stack.
+
+- Fixed limits by stake: Hold'em blinds 5/10 · 50/100 · 500/1,000; Liar's Dice ante 50 · 500 · 5,000 a game (last cup takes the pot); Blackjack against the house, bets 10–500 · 100–5,000 · from 1,000
+- No prize pool; short stacks play all in until they reach 0; top up between hands
+- Leaving mid-hand folds (Hold'em), gives up your dice (Liar's Dice) or stands and goes when the hand settles (Blackjack); closing the tab counts as leaving
+- Bots come and go between hands; Account Records add cash sessions and net
+
+Both:
+
+- Bots decide only from what their seat can see, and their style is never shown; `pnpm sim:bots` (`--cash`) and `pnpm check:tables` test them
 
 Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HANDOFF.md`.
 
