@@ -117,7 +117,7 @@ export const GAME_TUTORIALS: Record<GameName, GameTutorial> = {
   roulette: {
     intro: 'Bet on where the ball lands on a European wheel of 0–36.',
     steps: [
-      { title: 'Pick a chip', body: 'Choose a chip value from the rack.' },
+      { title: 'Pick a chip', body: 'Choose a chip value from the rack, or ¼, ½ or All in to stake that share of your balance per tap.' },
       { title: 'Place chips', body: 'Tap numbers or the outside spots — red, black, odd, even — to put chips on them. Stack chips and cover as many spots as you like.' },
       { title: 'Spin', body: 'The wheel lands on one pocket from 0 to 36.' },
       { title: 'Collect', body: 'Every winning spot pays: a single number 36×, red / black / odd / even 2×.' },
