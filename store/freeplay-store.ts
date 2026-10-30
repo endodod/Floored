@@ -17,7 +17,13 @@ export const useFreeplayStore = create<FreeplayStore>()(
     }),
     {
       name: 'floored-freeplay',
-      partialize: (state) => ({ peakBankroll: state.peakBankroll, resetCount: state.resetCount }),
+      // The balance is kept (and synced to the account, components/account-sync.tsx).
+      partialize: (state) => ({
+        bankroll: state.bankroll,
+        bust: state.bust,
+        peakBankroll: state.peakBankroll,
+        resetCount: state.resetCount,
+      }),
     },
   ),
 )

@@ -85,3 +85,16 @@ model LeaderboardEntry {
   completed   Boolean // did the player reach the objective (Speedrun) / finish the cap (Bankroll Attack)
   completedAt DateTime  @default(now())
 }
+
+// One row per signed-in user and synced store (freeplay, daily, ladder, tables):
+// the store's persisted localStorage value, so progress follows the account
+// across devices. Written in batches by components/account-sync.tsx.
+model UserState {
+  userId    String // Neon Auth user id
+  key       String // which store, see SYNCED_STORE_KEYS in lib/sync/stores.ts
+  data      Json // the store's persisted { state, version }
+  changedAt DateTime // when the player last changed it (client clock); newer wins
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, key])
+}
