@@ -57,6 +57,8 @@ export function useSurvivalPerks(game: GameName) {
     coinBiasLevel: perkLevel('perk_coin_bias'),
     deckBurn: hasGamePerk(purchasedUpgrades, game, 'perk_deck_burn'),
     deckBurnLevel: perkLevel('perk_deck_burn'),
+    towerNet: hasGamePerk(purchasedUpgrades, game, 'perk_tower_net'),
+    towerNetLevel: perkLevel('perk_tower_net'),
   }
 }
 

@@ -19,6 +19,7 @@ export const HIGH_VARIANCE_GAME_IDS: GameName[] = [
   'keno',
   'street-cups',
   'deck-countdown',
+  'tower-of-cards',
 ]
 
 export const LOW_VARIANCE_GAME_IDS: GameName[] = [

@@ -223,6 +223,17 @@ export const GAMES: GameEntry[] = [
     gradient: 'from-gray-950 to-gray-900',
     accent: 'border-gray-600 hover:border-gray-500',
   },
+  {
+    // pos 20 — Tower of Cards
+    name: 'tower-of-cards',
+    label: 'Tower of Cards',
+    sub: 'Four calls, cash out between them',
+    symbol: '▲',
+    availableFreeplay: true,
+    availableSurvival: true,
+    gradient: 'from-neutral-950 to-neutral-900',
+    accent: 'border-neutral-600 hover:border-neutral-500',
+  },
 ]
 
 export const GAME_BY_NAME = new Map(GAMES.map((g) => [g.name, g]))

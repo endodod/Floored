@@ -1,6 +1,6 @@
 # Floored
 
-Browser casino simulation with play money only. 19 games across four modes: Daily, Ladder,
+Browser casino simulation with play money only. 20 games across four modes: Daily, Ladder,
 Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind and Zustand.
 
 ## Docs

@@ -666,7 +666,7 @@ Implementation:
 | Game | Engine | Board | Survival | Docs | Browser-checked |
 |---|---|---|---|---|---|
 | Deck Countdown | ✓ | ✓ | ✓ | ✓ | — |
-| Tower of Cards | — | — | — | — | — |
+| Tower of Cards | ✓ | ✓ | ✓ | ✓ | — |
 | Baccarat | — | — | — | — | — |
 | Sic Bo | — | — | — | — | — |
 

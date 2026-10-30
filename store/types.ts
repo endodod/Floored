@@ -22,6 +22,7 @@ export type GameName =
   | 'case-battles'
   | 'poker-1p'
   | 'deck-countdown'
+  | 'tower-of-cards'
 
 export interface Modifier {
   id: string

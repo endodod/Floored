@@ -14,6 +14,16 @@ export interface GameTutorial {
 }
 
 export const GAME_TUTORIALS: Record<GameName, GameTutorial> = {
+  'tower-of-cards': {
+    intro: 'Four calls on four cards. Every right call multiplies your bet; cash out between them.',
+    steps: [
+      { title: 'Colour', body: 'Call red or black. A right call pays 1.94×.' },
+      { title: 'Higher or lower', body: 'Call the next card against the first. Equal loses.' },
+      { title: 'Inside or outside', body: 'Call whether the third card falls between the first two or outside them. Equal to either loses.' },
+      { title: 'Suit', body: 'Call the suit of the fourth card. Four right calls cash out automatically.' },
+    ],
+    notes: ['Each button shows what that call multiplies by, from the cards still in the deck.', 'Ace counts high.', 'You can cash out after any right call.'],
+  },
   'deck-countdown': {
     intro: 'Flip cards until a rank comes up twice. Every new rank raises the payout.',
     steps: [

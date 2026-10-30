@@ -35,6 +35,7 @@ export interface CatalogItem {
 
 const GAME_BOOST_LABELS: Record<GameName, { name: string }> = {
   'deck-countdown': { name: 'Card Memory' },
+  'tower-of-cards': { name: 'High Card' },
   blackjack: { name: 'Card Counter' },
   crash: { name: 'Early Cashout' },
   plinko: { name: 'Gravity Bias' },
@@ -60,6 +61,7 @@ const GAME_PERK_DEFS: Record<
   { name: string; description: string; effectKey: string; baseCost: number; rarity: 'rare' | 'epic'; descriptionForLevel?: (level: number) => string }
 > = {
   'deck-countdown': { name: 'Burn Card', description: 'The first repeated rank is burned instead of busting.', effectKey: 'perk_deck_burn', baseCost: 22, rarity: 'rare' },
+  'tower-of-cards': { name: 'Safety Net', description: 'A wrong call from step two returns the multiplier banked before it.', effectKey: 'perk_tower_net', baseCost: 20, rarity: 'rare' },
   blackjack: {
     name: 'Hole Card Reader',
     description: 'See the dealer’s hole card while you play your hand.',

@@ -891,6 +891,27 @@ body > div.neon-auth-ui {
 @container board (max-width: 360px) {
   .dcd-ranks { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 }
+
+/* Tower of Cards uses a compact stair that becomes a 2 × 2 block on phones. */
+.toc-board { --card-h: clamp(3.5rem, calc(100cqh - 18rem), 6.5rem); }
+.toc-step:nth-child(2) { transform: translateY(-0.4rem); }
+.toc-step:nth-child(3) { transform: translateY(-0.8rem); }
+.toc-step:nth-child(4) { transform: translateY(-1.2rem); }
+.toc-red { background: #a92b42; border-color: rgba(217,164,65,.55); color: #f4f1ea; }
+.toc-black { background: #141318; border-color: rgba(217,164,65,.55); color: #f4f1ea; }
+@container board (max-height: 300px) and (min-aspect-ratio: 2/1) {
+  .toc-board { display: grid !important; grid-template-columns: auto minmax(14rem, 1fr); grid-template-rows: auto 1fr; gap: .5rem; padding-top: 3.75rem !important; }
+  .toc-multiplier { grid-column: 1 / -1; }
+  .toc-stair { grid-column: 1; grid-row: 2; gap: .2rem; }
+  .toc-step { transform: none !important; padding: .15rem; }
+  .toc-step .pcard { --card-h: clamp(3rem, calc(100cqh - 12rem), 5rem); }
+  .toc-actions { grid-column: 2; grid-row: 2; align-self: center; }
+}
+@container board (max-width: 420px) {
+  .toc-stair { gap: .35rem; }
+  .toc-step { padding: .35rem; }
+  .toc-step:nth-child(n) { transform: none; }
+}
 @container board (max-height: 300px) and (min-aspect-ratio: 2/1) {
   .dcd-board { display: grid !important; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; gap: 0.5rem; padding-top: 3.75rem !important; }
   .dcd-top { grid-row: 1 / 3; }
