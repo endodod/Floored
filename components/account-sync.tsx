@@ -5,6 +5,7 @@ import { authClient } from '@/lib/auth/client'
 import { useDailyStore } from '@/store/daily-store'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useLadderStore } from '@/store/ladder-store'
+import { useSurvivalStore } from '@/store/survival-store'
 import { useTablesStore } from '@/store/tables-store'
 import { SYNCED_STORE_KEYS, type SyncPayload, type SyncedStoreKey } from '@/lib/sync/keys'
 
@@ -19,6 +20,7 @@ const STORES: Record<SyncedStoreKey, PersistedStore> = {
   daily: useDailyStore as unknown as PersistedStore,
   ladder: useLadderStore as unknown as PersistedStore,
   tables: useTablesStore as unknown as PersistedStore,
+  survival: useSurvivalStore as unknown as PersistedStore,
 }
 
 /**
@@ -33,6 +35,8 @@ const REPULL_AFTER_HIDDEN_MS = 30 * 60_000
 /** Browsers cap keepalive request bodies at 64 KB. */
 const KEEPALIVE_MAX = 60_000
 const META_KEY = 'floored-sync'
+/** First retry of a failed pull; later ones wait 2× and 3× as long. */
+const PULL_RETRY_MS = 2 * 60_000
 
 interface Meta {
   /** The account the local stores last synced with; null = never signed in here. */
@@ -63,6 +67,14 @@ function storageName(key: SyncedStoreKey): string {
   return STORES[key].persist.getOptions().name ?? `floored-${key}`
 }
 
+function readRaw(key: SyncedStoreKey): string | null {
+  try {
+    return window.localStorage.getItem(storageName(key))
+  } catch {
+    return null
+  }
+}
+
 function readLocal(key: SyncedStoreKey): unknown | null {
   try {
     const raw = window.localStorage.getItem(storageName(key))
@@ -73,13 +85,18 @@ function readLocal(key: SyncedStoreKey): unknown | null {
 }
 
 /**
- * Keeps Freeplay, Daily, Ladder and Tables progress on the signed-in account
+ * Keeps Freeplay, Daily, Ladder, Tables and Survival progress on the signed-in account
  * (`/api/state`), so it follows the player across devices. Renders nothing.
  *
  * On load: pull once. A store changed on another device since this one last
  * synced replaces the local copy, unless this device changed it more recently
  * (newest change wins, per store). First sign-in on a device: the account's
  * progress wins; stores the account doesn't have yet are uploaded from here.
+ *
+ * A change counts only when the store's saved value really changed. Changes made
+ * before the first pull lands (a page rolling Daily over to a new day as it
+ * opens) wait for it: they are dropped for a store the account replaces, so a
+ * stale device can't beat the account's newer progress.
  */
 export function AccountSync() {
   const session = authClient.useSession()
@@ -88,6 +105,11 @@ export function AccountSync() {
   useEffect(() => {
     if (!uid) return
     let applying = false
+    let ready = false
+    /** Changes seen before the first pull finished: store → when. */
+    const early = new Map<SyncedStoreKey, number>()
+    /** The saved value each store had at its last counted change, to skip no-op writes. */
+    const lastRaw = new Map(SYNCED_STORE_KEYS.map((key) => [key, readRaw(key)] as const))
     let timer: ReturnType<typeof setTimeout> | null = null
     let hiddenAt = 0
     let alive = true
@@ -136,31 +158,44 @@ export function AccountSync() {
       try {
         window.localStorage.setItem(storageName(key), JSON.stringify(data))
         await STORES[key].persist.rehydrate()
+        // Let the store write itself back before taking its saved value as the baseline.
+        await Promise.resolve()
       } catch {
         // Keep the local copy if the account's can't be stored or read.
       } finally {
+        lastRaw.set(key, readRaw(key))
         applying = false
       }
     }
 
+    let retries = 0
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+
     async function pull() {
-      let server: SyncPayload
+      let server: SyncPayload | null = null
       try {
         const res = await fetch('/api/state')
-        if (!res.ok) return
-        server = (await res.json()) as SyncPayload
+        if (res.ok) server = (await res.json()) as SyncPayload
       } catch {
+        // Handled below.
+      }
+      if (!server) {
+        // Until a pull lands nothing is uploaded, so a device that couldn't check
+        // the account never overwrites it. Try again a few times, spaced out.
+        if (alive && !ready && retries < 3) retryTimer = setTimeout(() => void pull(), PULL_RETRY_MS * ++retries)
         return
       }
       if (!alive) return
       const meta = readMeta()
       const firstHere = meta.userId !== uid
+      const applied = new Set<SyncedStoreKey>()
       for (const key of SYNCED_STORE_KEYS) {
         const s = server[key]
         const e = entry(meta, key)
         if (firstHere) {
           if (s) {
             await apply(key, s.data)
+            applied.add(key)
             meta.keys[key] = { changedAt: s.changedAt, syncedAt: s.changedAt }
           } else if (meta.userId == null && readLocal(key)) {
             // Progress made before signing in moves into the new account.
@@ -173,9 +208,18 @@ export function AccountSync() {
         const dirty = e.changedAt > e.syncedAt
         if (s && s.changedAt > e.syncedAt && (!dirty || s.changedAt >= e.changedAt)) {
           await apply(key, s.data)
+          applied.add(key)
           meta.keys[key] = { changedAt: s.changedAt, syncedAt: s.changedAt }
         }
       }
+      // Early local changes count only for stores the account didn't replace.
+      for (const [key, at] of early) {
+        if (applied.has(key) || !readLocal(key)) continue
+        const e = entry(meta, key)
+        e.changedAt = Math.max(e.changedAt, at)
+      }
+      early.clear()
+      ready = true
       meta.userId = uid
       writeMeta(meta)
       // The database is awake from the pull: send anything pending now, at no extra cost.
@@ -185,10 +229,22 @@ export function AccountSync() {
     const unsubs = SYNCED_STORE_KEYS.map((key) =>
       STORES[key].subscribe(() => {
         if (applying) return
-        const meta = readMeta()
-        entry(meta, key).changedAt = Date.now()
-        writeMeta(meta)
-        schedule()
+        const at = Date.now()
+        // The store writes its saved value right after notifying; compare once it has.
+        queueMicrotask(() => {
+          if (applying) return
+          const raw = readRaw(key)
+          if (raw === lastRaw.get(key)) return
+          lastRaw.set(key, raw)
+          if (!ready) {
+            early.set(key, at)
+            return
+          }
+          const meta = readMeta()
+          entry(meta, key).changedAt = at
+          writeMeta(meta)
+          schedule()
+        })
       }),
     )
 
@@ -210,6 +266,7 @@ export function AccountSync() {
       alive = false
       unsubs.forEach((u) => u())
       if (timer) clearTimeout(timer)
+      if (retryTimer) clearTimeout(retryTimer)
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('pagehide', onPageHide)
     }

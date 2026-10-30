@@ -3,7 +3,7 @@
  * limits the /api/state route enforces. Shared by the route and the client.
  * Each key's value is the store's persisted localStorage entry ({ state, version }).
  */
-export const SYNCED_STORE_KEYS = ['freeplay', 'daily', 'ladder', 'tables'] as const
+export const SYNCED_STORE_KEYS = ['freeplay', 'daily', 'ladder', 'tables', 'survival'] as const
 export type SyncedStoreKey = (typeof SYNCED_STORE_KEYS)[number]
 
 export function isSyncedStoreKey(key: string): key is SyncedStoreKey {

@@ -1,6 +1,6 @@
 # Floored
 
-Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: survival runs, Freeplay balance, Daily, Ladder and Tables).
+Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: Freeplay balance, Daily, Ladder, Tables and Survival, runs in progress included).
 
 Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
@@ -133,7 +133,7 @@ All survival numbers are listed in [.md/BALANCE_AUDIT.md](.md/BALANCE_AUDIT.md).
 - Zustand (client-side state)
 - Radix UI (primitives)
 - Framer Motion (animations)
-- Neon Postgres + Prisma, Neon Auth (optional accounts; survival runs and Freeplay / Daily / Ladder / Tables progress sync to your account)
+- Neon Postgres + Prisma, Neon Auth (optional accounts; Freeplay / Daily / Ladder / Tables / Survival progress and finished survival runs sync to your account)
 
 ## Development
 
