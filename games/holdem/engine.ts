@@ -461,7 +461,7 @@ export const holdemEngine: TableEngine<HoldemState, HoldemView, HoldemAction> = 
 
 export const holdemCashOps = {
   betweenHands: (state: HoldemState) => state.phase === 'handOver',
-  sit: (state: HoldemState, seat: number, stack: number, newcomer: boolean) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false, startStack: stack, lastAction: newcomer ? 'big-blind' : null } : s) }),
+  sit: (state: HoldemState, seat: number, stack: number, newcomer: boolean) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false, startStack: stack, lastAction: newcomer ? 'big-blind' as HoldemActionKind : null } : s) }),
   stand: (state: HoldemState, seat: number) => { const stack = state.seats[seat]!.stack; return { stack, state: { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: 0, empty: true, out: false, hole: [], folded: true } : s) } } },
   addChips: (state: HoldemState, seat: number, amount: number) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: s.stack + amount } : s) }),
   stackBehind: (state: HoldemState, seat: number) => state.seats[seat]!.stack,

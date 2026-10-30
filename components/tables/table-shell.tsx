@@ -58,22 +58,27 @@ export function TableShell({
   const router = useRouter()
   const finish = useTablesStore((s) => s.finish)
   const forfeit = useTablesStore((s) => s.forfeit)
+  const cashOut = useTablesStore((s) => s.cashOut)
   const wallet = useTablesStore((s) => s.wallet)
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [resultReady, setResultReady] = useState(false)
   const settled = useRef(false)
   const tier = TIER_BY_ID.get(table.tier)!
+  const cash = table.format === 'cash'
   const prizes = payoutsFor(standings, table.buyIn, table.seats, table.game)
   const prize = place != null ? (prizes[0] ?? 0) : 0
 
   useEffect(() => {
-    if (place == null || settled.current) return
+    if (cash || place == null || settled.current) return
     settled.current = true
     finish(place, prize)
-  }, [place, prize, finish])
+  }, [cash, place, prize, finish])
 
   function leave() {
-    if (place == null) setConfirmLeave(true)
+    if (cash) {
+      cashOut()
+      router.push('/tables/lobby')
+    } else if (place == null) setConfirmLeave(true)
     else router.push('/tables/lobby')
   }
 
@@ -92,7 +97,7 @@ export function TableShell({
       <div className={GAME_STATUS_BAR}>
         <span className="text-[13px] font-semibold text-ink">
           {game.label}
-          <span className="ml-2 hidden font-normal text-dim sm:inline">{tier.label}</span>
+          <span className="ml-2 hidden font-normal text-dim sm:inline">{cash ? 'Cash table' : tier.label}</span>
         </span>
         <span className="text-[13px] text-dim">{message}</span>
       </div>
@@ -106,7 +111,7 @@ export function TableShell({
       >
         <div className="absolute left-3 top-3 z-20 flex gap-2">
           <button type="button" onClick={leave} className={CORNER_BTN}>
-            ← Tables
+            {cash ? 'Leave table' : '← Tables'}
           </button>
           <Link
             href={`/how-to-play/tables/${game.name}`}

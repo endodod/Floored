@@ -45,10 +45,13 @@ export function useTableRunner<S, V, A>(
     turnMs: number
     /** Pause before a random step (next deal / next roll), to read the last result. */
     pauseMs: (state: S) => number
+    /** Cash tables create and seat players before the runner begins. */
+    initialState?: () => S
+    onState?: (state: S) => void
   },
 ): TableRunner<V, A> {
   const { human, bots, turnMs, pauseMs } = opts
-  const [state, setState] = useState<S>(() => def.create(opts.seats))
+  const [state, setState] = useState<S>(() => opts.initialState ? opts.initialState() : def.create(opts.seats))
   const rng = useRef(createRng(opts.seed))
   const minds = useRef<BotMind[]>(Array.from({ length: opts.seats }, (_, i) => createMind(i, opts.seats)))
   const memoryLoaded = useRef(false)
@@ -56,6 +59,8 @@ export function useTableRunner<S, V, A>(
   const [deadline, setDeadline] = useState<number | null>(null)
   const [watching, setWatching] = useState(false)
   const engine = def.engine
+
+  useEffect(() => { opts.onState?.(state) }, [state, opts])
 
   const over = engine.isOver(state)
   const seat = engine.toAct(state)

@@ -15,7 +15,8 @@ import { calculateHandValue } from '@/games/blackjack/engine'
 import type { ShowdownAction, ShowdownState, ShowdownView } from '@/games/blackjack-showdown/types'
 import { seatBots } from '@/lib/bots/core'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
-import { showdownDef } from '@/lib/tables/defs'
+import { showdownCashDef, showdownDef } from '@/lib/tables/defs'
+import { BOT_SIT_RANGE, cashStakeFor } from '@/lib/tables/stakes'
 import type { OpenTable } from '@/store/tables-store'
 import { createRng } from '@/utils/rng'
 import { formatChips } from '@/utils/format'
@@ -23,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { SeatPlate } from './seat'
 import { TableShell, useSecondsLeft } from './table-shell'
 import { useTableRunner } from './use-table-runner'
+import { useTablesStore } from '@/store/tables-store'
 
 const TURN_MS = 30_000
 const pause = (s: ShowdownState) => (s.hand === 0 ? 500 : 3200)
@@ -40,7 +42,20 @@ function handValue(cards: ShowdownView['seats'][number]['cards']) {
 export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
   const game = TABLE_GAME_BY_NAME.get('blackjack-showdown')!
   const bots = useMemo(() => [null, ...seatBots(table.seats - 1, createRng(table.seed ^ 0xb1ac))], [table])
-  const runner = useTableRunner(showdownDef, { seats: table.seats, human: 0, bots, memoryKey: 'blackjack-showdown', seed: table.seed, turnMs: TURN_MS, pauseMs: pause })
+  const syncCashStack = useTablesStore((s) => s.syncCashStack)
+  const cash = table.format === 'cash'
+  const runner = useTableRunner(cash ? showdownCashDef : showdownDef, {
+    seats: table.seats, human: 0, bots, memoryKey: `blackjack-showdown:${table.format}`, seed: table.seed, turnMs: TURN_MS, pauseMs: pause,
+    initialState: cash ? () => {
+      const stake = cashStakeFor('blackjack-showdown', table.stake ?? 'low')
+      let state = showdownCashDef.createCash(table.seats, stake)
+      state = showdownCashDef.ops.sit(state, 0, table.stack ?? 0, false)
+      const min = stake.limits.bets?.[0] ?? 10
+      bots.forEach((bot, seat) => { if (seat > 0 && bot) state = showdownCashDef.ops.sit(state, seat, (BOT_SIT_RANGE['blackjack-showdown'][0] + Math.floor((BOT_SIT_RANGE['blackjack-showdown'][1] - BOT_SIT_RANGE['blackjack-showdown'][0]) * createRng(table.seed + seat)())) * min, false) })
+      return state
+    } : undefined,
+    onState: cash ? (state) => syncCashStack(showdownCashDef.ops.stackBehind(state, 0), showdownCashDef.ops.handsPlayed(state)) : undefined,
+  })
   const { view: v, yourTurn, thinking } = runner
   const names = useMemo(() => ['You', ...bots.slice(1).map((b) => b!.profile.name)], [bots])
   const secs = useSecondsLeft(runner.deadline)
