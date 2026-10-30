@@ -12,6 +12,9 @@ Read the one that matches the task before changing code:
 - [.md/BOT_TABLES_HANDOFF.md](.md/BOT_TABLES_HANDOFF.md): the new Tables mode:
   game designs (Hold'em, Liar's Dice, Blackjack Showdown), the bot system and the phases.
 
+- [.md/NEW_GAMES_HANDOFF.md](.md/NEW_GAMES_HANDOFF.md): four new house games to build (Sic Bo,
+  Tower of Cards, Deck Countdown, Baccarat): rules, exact pay tables, boards, wiring, perks.
+
 - [README.md](README.md): what each mode is and how it plays; the game list.
 - [.md/ARCHITECTURE.md](.md/ARCHITECTURE.md): code layout, the game/engine contract, the
   shared game UI (shell, board and dock pieces, colour rules, layout stability), survival
