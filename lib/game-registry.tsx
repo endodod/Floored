@@ -23,6 +23,8 @@ import { DeckCountdownGame } from '@/components/games/deck-countdown/game'
 import { TowerOfCardsGame } from '@/components/games/tower-of-cards/game'
 import { BaccaratGame } from '@/components/games/baccarat/game'
 import { SicBoGame } from '@/components/games/sic-bo/game'
+import { AndarBaharGame } from '@/components/games/andar-bahar/game'
+import { DragonTigerGame } from '@/components/games/dragon-tiger/game'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyGameComponent = ComponentType<{
@@ -55,6 +57,8 @@ export const GAME_REGISTRY: Record<GameName, AnyGameComponent> = {
   'tower-of-cards': TowerOfCardsGame,
   baccarat: BaccaratGame,
   'sic-bo': SicBoGame,
+  'andar-bahar': AndarBaharGame,
+  'dragon-tiger': DragonTigerGame,
 }
 
 export const GAME_NAMES = Object.keys(GAME_REGISTRY) as GameName[]

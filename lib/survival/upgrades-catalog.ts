@@ -38,6 +38,8 @@ const GAME_BOOST_LABELS: Record<GameName, { name: string }> = {
   'tower-of-cards': { name: 'High Card' },
   baccarat: { name: 'Shoe Reader' },
   'sic-bo': { name: 'Hot Dice' },
+  'andar-bahar': { name: 'Pile Reader' },
+  'dragon-tiger': { name: 'Tiger Eye' },
   blackjack: { name: 'Card Counter' },
   crash: { name: 'Early Cashout' },
   plinko: { name: 'Gravity Bias' },
@@ -66,6 +68,8 @@ const GAME_PERK_DEFS: Record<
   'tower-of-cards': { name: 'Safety Net', description: 'A wrong call from step two returns the multiplier banked before it.', effectKey: 'perk_tower_net', baseCost: 20, rarity: 'rare' },
   baccarat: { name: 'Shoe Peek', description: 'See the Player’s first card before dealing.', effectKey: 'perk_baccarat_peek', baseCost: 22, rarity: 'epic' },
   'sic-bo': { name: 'Cold Faces', description: 'Two faces that cannot land are crossed out before the roll.', effectKey: 'perk_sic_bo_cold', baseCost: 20, rarity: 'rare' },
+  'andar-bahar': { name: 'Side Count', description: 'When active, the pile you choose is favoured to receive the match.', effectKey: 'perk_andar_bahar_count', baseCost: 20, rarity: 'rare' },
+  'dragon-tiger': { name: 'Tiger Eye', description: 'See the Dragon card before dealing.', effectKey: 'perk_dragon_tiger_peek', baseCost: 22, rarity: 'epic' },
   blackjack: {
     name: 'Hole Card Reader',
     description: 'See the dealer’s hole card while you play your hand.',

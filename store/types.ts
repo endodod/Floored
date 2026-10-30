@@ -25,6 +25,8 @@ export type GameName =
   | 'tower-of-cards'
   | 'baccarat'
   | 'sic-bo'
+  | 'andar-bahar'
+  | 'dragon-tiger'
 
 export interface Modifier {
   id: string

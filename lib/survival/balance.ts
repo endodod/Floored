@@ -52,6 +52,8 @@ export const SURVIVAL_GAME_POOL: GameName[] = [
   'tower-of-cards',
   'baccarat',
   'sic-bo',
+  'andar-bahar',
+  'dragon-tiger',
 ]
 
 export const DIFFICULTY_QUOTA_MULT: Record<Difficulty, number> = {

@@ -976,6 +976,52 @@ body > div.neon-auth-ui {
   --cell-h: 2.7rem;
 }
 .sb-mat button:nth-child(n+10):nth-child(-n+23) { min-width: 0; }
+.ab-board { --card-h: clamp(3.5rem, calc(100cqh - 19rem), 5.5rem); }
+.dtg-board { --card-h: clamp(4rem, calc(100cqh - 17rem), 7rem); }
+.ab-board .pcard, .dtg-board .pcard { flex: 0 0 auto; }
+.ab-mat, .dtg-mat {
+  width: 100%;
+  max-width: 34rem;
+}
+.ab-mat {
+  --cell-h: clamp(8.5rem, 52cqh, 13rem);
+}
+.dtg-mat {
+  --cell-h: clamp(4rem, 12cqh, 6rem);
+}
+.ab-seat {
+  min-height: var(--cell-h);
+  height: var(--cell-h);
+}
+.ab-pile {
+  --card-h: 2.2rem;
+  height: var(--card-h);
+  max-width: 12rem;
+}
+/* The pile cards are placed by pileCardStyle; the .pcard base rule sets
+   position: relative, so this needs to win over the utility class. */
+.ab-pile-card {
+  position: absolute;
+  top: 0;
+}
+/* The latest card fills the space left in its player box (never taller than
+   the box, never wider than it), capped so it does not look oversized. The
+   padding keeps it clear of the pile above and the foot of the box. */
+.ab-latest {
+  container-type: size;
+  padding: 0.5rem 0 0.75rem;
+}
+.ab-latest .pcard {
+  --card-h: min(100cqh, 140cqw, 7.5rem);
+}
+@container board (max-height: 320px) and (min-aspect-ratio: 2/1) {
+  .ab-board, .dtg-board { display: grid !important; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; gap: .5rem; padding-top: 3.75rem !important; }
+  .ab-joker, .dtg-hands { grid-column: 1; grid-row: 1; align-self: center; }
+  .ab-mat, .dtg-mat { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+  .ab-note, .dtg-note { grid-column: 1; grid-row: 2; }
+  .ab-board { --card-h: clamp(3rem, calc(100cqh - 10rem), 5rem); }
+  .ab-mat { --cell-h: clamp(6.5rem, 70cqh, 11rem); }
+}
 @container board (max-height: 340px) and (min-aspect-ratio: 2/1) {
   .sb-board { display: grid !important; grid-template-columns: auto minmax(22rem, 1fr); grid-template-rows: 1fr auto; gap: .5rem; padding-top: 3.75rem !important; }
   .sb-dome { grid-column: 1; grid-row: 1; }

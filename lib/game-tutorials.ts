@@ -24,6 +24,26 @@ export const GAME_TUTORIALS: Record<GameName, GameTutorial> = {
     ],
     notes: ['Small and Big lose on any triple.', 'A single number pays 2× for one die, 3× for two, 15× for three.'],
   },
+  'andar-bahar': {
+    intro: 'A Joker starts the round. Bet on which pile receives the matching rank first.',
+    steps: [
+      { title: 'Choose a pile', body: 'Pick Andar on the left or Bahar on the right, then place your bet.' },
+      { title: 'Deal', body: 'Cards alternate into Andar and Bahar, starting with Andar.' },
+      { title: 'Find the match', body: 'The first card with the Joker’s rank ends the round.' },
+      { title: 'Collect', body: 'The winning pile pays 1.95× your bet.' },
+    ],
+    notes: ['Suits do not matter; only the rank matching the Joker matters.', 'The Joker is always dealt face-up before the piles begin.'],
+  },
+  'dragon-tiger': {
+    intro: 'One card for Dragon, one for Tiger. Bet on the higher rank or a Tie.',
+    steps: [
+      { title: 'Pick a side', body: 'Choose Dragon, Tiger or Tie, then place your bet.' },
+      { title: 'Deal', body: 'One face-up card is dealt to each side.' },
+      { title: 'Compare', body: 'Aces are low and Kings are high. Equal ranks make a Tie.' },
+      { title: 'Collect', body: 'Dragon and Tiger pay 2×; Tie pays 12×.' },
+    ],
+    notes: ['Only rank matters; suits are ignored.', 'A Dragon or Tiger bet loses when the result is a Tie.'],
+  },
   baccarat: {
     intro: 'Bet on the Player hand, the Banker hand or a Tie. The cards play themselves.',
     steps: [
