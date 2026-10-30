@@ -49,6 +49,10 @@ export function holdemConfig(seats: number): HoldemConfig {
   }
 }
 
+export function holdemCashConfig(seats: number, blinds: [number, number]): HoldemConfig {
+  return { seats, startingStack: 0, blinds: [blinds], handsPerLevel: Infinity, format: 'cash' }
+}
+
 export function createHoldem(config: HoldemConfig): HoldemState {
   const seats: HoldemSeat[] = Array.from({ length: config.seats }, () => ({
     stack: config.startingStack,
@@ -58,6 +62,7 @@ export function createHoldem(config: HoldemConfig): HoldemState {
     folded: false,
     allIn: false,
     out: false,
+    empty: config.format === 'cash',
     startStack: config.startingStack,
     lastAction: null,
   }))
@@ -93,7 +98,7 @@ function nextSeat(n: number, from: number, pred: (i: number) => boolean): number
   return -1
 }
 
-const inHand = (s: HoldemSeat) => !s.out && !s.folded
+const inHand = (s: HoldemSeat) => !s.out && !s.empty && !s.folded
 const canAct = (s: HoldemSeat) => inHand(s) && !s.allIn
 
 export function potOf(state: Pick<HoldemState, 'seats'>): number {
@@ -121,12 +126,12 @@ function startHand(prev: HoldemState, rng: Rng): HoldemState {
     hole: [],
     bet: 0,
     committed: 0,
-    folded: s.out,
+    folded: s.out || !!s.empty || s.stack === 0,
     allIn: false,
     startStack: s.stack,
     lastAction: null,
   }))
-  const alive = (i: number) => !seats[i]!.out
+  const alive = (i: number) => !seats[i]!.out && !seats[i]!.empty && seats[i]!.stack > 0
   const button = prev.button < 0 ? nextSeat(n, Math.floor(rng() * n) - 1 + n, alive) : nextSeat(n, prev.button, alive)
 
   let deck = shuffled(fullDeck(), rng)
@@ -141,7 +146,7 @@ function startHand(prev: HoldemState, rng: Rng): HoldemState {
     }
   }
 
-  const aliveCount = seats.filter((s) => !s.out).length
+  const aliveCount = seats.filter((s) => !s.out && !s.empty && s.stack > 0).length
   const sbSeat = aliveCount === 2 ? button : nextSeat(n, button, alive)
   const bbSeat = nextSeat(n, sbSeat, alive)
   const log: HoldemState['log'] = []
@@ -375,7 +380,7 @@ function finishHand(state: HoldemState, showdown: boolean): HoldemState {
   const busted: number[] = []
   const busts = [...state.busts]
   seats.forEach((s, i) => {
-    if (!s.out && s.stack === 0) {
+    if (!s.out && !s.empty && s.stack === 0 && state.config.format !== 'cash') {
       s.out = true
       busted.push(i)
       busts.push({ seat: i, hand: state.hand, startStack: s.startStack })
@@ -391,14 +396,14 @@ function finishHand(state: HoldemState, showdown: boolean): HoldemState {
     showdown,
     busted,
   }
-  const alive = seats.filter((s) => !s.out).length
+  const alive = seats.filter((s) => !s.out && !s.empty && s.stack > 0).length
   return {
     ...state,
     seats,
     busts,
     pending: seats.map(() => false),
     toAct: null,
-    phase: alive <= 1 ? 'over' : 'handOver',
+    phase: state.config.format !== 'cash' && alive <= 1 ? 'over' : 'handOver',
     lastResult: result,
   }
 }
@@ -432,7 +437,7 @@ export function viewHoldem(state: HoldemState, seat: number): HoldemView {
 }
 
 function holdemStandings(state: HoldemState): Standings {
-  const alive = state.seats.map((_, i) => i).filter((i) => !state.seats[i]!.out)
+  const alive = state.seats.map((_, i) => i).filter((i) => !state.seats[i]!.out && !state.seats[i]!.empty)
   return rankSeats(
     alive,
     state.busts.map((b) => ({ seat: b.seat, order: b.hand, tiebreak: b.startStack })),
@@ -449,9 +454,21 @@ export const holdemEngine: TableEngine<HoldemState, HoldemView, HoldemAction> = 
     return startHand(s, rng)
   },
   timeoutAction: (s, seat) => (legalFor(s, seat)?.canCheck ? { type: 'check' } : { type: 'fold' }),
-  isOver: (s) => s.phase === 'over',
+  isOver: (s) => s.config.format !== 'cash' && s.phase === 'over',
   standings: holdemStandings,
   placeOf: (s, seat) => (s.seats[seat]!.out || s.phase === 'over' ? placeIn(holdemStandings(s), seat) : null),
+}
+
+export const holdemCashOps = {
+  betweenHands: (state: HoldemState) => state.phase === 'handOver',
+  sit: (state: HoldemState, seat: number, stack: number, newcomer: boolean) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false, startStack: stack, lastAction: newcomer ? 'big-blind' : null } : s) }),
+  stand: (state: HoldemState, seat: number) => { const stack = state.seats[seat]!.stack; return { stack, state: { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: 0, empty: true, out: false, hole: [], folded: true } : s) } } },
+  addChips: (state: HoldemState, seat: number, amount: number) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: s.stack + amount } : s) }),
+  stackBehind: (state: HoldemState, seat: number) => state.seats[seat]!.stack,
+  inPlay: (state: HoldemState, seat: number) => state.phase === 'betting' && inHand(state.seats[seat]!),
+  leaveAction: (state: HoldemState, seat: number) => state.phase === 'betting' ? holdemEngine.apply(state, seat, { type: 'fold' }) : state,
+  emptySeats: (state: HoldemState) => state.seats.map((s, i) => s.empty ? i : -1).filter((i) => i >= 0),
+  handsPlayed: (state: HoldemState) => state.hand,
 }
 
 export type { Card }

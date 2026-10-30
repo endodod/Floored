@@ -28,6 +28,8 @@ export interface HoldemSeat {
   allIn: boolean
   /** Out of the tournament (no chips). */
   out: boolean
+  /** Cash-table seat without a player. */
+  empty?: boolean
   /** Stack at the start of the hand — breaks ties between seats busting in the same hand. */
   startStack: number
   lastAction: HoldemActionKind | null
@@ -74,6 +76,7 @@ export interface HoldemConfig {
   blinds: [number, number][]
   /** Hands per blind level. */
   handsPerLevel: number
+  format?: 'tournament' | 'cash'
 }
 
 export interface HoldemState {

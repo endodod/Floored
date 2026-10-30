@@ -22,6 +22,8 @@ export interface ShowdownSeat {
   done: boolean
   doubled: boolean
   out: boolean
+  /** Cash-table seat without a player. */
+  empty?: boolean
   outcome: ShowdownOutcome | null
   /** Chips won (+) or lost (−) this hand. */
   net: number
@@ -36,6 +38,7 @@ export interface ShowdownConfig {
   decks: number
   /** Reshuffle before a hand when fewer cards than this are left in the shoe. */
   reshuffleAt: number
+  format?: 'tournament' | 'cash'
 }
 
 export interface ShowdownLogEntry {

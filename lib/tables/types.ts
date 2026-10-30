@@ -7,6 +7,8 @@ export type TableGameName = 'holdem' | 'liars-dice' | 'blackjack-showdown'
 
 /** Buy-in tier; bot skills are drawn independently at each table. */
 export type TableTier = 'rookie' | 'regular' | 'shark'
+export type TableFormat = 'tournament' | 'cash'
+export type CashStakeId = 'low' | 'mid' | 'high'
 
 /** A source of uniform numbers in [0, 1) — `createRng(seed)` from utils/rng.ts. */
 export type Rng = () => number
@@ -41,4 +43,17 @@ export interface TableEngine<State, View, Action> {
   standings: (state: State) => Standings
   /** Place (1-based) of a seat once it is decided (out, or the table is over), else null. */
   placeOf: (state: State, seat: number) => number | null
+}
+
+/** Operations required by the cash-table runner between hands or games. */
+export interface CashTableOps<State> {
+  betweenHands: (state: State) => boolean
+  sit: (state: State, seat: number, stack: number, newcomer: boolean) => State
+  stand: (state: State, seat: number) => { state: State; stack: number }
+  addChips: (state: State, seat: number, amount: number) => State
+  stackBehind: (state: State, seat: number) => number
+  inPlay: (state: State, seat: number) => boolean
+  leaveAction: (state: State, seat: number) => State
+  emptySeats: (state: State) => number[]
+  handsPlayed: (state: State) => number
 }

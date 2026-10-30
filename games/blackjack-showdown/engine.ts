@@ -47,6 +47,10 @@ export function showdownConfig(seats: number): ShowdownConfig {
   }
 }
 
+export function showdownCashConfig(seats: number, minBet: number, maxBet: number | null): ShowdownConfig {
+  return { seats, startingStack: 0, hands: Infinity, minBet, maxBet: maxBet ?? Number.MAX_SAFE_INTEGER, decks: 4, reshuffleAt: 60, format: 'cash' }
+}
+
 const SUITS: BlackjackCard['suit'][] = ['♠', '♥', '♦', '♣']
 const RANKS: BlackjackCard['rank'][] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
@@ -70,6 +74,7 @@ export function createShowdown(config: ShowdownConfig): ShowdownState {
       done: false,
       doubled: false,
       out: false,
+      empty: config.format === 'cash',
       outcome: null,
       net: 0,
     })),
@@ -88,7 +93,7 @@ function nextAlive(seats: ShowdownSeat[], from: number, pred: (s: ShowdownSeat) 
   const n = seats.length
   for (let k = 1; k <= n; k++) {
     const i = (from + k) % n
-    if (!seats[i]!.out && pred(seats[i]!)) return i
+    if (!seats[i]!.out && !seats[i]!.empty && pred(seats[i]!)) return i
   }
   return -1
 }
@@ -96,7 +101,7 @@ function nextAlive(seats: ShowdownSeat[], from: number, pred: (s: ShowdownSeat) 
 /** Seats in turn order for this hand, starting with `first`. */
 function turnOrder(state: Pick<ShowdownState, 'seats' | 'first'>): number[] {
   const n = state.seats.length
-  return Array.from({ length: n }, (_, k) => (state.first + k) % n).filter((i) => !state.seats[i]!.out)
+  return Array.from({ length: n }, (_, k) => (state.first + k) % n).filter((i) => !state.seats[i]!.out && !state.seats[i]!.empty)
 }
 
 function startHand(prev: ShowdownState, rng: Rng): ShowdownState {
@@ -113,7 +118,8 @@ export function legalFor(state: ShowdownState, seat: number): ShowdownLegal | nu
   const s = state.seats[seat]!
   if (state.phase === 'betting') {
     const max = Math.min(state.config.maxBet, s.stack)
-    return { bet: { min: Math.min(showdownMinBetForHand(state.hand), max), max }, canHit: false, canStand: false, canDouble: false }
+    const min = state.config.format === 'cash' ? Math.min(state.config.minBet, max) : Math.min(showdownMinBetForHand(state.hand), max)
+    return { bet: { min, max }, canHit: false, canStand: false, canDouble: false }
   }
   if (state.phase === 'playing') {
     return {
@@ -193,8 +199,8 @@ function settle(state: ShowdownState): ShowdownState {
     if (out) busts.push({ seat: i, hand: state.hand, stack })
     return { ...s, outcome, net, stack, done: true, out }
   })
-  const alive = seats.filter((s) => !s.out).length
-  const over = state.hand >= state.config.hands || alive <= 1
+  const alive = seats.filter((s) => !s.out && !s.empty).length
+  const over = state.config.format !== 'cash' && (state.hand >= state.config.hands || alive <= 1)
   return { ...state, seats, busts, toAct: null, phase: over ? 'over' : 'handOver' }
 }
 
@@ -235,7 +241,7 @@ function applyShowdown(prev: ShowdownState, seat: number, action: ShowdownAction
 }
 
 export function viewShowdown(state: ShowdownState, seat: number): ShowdownView {
-  const secretBets = state.hand === state.config.hands && state.phase === 'betting'
+  const secretBets = state.config.format !== 'cash' && state.hand === state.config.hands && state.phase === 'betting'
   const hideHole = state.phase === 'betting' || state.phase === 'playing'
   return {
     seat,
@@ -250,11 +256,23 @@ export function viewShowdown(state: ShowdownState, seat: number): ShowdownView {
       bet: secretBets && i !== seat ? null : s.bet,
       hasBet: s.bet > 0,
     })),
-    secretBets: state.hand === state.config.hands,
+    secretBets,
     log: secretBets ? state.log.filter((e) => e.hand !== state.hand || e.seat === seat) : state.log,
     legal: legalFor(state, seat),
     cardsLeft: state.shoe.length,
   }
+}
+
+export const showdownCashOps = {
+  betweenHands: (state: ShowdownState) => state.phase === 'handOver',
+  sit: (state: ShowdownState, seat: number, stack: number) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false } : s) }),
+  stand: (state: ShowdownState, seat: number) => { const stack = state.seats[seat]!.stack; return { stack, state: { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: 0, empty: true, out: false } : s) } } },
+  addChips: (state: ShowdownState, seat: number, amount: number) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: s.stack + amount } : s) }),
+  stackBehind: (state: ShowdownState, seat: number) => state.seats[seat]!.stack,
+  inPlay: (state: ShowdownState, seat: number) => state.phase === 'playing' && !state.seats[seat]!.done,
+  leaveAction: (state: ShowdownState) => state,
+  emptySeats: (state: ShowdownState) => state.seats.map((s, i) => s.empty ? i : -1).filter((i) => i >= 0),
+  handsPlayed: (state: ShowdownState) => state.hand,
 }
 
 function showdownStandings(state: ShowdownState): Standings {

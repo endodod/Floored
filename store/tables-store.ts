@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { MIN_BUY_IN, TABLES_START_WALLET, TIER_BY_ID } from '@/lib/tables/stakes'
-import type { TableGameName, TableTier } from '@/lib/tables/types'
+import type { CashStakeId, TableFormat, TableGameName, TableTier } from '@/lib/tables/types'
 
 /** The table you bought into. Leaving it before your place is decided forfeits the buy-in. */
 export interface OpenTable {
@@ -16,6 +16,12 @@ export interface OpenTable {
   startedAt: string
   /** Set once the table page has dealt it — a second visit means the table was left. */
   seated: boolean
+  format: TableFormat
+  /** Cash-only fields; tournament tables leave these undefined. */
+  stake?: CashStakeId
+  broughtIn?: number
+  stack?: number
+  hands?: number
 }
 
 export interface TableRecord {
@@ -40,7 +46,25 @@ export interface TableGameStats {
   net: number
 }
 
+export interface CashSessionRecord {
+  id: string
+  game: TableGameName
+  stake: CashStakeId
+  broughtIn: number
+  cashedOut: number
+  hands: number
+  endedAt: string
+}
+export interface CashGameStats {
+  sessions: number
+  hands: number
+  net: number
+  bestSession: number | null
+  worstSession: number | null
+}
+
 const emptyStats = (): TableGameStats => ({ played: 0, won: 0, cashes: 0, bestFinish: null, net: 0 })
+const emptyCashStats = (): CashGameStats => ({ sessions: 0, hands: 0, net: 0, bestSession: null, worstSession: null })
 
 interface TablesStore {
   wallet: number
@@ -52,9 +76,16 @@ interface TablesStore {
   history: TableRecord[]
   /** The last table's result, shown once on the hub. */
   lastResult: TableRecord | null
+  cashStats: Record<TableGameName, CashGameStats>
+  cashHistory: CashSessionRecord[]
+  lastCashResult: CashSessionRecord | null
 
   /** Pays the buy-in and opens a table; false if the wallet can't cover it or a table is open. */
   sitDown: (game: TableGameName, tier: TableTier, seats: number) => boolean
+  sitDownCash: (game: TableGameName, stake: CashStakeId, amount: number, seats: number) => boolean
+  syncCashStack: (stack: number, hands: number) => void
+  topUp: (amount: number) => boolean
+  cashOut: () => void
   markSeated: () => void
   /** Your place is decided: pays the prize and closes the table. */
   finish: (place: number, prize: number) => void
@@ -65,6 +96,7 @@ interface TablesStore {
   /** Back to the start amount, only when the wallet can't cover the smallest buy-in. */
   refill: () => boolean
   dismissResult: () => void
+  dismissCashResult: () => void
 }
 
 const HISTORY_LIMIT = 40
@@ -116,6 +148,9 @@ export const useTablesStore = create<TablesStore>()(
         stats: { holdem: emptyStats(), 'liars-dice': emptyStats(), 'blackjack-showdown': emptyStats() },
         history: [],
         lastResult: null,
+        cashStats: { holdem: emptyCashStats(), 'liars-dice': emptyCashStats(), 'blackjack-showdown': emptyCashStats() },
+        cashHistory: [],
+        lastCashResult: null,
 
         sitDown: (game, tier, seats) => {
           const s = get()
@@ -133,9 +168,42 @@ export const useTablesStore = create<TablesStore>()(
               seed: Math.floor(Math.random() * 2 ** 31),
               startedAt: new Date().toISOString(),
               seated: false,
+              format: 'tournament',
             },
           })
           return true
+        },
+        sitDownCash: (game, stake, amount, seats) => {
+          const s = get()
+          const buyIn = Math.floor(amount)
+          if (s.open || buyIn < 1 || buyIn > s.wallet) return false
+          set({
+            wallet: s.wallet - buyIn,
+            lastCashResult: null,
+            open: {
+              id: `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`,
+              game, tier: 'rookie', buyIn: 0, seats, seed: Math.floor(Math.random() * 2 ** 31), startedAt: new Date().toISOString(), seated: false,
+              format: 'cash', stake, broughtIn: buyIn, stack: buyIn, hands: 0,
+            },
+          })
+          return true
+        },
+        syncCashStack: (stack, hands) => set((s) => s.open?.format === 'cash' ? { open: { ...s.open, stack: Math.max(0, Math.floor(stack)), hands: Math.max(0, Math.floor(hands)) } } : {}),
+        topUp: (amount) => {
+          const s = get(), open = s.open, chips = Math.floor(amount)
+          if (!open || open.format !== 'cash' || chips < 1 || chips > s.wallet) return false
+          set({ wallet: s.wallet - chips, open: { ...open, broughtIn: (open.broughtIn ?? 0) + chips, stack: (open.stack ?? 0) + chips } })
+          return true
+        },
+        cashOut: () => {
+          const open = get().open
+          if (!open || open.format !== 'cash') return
+          const cashedOut = Math.max(0, open.stack ?? 0), broughtIn = open.broughtIn ?? 0
+          const record: CashSessionRecord = { id: open.id, game: open.game, stake: open.stake ?? 'low', broughtIn, cashedOut, hands: open.hands ?? 0, endedAt: new Date().toISOString() }
+          set((s) => {
+            const stats = s.cashStats[open.game] ?? emptyCashStats(), net = cashedOut - broughtIn
+            return { open: null, wallet: s.wallet + cashedOut, peakWallet: Math.max(s.peakWallet, s.wallet + cashedOut), lastCashResult: record, cashHistory: [record, ...s.cashHistory].slice(0, HISTORY_LIMIT), cashStats: { ...s.cashStats, [open.game]: { sessions: stats.sessions + 1, hands: stats.hands + record.hands, net: stats.net + net, bestSession: stats.bestSession == null ? net : Math.max(stats.bestSession, net), worstSession: stats.worstSession == null ? net : Math.min(stats.worstSession, net) } } }
+          })
         },
         markSeated: () => set((s) => (s.open ? { open: { ...s.open, seated: true } } : {})),
         finish: (place, prize) => close(place, prize, false),
@@ -144,7 +212,7 @@ export const useTablesStore = create<TablesStore>()(
           if (open) close(open.seats, 0, true)
         },
         cancelUnseated: () =>
-          set((s) => (s.open && !s.open.seated ? { open: null, wallet: s.wallet + s.open.buyIn } : {})),
+          set((s) => s.open && !s.open.seated ? s.open.format === 'cash' ? { open: null, wallet: s.wallet + (s.open.stack ?? 0) } : { open: null, wallet: s.wallet + s.open.buyIn } : {}),
         refill: () => {
           const s = get()
           if (s.open || s.wallet >= MIN_BUY_IN) return false
@@ -152,13 +220,15 @@ export const useTablesStore = create<TablesStore>()(
           return true
         },
         dismissResult: () => set({ lastResult: null }),
+        dismissCashResult: () => set({ lastCashResult: null }),
       }
     },
     {
       name: 'floored-tables',
       merge: (persisted, current) => {
-        const restored = { ...current, ...(persisted as Partial<TablesStore>) }
-        return { ...restored, peakWallet: Math.max(restored.peakWallet, restored.wallet) }
+        const saved = persisted as Partial<TablesStore>
+        const restored = { ...current, ...saved, open: saved.open ? { ...saved.open, format: saved.open.format ?? 'tournament' } : null }
+        return { ...restored, cashStats: saved.cashStats ?? current.cashStats, cashHistory: saved.cashHistory ?? [], lastCashResult: saved.lastCashResult ?? null, peakWallet: Math.max(restored.peakWallet, restored.wallet) }
       },
     },
   ),

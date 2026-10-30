@@ -27,6 +27,13 @@ export default function TableGamePage({ params }: { params: Promise<{ game: stri
       router.replace('/tables/lobby')
       return
     }
+    // Cash tables use their own runner and never fall through to tournament components.
+    // Until a cash runner mounts, return the untouched stack to the wallet.
+    if (s.open.format === 'cash') {
+      s.cashOut()
+      router.replace('/tables/lobby')
+      return
+    }
     if (s.open.seated) {
       s.forfeit()
       router.replace('/tables/lobby')

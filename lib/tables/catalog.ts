@@ -14,6 +14,7 @@ export interface TableGameEntry {
   phoneSeats: number
   /** One line on how the table is decided. */
   format: string
+  cash: { label: string; sub: string; format: string }
 }
 
 const ALL_TABLE_GAMES: TableGameEntry[] = [
@@ -21,11 +22,12 @@ const ALL_TABLE_GAMES: TableGameEntry[] = [
     name: 'holdem',
     label: "Texas Hold'em",
     symbol: '♠',
-    sub: 'No-limit Sit & Go against five bots',
+    sub: 'No-limit tournament against five bots',
     skill: 'Betting and bluffing',
     seats: 6,
     phoneSeats: 4,
     format: 'Last player with chips wins',
+    cash: { label: "Texas Hold'em", sub: 'No-limit cash table, bring your own stack', format: 'Play until you leave or run out of chips' },
   },
   {
     name: 'liars-dice',
@@ -36,6 +38,7 @@ const ALL_TABLE_GAMES: TableGameEntry[] = [
     seats: 4,
     phoneSeats: 4,
     format: 'Last player with dice wins',
+    cash: { label: "Liar's Dice", sub: 'Ante each game, last cup standing takes the pot', format: 'Play until you leave or run out of chips' },
   },
   {
     name: 'blackjack-showdown',
@@ -46,6 +49,7 @@ const ALL_TABLE_GAMES: TableGameEntry[] = [
     seats: 4,
     phoneSeats: 4,
     format: 'Most chips after 12 hands wins',
+    cash: { label: 'Blackjack', sub: 'Play the house at a shared table', format: 'Play until you leave or run out of chips' },
   },
 ]
 
