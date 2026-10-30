@@ -1,5 +1,8 @@
 # Bot Tables — handoff
 
+**Next:** a Sit n Go category (bring your own bankroll, no prizes) is planned in
+[TABLES_SIT_N_GO_HANDOFF.md](TABLES_SIT_N_GO_HANDOFF.md).
+
 ## Status (2026-10-29)
 
 Built, with the open questions answered by the proposals below (owner asked to

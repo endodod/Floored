@@ -36,6 +36,8 @@ together.
    `Record<GameName, …>` fails `tsc`, so add the name and its entries together.
 4. **Owner questions (section 7) block nothing**, but Ladder rung count and the Deck
    Countdown top prize need an answer before the last of the four is merged.
+5. **Survival floor selection (section 6.1)** changes with the first game's commit,
+   because that commit grows the pool past 18.
 
 ---
 
@@ -58,7 +60,7 @@ Do every line for each game. File paths are from the repo root.
 | 11 | `hooks/use-survival-perks.ts` | Two fields: `<camel>: hasGamePerk(…, '<effectKey>')` and `<camel>Level: perkLevel('<effectKey>')`, next to the others. |
 | 12 | `lib/survival/missions.ts` | Add the id to `HIGH_VARIANCE_GAME_IDS` or `LOW_VARIANCE_GAME_IDS` (below). |
 | 13 | `app/globals.css` | The game's `@container board` block (`<prefix>-*` classes) and any new animation classes, each added to the `:root[data-motion='reduced']` block. |
-| 14 | Docs | `README.md` game list; `.md/BALANCE_AUDIT.md` §1 pool size, §4 a `### <id>` entry in the existing format, §5 the perk table row and the "18 × 5 levels" counts, §7 pool size and the 3–4 appearances claim (see owner question 2); `.md/ARCHITECTURE.md` "all 18 game components" / "the 18 tables" wording; `CLAUDE.md` "18 games"; tick this file's status table (section 8). |
+| 14 | Docs | `README.md` game list; `.md/BALANCE_AUDIT.md` §1 pool size, §4 a `### <id>` entry in the existing format, §5 the perk table row and the "18 × 5 levels" counts, §7 rewritten for the new floor selection (section 6.1); `.md/ARCHITECTURE.md` "all 18 game components" / "the 18 tables" wording; `CLAUDE.md` "18 games"; tick this file's status table (section 8). |
 
 Catalog entries (`symbol` is a text glyph, no emoji; `gradient` / `accent` are not
 rendered anywhere today but are required fields, so use unused palette names):
@@ -596,6 +598,53 @@ and Safe Lane. Write the numbers into the audit's §4 entry in the existing form
 Mission notes: `min_multiplier` uses `multiplier` from the resolve payload, so always
 pass the real round multiplier (`payout / bet` for the chip-on-mat games, as Roulette).
 
+### 6.1 Floor game selection: favour games not offered yet (owner-approved)
+
+**Today** (`lib/survival/floor-generator.ts`): the whole run's schedule is a plain
+seeded shuffle of the pool in batches of `floor(pool / 6)` floors. Nothing looks at
+upgrades ("Invested-game guarantee: Not implemented", `BALANCE_AUDIT.md` §7). With
+22 games, 4 sit out each batch, so a game can miss a whole run.
+
+**New:** pick each floor's six games when the floor is generated, by a seeded,
+weighted draw without replacement. Each game's weight is the product of:
+
+| Factor | Weight | Why |
+|---|---|---|
+| Not offered on any earlier floor this run | **× 3** | The owner's ask: new games come up sooner, every game gets a turn |
+| The player owns that game's boost or perk (any level) | **× 2** | Upgrades you bought come back (the "invested game" the audit lists as missing) |
+| Offered on the previous floor | **× 0.5** | Fewer repeats floor to floor |
+| Already offered on 5 floors this run | **× 0** | Hard cap |
+
+Simulated over 4,000 runs of 10 floors with 22 games (a player buying an upgrade for
+a game every second floor): **0.012 games per run never offered** (1.1 with a plain
+draw), no game on more than 5 floors, owned games offered on 3.6 floors on average
+against 2.5 for the rest.
+
+Implementation:
+
+- `generateFloor` input gains `previousFloors: GameName[][]` (from `floorHistory`
+  plus the floor just finished; include lobby-reroll replacements, i.e. the final
+  `floorGames` of each floor) and `ownedGames: GameName[]` (games with a `game`-scope
+  item in `purchasedUpgrades`; add a helper `ownedUpgradeGames(purchasedUpgrades)` in
+  `lib/survival/survival-perks.ts`).
+- RNG: `createRng(seedFromString(`${runSeed}:floor:${floor}`))`. The same seed, the
+  same history and the same upgrades give the same floor.
+- Draw: repeat six times — weights as above, pick by cumulative weight, remove the
+  pick. If every weight is 0 (impossible with 22 games and a cap of 5 over 10 floors,
+  but guard it), fall back to a uniform draw.
+- Endless floors (> 10) use the same draw; the cap counts only the last 10 floors.
+- `generateRunSchedule` is no longer used; delete it. The three `generateFloor` calls
+  in `store/survival-store.ts` pass the new inputs (floor 1: empty history, no
+  upgrades).
+- Weights and the cap are constants in `lib/survival/balance.ts`
+  (`FLOOR_UNSEEN_WEIGHT = 3`, `FLOOR_OWNED_WEIGHT = 2`, `FLOOR_REPEAT_WEIGHT = 0.5`,
+  `FLOOR_MAX_APPEARANCES = 5`).
+- Lobby reroll ticket (`pickLobbyGameReroll`): use the same weights over the games it
+  may offer, so a reroll also prefers unseen games.
+- Docs: rewrite `BALANCE_AUDIT.md` §7 (selection algorithm, the invested-game line,
+  pool size) and the floor-generator comment.
+- Check: a script run of 1,000 seeds printing the three figures above.
+
 ---
 
 ## 7. Open questions for the owner (ask once, early)
@@ -604,12 +653,10 @@ pass the real round multiplier (`payout / bet` for the chip-on-mat games, as Rou
    the top uses every game exactly once". With 22 games, either keep 18 rungs (four games
    left over each climb, more choice; update the comment) or set it to 22 (`GAMES.length`).
    Recommendation: **keep 18**, update the comment and the picker note.
-2. **Survival schedule.** `generateRunSchedule` covers `floor(pool / 6)` floors per
-   shuffle. With 22 games, 4 games sit out each shuffle, so a game can appear 0 times in
-   a run (it is 3–4 times today). Fine, or pad each shuffle so every game appears at least
-   once? Also: a run in progress when this ships gets a new schedule for its later floors
-   (the schedule is regenerated from the seed and the pool). Recommendation: accept both,
-   update §7 of the audit.
+2. **Survival schedule — decided.** The owner accepted that runs in progress get
+   different later floors, and asked for a higher chance for games not yet offered
+   this run. Build section 6.1 below (in the first game's commit, since the pool grows
+   then).
 3. **Deck Countdown top prize.** Clearing all 13 ranks pays 9178.56× (about 1 in 9,500
    rounds for someone who never stops). Keep, or cap at 1,000× (then flip 13 is a bad bet
    and few will take it)? Recommendation: **keep** the exact table, it is play money and

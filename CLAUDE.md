@@ -13,7 +13,10 @@ Read the one that matches the task before changing code:
   game designs (Hold'em, Liar's Dice, Blackjack Showdown), the bot system and the phases.
 
 - [.md/NEW_GAMES_HANDOFF.md](.md/NEW_GAMES_HANDOFF.md): four new house games to build (Sic Bo,
-  Tower of Cards, Deck Countdown, Baccarat): rules, exact pay tables, boards, wiring, perks.
+  Tower of Cards, Deck Countdown, Baccarat): rules, exact pay tables, boards, wiring, perks, and the new Survival floor
+  selection that favours games not offered yet.
+- [.md/TABLES_SIT_N_GO_HANDOFF.md](.md/TABLES_SIT_N_GO_HANDOFF.md): a Sit n Go (bring-your-own-bankroll)
+  category in Tables for Hold'em, Liar's Dice and Blackjack: rules, stakes, engine/store/UI plan.
 
 - [README.md](README.md): what each mode is and how it plays; the game list.
 - [.md/ARCHITECTURE.md](.md/ARCHITECTURE.md): code layout, the game/engine contract, the

@@ -13,6 +13,7 @@
 - [ ] New mode
   - [ ] Multiplayer
     - [ ] 1v1
+    - [ ] Tables: Sit n Go category (join with your own bankroll, leave any time) — planned in `.md/TABLES_SIT_N_GO_HANDOFF.md`, not built
     - [x] Multiplayer casino games against bots — Tables mode: Hold'em, Liar's Dice, and Blackjack Showdown playable; account records grouped by mode/game (see `.md/BOT_TABLES_HANDOFF.md`)
 - [ ] New house games: Sic Bo, Tower of Cards, Deck Countdown, Baccarat — planned in `.md/NEW_GAMES_HANDOFF.md`, not built
 - [ ] Sound design
