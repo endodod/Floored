@@ -86,6 +86,23 @@ function nextAlive(seats: LiarsSeat[], from: number): number {
   return -1
 }
 
+/** Removes a seat's cup from an in-progress game (used when leaving a cash table). */
+export function removeLiarsSeat(state: LiarsState, seat: number): LiarsState {
+  const current = state.seats[seat]
+  if (!current || current.out) return state
+  const seats = state.seats.map((value, index) => index === seat ? { ...value, dice: [], out: true } : value)
+  const alive = seats.filter((value) => !value.out).length
+  const next = state.toAct === seat ? nextAlive(seats, seat) : state.toAct
+  return {
+    ...state,
+    seats,
+    toAct: alive <= 1 ? null : next,
+    phase: alive <= 1 ? 'over' : state.phase,
+    starter: state.starter === seat ? nextAlive(seats, seat) : state.starter,
+    busts: [...state.busts, { seat, round: state.round }],
+  }
+}
+
 const totalDice = (s: LiarsState) => s.seats.reduce((sum, seat) => sum + seat.dice.length, 0)
 
 function roll(prev: LiarsState, rng: Rng): LiarsState {

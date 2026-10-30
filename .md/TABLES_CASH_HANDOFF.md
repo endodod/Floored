@@ -1,8 +1,11 @@
 # Tables: Cash tables — handoff
 
-Status as of 2026-10-30: **designed and owner-approved, nothing built.** Branch
-`claude/new-games-handoff`. Every owner question is answered (section 5); start at
-Phase 2 (section 3).
+Status as of 2026-10-30: **partly implemented on `claude/new-games-handoff` and
+`main`.** Cash stakes, catalog, wallet/session records, the Hold'em and Blackjack
+cash engine foundations, and the initial runner/lobby/table wiring are present.
+Liar's Dice now has a cash wrapper and board integration. Bot churn, cash-specific
+checks/simulation, top-up/leave UX, tutorials, final documentation and browser
+verification remain; use the phase table below as the source of truth.
 
 ## What the owner asked for
 
@@ -382,11 +385,11 @@ per game, short antes get excess back; Blackjack: house edge ~1%). The rules pag
 | Phase | What | Done when |
 |---|---|---|
 | 1 | Design and owner answers | **Done** (this file) |
-| 2 | Types, empty seats, cash configs and ops in the three engines, `games/liars-dice/cash.ts`, `settleLiarsPot`, defs; cash checks in `check:tables` | Cash checks pass; tournament `check:tables` / `sim:bots` output identical to before |
-| 3 | Bot changes, `sim:bots --cash` | Zero illegal actions; section 4 filled in |
-| 4 | Stakes, catalog, store (with migration), tutorials | `tsc` / lint clean; an old save loads (test by pasting an old `floored-tables` value into localStorage) |
-| 5 | Runner, lobby category and dialog, table shell, the three cash tables, account records | Browser checks in 2.10 pass |
-| 6 | Docs: `README.md` Tables section, `ARCHITECTURE.md` Tables row, `BOT_TABLES_HANDOFF.md` status, `BALANCE_AUDIT.md` Tables section (cash stakes, blackjack edge), `TODO.md` tick | Docs match the code |
+| 2 | **Partial:** types, empty seats, cash configs/ops, `games/liars-dice/cash.ts`, `settleLiarsPot` and cash defs are in place. | Cash checks and regression comparison still needed. |
+| 3 | Not started: bot churn and `sim:bots --cash`. | Zero illegal actions; section 4 filled in. |
+| 4 | **Partial:** stakes, catalog and persisted wallet/session store are implemented. | Cash tutorials and old-save validation still needed. |
+| 5 | **Partial:** lobby category/dialog, shell, and initial runners for all three boards are implemented. | Churn, top-up/leave behavior, session UI and browser checks remain. |
+| 6 | Not started. | Docs match the code. |
 
 Update this file's status line and section 4 as phases land.
 
