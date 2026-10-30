@@ -9,9 +9,18 @@
  *   pnpm sim:bots                       every game, default table counts
  *   pnpm sim:bots holdem 200            one game, 200 tables per experiment
  *   pnpm sim:bots all 100 --seed 7      another seed
+ *   pnpm sim:bots --cash                cash tables instead: bots sit, play long
+ *                                       sessions with churn; per skill tier, chips
+ *                                       won per 100 hands (Hold'em big blinds, Liar's
+ *                                       Dice antes per game) and Blackjack's house edge
+ *   pnpm sim:bots holdem 20 --cash --stake high
  */
-import { holdemDef, liarsDef, showdownDef, type TableDef } from '@/lib/tables/defs'
-import { playBotTable, type SimResult } from '@/lib/tables/simulate'
+import { holdemCashDef, holdemDef, liarsCashDef, liarsDef, showdownCashDef, showdownDef, type CashTableDef, type TableDef } from '@/lib/tables/defs'
+import { playBotTable, playCashTable, type SimResult } from '@/lib/tables/simulate'
+import { stakeUnit } from '@/lib/tables/cash-session'
+import { cashStakeFor } from '@/lib/tables/stakes'
+import type { CashStakeId } from '@/lib/tables/types'
+import type { ShowdownAction, ShowdownView } from '@/games/blackjack-showdown/types'
 import { BOT_ROSTER } from '@/lib/bots/roster'
 import type { Bot, BotSkill, BotStyle } from '@/lib/bots/types'
 import { placeIn } from '@/lib/tables/standings'
@@ -177,14 +186,87 @@ function run<S, V, A>(
   return totals
 }
 
+// ── Cash tables ──
+
+function runCash<S, V, A>(game: TableGameName, def: CashTableDef<S, V, A>, tables: number, deals: number, stakeId: CashStakeId, seed: number) {
+  const stake = cashStakeFor(game, stakeId)
+  const unit = stakeUnit(game, stake)
+  const seats = TABLE_GAME_BY_NAME.get(game)!.seats
+  const bySkill: Record<string, { net: number; deals: number; sittings: number }> = {}
+  const totals = { deals: 0, decisions: 0, illegal: 0, arrivals: 0, departures: 0, topUps: 0, ms: 0, botNet: 0, wagered: 0, leaks: 0 }
+  for (let t = 0; t < tables; t++) {
+    const started = performance.now()
+    // Blackjack: every bet and double is a wager against the house.
+    const onAction = game === 'blackjack-showdown'
+      ? (view: V, action: A) => {
+          const a = action as unknown as ShowdownAction
+          const v = view as unknown as ShowdownView
+          if (a.type === 'bet') totals.wagered += a.amount
+          else if (a.type === 'double') totals.wagered += Math.min(v.seats[v.seat]!.bet ?? 0, (v.seats[v.seat]!.stack ?? 0) - (v.seats[v.seat]!.bet ?? 0))
+        }
+      : undefined
+    const r = playCashTable(def, game, stake, seats, seed * 1000 + t, deals, onAction)
+    totals.ms += performance.now() - started
+    totals.deals += r.deals
+    totals.decisions += r.decisions
+    totals.illegal += r.illegal
+    totals.arrivals += r.arrivals
+    totals.departures += r.departures
+    totals.topUps += r.topUps
+    if (r.brought !== r.takenAway + r.onTable && game !== 'blackjack-showdown') totals.leaks++
+    for (const s of r.sittings) {
+      const b = (bySkill[s.bot.skill] ??= { net: 0, deals: 0, sittings: 0 })
+      b.net += s.left - s.brought
+      b.deals += s.deals
+      b.sittings++
+      totals.botNet += s.left - s.brought
+    }
+  }
+  const per = game === 'liars-dice' ? 'game' : 'hand'
+  console.log(`\n━━ ${TABLE_GAME_BY_NAME.get(game)!.cash.label} cash · ${stake.label} (${game === 'holdem' ? `big blind ${unit}` : game === 'liars-dice' ? `ante ${unit}` : `minimum bet ${unit}`}) · ${seats} seats · ${tables} tables × ${deals} ${per}s · seed ${seed}`)
+  console.log(
+    `${(totals.decisions / totals.deals).toFixed(1)} decisions a ${per} · ${(totals.ms / totals.decisions).toFixed(2)} ms compute per decision · ` +
+      `per 100 ${per}s: ${((100 * totals.arrivals) / totals.deals).toFixed(1)} arrivals, ${((100 * totals.departures) / totals.deals).toFixed(1)} departures, ${((100 * totals.topUps) / totals.deals).toFixed(1)} top-ups`,
+  )
+  console.log(`illegal actions ${totals.illegal} · chip leaks ${totals.leaks}`)
+  for (const skill of ['rookie', 'regular', 'shark']) {
+    const b = bySkill[skill]
+    if (!b) continue
+    const rate = game === 'liars-dice' ? b.net / unit / Math.max(b.deals, 1) : (100 * b.net) / unit / Math.max(b.deals, 1)
+    console.log(`  ${pad(skill, 9)} ${rate >= 0 ? '+' : ''}${rate.toFixed(game === 'liars-dice' ? 3 : 1)} ${game === 'holdem' ? 'big blinds per 100 hands' : game === 'liars-dice' ? 'antes per game' : 'minimum bets per 100 hands'} · ${b.sittings} sittings`)
+  }
+  if (game === 'blackjack-showdown') console.log(`  house edge ${((-100 * totals.botNet) / Math.max(totals.wagered, 1)).toFixed(2)}% of ${totals.wagered} wagered`)
+  return totals
+}
+
 const args = process.argv.slice(2)
-const seedFlag = args.indexOf('--seed')
-const seed = seedFlag >= 0 ? Number(args[seedFlag + 1]) : 1
-const positional = args.filter((a, i) => !a.startsWith('--') && (seedFlag < 0 || i !== seedFlag + 1))
+const flagValue = (name: string) => {
+  const i = args.indexOf(name)
+  return i >= 0 ? args[i + 1] : undefined
+}
+const seed = Number(flagValue('--seed') ?? 1)
+const cashMode = args.includes('--cash')
+const stakeId = (flagValue('--stake') ?? 'low') as CashStakeId
+const valueIdx = new Set(['--seed', '--stake'].map((f) => args.indexOf(f)).filter((i) => i >= 0).map((i) => i + 1))
+const positional = args.filter((a, i) => !a.startsWith('--') && !valueIdx.has(i))
 const which = (positional[0] ?? 'all') as TableGameName | 'all'
 const count = positional[1] ? Number(positional[1]) : undefined
 
 let bad = 0
+if (cashMode) {
+  if (which === 'all' || which === 'holdem') bad += sum(runCash('holdem', holdemCashDef, count ?? 20, 300, stakeId, seed))
+  if (which === 'all' || which === 'liars-dice') bad += sum(runCash('liars-dice', liarsCashDef, count ?? 40, 40, stakeId, seed))
+  if (which === 'all' || which === 'blackjack-showdown') bad += sum(runCash('blackjack-showdown', showdownCashDef, count ?? 60, 300, stakeId, seed))
+  if (bad) {
+    console.error(`\n${bad} illegal actions or chip leaks`)
+    process.exit(1)
+  }
+  process.exit(0)
+}
+function sum(t: { illegal: number; leaks: number }) {
+  return t.illegal + t.leaks
+}
+
 if (which === 'all' || which === 'holdem') {
   const t = run('holdem', holdemDef, count ?? 60, seed, twinHoldem, habitsHoldem)
   bad += t.illegal + t.leaks

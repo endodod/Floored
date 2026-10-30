@@ -3,7 +3,13 @@
  * conservation and the Liar's Dice bid rules. Run with `pnpm check:tables`.
  */
 import { evaluate, labelOf } from '@/games/holdem/evaluator'
-import { buildPots } from '@/games/holdem/engine'
+import { buildPots, holdemCashOps } from '@/games/holdem/engine'
+import { liarsCashOps, settleLiarsPot } from '@/games/liars-dice/cash'
+import { showdownCashOps } from '@/games/blackjack-showdown/engine'
+import { holdemCashDef, liarsCashDef, showdownCashDef } from '@/lib/tables/defs'
+import { playCashTable } from '@/lib/tables/simulate'
+import { cashStakeFor } from '@/lib/tables/stakes'
+import { createRng } from '@/utils/rng'
 import type { Card, HoldemSeat } from '@/games/holdem/types'
 import { isRaise } from '@/games/liars-dice/engine'
 import { holdemDef, liarsDef, showdownDef } from '@/lib/tables/defs'
@@ -68,6 +74,117 @@ for (let t = 0; t < 30; t++) {
   const b = playBotTable(showdownDef, bots(4), 500 + t)
   check('showdown ends after 12 hands or one left', b.final.hand === 12 || b.final.seats.filter((s) => !s.out).length <= 1)
   check('showdown standings cover every seat', b.standings.flat().length === 4)
+}
+
+// ── Cash tables ──
+
+// Liar's Dice pot: full antes all round → the winner takes everything.
+const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
+check('liars pot: full antes, winner takes all', settleLiarsPot([50, 50, 50], 1).join() === '0,150,0')
+// One short stack (20) wins: 20 from each, the rest goes back.
+check('liars pot: short winner takes its size from each', settleLiarsPot([50, 20, 50], 1).join() === '30,60,30')
+// Short stack loses: the winner takes all of it.
+check('liars pot: short loser pays all it put in', settleLiarsPot([50, 20, 50], 0).join() === '120,0,0')
+// Two short stacks, one wins.
+check('liars pot: two short stacks', settleLiarsPot([50, 10, 30, 50], 2).join() === '20,0,100,20')
+check('liars pot: payouts sum to the antes', [0, 1, 2, 3].every((w) => sum(settleLiarsPot([50, 10, 30, 50], w)) === 140))
+
+const low = (game: 'holdem' | 'liars-dice' | 'blackjack-showdown') => cashStakeFor(game, 'low')
+const rng = createRng(42)
+
+// Hold'em: a newcomer posts one big blind (a live bet), then plays normally.
+{
+  let st = holdemCashDef.createCash(6, low('holdem'))
+  for (const seat of [0, 1, 2]) st = holdemCashOps.sit(st, seat, 1000, false)
+  st = holdemCashOps.sit(st, 4, 1000, true)
+  st = holdemCashDef.engine.advance(st, rng)
+  const posted = st.log.filter((e) => e.hand === 1 && e.seat === 4 && e.kind === 'big-blind')
+  const blinds = st.log.filter((e) => e.hand === 1 && (e.kind === 'big-blind' || e.kind === 'small-blind')).length
+  check("hold'em newcomer posts a big blind", posted.length === 1)
+  check("hold'em newcomer flag clears after posting", !st.seats[4]!.newcomer)
+  check("hold'em empty seats get no cards", st.seats[3]!.hole.length === 0 && st.seats[5]!.hole.length === 0)
+  check("hold'em three blinds posted with a newcomer off the blinds", blinds === 3 || posted.length === 1)
+
+  // Leaving out of turn folds; the chips already in stay in the pot, the rest leave with the player.
+  const leaver = [0, 1, 2, 4].find((i) => i !== st.toAct && !st.seats[i]!.folded)!
+  const before = sum(st.seats.map((x) => x.stack + x.committed))
+  const after = holdemCashOps.leaveAction(st, leaver)
+  check("hold'em leaving folds the seat", after.seats[leaver]!.folded)
+  const out = holdemCashOps.stand(after, leaver)
+  check("hold'em stand returns the stack behind", out.stack === after.seats[leaver]!.stack)
+  check("hold'em leaving keeps every chip", sum(out.state.seats.map((x) => x.stack + x.committed)) + out.stack === before)
+  check("hold'em the hand plays on after a leave", out.state.phase === 'betting' || out.state.phase === 'handOver')
+}
+
+// Hold'em: a cash table waits for a second player with chips.
+{
+  let st = holdemCashDef.createCash(6, low('holdem'))
+  st = holdemCashOps.sit(st, 0, 500, false)
+  check("hold'em one player: no deal", !holdemCashDef.engine.needsAdvance(st))
+  st = holdemCashOps.sit(st, 1, 0, false)
+  check("hold'em a 0-chip seat doesn't count", !holdemCashDef.engine.needsAdvance(st))
+}
+
+// Blackjack: below the minimum a seat may bet only its whole stack; chips at risk aren't "behind".
+{
+  let st = showdownCashDef.createCash(4, low('blackjack-showdown'))
+  st = showdownCashOps.sit(st, 0, 7, false)
+  st = showdownCashOps.sit(st, 1, 1000, false)
+  st = showdownCashDef.engine.advance(st, rng)
+  const seat = st.toAct!
+  const legal = showdownCashDef.engine.viewFor(st, seat).legal!.bet!
+  if (seat === 0) check('blackjack short stack: only all in', legal.min === 7 && legal.max === 7)
+  else check('blackjack min bet at a cash table', legal.min === 10 && legal.max === 500)
+  st = showdownCashDef.engine.apply(st, seat, { type: 'bet', amount: legal.min })
+  check('blackjack a bet at risk is not behind', showdownCashOps.stackBehind(st, seat) === st.seats[seat]!.stack - legal.min)
+  check('blackjack a placed bet is in play', showdownCashOps.inPlay(st, seat))
+}
+
+// Blackjack: leaving on your betting turn passes the turn on.
+{
+  let st = showdownCashDef.createCash(4, low('blackjack-showdown'))
+  for (const seat of [0, 1, 2]) st = showdownCashOps.sit(st, seat, 1000, false)
+  st = showdownCashDef.engine.advance(st, rng)
+  const seat = st.toAct!
+  const after = showdownCashOps.leaveAction(st, seat)
+  check('blackjack leaving on your bet turn moves the turn', after.toAct !== seat)
+  check('blackjack nothing at risk after leaving on your bet turn', !showdownCashOps.inPlay(after, seat))
+}
+
+// Liar's Dice: a 0-chip seat never antes; a short stack antes all it has; leaving voids the round.
+{
+  let st = liarsCashDef.createCash(4, low('liars-dice'))
+  st = liarsCashOps.sit(st, 0, 0, false)
+  st = liarsCashOps.sit(st, 1, 30, false)
+  st = liarsCashOps.sit(st, 2, 500, false)
+  st = liarsCashOps.sit(st, 3, 500, false)
+  st = liarsCashDef.engine.advance(st, rng)
+  check("liars 0-chip seat sits out", st.antes[0] === 0 && !st.seatMap.includes(0))
+  check("liars short stack antes all it has", st.antes[1] === 30 && st.stacks[1] === 0)
+  check("liars full antes", st.antes[2] === 50 && st.antes[3] === 50)
+  const total = sum(st.stacks) + sum(st.antes)
+  const after = liarsCashOps.leaveAction(st, 2)
+  check("liars leaving voids the round", after.game == null || after.game.phase === 'reveal' || after.game.phase === 'over')
+  check("liars leaving keeps every chip", sum(after.stacks) + sum(after.antes) === total)
+  let empty = liarsCashDef.createCash(4, low('liars-dice'))
+  empty = liarsCashOps.sit(empty, 0, 500, false)
+  check("liars one player: no game, no ante", !liarsCashDef.engine.needsAdvance(empty))
+}
+
+// Chip conservation across long churning sessions: every chip brought is on the table or was taken away.
+for (let t = 0; t < 8; t++) {
+  for (const id of ['low', 'high'] as const) {
+    const h = playCashTable(holdemCashDef, 'holdem', cashStakeFor('holdem', id), 6, 1300 + t, 300)
+    check(`hold'em cash chips conserved (${id}, seed ${1300 + t})`, h.brought === h.takenAway + h.onTable)
+    check(`hold'em cash no illegal actions (${id}, seed ${1300 + t})`, h.illegal === 0)
+    check(`hold'em cash bots come and go (seed ${1300 + t})`, h.arrivals > 0 && h.departures > 0)
+    const l = playCashTable(liarsCashDef, 'liars-dice', cashStakeFor('liars-dice', id), 4, 1400 + t, 40)
+    check(`liars cash chips conserved (${id}, seed ${1400 + t})`, l.brought === l.takenAway + l.onTable)
+    check(`liars cash no illegal actions (${id}, seed ${1400 + t})`, l.illegal === 0)
+    const b = playCashTable(showdownCashDef, 'blackjack-showdown', cashStakeFor('blackjack-showdown', id), 4, 1500 + t, 300)
+    check(`blackjack cash no illegal actions (${id}, seed ${1500 + t})`, b.illegal === 0)
+    check(`blackjack cash no negative stacks (${id}, seed ${1500 + t})`, b.final.seats.every((x) => x.stack >= 0))
+  }
 }
 
 console.log(failed ? `${failed} checks failed` : 'All table engine checks passed')

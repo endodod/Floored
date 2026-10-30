@@ -51,7 +51,34 @@ const IDEAL = { tightness: 0.5, aggression: 0.5, bluff: 0, risk: 0.5 }
 
 const round10 = (n: number) => Math.round(n / 10) * 10
 
+/** Each bot's result last hand, for cash-table bet sizing (a win makes the bold press). */
+const lastNet = new WeakMap<BotMind, number>()
+
+/**
+ * Cash tables have no standings to chase: each style sizes its bets from its
+ * own stack. Rocks and nits bet the minimum, regulars 2–4%, maniacs and
+ * tricksters 5–10% (half as much again after a win), stations a flat 3%.
+ */
+function decideCashBet(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): number {
+  const legal = view.legal!.bet!
+  const stack = view.seats[view.seat]!.stack
+  const clampBet = (n: number) => clamp(round10(n), legal.min, legal.max)
+  switch (bot.profile.style) {
+    case 'rock':
+    case 'nit':
+      return legal.min
+    case 'regular':
+      return clampBet(stack * (0.02 + rng() * 0.02))
+    case 'maniac':
+    case 'trickster':
+      return clampBet(stack * (0.05 + rng() * 0.05) * ((lastNet.get(mind) ?? 0) > 0 ? 1.5 : 1))
+    case 'station':
+      return clampBet(stack * 0.03)
+  }
+}
+
 function decideBet(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): number {
+  if (view.config.format === 'cash') return decideCashBet(view, bot, mind, rng)
   const legal = view.legal!.bet!
   const skill = SKILL[bot.skill]
   const risk = clamp(playingProfile(bot, IDEAL).risk + mind.tilt * 0.3, 0, 1)
@@ -141,12 +168,13 @@ function decidePlay(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): Show
     else if (total === 12 && up === 2 && count >= 3) move = 'stand'
     else if (total === 13 && up === 2 && count <= -1) move = 'hit'
   }
-  // Far behind on the last hands: double more freely to catch up.
+  // Far behind on the last hands: double more freely to catch up (tournaments only; cash plays the cards).
+  const cash = view.config.format === 'cash'
   const others = view.seats.filter((s, i) => i !== view.seat && !s.out)
   const leader = Math.max(0, ...others.map((s) => s.stack))
   const behind = leader - me.stack
   const left = view.config.hands - view.hand
-  if (move === 'hit' && legal.canDouble && left <= 1 && behind > (me.bet ?? 0) && total >= 8 && total <= 11 + Math.round(bot.profile.risk * 3)) {
+  if (!cash && move === 'hit' && legal.canDouble && left <= 1 && behind > (me.bet ?? 0) && total >= 8 && total <= 11 + Math.round(bot.profile.risk * 3)) {
     move = 'double'
   }
   if (mind.tilt > 0.4 && move === 'stand' && total <= 14 && rng() < mind.tilt * 0.3) move = 'hit'
@@ -188,6 +216,7 @@ function observeShowdown(view: ShowdownView, bot: Bot, mind: BotMind) {
   }
   mind.tilt *= 0.6
   const me = view.seats[view.seat]!
+  lastNet.set(mind, me.net)
   if (me.net < 0 && -me.net >= (me.stack - me.net) * 0.25) mind.tilt = Math.max(mind.tilt, bot.profile.tiltProne)
 }
 

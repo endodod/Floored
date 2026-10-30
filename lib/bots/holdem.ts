@@ -94,7 +94,7 @@ function lateness(view: HoldemView): number {
   const order: number[] = []
   for (let k = 1; k <= n; k++) {
     const i = (view.button + k) % n
-    if (!view.seats[i]!.out) order.push(i)
+    if (!view.seats[i]!.out && !view.seats[i]!.empty) order.push(i)
   }
   const idx = order.indexOf(view.seat)
   const count = order.length
@@ -181,8 +181,8 @@ function decideHoldem(view: HoldemView, bot: Bot, mind: BotMind, rng: Rng): Hold
     const raiseLevel = view.currentBet / bb
     const facingRaise = raiseLevel > 1
 
-    if (stackBB <= 12) {
-      // Push / fold.
+    // Push / fold when short: a tournament survival tool from 12 big blinds, a plain chip-EV play under 10 at a cash table.
+    if (stackBB <= (view.config.format === 'cash' ? 10 : 12)) {
       const callers = others.filter((s) => !s.allIn).length
       if (facingRaise) {
         const need = 9.5 + tightness * 2.5 - (stackBB < 6 ? 2 : 0) - (legal.toCall < me.stack * 0.3 ? 2 : 0)
