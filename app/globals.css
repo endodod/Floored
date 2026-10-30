@@ -893,7 +893,8 @@ body > div.neon-auth-ui {
 }
 
 /* Tower of Cards uses a compact stair that becomes a 2 × 2 block on phones. */
-.toc-board { --card-h: clamp(3.5rem, calc(100cqh - 18rem), 6.5rem); }
+.toc-board { --card-h: clamp(3.5rem, calc(100cqh - 19.25rem), 6.5rem); }
+.toc-stair { margin-top: 1.25rem; }
 .toc-step:nth-child(2) { transform: translateY(-0.4rem); }
 .toc-step:nth-child(3) { transform: translateY(-0.8rem); }
 .toc-step:nth-child(4) { transform: translateY(-1.2rem); }
@@ -902,7 +903,7 @@ body > div.neon-auth-ui {
 @container board (max-height: 300px) and (min-aspect-ratio: 2/1) {
   .toc-board { display: grid !important; grid-template-columns: auto minmax(14rem, 1fr); grid-template-rows: auto 1fr; gap: .5rem; padding-top: 3.75rem !important; }
   .toc-multiplier { grid-column: 1 / -1; }
-  .toc-stair { grid-column: 1; grid-row: 2; gap: .2rem; }
+  .toc-stair { grid-column: 1; grid-row: 2; gap: .2rem; margin-top: 0; }
   .toc-step { transform: none !important; padding: .15rem; }
   .toc-step .pcard { --card-h: clamp(3rem, calc(100cqh - 12rem), 5rem); }
   .toc-actions { grid-column: 2; grid-row: 2; align-self: center; }
