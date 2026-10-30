@@ -14,7 +14,6 @@ import type { MatchHistoryEntry } from '@/components/game-match-history'
 import { calculateHandValue } from '@/games/blackjack/engine'
 import type { ShowdownAction, ShowdownState, ShowdownView } from '@/games/blackjack-showdown/types'
 import { seatBots } from '@/lib/bots/core'
-import { BOT_STYLE_LABEL } from '@/lib/bots/roster'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { showdownDef } from '@/lib/tables/defs'
 import type { OpenTable } from '@/store/tables-store'
@@ -87,7 +86,6 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
       <div key={i} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
         <SeatPlate
           name={bot.profile.name}
-          tag={BOT_STYLE_LABEL[bot.profile.style]}
           stack={s.out ? null : s.stack}
           stackLabel={s.out ? 'Out' : undefined}
           timer={thinking?.seat === i ? { ms: thinking.ms, key: `${v.hand}-${v.log.length}` } : null}

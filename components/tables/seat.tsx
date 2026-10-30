@@ -6,12 +6,12 @@ import { formatChips } from '@/utils/format'
 
 /**
  * One seat at a table: an avatar disc with the player's initials (the turn
- * timer runs round it), the name, the stack and what they did last. Bots wear
- * their style as a small tag. Out-of-hand seats fall back with `g-dim`.
+ * timer runs round it), the name, the stack and what they did last. Out-of-hand
+ * seats fall back with `g-dim`. A bot's style and skill are never shown: players
+ * read them from how it plays, as at a real table.
  */
 export function SeatPlate({
   name,
-  tag,
   stack,
   stackLabel,
   stackCaption,
@@ -26,8 +26,6 @@ export function SeatPlate({
   children,
 }: {
   name: string
-  /** The bot's style ("Maniac"), or the tier. */
-  tag?: string
   stack: number | null
   /** Replaces the stack figure ("Out", "3 dice"). */
   stackLabel?: ReactNode
@@ -65,7 +63,6 @@ export function SeatPlate({
         <span className="flex min-w-0 flex-col leading-tight">
           <span className="truncate text-[12.5px] font-semibold text-ink">
             {you ? 'You' : name}
-            {tag && <span className="tb-tag ml-1.5 font-normal text-dim">{tag}</span>}
           </span>
           <span className="num truncate text-[12px] text-soft">
             {stackLabel ?? (stack != null ? <>{stackCaption && <span className="mr-1 text-dim">{stackCaption}</span>}{formatChips(stack)}</> : '')}

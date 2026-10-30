@@ -9,7 +9,7 @@ Built, with the open questions answered by the proposals below (owner asked to
 build to completion): name **Tables**; own wallet (10K, refill below 100); buy-ins later changed to 100 / 1,000 / 10,000;
 Hold'em as a Sit & Go; each bot gets a random skill independently of stakes
 when a table is seated; Hold'em seats 4 on phones; `tsx` added (dev); leaving
-forfeits the buy-in; bots have names and a style tag, no chat; Hold'em pays
+forfeits the buy-in; bots have names only, no chat (the style tag was removed: a bot's style and skill are never shown, players read them from play); Hold'em pays
 top two (65/35 at six seats, 70/30 at four), while Blackjack Showdown and
 Liar's Dice are winner-takes-all.
 
@@ -62,6 +62,10 @@ engines or bots.
   table, `playing-card.tsx`, casino chips, the motion kit (`g-*`), reduced
   motion, boards that fit every screen without scrolling.
 - Play money only, like the rest of Floored.
+- **Bots stay hidden.** Never show a bot's style (Rock, Maniac, Trickster…) or skill
+  tier at a table, in the lobby, in the hand history or on a rules page about a
+  specific bot. `SeatPlate` has no tag prop on purpose. This holds for every table
+  game, current and future.
 - **Bots never cheat.** A bot decides from exactly what a human in its seat
   could see: its own hole cards / dice, the public board, bets and the action
   history. Engines expose a per-seat view; bots only ever receive that view.

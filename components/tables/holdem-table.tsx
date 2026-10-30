@@ -14,7 +14,6 @@ import type { MatchHistoryEntry } from '@/components/game-match-history'
 import { evaluate, fullDeck, labelOf, sameCard, shuffled } from '@/games/holdem/evaluator'
 import type { Card, HoldemActionKind, HoldemState, HoldemView } from '@/games/holdem/types'
 import { seatBots } from '@/lib/bots/core'
-import { BOT_STYLE_LABEL } from '@/lib/bots/roster'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { holdemDef } from '@/lib/tables/defs'
 import type { OpenTable } from '@/store/tables-store'
@@ -180,7 +179,6 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
       <div key={i} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
         <SeatPlate
           name={bot.profile.name}
-          tag={BOT_STYLE_LABEL[bot.profile.style]}
           stack={s.out ? null : s.stack}
           stackLabel={s.out ? 'Out' : undefined}
           timer={thinking?.seat === i ? { ms: thinking.ms, key: `${v.hand}-${v.log.length}` } : null}

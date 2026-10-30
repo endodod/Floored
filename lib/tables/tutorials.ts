@@ -37,7 +37,7 @@ export const TABLES_STEPS: TutorialStep[] = [
   },
   {
     title: 'Bots play fair',
-    body: 'A bot decides only from what a player in its seat could see. Each has its own style: rocks, maniacs, calling stations…',
+    body: 'A bot decides only from what a player in its seat could see. Each has its own style (rocks, maniacs, calling stations…), but nothing at the table says which: read it from how they play.',
   },
   {
     title: 'Leaving costs the buy-in',

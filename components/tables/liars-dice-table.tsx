@@ -14,7 +14,6 @@ import type { MatchHistoryEntry } from '@/components/game-match-history'
 import { minCountFor } from '@/games/liars-dice/engine'
 import type { LiarsBid, LiarsState } from '@/games/liars-dice/types'
 import { seatBots } from '@/lib/bots/core'
-import { BOT_STYLE_LABEL } from '@/lib/bots/roster'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { liarsDef } from '@/lib/tables/defs'
 import type { OpenTable } from '@/store/tables-store'
@@ -130,7 +129,6 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
       <div key={i} className="ld-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
         <SeatPlate
           name={bot.profile.name}
-          tag={BOT_STYLE_LABEL[bot.profile.style]}
           stack={null}
           stackLabel={out ? 'Out' : `${v.diceCounts[i]} ${v.diceCounts[i] === 1 ? 'die' : 'dice'}`}
           timer={thinking?.seat === i ? { ms: thinking.ms, key: `${v.round}-${v.log.length}` } : null}

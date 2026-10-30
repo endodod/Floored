@@ -121,7 +121,8 @@ Blackjack figure in `BALANCE_AUDIT.md`). Its label in this category is **Blackja
   - the table never has fewer than 2 bots: if churn would drop below that, fill a
     seat at once.
 - Arrivals and departures go into the hand history: "Mara sits down with 860",
-  "Theo leaves with 2,140".
+  "Theo leaves with 2,140". Name and chips only: a bot's style and skill are never
+  shown anywhere (ground rule in `BOT_TABLES_HANDOFF.md`).
 
 ---
 

@@ -1,6 +1,11 @@
 import type { BotProfile, BotStyle } from './types'
 
-/** The house regulars. Names are invented; each style plays visibly differently. */
+/**
+ * The house regulars. Names are invented; each style plays visibly differently.
+ * Style labels and notes are for dev tools and the simulation report only: never
+ * render a bot's style or skill at a table or in the lobby, it hands the player
+ * a read they should earn from play.
+ */
 export const BOT_STYLE_LABEL: Record<BotStyle, string> = {
   rock: 'Rock',
   maniac: 'Maniac',

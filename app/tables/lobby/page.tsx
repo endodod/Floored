@@ -160,7 +160,7 @@ export default function TablesLobbyPage() {
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {TABLE_GAMES.map((g, i) => {
             const seats = isMobile ? g.phoneSeats : g.seats
-            const prize = prizes(chosen.buyIn, seats)
+            const prize = prizes(chosen.buyIn, seats, g.name)
             const affordable = s.wallet >= chosen.buyIn
             return (
               <li key={g.name}>
@@ -172,7 +172,9 @@ export default function TablesLobbyPage() {
                   sub={g.sub}
                   meta={
                     <span className="num text-xs text-gold">
-                      1st {formatChips(prize[0]!)} · 2nd {formatChips(prize[1]!)}
+                      {prize.length > 1
+                        ? `1st ${formatChips(prize[0]!)} · 2nd ${formatChips(prize[1]!)}`
+                        : `Winner takes ${formatChips(prize[0]!)}`}
                     </span>
                   }
                   action={affordable ? `Sit down · ${formatChips(chosen.buyIn)}` : 'Not enough'}
