@@ -16,7 +16,6 @@ import type { ShowdownAction, ShowdownState, ShowdownView } from '@/games/blackj
 import { seatBots } from '@/lib/bots/core'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { showdownCashDef, showdownDef } from '@/lib/tables/defs'
-import { BOT_SIT_RANGE, cashStakeFor } from '@/lib/tables/stakes'
 import type { OpenTable } from '@/store/tables-store'
 import { createRng } from '@/utils/rng'
 import { formatChips } from '@/utils/format'
@@ -24,7 +23,7 @@ import { cn } from '@/lib/utils'
 import { SeatPlate } from './seat'
 import { TableShell, useSecondsLeft } from './table-shell'
 import { useTableRunner } from './use-table-runner'
-import { useTablesStore } from '@/store/tables-store'
+import { useCashOptions } from './use-cash-table'
 
 const TURN_MS = 30_000
 const pause = (s: ShowdownState) => (s.hand === 0 ? 500 : 3200)
@@ -42,22 +41,15 @@ function handValue(cards: ShowdownView['seats'][number]['cards']) {
 export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
   const game = TABLE_GAME_BY_NAME.get('blackjack-showdown')!
   const bots = useMemo(() => [null, ...seatBots(table.seats - 1, createRng(table.seed ^ 0xb1ac))], [table])
-  const syncCashStack = useTablesStore((s) => s.syncCashStack)
-  const cash = table.format === 'cash'
+  const cashOpts = useCashOptions(table, showdownCashDef)
+  const cash = !!cashOpts
   const runner = useTableRunner(cash ? showdownCashDef : showdownDef, {
-    seats: table.seats, human: 0, bots, memoryKey: `blackjack-showdown:${table.format}`, seed: table.seed, turnMs: TURN_MS, pauseMs: pause,
-    initialState: cash ? () => {
-      const stake = cashStakeFor('blackjack-showdown', table.stake ?? 'low')
-      let state = showdownCashDef.createCash(table.seats, stake)
-      state = showdownCashDef.ops.sit(state, 0, table.stack ?? 0, false)
-      const min = stake.limits.bets?.[0] ?? 10
-      bots.forEach((bot, seat) => { if (seat > 0 && bot) state = showdownCashDef.ops.sit(state, seat, (BOT_SIT_RANGE['blackjack-showdown'][0] + Math.floor((BOT_SIT_RANGE['blackjack-showdown'][1] - BOT_SIT_RANGE['blackjack-showdown'][0]) * createRng(table.seed + seat)())) * min, false) })
-      return state
-    } : undefined,
-    onState: cash ? (state) => syncCashStack(showdownCashDef.ops.stackBehind(state, 0), showdownCashDef.ops.handsPlayed(state)) : undefined,
+    seats: table.seats, human: 0, bots, memoryKey: `blackjack-showdown:${table.format}`, seed: table.seed, turnMs: TURN_MS, pauseMs: pause, cash: cashOpts,
   })
   const { view: v, yourTurn, thinking } = runner
-  const names = useMemo(() => ['You', ...bots.slice(1).map((b) => b!.profile.name)], [bots])
+  // At a cash table bots come and go: the runner says who sits where now.
+  const seated = runner.cash?.bots ?? bots
+  const names = useMemo(() => seated.map((b, i) => (i === 0 ? 'You' : (b?.profile.name ?? 'Empty seat'))), [seated])
   const secs = useSecondsLeft(runner.deadline)
   const me = v.seats[0]!
   const [bet, setBet] = useState(100)
@@ -66,6 +58,8 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
   const [history, setHistory] = useState<MatchHistoryEntry[]>([])
   useEffect(() => {
     if (!currentResult || v.hand === 0) return
+    // A cash hand you sat out (no chips) isn't yours to log.
+    if (cash && !me.bet) return
     setHistory((items) => {
       if (items[0]?.id === `b${v.hand}`) return items
       const net = me.net
@@ -79,7 +73,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
       }
       return [entry, ...items].slice(0, 40)
     })
-  }, [currentResult, v.hand, me.net, me.outcome, me.bet])
+  }, [currentResult, v.hand, me.net, me.outcome, me.bet, cash])
 
   const thinker = thinking ? names[thinking.seat] : null
   let message: string
@@ -89,16 +83,23 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
   else if (yourTurn) message = 'Your turn · hit, stand, or double'
   else if (thinker) message = `${thinker} is thinking…`
   else if (currentResult && v.hand > 0) message = `Hand ${v.hand} result · ${me.outcome ? OUTCOME_LABEL[me.outcome] : ''}`
-  else message = `Hand ${Math.max(1, v.hand)} of ${v.config.hands}`
+  else message = cash ? `Hand ${Math.max(1, v.hand)}` : `Hand ${Math.max(1, v.hand)} of ${v.config.hands}`
 
   const seatEl = (i: number) => {
     const s = v.seats[i]!
-    const bot = bots[i]!
+    const bot = seated[i]
+    if (s.empty || !bot) {
+      return (
+        <div key={`empty-${i}`} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
+          <SeatPlate name="" stack={null} empty />
+        </div>
+      )
+    }
     const concealedBet = v.secretBets && i !== 0 && s.hasBet
     const active = v.toAct === i && (v.phase === 'betting' || v.phase === 'playing')
     const won = s.outcome === 'win' || s.outcome === 'blackjack'
     return (
-      <div key={i} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
+      <div key={`${i}-${bot.profile.id}`} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
         <SeatPlate
           name={bot.profile.name}
           stack={s.out ? null : s.stack}
@@ -126,7 +127,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
       <div aria-hidden className="hd-oval" />
       {Array.from({ length: table.seats - 1 }, (_, k) => seatEl(k + 1))}
       <div className="hd-centre flex min-w-0 flex-col items-center justify-center gap-1.5" style={{ gridArea: 'c' }}>
-        <p className="hd-print felt-print text-center">Dealer · shared shoe · Hand {Math.max(1, v.hand)} / {v.config.hands}</p>
+        <p className="hd-print felt-print text-center">Dealer · shared shoe · Hand {Math.max(1, v.hand)}{cash ? '' : ` / ${v.config.hands}`}</p>
         <div className="flex items-center gap-[clamp(0.2rem,0.8cqw,0.4rem)]" aria-label="Dealer cards">
           {v.dealer.map((card, k) => <CardFace key={`${v.hand}-d${k}`} card={card} style={{ '--i': k } as CSSProperties} />)}
           {v.dealer.length === 0 && [0, 1].map((k) => <PlayingCard key={`dealer-slot-${k}`} variant="slot" />)}
@@ -201,6 +202,7 @@ export function ShowdownTable({ table, onPlayAgain }: { table: OpenTable; onPlay
       history={history}
       board={board}
       dock={dock}
+      cash={runner.cash}
     />
   )
 }

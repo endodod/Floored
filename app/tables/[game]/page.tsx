@@ -28,7 +28,9 @@ export default function TableGamePage({ params }: { params: Promise<{ game: stri
       return
     }
     if (s.open.seated) {
-      s.forfeit()
+      // A table dealt on an earlier visit was left: a cash table returns your chips, a tournament is forfeited.
+      if (s.open.format === 'cash') s.cashOut()
+      else s.forfeit()
       router.replace('/tables/lobby')
       return
     }

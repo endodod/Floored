@@ -17,7 +17,7 @@ import { bestMultiplier, currentStreak, formatMultiplier } from '@/lib/daily/sha
 import { dailyDateKey } from '@/lib/daily/challenge'
 import { useHydrated } from '@/hooks/use-hydrated'
 import { Button } from '@/components/ui/button'
-import { PageTitle } from '@/components/ui/terminal'
+import { PageTitle, signed } from '@/components/ui/terminal'
 import {
   Dialog,
   DialogContent,
@@ -117,6 +117,9 @@ export default function AccountPage() {
   const freeplayResetCount = useFreeplayStore((s) => s.resetCount)
   const tablesPeakWallet = useTablesStore((s) => s.peakWallet)
   const tablesRefills = useTablesStore((s) => s.refills)
+  const cashStats = useTablesStore((s) => s.cashStats)
+  const cashSessions = Object.values(cashStats).reduce((n, c) => n + c.sessions, 0)
+  const cashNet = Object.values(cashStats).reduce((n, c) => n + c.net, 0)
   const hydrated = useHydrated()
   const dailyHistory = useDailyStore((s) => s.history)
   const dailiesPlayed = Object.keys(dailyHistory).length
@@ -231,6 +234,7 @@ export default function AccountPage() {
           <RecordGroup title="Tables">
             <Stat label="Peak wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
             <Stat label="Wallet refills" value={hydrated ? String(tablesRefills) : '—'} />
+            <Stat label="Cash sessions · net" value={hydrated ? `${cashSessions} · ${signed(cashNet, formatChips)}` : '—'} />
           </RecordGroup>
 
         </div>

@@ -16,7 +16,6 @@ import type { Card, HoldemActionKind, HoldemState, HoldemView } from '@/games/ho
 import { seatBots } from '@/lib/bots/core'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { holdemCashDef, holdemDef } from '@/lib/tables/defs'
-import { cashStakeFor, BOT_SIT_RANGE } from '@/lib/tables/stakes'
 import type { OpenTable } from '@/store/tables-store'
 import { createRng } from '@/utils/rng'
 import { formatChips } from '@/utils/format'
@@ -24,7 +23,7 @@ import { cn } from '@/lib/utils'
 import { SeatPlate } from './seat'
 import { TableShell, useSecondsLeft } from './table-shell'
 import { useTableRunner } from './use-table-runner'
-import { useTablesStore } from '@/store/tables-store'
+import { useCashOptions } from './use-cash-table'
 
 const TURN_MS = 30_000
 const pause = (s: HoldemState) => (s.hand === 0 ? 500 : s.lastResult?.showdown ? 3400 : 1600)
@@ -67,22 +66,14 @@ function BetChip({ amount }: { amount: number }) {
 export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
   const game = TABLE_GAME_BY_NAME.get('holdem')!
   const bots = useMemo(() => [null, ...seatBots(table.seats - 1, createRng(table.seed ^ 0x48de))], [table])
-  const syncCashStack = useTablesStore((s) => s.syncCashStack)
-  const cash = table.format === 'cash'
-  const runner = useTableRunner(cash ? holdemCashDef : holdemDef, {
-    seats: table.seats, human: 0, bots, memoryKey: `holdem:${table.format}`, seed: table.seed, turnMs: TURN_MS, pauseMs: pause,
-    initialState: cash ? () => {
-      const stake = cashStakeFor('holdem', table.stake ?? 'low')
-      let state = holdemCashDef.createCash(table.seats, stake)
-      state = holdemCashDef.ops.sit(state, 0, table.stack ?? 0, false)
-      const [, bigBlind] = stake.limits.blinds ?? [5, 10]
-      bots.forEach((bot, seat) => { if (seat > 0 && bot) state = holdemCashDef.ops.sit(state, seat, (BOT_SIT_RANGE.holdem[0] + Math.floor((BOT_SIT_RANGE.holdem[1] - BOT_SIT_RANGE.holdem[0]) * createRng(table.seed + seat)())) * bigBlind, false) })
-      return state
-    } : undefined,
-    onState: cash ? (state) => syncCashStack(holdemCashDef.ops.stackBehind(state, 0), holdemCashDef.ops.handsPlayed(state)) : undefined,
+  const cashOpts = useCashOptions(table, holdemCashDef)
+  const runner = useTableRunner(cashOpts ? holdemCashDef : holdemDef, {
+    seats: table.seats, human: 0, bots, memoryKey: `holdem:${table.format}`, seed: table.seed, turnMs: TURN_MS, pauseMs: pause, cash: cashOpts,
   })
   const { view: v, yourTurn, thinking } = runner
-  const names = useMemo(() => ['You', ...bots.slice(1).map((b) => b!.profile.name)], [bots])
+  // At a cash table bots come and go: the runner says who sits where now.
+  const seated = runner.cash?.bots ?? bots
+  const names = useMemo(() => seated.map((b, i) => (i === 0 ? 'You' : (b?.profile.name ?? 'Empty seat'))), [seated])
   const me = v.seats[0]!
   const legal = v.legal
   const secs = useSecondsLeft(runner.deadline)
@@ -177,7 +168,14 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
 
   const seatEl = (i: number) => {
     const s = v.seats[i]!
-    const bot = bots[i]!
+    const bot = seated[i]
+    if (s.empty || !bot) {
+      return (
+        <div key={`empty-${i}`} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
+          <SeatPlate name="" stack={null} empty />
+        </div>
+      )
+    }
     const act = actionText(v, i)
     const won = result?.pots.some((p) => p.winners.includes(i))
     const net = result?.net[i] ?? 0
@@ -191,7 +189,7 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
             ? { text: result.labels[i]!, tone: 'neutral' as const }
             : act
     return (
-      <div key={i} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
+      <div key={`${i}-${bot.profile.id}`} className="hd-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
         <SeatPlate
           name={bot.profile.name}
           stack={s.out ? null : s.stack}
@@ -406,6 +404,7 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
       history={history}
       board={board}
       dock={dock}
+      cash={runner.cash}
     />
   )
 }

@@ -134,6 +134,20 @@ function applyLiars(prev: LiarsState, seat: number, action: LiarsAction): LiarsS
   }
 }
 
+/**
+ * A player leaves mid-game (cash tables): their cup is taken off the table and
+ * the round in progress is void, so it is rolled again without them. If one
+ * player is left, the game is over.
+ */
+export function removeLiarsSeat(state: LiarsState, seat: number): LiarsState {
+  if (state.seats[seat]!.out) return state
+  const seats = state.seats.map((s, i) => (i === seat ? { ...s, dice: [], out: true } : s))
+  const busts = [...state.busts, { seat, round: state.round }]
+  const alive = seats.filter((s) => !s.out).length
+  const starter = state.starter === seat || seats[state.starter]?.out ? nextAlive(seats, seat) : state.starter
+  return { ...state, seats, busts, bid: null, bidder: null, toAct: null, starter, phase: alive <= 1 ? 'over' : 'reveal' }
+}
+
 export function viewLiars(state: LiarsState, seat: number): LiarsView {
   const total = totalDice(state)
   const bidding = state.phase === 'bidding' && state.toAct === seat

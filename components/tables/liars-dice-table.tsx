@@ -12,19 +12,24 @@ import {
 } from '@/components/game-dock-parts'
 import type { MatchHistoryEntry } from '@/components/game-match-history'
 import { minCountFor } from '@/games/liars-dice/engine'
-import type { LiarsBid, LiarsState } from '@/games/liars-dice/types'
+import type { LiarsCashState, LiarsCashView } from '@/games/liars-dice/cash'
+import type { LiarsAction, LiarsBid, LiarsState, LiarsView } from '@/games/liars-dice/types'
 import { seatBots } from '@/lib/bots/core'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
-import { liarsDef } from '@/lib/tables/defs'
+import { liarsCashDef, liarsDef, type TableDef } from '@/lib/tables/defs'
 import type { OpenTable } from '@/store/tables-store'
 import { createRng } from '@/utils/rng'
 import { cn } from '@/lib/utils'
+import { formatChips } from '@/utils/format'
 import { SeatPlate } from './seat'
 import { TableShell, useSecondsLeft } from './table-shell'
 import { useTableRunner } from './use-table-runner'
+import { useCashOptions } from './use-cash-table'
 
 const TURN_MS = 30_000
 const pause = (s: LiarsState) => (s.round === 0 ? 500 : 3800)
+/** Cash: rounds as in a tournament; between games, time to see who took the pot. */
+const cashPause = (s: LiarsCashState) => (s.game ? pause(s.game) : s.games === 0 ? 500 : 4200)
 
 const FACE_WORD = ['', '1s', '2s', '3s', '4s', '5s', '6s']
 const bidText = (b: LiarsBid) => `${b.count} × ${FACE_WORD[b.face]}`
@@ -48,9 +53,28 @@ function Cup({ dice, lifted }: { dice: number; lifted: boolean }) {
 export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
   const game = TABLE_GAME_BY_NAME.get('liars-dice')!
   const bots = useMemo(() => [null, ...seatBots(table.seats - 1, createRng(table.seed ^ 0x1d1ce))], [table])
-  const runner = useTableRunner(liarsDef, { seats: table.seats, human: 0, bots, memoryKey: 'liars-dice', seed: table.seed, turnMs: TURN_MS, pauseMs: pause })
+  const cashOpts = useCashOptions(table, liarsCashDef)
+  const cash = !!cashOpts
+  // Both engines share the board's view (the cash view adds the pot and stacks), so one runner type covers both.
+  const runner = useTableRunner(
+    (cash ? liarsCashDef : liarsDef) as unknown as TableDef<LiarsCashState, LiarsView, LiarsAction>,
+    {
+      seats: table.seats,
+      human: 0,
+      bots,
+      memoryKey: cash ? 'liars-dice:cash' : 'liars-dice',
+      seed: table.seed,
+      turnMs: TURN_MS,
+      pauseMs: (cash ? cashPause : pause) as (s: LiarsCashState) => number,
+      cash: cashOpts,
+    },
+  )
   const { view: v, yourTurn, thinking } = runner
-  const names = useMemo(() => ['You', ...bots.slice(1).map((b) => b!.profile.name)], [bots])
+  const cv = cash ? (v as LiarsCashView) : null
+  // At a cash table bots come and go: the runner says who sits where now.
+  const seated = runner.cash?.bots ?? bots
+  const names = useMemo(() => seated.map((b, i) => (i === 0 ? 'You' : (b?.profile.name ?? 'Empty seat'))), [seated])
+  const gameKey = cv ? `g${cv.games}-` : ''
   const secs = useSecondsLeft(runner.deadline)
   const reveal = v.phase !== 'bidding' && v.lastReveal?.round === v.round ? v.lastReveal : null
   const roundLog = v.log.filter((e) => e.round === v.round && e.action.type === 'bid')
@@ -61,11 +85,11 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
     const r = v.lastReveal
     if (!r) return
     setHistory((h) => {
-      if (h[0]?.id === `r${r.round}`) return h
+      if (h[0]?.id === `${gameKey}r${r.round}`) return h
       const involved = r.bidder === 0 || r.caller === 0
       const youLost = r.loser === 0
       const entry: MatchHistoryEntry = {
-        id: `r${r.round}`,
+        id: `${gameKey}r${r.round}`,
         at: new Date(),
         title: `Round ${r.round} · ${youLost ? 'you lose a die' : `${names[r.loser]} loses a die`}`,
         subtitle: `${names[r.caller]} called liar on ${names[r.bidder]}'s ${bidText(r.bid)}; there were ${r.actual}.`,
@@ -73,7 +97,34 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
       }
       return [entry, ...h].slice(0, 80)
     })
-  }, [v.lastReveal, names])
+  }, [v.lastReveal, names, gameKey])
+
+  // Cash: one entry per game, for the pot.
+  const lastGame = cv?.lastGame ?? null
+  useEffect(() => {
+    if (!lastGame || !cv) return
+    setHistory((h) => {
+      const id = `pot-${cv.games}`
+      if (h.some((e) => e.id === id)) return h
+      const youWon = lastGame.winner === 0
+      const pot = lastGame.payouts.reduce((a, b) => a + b, 0)
+      const entry: MatchHistoryEntry = {
+        id,
+        at: new Date(),
+        title: `Game ${cv.games} · ${youWon ? 'you take' : `${names[lastGame.winner]} takes`} ${formatChips(lastGame.payouts[lastGame.winner] ?? 0)}`,
+        subtitle: `Pot ${formatChips(pot)}`,
+        tone: youWon ? 'win' : 'neutral',
+      }
+      return [entry, ...h].slice(0, 80)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastGame])
+
+  /** Dice left, and at a cash table the chips behind them. */
+  const seatLabel = (i: number, out: boolean) => {
+    const dice = out ? (cv ? 'Sitting out' : 'Out') : `${v.diceCounts[i]} ${v.diceCounts[i] === 1 ? 'die' : 'dice'}`
+    return cv ? `${dice} · ${formatChips(cv.stacks[i] ?? 0)}` : dice
+  }
 
   // ── Bid picker ──
   const favourite = useMemo(() => {
@@ -104,13 +155,22 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
   let message: string
   if (runner.place != null && !runner.over) message = 'You are out · the table plays on'
   else if (runner.over) message = 'Table over'
+  else if (cv && lastGame && !cv.inGame.some(Boolean)) message = `${names[lastGame.winner]} ${lastGame.winner === 0 ? 'take' : 'takes'} the pot · ${formatChips(lastGame.payouts[lastGame.winner] ?? 0)}`
+  else if (cv && !cv.inGame[0] && cv.inGame.some(Boolean)) message = `Game ${cv.games} · you sit this one out`
   else if (reveal) message = `${names[reveal.caller]} calls liar · ${reveal.actual} ${FACE_WORD[reveal.bid.face]} · ${names[reveal.loser]} loses a die`
   else if (yourTurn) message = v.bid ? `Your turn · raise ${bidText(v.bid)} or call liar` : 'Your turn · open the bidding'
   else if (thinker) message = `${thinker} is thinking…`
   else message = `Round ${Math.max(v.round, 1)} · ${v.totalDice} dice on the table`
 
   const seatEl = (i: number) => {
-    const bot = bots[i]!
+    const bot = seated[i]
+    if (!bot || cv?.empty[i]) {
+      return (
+        <div key={`empty-${i}`} className="ld-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
+          <SeatPlate name="" stack={null} empty />
+        </div>
+      )
+    }
     const out = v.out[i]!
     const dice = reveal ? reveal.dice[i]! : []
     const last = [...roundLog].reverse().find((e) => e.seat === i)
@@ -126,11 +186,11 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
               ? { text: bidText(last.action.bid), tone: 'neutral' as const }
               : null
     return (
-      <div key={i} className="ld-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
+      <div key={`${i}-${bot.profile.id}`} className="ld-seat flex min-w-0 flex-col items-center" style={{ gridArea: `s${i}` }}>
         <SeatPlate
           name={bot.profile.name}
           stack={null}
-          stackLabel={out ? 'Out' : `${v.diceCounts[i]} ${v.diceCounts[i] === 1 ? 'die' : 'dice'}`}
+          stackLabel={seatLabel(i, out)}
           timer={thinking?.seat === i ? { ms: thinking.ms, key: `${v.round}-${v.log.length}` } : null}
           dim={out}
           win={!!reveal && reveal.loser !== i && (reveal.caller === i || reveal.bidder === i)}
@@ -166,7 +226,10 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
       {Array.from({ length: table.seats - 1 }, (_, k) => seatEl(k + 1))}
 
       <div className="ld-centre flex min-w-0 flex-col items-center justify-center gap-1.5" style={{ gridArea: 'c' }}>
-        <p className="ld-print felt-print text-center">1s are wild · Round {Math.max(v.round, 1)}</p>
+        <p className="ld-print felt-print text-center">
+          1s are wild · {cv ? `Game ${Math.max(cv.games, 1)} · ` : ''}Round {Math.max(v.round, 1)}
+          {cv && cv.pot > 0 && <span className="gold-print"> · Pot {formatChips(cv.pot)}</span>}
+        </p>
         <div className="flex min-h-[var(--die-l)] items-center gap-2.5" aria-live="polite">
           {v.bid ? (
             <>
@@ -208,7 +271,7 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
           name="You"
           you
           stack={null}
-          stackLabel={v.out[0] ? 'Out' : `${v.diceCounts[0]} ${v.diceCounts[0] === 1 ? 'die' : 'dice'}`}
+          stackLabel={seatLabel(0, v.out[0]!)}
           timer={yourTurn ? { ms: TURN_MS, key: `${v.round}-${v.log.length}` } : null}
           dim={v.out[0]}
           status={reveal?.loser === 0 ? '−1 die' : undefined}
@@ -270,7 +333,7 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
           </div>
         ) : (
           <p className="text-[13px] text-dim">
-            {v.out[0] ? 'You are out' : thinker ? `${thinker} is thinking…` : reveal ? 'Next round coming up' : 'Waiting…'}
+            {v.out[0] ? (cv ? 'Not in this game' : 'You are out') : thinker ? `${thinker} is thinking…` : reveal ? 'Next round coming up' : 'Waiting…'}
           </p>
         )}
       </div>
@@ -307,6 +370,7 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
       history={history}
       board={board}
       dock={dock}
+      cash={runner.cash}
     />
   )
 }

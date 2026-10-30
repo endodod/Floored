@@ -20,6 +20,7 @@ export function SeatPlate({
   dealer = false,
   dim = false,
   win = false,
+  empty = false,
   status,
   statusTone = 'neutral',
   className,
@@ -37,14 +38,28 @@ export function SeatPlate({
   dealer?: boolean
   dim?: boolean
   win?: boolean
+  /** Cash tables: nobody sits here right now. */
+  empty?: boolean
   status?: ReactNode
   statusTone?: 'neutral' | 'win' | 'loss' | 'gold' | 'dim'
   className?: string
   children?: ReactNode
 }) {
+  if (empty) {
+    return (
+      <div className={cn('tb-seat relative flex flex-col items-center', className)}>
+        <div className="tb-plate tb-plate-empty relative flex items-center gap-2 rounded-full pr-3">
+          <span className="tb-avatar relative flex shrink-0 items-center justify-center rounded-full" aria-hidden />
+          <span className="text-[12px] text-dim">Empty seat</span>
+        </div>
+        <span className="tb-status mt-1 h-4" />
+        {children}
+      </div>
+    )
+  }
   return (
     <div className={cn('tb-seat relative flex flex-col items-center', dim && 'g-dim', className)}>
-      <div className={cn('tb-plate relative flex items-center gap-2 rounded-full pr-3', you && 'tb-plate-you', win && 'g-win')}>
+      <div className={cn('tb-plate g-pop relative flex items-center gap-2 rounded-full pr-3', you && 'tb-plate-you', win && 'g-win')}>
         <span className="tb-avatar relative flex shrink-0 items-center justify-center rounded-full">
           <span aria-hidden className="text-[11px] font-semibold tracking-wide">
             {you ? 'YOU' : name.slice(0, 2).toUpperCase()}

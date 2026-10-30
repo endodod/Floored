@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useHydrated } from '@/hooks/use-hydrated'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { TABLE_GAMES, TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
-import { CASH_STAKES, cashStakeFor, limitsLabel, MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, TIER_BY_ID, ordinal, prizes } from '@/lib/tables/stakes'
+import { cashStakeFor, limitsLabel, MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, TIER_BY_ID, ordinal, prizes } from '@/lib/tables/stakes'
 import type { CashStakeId, TableFormat, TableGameName, TableTier } from '@/lib/tables/types'
 import { useTablesStore } from '@/store/tables-store'
 import { formatChips } from '@/utils/format'
@@ -14,7 +14,7 @@ import { FigureStrip, PageTitle, SectionTitle, signed, toneOf } from '@/componen
 import { GameTile } from '@/components/game-tile'
 import { ScreenSkeleton } from '@/components/screen-skeleton'
 import { cn } from '@/lib/utils'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { CashChipsDialog } from '@/components/tables/table-shell'
 
 const TIER_KEY = 'floored-tables-tier'
 const FORMAT_KEY = 'floored-tables-format'
@@ -38,7 +38,6 @@ export default function TablesLobbyPage() {
   const [cashStake, setCashStake] = useState<CashStakeId>('low')
   const [pending, setPending] = useState<TableGameName | null>(null)
   const [cashGame, setCashGame] = useState<TableGameName | null>(null)
-  const [buyIn, setBuyIn] = useState(0)
 
   useEffect(() => {
     setTier(readTier())
@@ -58,7 +57,6 @@ export default function TablesLobbyPage() {
   if (!hydrated) return <ScreenSkeleton />
 
   const chosen = TIER_BY_ID.get(tier)!
-  const stake = cashGame ? cashStakeFor(cashGame, cashStake) : null
   const totals = Object.values(s.stats).reduce(
     (acc, st) => ({ played: acc.played + st.played, won: acc.won + st.won, cashes: acc.cashes + st.cashes, net: acc.net + st.net }),
     { played: 0, won: 0, cashes: 0, net: 0 },
@@ -90,9 +88,8 @@ export default function TablesLobbyPage() {
   }
   function openCash(game: TableGameName) {
     setCashGame(game)
-    setBuyIn(s.wallet)
   }
-  function sitDownCash() {
+  function sitDownCash(buyIn: number) {
     if (!cashGame || pending) return
     const entry = TABLE_GAME_BY_NAME.get(cashGame)!
     const seats = isMobile ? entry.phoneSeats : entry.seats
@@ -128,6 +125,31 @@ export default function TablesLobbyPage() {
           </p>
         </div>
       )}
+
+      {s.lastCashResult && (() => {
+        const r = s.lastCashResult
+        const net = r.cashedOut - r.broughtIn
+        const label = TABLE_GAME_BY_NAME.get(r.game)?.cash.label ?? 'cash'
+        const unit = r.game === 'liars-dice' ? (r.hands === 1 ? 'game' : 'games') : r.hands === 1 ? 'hand' : 'hands'
+        return (
+          <div
+            className={cn('rise relative flex items-start justify-between gap-3 overflow-hidden rounded-md bg-surface px-5 py-4', net > 0 ? 'shadow-[inset_2px_0_0_var(--felt)]' : net < 0 ? 'shadow-[inset_2px_0_0_var(--loss)]' : 'shadow-[inset_2px_0_0_var(--line)]')}
+            role="status"
+          >
+            <div>
+              <p className={cn('text-[15px] font-semibold', net > 0 ? 'text-felt glow-felt' : net < 0 ? 'text-loss' : 'text-ink')}>
+                Left the {label} cash table <span className="num">{signed(net, formatChips)}</span>
+              </p>
+              <p className="mt-0.5 text-[13px] leading-5 text-soft">
+                Brought {formatChips(r.broughtIn)}, left with {formatChips(r.cashedOut)} after {r.hands} {unit}.
+              </p>
+            </div>
+            <button type="button" onClick={s.dismissCashResult} className="text-[12px] text-dim hover:text-ink">
+              Dismiss
+            </button>
+          </div>
+        )
+      })()}
 
       <FigureStrip
         items={[
@@ -224,14 +246,15 @@ export default function TablesLobbyPage() {
         </ul>
       </section>
 
-      <Dialog open={cashGame != null} onOpenChange={(open) => !open && setCashGame(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Bring chips to the table</DialogTitle><DialogDescription>{cashGame && `${cashStakeFor(cashGame, cashStake).label} · ${limitsLabel(cashGame, cashStakeFor(cashGame, cashStake))}`}</DialogDescription></DialogHeader>
-          <input type="number" min={1} max={s.wallet} value={buyIn} onChange={(event) => setBuyIn(Math.max(0, Math.floor(Number(event.target.value))))} className="num w-full rounded border border-line bg-ground px-3 py-2 text-ink" aria-label="Chips to bring" />
-          <div className="flex gap-2">{[['¼', .25], ['½', .5], ['All', 1]].map(([label, fraction]) => <button key={String(label)} type="button" onClick={() => setBuyIn(Math.max(1, Math.floor(s.wallet * Number(fraction))))} className="rounded border border-control px-3 py-1 text-sm text-soft">{label}</button>)}</div>
-          <DialogFooter><Button onClick={sitDownCash} disabled={buyIn < 1 || buyIn > s.wallet}>Sit down</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CashChipsDialog
+        open={cashGame != null}
+        onOpenChange={(open) => !open && setCashGame(null)}
+        title="Bring chips to the table"
+        description={cashGame ? `${TABLE_GAME_BY_NAME.get(cashGame)!.cash.label} · ${cashStakeFor(cashGame, cashStake).label} · ${limitsLabel(cashGame, cashStakeFor(cashGame, cashStake))}` : ''}
+        wallet={s.wallet}
+        action="Sit down"
+        onConfirm={sitDownCash}
+      />
 
     </div>
   )

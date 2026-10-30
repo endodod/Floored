@@ -100,7 +100,7 @@ export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameM
     const betMap = bets, amount = totalBet
     onBet?.(amount); setLastBetTotal(amount); setLastBets(betMap); setBets({}); setPlaced([]); setPending(null); setQuoteIdx(pickQuote(quoteIdx))
     const preRoll = peekCard
-    let result = blessed ? winGame(betMap) : cursed ? loseGame(betMap) : dealBaccarat(betMap, preRoll ?? undefined)
+    const result = blessed ? winGame(betMap) : cursed ? loseGame(betMap) : dealBaccarat(betMap, preRoll ?? undefined)
     if (preRoll && !blessed && !cursed) setPeekCard(null)
     setPendingDeal(result); setRevealed(1); setDealing(true)
     let i = 1
