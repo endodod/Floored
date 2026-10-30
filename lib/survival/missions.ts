@@ -20,6 +20,7 @@ export const HIGH_VARIANCE_GAME_IDS: GameName[] = [
   'street-cups',
   'deck-countdown',
   'tower-of-cards',
+  'andar-bahar',
 ]
 
 export const LOW_VARIANCE_GAME_IDS: GameName[] = [
@@ -36,6 +37,7 @@ export const LOW_VARIANCE_GAME_IDS: GameName[] = [
   'coin-flip',
   'poker-1p',
   'case-battles',
+  'dragon-tiger',
 ]
 
 export const MISSION_DEFINITIONS: Array<{

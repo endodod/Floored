@@ -63,6 +63,10 @@ export function useSurvivalPerks(game: GameName) {
     baccaratPeekLevel: perkLevel('perk_baccarat_peek'),
     sicBoCold: hasGamePerk(purchasedUpgrades, game, 'perk_sic_bo_cold'),
     sicBoColdLevel: perkLevel('perk_sic_bo_cold'),
+    andarBaharCount: hasGamePerk(purchasedUpgrades, game, 'perk_andar_bahar_count'),
+    andarBaharCountLevel: perkLevel('perk_andar_bahar_count'),
+    dragonTigerPeek: hasGamePerk(purchasedUpgrades, game, 'perk_dragon_tiger_peek'),
+    dragonTigerPeekLevel: perkLevel('perk_dragon_tiger_peek'),
   }
 }
 

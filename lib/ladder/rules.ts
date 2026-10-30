@@ -36,6 +36,8 @@ export const GAME_MAX_MULT: Record<GameName, number | null> = {
   'tower-of-cards': 756.92,
   baccarat: 12,
   'sic-bo': 70,
+  'andar-bahar': 1.95,
+  'dragon-tiger': 12,
 }
 
 export function isCheckpoint(rung: number): boolean {

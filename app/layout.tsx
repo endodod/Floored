@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { IBM_Plex_Mono, Public_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Navbar } from '@/components/navbar'
@@ -8,9 +7,6 @@ import { AccountSync } from '@/components/account-sync'
 import { Ambience } from '@/components/ambience'
 import { MOTION_BOOT_SCRIPT, MotionPreferenceSync } from '@/components/motion-preference'
 
-const sans = Public_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-floored-sans' })
-const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-floored-mono' })
-
 export const metadata: Metadata = {
   title: 'Floored',
   description: 'A casino game: a daily challenge, a roguelike survival run, and freeplay.',
@@ -18,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: MOTION_BOOT_SCRIPT }} />
       </head>

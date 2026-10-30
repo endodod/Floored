@@ -64,8 +64,9 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 
 ### Games
 
-22 games, available in Freeplay, Survival and the Ladder, and drawn from for the Daily:
+24 games, available in Freeplay, Survival and the Ladder, and drawn from for the Daily:
 
+- Andar Bahar
 - Blackjack
 - Baccarat
 - Case Battles
@@ -75,6 +76,7 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 - Crash
 - Deck Countdown
 - Dragon Tower
+- Dragon Tiger
 - HiLo
 - Keno
 - Mines

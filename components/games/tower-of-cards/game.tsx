@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import type { GameMode } from '@/store/types'
 import type { GameResolveFn } from '@/hooks/use-game-bankroll'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
@@ -80,7 +80,7 @@ export function TowerOfCardsGame({ mode, bankroll, onBet, onResolve }: { mode: G
           const n = index + 1, card = round.cards[index], active = playing && round.step === n, failed = settled && round.outcome === 'loss' && n === round.cards.length
           return <div key={label} className={`toc-step plaque flex flex-col items-center gap-1 p-2 ${active ? 'ring-2 ring-felt' : ''} ${failed ? 'g-shake' : card && settled ? 'g-dim' : ''}`}>
             <span className="felt-print">{label}</span>
-            {card ? <PlayingCard key={`${card.rank}${card.suit}`} rank={card.rank} suit={card.suit} className={failed ? 'g-shake' : 'g-flip'}/> : <PlayingCard variant="slot"/>}
+            {card ? <PlayingCard key={`${card.rank}${card.suit}`} rank={card.rank} suit={card.suit} className={failed ? 'g-shake' : 'g-flip'} style={{ '--i': index } as CSSProperties}/> : <PlayingCard variant="slot"/>}
             {card && (round.stepMultipliers[index] != null || (round.outcome === 'push' && n === 1)) && <span className="gold-print num">{round.outcome === 'push' && n === 1 ? 'Push' : formatMultiplier(round.stepMultipliers[index]!)}</span>}
           </div>
         })}</div>
