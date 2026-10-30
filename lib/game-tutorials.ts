@@ -14,6 +14,16 @@ export interface GameTutorial {
 }
 
 export const GAME_TUTORIALS: Record<GameName, GameTutorial> = {
+  baccarat: {
+    intro: 'Bet on the Player hand, the Banker hand or a Tie. The cards play themselves.',
+    steps: [
+      { title: 'Place chips', body: 'Pick a chip and tap Player, Banker, Tie or a Pair spot.' },
+      { title: 'Deal', body: 'Two cards to each hand. Tens and faces count 0, aces 1; only the last digit of the total counts.' },
+      { title: 'Third cards', body: 'Fixed rules decide whether each hand takes a third card. You make no choices.' },
+      { title: 'Collect', body: 'Player pays 2×, Banker 1.95×, Tie 9×, a Pair 12×.' },
+    ],
+    notes: ['On a Tie, Player and Banker bets are returned.', 'A natural 8 or 9 on the first two cards ends the deal.', 'Banker wins a little more often, so it pays 5% less.'],
+  },
   'tower-of-cards': {
     intro: 'Four calls on four cards. Every right call multiplies your bet; cash out between them.',
     steps: [

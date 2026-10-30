@@ -23,6 +23,7 @@ export const HIGH_VARIANCE_GAME_IDS: GameName[] = [
 ]
 
 export const LOW_VARIANCE_GAME_IDS: GameName[] = [
+  'baccarat',
   'blackjack',
   'roulette',
   'plinko',

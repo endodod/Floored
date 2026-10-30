@@ -22,7 +22,6 @@ import {
   dockChips,
   useOpeningTicketChip,
   stakeForFraction,
-  type DockChip,
   type StakeFraction,
   GameDockGameOverButton,
   GameDockLeaveButton,
@@ -60,6 +59,7 @@ import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
 import type { BetMap, RouletteState } from '@/games/roulette/types'
 import { useGameMinBet } from '@/hooks/use-game-min-bet'
+import { TableChipLayer } from '@/components/games/table-chips'
 
 // Standard European roulette table layout: 3 rows top-to-bottom, 12 columns left-to-right
 const BOARD_ROWS = [
@@ -212,59 +212,6 @@ function betCell(target: string): { gridColumn: string; gridRow: string } | null
   }
   const start = { even: 2, red: 5, black: 8, odd: 11 }[target]
   return start ? { gridColumn: `${start} / span 3`, gridRow: '4' } : null
-}
-
-/** The chip colour for a stake: the biggest denomination it reaches, as on a real table. */
-function chipFor(amount: number, chips: DockChip[]): DockChip {
-  const sorted = [...chips].sort((a, b) => a.value - b.value)
-  return sorted.filter((c) => c.value <= amount).pop() ?? sorted[0]!
-}
-
-/**
- * The chips on the table. A layer laid over the mat on the same grid, so each
- * stack sits centred on its spot, above every tile, without moving the number
- * under it. Taps pass through to the mat.
- */
-function ChipLayer({ bets, chips, result }: { bets: BetMap; chips: DockChip[]; result: number | null }) {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-20 grid gap-px p-px"
-      style={{
-        gridTemplateColumns: 'minmax(26px,1.15fr) repeat(12, minmax(0, 1fr))',
-        gridTemplateRows: 'repeat(3, var(--cell-h)) var(--out-h)',
-      }}
-    >
-      {Object.entries(bets).map(([target, amount]) => {
-        const at = betCell(target)
-        if (!at || amount <= 0) return null
-        const chip = chipFor(amount, chips)
-        const stacked = amount > chip.value
-        const fx = result == null ? 'g-pop' : isNumberCoveredByTarget(result, target) ? 'g-gold' : 'g-dim'
-        return (
-          <span key={`${target}-${amount}`} className="relative flex items-center justify-center" style={at}>
-            <span
-              className={`chip relative flex aspect-square items-center justify-center font-bold tracking-[-0.04em] tabular-nums ${fx}`}
-              style={
-                {
-                  '--chip': chip.chip,
-                  '--chip-ink': chip.ink,
-                  width: 'min(calc(var(--cell-h) * 0.92), 2.25rem)',
-                  fontSize: 'clamp(6px, calc(var(--cell-h) * 0.27), 10.5px)',
-                  // A stack shows its lower chips as edges under the top one.
-                  boxShadow: stacked
-                    ? `0 2px 0 ${chip.chip}, 0 3px 0 rgba(0,0,0,0.5), 0 5px 0 ${chip.chip}, 0 7px 10px rgba(0,0,0,0.6)`
-                    : '0 3px 8px rgba(0,0,0,0.6)',
-                } as CSSProperties
-              }
-            >
-              {formatChips(amount)}
-            </span>
-          </span>
-        )
-      })}
-    </div>
-  )
 }
 
 export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameProps) {
@@ -613,7 +560,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
                 </span>
               ))}
             </div>
-            <ChipLayer bets={shownBets} chips={chips} result={isSettled ? round.result : null} />
+            <TableChipLayer bets={shownBets} chips={chips} result={isSettled ? round.result : null} cellFor={betCell} isWinning={(result, target) => isNumberCoveredByTarget(result, target)} gridTemplateColumns="minmax(26px,1.15fr) repeat(12, minmax(0, 1fr))" gridTemplateRows="repeat(3, var(--cell-h)) var(--out-h)" />
             </div>
             <p className="felt-print mt-2 text-center text-[9.5px]">Numbers pay 36 for 1 · Outside bets pay 2 for 1</p>
           </div>

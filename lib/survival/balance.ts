@@ -50,6 +50,7 @@ export const SURVIVAL_GAME_POOL: GameName[] = [
   'coin-flip',
   'deck-countdown',
   'tower-of-cards',
+  'baccarat',
 ]
 
 export const DIFFICULTY_QUOTA_MULT: Record<Difficulty, number> = {

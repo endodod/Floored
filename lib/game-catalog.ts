@@ -234,6 +234,17 @@ export const GAMES: GameEntry[] = [
     gradient: 'from-neutral-950 to-neutral-900',
     accent: 'border-neutral-600 hover:border-neutral-500',
   },
+  {
+    // pos 21 — Baccarat
+    name: 'baccarat',
+    label: 'Baccarat',
+    sub: 'Player, Banker or Tie',
+    symbol: '♣',
+    availableFreeplay: true,
+    availableSurvival: true,
+    gradient: 'from-zinc-950 to-zinc-900',
+    accent: 'border-zinc-600 hover:border-zinc-500',
+  },
 ]
 
 export const GAME_BY_NAME = new Map(GAMES.map((g) => [g.name, g]))

@@ -667,7 +667,7 @@ Implementation:
 |---|---|---|---|---|---|
 | Deck Countdown | ✓ | ✓ | ✓ | ✓ | — |
 | Tower of Cards | ✓ | ✓ | ✓ | ✓ | — |
-| Baccarat | — | — | — | — | — |
+| Baccarat | ✓ | ✓ | ✓ | ✓ | — |
 | Sic Bo | — | — | — | — | — |
 
 Tick each column in the game's commit.

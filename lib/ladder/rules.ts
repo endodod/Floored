@@ -34,6 +34,7 @@ export const GAME_MAX_MULT: Record<GameName, number | null> = {
   'coin-flip':    Infinity,
   'deck-countdown': 9178.56,
   'tower-of-cards': 756.92,
+  baccarat: 12,
 }
 
 export function isCheckpoint(rung: number): boolean {

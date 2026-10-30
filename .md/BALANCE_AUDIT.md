@@ -13,7 +13,7 @@ Source: codebase only (`lib/survival/`, `games/`, `store/`, etc.). Generated fro
 | Games offered per floor (lobby) | **6** (`GAMES_PER_FLOOR` in `lib/survival/floor-generator.ts`) |
 | Bets per floor (hard cap) | **10** (`FLOOR_BET_LIMIT`) | `lib/survival/balance.ts` |
 | Games player may play per floor | Any of the **6 lobby games**, until **10 total bets** are placed across all games (no per-game bet cap in code) | `store/survival-store.ts` `recordResult` / `recordResultPayout` |
-| Full game pool size | **20** games (`SURVIVAL_GAME_POOL`) | `lib/survival/balance.ts` |
+| Full game pool size | **21** games (`SURVIVAL_GAME_POOL`) | `lib/survival/balance.ts` |
 
 ### Win condition (successful run)
 - Reach **floor 10**, meet quota on that floor, then choose **Claim Victory** in `FloorCompleteModal` → `endRun({ victory: true })`.
@@ -109,14 +109,14 @@ Run-scoped currency used to **buy shop upgrades** and **Lobby Reroll Tickets**. 
 | Lucky Charm | `run_payout_boost` | 12 | 12, 18, 24, 30, 36 | +5%, +10%, +15%, +20%, +25% on **all** win payouts (`RUN_PAYOUT_MULT_BY_LEVEL`) |
 | Opening Ticket | `first_bet_free` | 20 | 20, 30, 40, 50, 60 | First bet each floor free up to **10×, 12×, 16×, 22×, 30×** floor min bet (`OPENING_TICKET_CAP_BY_LEVEL`) |
 
-#### Game Boost (×20 games)
+#### Game Boost (×21 games)
 | Item pattern | Family | Base | L1–L5 costs | L1–L5 payout mult |
 |--------------|--------|------|-------------|-------------------|
 | e.g. Card Counter (Blackjack) | `{game}_boost` | 14 | 14, 21, 28, 35, 42 | 1.05, 1.12, 1.20, 1.30, 1.40 |
 
-Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` (20 unique names).
+Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` (21 unique names).
 
-#### Game Perks (×20 games) — base costs (L1); L2–L5 = `levelCost(base, L)`
+#### Game Perks (×21 games) — base costs (L1); L2–L5 = `levelCost(base, L)`
 | Game | Perk name | Base | Rarity |
 |------|-----------|------|--------|
 | blackjack | Hole Card Reader | 24 | epic |
@@ -139,6 +139,7 @@ Boost names per game: `GAME_BOOST_LABELS` in `lib/survival/upgrades-catalog.ts` 
 | coin-flip | Weighted Edge | 20 | rare |
 | deck-countdown | Burn Card | 22 | rare |
 | tower-of-cards | Safety Net | 20 | rare |
+| baccarat | Shoe Peek | 22 | epic |
 
 #### Consumable (active shop slot)
 | Item | ID | Base cost | Effect |
@@ -531,6 +532,18 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 
 ---
 
+### baccarat
+- **ID:** `baccarat`
+- **Rules:** Punto banco drawing rules; Player / Banker / Tie and Pair bets.
+- **Bet range:** min–max per spot.
+- **Returns:** Player **2×**, Banker **1.95×**, Tie **9×**, either Pair **12×**; Player / Banker bets push on Tie.
+- **RTP:** Player **98.77%**, Banker **98.94%**, Tie **85.88%**, Pair **92.31%**.
+- **Game Boost:** Shoe Reader; standard payout boost.
+- **Game Perk — Shoe Peek:** 30–75% proc; seeing Player’s first card can raise return to **106.7%** when betting the better side.
+- **TODO:** Verify dealing animation, exact odds and perk in Survival.
+
+---
+
 ## 5. SHOP — ALL ITEMS
 
 **Categories used in code:** `scope: 'run' | 'game' | 'consumable'` → mapped to Overall / Game Boost / Game Perk / Consumable. **Max level:** **5** (`MAX_UPGRADE_LEVEL`). **Permanent:** All upgrades are **run-permanent** (replace lower level in family). **Consumable:** tickets stack and are consumed.
@@ -659,11 +672,11 @@ owned upgrades while preserving reproducibility; each floor stores its final lin
 `floorHistory` for later selection.
 
 ### Pool membership
-All **20** games in `SURVIVAL_GAME_POOL` have survival routes. Selection is weighted by
+All **21** games in `SURVIVAL_GAME_POOL` have survival routes. Selection is weighted by
 run history and owned game upgrades.
 
 ### Lobby vs generator
-All 19 games are currently marked `availableSurvival: true` in the catalog.
+All 21 games are currently marked `availableSurvival: true` in the catalog.
 
 ### Locked / disabled
 - **Hard / nightmare** difficulty has no UI (runs start on Normal).
@@ -756,7 +769,7 @@ All 19 games are currently marked `availableSurvival: true` in the catalog.
 | FLOOR_REPEAT_WEIGHT | Constant | 0.5 | weight | Appeared on the previous floor |
 | FLOOR_MAX_APPEARANCES | Constant | 5 | floors | Last-ten-floor hard cap |
 | GAMES_PER_FLOOR | Constant | 6 | games | Lobby offerings |
-| SURVIVAL_GAME_POOL | Constant | 20 | games | Generator pool |
+| SURVIVAL_GAME_POOL | Constant | 21 | games | Generator pool |
 | GRANT_ALL_UPGRADES | Constant | false | flag | Dev only |
 | Quota formula | Formula | 2000×500^((f−1)/9) | chips | × difficulty quota mult |
 | Quota floor 1 normal | Quota | 2000 | chips | |

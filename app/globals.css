@@ -912,6 +912,22 @@ body > div.neon-auth-ui {
   .toc-step { padding: .35rem; }
   .toc-step:nth-child(n) { transform: none; }
 }
+
+/* Baccarat: paired hands above a five-spot betting mat. */
+.bac-board { --card-h: clamp(3.25rem, calc(100cqh - 17rem), 7rem); }
+.bac-third { transform: translateY(.35rem) rotate(90deg); transform-origin: center; }
+.bac-mat { min-height: clamp(4rem, 12cqh, 6rem); }
+@container board (max-height: 300px) and (min-aspect-ratio: 2/1) {
+  .bac-board { display: grid !important; grid-template-columns: minmax(13rem, 1fr) minmax(17rem, 1.25fr); grid-template-rows: 1fr auto; gap: .5rem; padding-top: 3.75rem !important; }
+  .bac-hands { grid-column: 1; grid-row: 1; align-self: center; }
+  .bac-mat { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+  .bac-board > .felt-print { grid-column: 1; grid-row: 2; }
+  .bac-board { --card-h: clamp(3rem, calc(100cqh - 10rem), 5rem); }
+}
+@container board (max-width: 420px) {
+  .bac-board { gap: .6rem; }
+  .bac-mat button { min-height: 3.5rem; font-size: .8rem; }
+}
 @container board (max-height: 300px) and (min-aspect-ratio: 2/1) {
   .dcd-board { display: grid !important; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; gap: 0.5rem; padding-top: 3.75rem !important; }
   .dcd-top { grid-row: 1 / 3; }

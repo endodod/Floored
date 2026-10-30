@@ -59,6 +59,8 @@ export function useSurvivalPerks(game: GameName) {
     deckBurnLevel: perkLevel('perk_deck_burn'),
     towerNet: hasGamePerk(purchasedUpgrades, game, 'perk_tower_net'),
     towerNetLevel: perkLevel('perk_tower_net'),
+    baccaratPeek: hasGamePerk(purchasedUpgrades, game, 'perk_baccarat_peek'),
+    baccaratPeekLevel: perkLevel('perk_baccarat_peek'),
   }
 }
 
