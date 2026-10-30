@@ -61,6 +61,8 @@ export function useSurvivalPerks(game: GameName) {
     towerNetLevel: perkLevel('perk_tower_net'),
     baccaratPeek: hasGamePerk(purchasedUpgrades, game, 'perk_baccarat_peek'),
     baccaratPeekLevel: perkLevel('perk_baccarat_peek'),
+    sicBoCold: hasGamePerk(purchasedUpgrades, game, 'perk_sic_bo_cold'),
+    sicBoColdLevel: perkLevel('perk_sic_bo_cold'),
   }
 }
 

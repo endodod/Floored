@@ -1,6 +1,6 @@
 # New games — handoff
 
-Status as of 2026-10-30: **designed and owner-approved, nothing built.** Four new house games for Freeplay,
+Status as of 2026-10-30: **implemented; browser verification still pending.** Four new house games for Freeplay,
 Daily, Ladder and Survival (not Tables):
 
 | ID | Label | Kind | Closest existing game to copy from |
@@ -668,7 +668,7 @@ Implementation:
 | Deck Countdown | ✓ | ✓ | ✓ | ✓ | — |
 | Tower of Cards | ✓ | ✓ | ✓ | ✓ | — |
 | Baccarat | ✓ | ✓ | ✓ | ✓ | — |
-| Sic Bo | — | — | — | — | — |
+| Sic Bo | ✓ | ✓ | ✓ | ✓ | — |
 
 Tick each column in the game's commit.
 

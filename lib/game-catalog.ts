@@ -245,6 +245,17 @@ export const GAMES: GameEntry[] = [
     gradient: 'from-zinc-950 to-zinc-900',
     accent: 'border-zinc-600 hover:border-zinc-500',
   },
+  {
+    // pos 22 — Sic Bo
+    name: 'sic-bo',
+    label: 'Sic Bo',
+    sub: 'Bet on three dice',
+    symbol: '⚄',
+    availableFreeplay: true,
+    availableSurvival: true,
+    gradient: 'from-blue-950 to-blue-900',
+    accent: 'border-blue-600 hover:border-blue-500',
+  },
 ]
 
 export const GAME_BY_NAME = new Map(GAMES.map((g) => [g.name, g]))

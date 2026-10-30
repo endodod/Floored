@@ -37,6 +37,7 @@ const GAME_BOOST_LABELS: Record<GameName, { name: string }> = {
   'deck-countdown': { name: 'Card Memory' },
   'tower-of-cards': { name: 'High Card' },
   baccarat: { name: 'Shoe Reader' },
+  'sic-bo': { name: 'Hot Dice' },
   blackjack: { name: 'Card Counter' },
   crash: { name: 'Early Cashout' },
   plinko: { name: 'Gravity Bias' },
@@ -64,6 +65,7 @@ const GAME_PERK_DEFS: Record<
   'deck-countdown': { name: 'Burn Card', description: 'The first repeated rank is burned instead of busting.', effectKey: 'perk_deck_burn', baseCost: 22, rarity: 'rare' },
   'tower-of-cards': { name: 'Safety Net', description: 'A wrong call from step two returns the multiplier banked before it.', effectKey: 'perk_tower_net', baseCost: 20, rarity: 'rare' },
   baccarat: { name: 'Shoe Peek', description: 'See the Player’s first card before dealing.', effectKey: 'perk_baccarat_peek', baseCost: 22, rarity: 'epic' },
+  'sic-bo': { name: 'Cold Faces', description: 'Two faces that cannot land are crossed out before the roll.', effectKey: 'perk_sic_bo_cold', baseCost: 20, rarity: 'rare' },
   blackjack: {
     name: 'Hole Card Reader',
     description: 'See the dealer’s hole card while you play your hand.',

@@ -928,6 +928,18 @@ body > div.neon-auth-ui {
   .bac-board { gap: .6rem; }
   .bac-mat button { min-height: 3.5rem; font-size: .8rem; }
 }
+
+/* Sic Bo: the dice dome and dense four-row mat share the board. */
+.sb-board { --die: clamp(2.35rem, 7cqh, 4rem); }
+.sb-dome { box-shadow: inset 0 0 20px rgba(255,255,255,.08), 0 10px 24px rgba(0,0,0,.5); }
+.sb-mat button:nth-child(n+10):nth-child(-n+23) { min-width: 0; }
+@container board (max-height: 340px) and (min-aspect-ratio: 2/1) {
+  .sb-board { display: grid !important; grid-template-columns: auto minmax(22rem, 1fr); grid-template-rows: 1fr auto; gap: .5rem; padding-top: 3.75rem !important; }
+  .sb-dome { grid-column: 1; grid-row: 1; }
+  .sb-dome + .plaque { grid-column: 1; grid-row: 2; align-self: start; }
+  .sb-mat { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+  .sb-board > .felt-print { display: none; }
+}
 @container board (max-height: 300px) and (min-aspect-ratio: 2/1) {
   .dcd-board { display: grid !important; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; gap: 0.5rem; padding-top: 3.75rem !important; }
   .dcd-top { grid-row: 1 / 3; }

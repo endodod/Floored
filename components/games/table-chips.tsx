@@ -7,7 +7,7 @@ export function chipFor(amount: number, chips: DockChip[]): DockChip {
   return sorted.filter((chip) => chip.value <= amount).pop() ?? sorted[0]!
 }
 
-export function TableChipLayer<T extends string | number>({
+export function TableChipLayer<T>({
   bets, chips, result, cellFor, isWinning, gridTemplateColumns, gridTemplateRows,
 }: {
   bets: Record<string, number>

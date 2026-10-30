@@ -14,6 +14,16 @@ export interface GameTutorial {
 }
 
 export const GAME_TUTORIALS: Record<GameName, GameTutorial> = {
+  'sic-bo': {
+    intro: 'Bet on three dice: their total, a number, a pair or a triple.',
+    steps: [
+      { title: 'Pick a chip', body: 'Choose a chip value, or ¼, ½ or All in, from the rack.' },
+      { title: 'Place chips', body: 'Tap any spots on the mat. Cover as many as you like.' },
+      { title: 'Roll', body: 'Three dice land under the dome.' },
+      { title: 'Collect', body: 'Every winning spot pays on its own: Small or Big 2×, a total up to 70×, a double 13×, a triple 35×.' },
+    ],
+    notes: ['Small and Big lose on any triple.', 'A single number pays 2× for one die, 3× for two, 15× for three.'],
+  },
   baccarat: {
     intro: 'Bet on the Player hand, the Banker hand or a Tie. The cards play themselves.',
     steps: [

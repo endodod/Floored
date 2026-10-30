@@ -17,6 +17,7 @@ export const PROC_PERK_BASE_CHANCES: Record<string, number> = {
   perk_deck_burn: 0.30,
   perk_tower_net: 0.30,
   perk_baccarat_peek: 0.30,
+  perk_sic_bo_cold: 0.30,
 }
 
 const PROC_LEVEL_BONUS = 0.1125
