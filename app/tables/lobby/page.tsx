@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useHydrated } from '@/hooks/use-hydrated'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { TABLE_GAMES, TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
-import { CASH_STAKES, cashStakeFor, limitsLabel, MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, TIER_BY_ID, ordinal, prizes } from '@/lib/tables/stakes'
+import { cashStakeFor, limitsLabel, MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, TIER_BY_ID, ordinal, prizes } from '@/lib/tables/stakes'
 import type { CashStakeId, TableFormat, TableGameName, TableTier } from '@/lib/tables/types'
 import { useTablesStore } from '@/store/tables-store'
 import { formatChips } from '@/utils/format'
@@ -58,7 +58,6 @@ export default function TablesLobbyPage() {
   if (!hydrated) return <ScreenSkeleton />
 
   const chosen = TIER_BY_ID.get(tier)!
-  const stake = cashGame ? cashStakeFor(cashGame, cashStake) : null
   const totals = Object.values(s.stats).reduce(
     (acc, st) => ({ played: acc.played + st.played, won: acc.won + st.won, cashes: acc.cashes + st.cashes, net: acc.net + st.net }),
     { played: 0, won: 0, cashes: 0, net: 0 },
@@ -176,7 +175,11 @@ export default function TablesLobbyPage() {
                   <span aria-hidden className="text-sm leading-none">{t.symbol}</span>
                   <span className={cn('text-[13px] font-semibold', on ? 'text-ink' : 'text-soft')}>{t.label}</span>
                 </span>
-                <span className="num mt-0.5 text-[17px] text-ink">{format === 'tournament' ? formatChips((t as typeof TABLE_TIERS[number]).buyIn) : TABLE_GAMES.map((game) => limitsLabel(game.name, cashStakeFor(game.name, t.id as CashStakeId))).join(' · ')}</span>
+                {format === 'tournament' ? <span className="num mt-0.5 text-[17px] text-ink">{formatChips((t as typeof TABLE_TIERS[number]).buyIn)}</span> : (
+                  <span className="mt-1 grid w-full gap-0.5 text-xs text-ink">
+                    {TABLE_GAMES.map((game) => <span key={game.name} className="flex items-baseline justify-between gap-2"><span className="text-soft">{game.label}</span><span className="num">{limitsLabel(game.name, cashStakeFor(game.name, t.id as CashStakeId))}</span></span>)}
+                  </span>
+                )}
                 <span className="mt-0.5 text-xs text-dim">{format === 'tournament' ? 'Paid to the prize pool' : 'No prize pool · leave with your stack'}</span>
               </button>
             )

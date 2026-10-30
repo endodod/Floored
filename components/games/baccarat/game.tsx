@@ -15,9 +15,8 @@ import { survivalAfterNext } from '@/lib/survival/survival-round'
 import { resolveGame } from '@/lib/survival/game-resolve'
 import { buildPendingResult, formatBetSummary, type GamePendingResult } from '@/lib/game-result-labels'
 import { pickQuote } from '@/lib/gambling-quotes'
-import { formatChips } from '@/utils/format'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
-import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_SECONDARY_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
+import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_RACK_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { PlayingCard } from '@/components/games/playing-card'
 import { PerkHint } from '@/components/survival/perk-hint'
@@ -28,7 +27,6 @@ import type { BaccaratBets, BaccaratSpot, BaccaratState } from '@/games/baccarat
 const SPOTS: BaccaratSpot[] = ['player-pair', 'player', 'tie', 'banker', 'banker-pair']
 const LABELS: Record<BaccaratSpot, string> = { 'player-pair': 'P Pair', player: 'Player', tie: 'Tie', banker: 'Banker', 'banker-pair': 'B Pair' }
 const PAYS: Record<BaccaratSpot, string> = { 'player-pair': '11 to 1', player: '1 to 1', tie: '8 to 1', banker: '0.95 to 1', 'banker-pair': '11 to 1' }
-const DISPLAY_ORDER = ['♠', '♥', '♦', '♣']
 const ROLL_MS = 350
 
 export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameMode; bankroll: number; onBet?: (amount: number) => void; onResolve: GameResolveFn }) {
@@ -60,7 +58,6 @@ export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameM
   const settled = round.stage === 'settled' && !dealing
   const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: betting || (settled && pending != null) })
   const totalBet = Object.values(bets).reduce((sum, amount) => sum + (amount ?? 0), 0)
-  const lastTotal = Object.values(lastBets).reduce((sum, amount) => sum + (amount ?? 0), 0)
   const canDeal = totalBet >= minBet && totalBet <= bankroll
 
   useEffect(() => {
@@ -100,7 +97,7 @@ export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameM
     const betMap = bets, amount = totalBet
     onBet?.(amount); setLastBetTotal(amount); setLastBets(betMap); setBets({}); setPlaced([]); setPending(null); setQuoteIdx(pickQuote(quoteIdx))
     const preRoll = peekCard
-    let result = blessed ? winGame(betMap) : cursed ? loseGame(betMap) : dealBaccarat(betMap, preRoll ?? undefined)
+    const result = blessed ? winGame(betMap) : cursed ? loseGame(betMap) : dealBaccarat(betMap, preRoll ?? undefined)
     if (preRoll && !blessed && !cursed) setPeekCard(null)
     setPendingDeal(result); setRevealed(1); setDealing(true)
     let i = 1
@@ -131,7 +128,7 @@ export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameM
   }
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
-  const visible = pendingDeal ? pendingDeal.deal.slice(0, revealed) : []
+  const visible = pendingDeal ? pendingDeal.deal.slice(0, revealed) : round.deal
   const player = visible.filter(d => d.hand === 'player').map(d => d.card)
   const banker = visible.filter(d => d.hand === 'banker').map(d => d.card)
   const cellFor = (target: string) => ({ gridColumn: String(SPOTS.indexOf(target as BaccaratSpot) + 1), gridRow: '1' })
@@ -142,7 +139,7 @@ export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameM
     <div className={GAME_STATUS_BAR}><span className="text-[13px] font-semibold text-ink">Baccarat</span>{shoePeek.perkEffective && peekCard && <PerkHint>Shoe Peek — Player’s first card is shown</PerkHint>}<span className="text-[13px] text-dim">{round.message}</span></div>
     <GameFieldWithHistory className={GAME_BOARD_ARENA} boardClassName="relative" entries={history} gameLabel="Baccarat">
       <div className="bac-board relative flex h-full min-h-0 w-full flex-col items-center justify-center gap-3 px-3 py-3">
-        <GameDockBackButton mode={mode} visible={betting && !showGameOver}/><GameActiveBetBadge betAmount={!betting ? (round.totalBetAmount || lastBetTotal) : 0} visible={!betting}/>
+        <GameDockBackButton mode={mode} visible={betting && !showGameOver}/><GameActiveBetBadge betAmount={!betting ? (round.totalBetAmount || lastBetTotal) : 0} betType={!betting && lastBetTotal > 0 ? `${Object.keys(lastBets).length} spots` : undefined} visible={!betting}/>
         <div className="bac-hands flex w-full max-w-2xl items-center justify-around gap-3">
           {(['player','banker'] as const).map(hand => {
             const cards = hand === 'player' ? player : banker
@@ -152,20 +149,20 @@ export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameM
               <div className="felt-print flex items-center gap-2">{hand === 'player' ? 'Player' : 'Banker'}{total != null && <span className="plaque num px-2 py-0.5 text-ink">{total}</span>}</div>
               <div className="bac-card-row flex items-center justify-center gap-1">{Array.from({ length: 3 }, (_, i) => {
                 const card = cards[i] ?? (hand === 'player' && i === 0 && !dealing ? peekCard : null)
-                return card ? <PlayingCard key={`${card.rank}${card.suit}-${i}`} rank={card.rank} suit={card.suit} className={i >= 2 ? 'bac-third g-flip' : 'g-flip'}/> : <PlayingCard key={`slot-${hand}-${i}`} variant="slot" className="invisible" />
+                    return card ? <PlayingCard key={`${card.rank}${card.suit}-${i}`} rank={card.rank} suit={card.suit} className={i >= 2 ? 'bac-third g-flip' : 'g-flip'} style={{ '--i': i } as CSSProperties}/> : <PlayingCard key={`slot-${hand}-${i}`} variant="slot" className="invisible" />
               })}</div>
             </div>
           })}
         </div>
-        <div className="bac-mat relative grid w-full max-w-4xl gap-1 rounded-xl border border-gold bg-ground p-1" style={gridStyle as CSSProperties}>
-          {SPOTS.map(spot => <button key={spot} onClick={() => place(spot)} disabled={!betting} className={`relative flex min-h-14 flex-col items-center justify-center rounded-lg border border-line bg-felt px-1 py-1 text-center ${spot === 'tie' ? 'text-gold' : 'text-ink'} disabled:cursor-default`}><span className="felt-print">{LABELS[spot]}</span><span className="text-[10px] text-soft">{PAYS[spot]}</span></button>)}
+        <div className="bac-mat relative grid w-full max-w-4xl gap-px rounded-sm bg-[rgba(217,164,65,0.4)] p-px shadow-[0_18px_40px_-20px_rgba(0,0,0,0.9)]" style={gridStyle as CSSProperties}>
+          {SPOTS.map(spot => <button key={spot} type="button" onClick={() => place(spot)} disabled={!betting} aria-pressed={(bets[spot] ?? 0) > 0} className={`relative flex min-h-14 items-center justify-center bg-[#163021] px-1 py-1 text-center text-[12px] font-semibold text-[#f4f1ea] transition-[filter,box-shadow,opacity] duration-150 select-none ${betting ? 'cursor-pointer hover:brightness-125' : 'cursor-default'}`}><span>{LABELS[spot]}</span><span className="ml-1 font-normal text-gold">{PAYS[spot]}</span></button>)}
           <TableChipLayer bets={betting ? bets as Record<string,number> : lastBets as Record<string,number>} chips={chips} result={settled ? round.winner : null} cellFor={cellFor} isWinning={winning} gridTemplateColumns="repeat(5, minmax(0, 1fr))" gridTemplateRows="1fr" />
         </div>
         <p className="felt-print">Player / Banker pay 1 to 1 · Tie 8 to 1</p>
       </div>
     </GameFieldWithHistory>
     <div className={GAME_CONTROL_DOCK_M}><div className={GAME_DOCK_INNER}>
-      {betting ? <GameDockChipPicker chips={chips} selected={selectedChip} onSelect={v => { setChipValue(v); setFraction(null) }} remaining={(ticketChip ? ticketChip.value : bankroll) - totalBet} fraction={ticketChip ? null : fraction} onSelectFraction={ticketChip ? undefined : f => setFraction(f)}><button type="button" onClick={undo} disabled={!placed.length} className={GAME_DOCK_SECONDARY_BTN}>Undo</button></GameDockChipPicker> : <GameDockChipRow visible={dealing} bankroll={bankroll} currentBet={0} onAddChip={() => {}} quoteIdx={quoteIdx} showQuote={dealing} minBet={minBet}/>}
+      {betting ? <GameDockChipPicker chips={chips} selected={selectedChip} onSelect={v => { setChipValue(v); setFraction(null) }} remaining={(ticketChip ? ticketChip.value : bankroll) - totalBet} fraction={ticketChip ? null : fraction} onSelectFraction={ticketChip ? undefined : f => setFraction(f)}><button type="button" onClick={undo} disabled={!placed.length} className={GAME_DOCK_RACK_BTN}>Undo</button></GameDockChipPicker> : <GameDockChipRow visible={dealing} bankroll={bankroll} currentBet={0} onAddChip={() => {}} quoteIdx={quoteIdx} showQuote={dealing} minBet={minBet}/>}
       <div className={GAME_DOCK_SETTLED_SLOT}>{betting && <GameDockBetRow currentBet={totalBet} onClear={clear}/>}{dealing && <p className="text-sm text-soft">Cards are being dealt…</p>}{settled && pending && <GameDockSettledRow betSummary={pending.betSummary} resultSummary={pending.resultSummary} profitLabel={pending.profitLabel} tone={pending.tone}/>}</div>
       <div className={GAME_DOCK_ACTIONS}>{showGameOver ? <GameDockGameOverButton onClick={handleGameOver}/> : betting ? <button onClick={deal} disabled={!canDeal} className={GAME_DOCK_PRIMARY_BTN}>Deal →</button> : settled ? <GameDockSettledActions mode={mode} showGameOver={showGameOver} onGameOver={handleGameOver} onNext={nextRound}/> : <span className="invisible">Deal →</span>}</div>
     </div></div>
