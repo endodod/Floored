@@ -2,6 +2,8 @@ import type { GameName } from '@/store/types'
 
 /** 18 rungs, one game each; with more games than rungs, some are left over each climb. */
 export const LADDER_RUNGS = 18
+/** Each rung's picker offers this many of the games still unused this run. */
+export const PICKS_PER_RUNG = 6
 export const CHECKPOINT_EVERY = 3
 export const START_POT = 100
 export const LADDER_LIVES = 3

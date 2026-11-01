@@ -661,7 +661,7 @@ Implementation:
 1. **Ladder length: keep 18 rungs.** With 22 games, four are left over each climb.
    Update the `LADDER_RUNGS` comment in `lib/ladder/rules.ts` (first game's commit) and
    the README's Ladder line "every game once per run" → "one game per rung, never the
-   same game twice". The picker's "`n` of `GAMES.length` games left" already adapts.
+   same game twice". The picker's "`n` on offer · `GAMES.length` games left" note already adapts.
 2. **Survival floors: weighted draw (section 6.1).** Runs in progress may get different
    later floors; accepted.
 3. **Deck Countdown top prize: keep 9178.56×**, no cap.

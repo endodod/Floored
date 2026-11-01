@@ -9,7 +9,7 @@ import { MOTION_BOOT_SCRIPT, MotionPreferenceSync } from '@/components/motion-pr
 
 export const metadata: Metadata = {
   title: 'Floored',
-  description: 'A casino game: a daily challenge, a roguelike survival run, and freeplay.',
+  description: 'A casino game: a daily challenge, a ladder climb, tables and freeplay.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

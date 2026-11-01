@@ -13,7 +13,7 @@ import {
 } from '@/lib/ladder/rules'
 import { ladderStats } from '@/lib/ladder/share'
 import { formatMultiplier } from '@/lib/daily/share'
-import { GAMES } from '@/lib/game-catalog'
+import { GAMES, GAME_BY_NAME } from '@/lib/game-catalog'
 import { useHydrated } from '@/hooks/use-hydrated'
 import { formatChips } from '@/utils/format'
 import { LadderResults } from '@/components/ladder/ladder-results'
@@ -69,8 +69,8 @@ const TUTORIAL: TutorialStep[] = [
     body: 'Finish the round with more than you staked and you climb — the payout becomes your new pot. A push replays the rung.',
   },
   {
-    title: 'Each game once',
-    body: 'Every game can only clear one rung per run, so save the safe ones for when the pot gets big.',
+    title: 'Six on offer, each game once',
+    body: 'Each rung offers six random games, and a game can only clear one rung per run — games you have not been offered yet are likelier to turn up.',
   },
   {
     title: 'Checkpoints',
@@ -150,11 +150,25 @@ export default function LadderPage() {
 
   const used = useMemo(() => usedGames(s.cleared), [s.cleared])
   const available = useMemo(() => GAMES.map((g) => g.name).filter((g) => !used.has(g)), [used])
+  // The picker only ever shows this rung's offers — six games, drawn by the store.
+  const offered = useMemo(() => {
+    const names = s.offers.find((o) => o.rung === s.rung)?.games ?? []
+    return names.flatMap((name) => {
+      const entry = GAME_BY_NAME.get(name)
+      return entry ? [entry] : []
+    })
+  }, [s.offers, s.rung])
   const stats = useMemo(() => ladderStats(s.history), [s.history])
 
   useEffect(() => {
-    if (s.status === 'climbing') available.forEach((g) => router.prefetch(`/ladder/${g}`))
-  }, [s.status, available, router])
+    if (s.status !== 'climbing') return
+    // A climb saved before the offer pool existed gets its picker drawn on arrival.
+    useLadderStore.getState().ensureOffers()
+  }, [s.status, s.rung])
+
+  useEffect(() => {
+    if (s.status === 'climbing') offered.forEach((g) => router.prefetch(`/ladder/${g.name}`))
+  }, [s.status, offered, router])
 
   if (!hydrated) return <ScreenSkeleton />
 
@@ -265,14 +279,12 @@ export default function LadderPage() {
           />
 
           <section className="flex flex-col gap-4" aria-labelledby="ladder-games">
-            <SectionTitle suit={3} note={`${available.length} of ${GAMES.length} games left this run`}>
+            <SectionTitle suit={3} note={`${offered.length} on offer · ${available.length} games left`}>
               <span id="ladder-games">Pick the game for rung {s.rung + 1}</span>
             </SectionTitle>
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {GAMES.map((entry, i) => {
+              {offered.map((entry, i) => {
                 const game = entry.name
-                const usedOn = s.cleared.findIndex((c) => c.game === game)
-                const playable = usedOn === -1
                 const isLoading = pending === game
                 return (
                   <li key={game}>
@@ -282,9 +294,8 @@ export default function LadderPage() {
                       symbol={entry.symbol}
                       sub={entry.sub}
                       meta={<PayoutCaption game={game} />}
-                      action={usedOn !== -1 ? `Used on rung ${usedOn + 1}` : 'Play'}
-                      disabled={!playable || !!pending}
-                      faded={!playable || (!!pending && !isLoading)}
+                      disabled={!!pending}
+                      faded={!!pending && !isLoading}
                       loading={isLoading}
                       onClick={() => handlePick(game)}
                     />

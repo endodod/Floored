@@ -3,13 +3,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { GameName } from '@/store/types'
+import { GAMES } from '@/lib/game-catalog'
 import {
   LADDER_LIVES,
   LADDER_RUNGS,
+  PICKS_PER_RUNG,
   START_POT,
   TOP_BONUS,
   isCheckpoint,
 } from '@/lib/ladder/rules'
+import { pickRungOffers } from '@/lib/ladder/offers'
 
 export interface ClearedRung {
   game: GameName
@@ -38,6 +41,12 @@ export interface LadderRecord {
   log: LadderEvent[]
 }
 
+/** The games the picker offers on one rung. */
+export interface RungOffers {
+  rung: number
+  games: GameName[]
+}
+
 interface OpenRound {
   game: GameName
   staked: number
@@ -53,6 +62,8 @@ interface LadderStore {
   checkpointPot: number
   /** Game used on each cleared rung, bottom first — doubles as the set of used games. */
   cleared: ClearedRung[]
+  /** Each rung's picker, lowest first. Entries above the current rung are discarded on a fall. */
+  offers: RungOffers[]
   /** Game picked for the rung being climbed. */
   currentGame: GameName | null
   openRound: OpenRound | null
@@ -66,6 +77,8 @@ interface LadderStore {
   history: LadderRecord[]
 
   startRun: () => void
+  /** Draws the picker for the current rung if it is missing (a run saved before the offer pool). */
+  ensureOffers: () => void
   pickGame: (game: GameName | null) => void
   placeBet: (game: GameName, amount: number) => void
   /** Credits a payout; `settle` closes the round: profit clears the rung, a loss falls, a push replays it. */
@@ -80,6 +93,18 @@ interface LadderStore {
 
 const HISTORY_LIMIT = 50
 
+/**
+ * Draws the picker for `rung`: never a used game, and games that haven't been offered on an
+ * earlier rung are likelier. Offers for later rungs are dropped, so a fall re-draws its rung.
+ */
+function drawOffers(rung: number, cleared: ClearedRung[], offers: RungOffers[]): RungOffers[] {
+  const kept = offers.filter((o) => o.rung < rung)
+  const used = new Set(cleared.map((c) => c.game))
+  const seen = new Set(kept.flatMap((o) => o.games))
+  const available = GAMES.map((g) => g.name).filter((g) => !used.has(g))
+  return [...kept, { rung, games: pickRungOffers(available, seen, PICKS_PER_RUNG) }]
+}
+
 function freshRun() {
   return {
     status: 'climbing' as const,
@@ -88,6 +113,7 @@ function freshRun() {
     checkpointRung: 0,
     checkpointPot: START_POT,
     cleared: [],
+    offers: drawOffers(0, [], []),
     currentGame: null,
     openRound: null,
     lives: LADDER_LIVES,
@@ -126,10 +152,12 @@ export const useLadderStore = create<LadderStore>()(
         const s = get()
         const lives = s.lives - 1
         // Back to the checkpoint: its pot is restored and the games used since then unlock.
+        const cleared = s.cleared.slice(0, s.checkpointRung)
         set({
           rung: s.checkpointRung,
           pot: s.checkpointPot,
-          cleared: s.cleared.slice(0, s.checkpointRung),
+          cleared,
+          offers: drawOffers(s.checkpointRung, cleared, s.offers),
           currentGame: null,
           openRound: null,
           lives,
@@ -153,10 +181,12 @@ export const useLadderStore = create<LadderStore>()(
         const rung = s.rung + 1
         const checkpoint = isCheckpoint(rung)
         const topped = rung === LADDER_RUNGS
+        const cleared = [...s.cleared, { game: round.game, multiplier }]
         set({
           rung,
           peakRung: Math.max(s.peakRung, rung),
-          cleared: [...s.cleared, { game: round.game, multiplier }],
+          cleared,
+          offers: drawOffers(rung, cleared, s.offers),
           currentGame: null,
           openRound: null,
           checkpointRung: checkpoint ? rung : s.checkpointRung,
@@ -178,10 +208,21 @@ export const useLadderStore = create<LadderStore>()(
 
         startRun: () => set({ ...freshRun() }),
 
+        ensureOffers: () => {
+          const s = get()
+          if (s.status !== 'climbing') return
+          if (s.offers.some((o) => o.rung === s.rung && o.games.length > 0)) return
+          set({ offers: drawOffers(s.rung, s.cleared, s.offers) })
+        },
+
         pickGame: (game) => {
           const s = get()
           if (s.status !== 'climbing' || s.openRound) return
-          if (game && s.cleared.some((c) => c.game === game)) return
+          if (game) {
+            const offered = s.offers.find((o) => o.rung === s.rung)?.games ?? []
+            if (!offered.includes(game)) return
+            if (s.cleared.some((c) => c.game === game)) return
+          }
           set({ currentGame: game, lastResult: null })
         },
 
@@ -229,7 +270,18 @@ export const useLadderStore = create<LadderStore>()(
     },
     {
       name: 'floored-ladder',
-      version: 0,
+      version: 1,
+      migrate: (persisted) => {
+        const state = persisted as Partial<LadderStore>
+        const offers = state.offers ?? []
+        // An in-progress climb from before the offer pool needs its picker drawn.
+        const needsOffers =
+          state.status === 'climbing' && !offers.some((o) => o.rung === (state.rung ?? 0))
+        return {
+          ...state,
+          offers: needsOffers ? drawOffers(state.rung ?? 0, state.cleared ?? [], offers) : offers,
+        } as LadderStore
+      },
     },
   ),
 )

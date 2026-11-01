@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth/client'
-import { LADDER_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
 import { useLadderStore } from '@/store/ladder-store'
 import { ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
@@ -164,7 +164,14 @@ export default function AccountPage() {
     <div className="mx-auto w-full max-w-[1152px] pb-12">
       <PageTitle title="Account" sub="Your sign-in, your records across every mode, and settings." className="mb-8" />
 
-      <Section title="Sign-in" description="Optional. Signed in, your survival runs sync to your account.">
+      <Section
+        title="Sign-in"
+        description={
+          SURVIVAL_ENABLED
+            ? 'Optional. Signed in, your survival runs sync to your account.'
+            : 'Optional. Sign in to keep your progress across devices.'
+        }
+      >
         {session.isPending ? (
           <p className="text-[13px] text-dim">Checking your session…</p>
         ) : session.data ? (
@@ -197,11 +204,13 @@ export default function AccountPage() {
       <Section
         title="Records"
         description={
-          session.data?.user
-            ? serverStats
-              ? `Survival figures synced from your account · ${serverStats.totalRuns} run${serverStats.totalRuns === 1 ? '' : 's'} recorded.`
-              : 'Loading your synced survival figures…'
-            : 'Kept in this browser. Sign in to keep survival runs across devices.'
+          SURVIVAL_ENABLED
+            ? session.data?.user
+              ? serverStats
+                ? `Survival figures synced from your account · ${serverStats.totalRuns} run${serverStats.totalRuns === 1 ? '' : 's'} recorded.`
+                : 'Loading your synced survival figures…'
+              : 'Kept in this browser. Sign in to keep survival runs across devices.'
+            : 'Kept in this browser. Sign in to keep your records across devices.'
         }
       >
         <div className="space-y-5">
@@ -223,10 +232,12 @@ export default function AccountPage() {
             </RecordGroup>
           )}
 
-          <RecordGroup title="Survival">
-            <Stat label="Best floor" value={String(serverStats ? serverStats.highscore : survivalHighscore)} />
-            <Stat label="Wins" value={String(serverStats ? serverStats.wins : survivalWinCount)} />
-          </RecordGroup>
+          {SURVIVAL_ENABLED && (
+            <RecordGroup title="Survival">
+              <Stat label="Best floor" value={String(serverStats ? serverStats.highscore : survivalHighscore)} />
+              <Stat label="Wins" value={String(serverStats ? serverStats.wins : survivalWinCount)} />
+            </RecordGroup>
+          )}
 
           <RecordGroup title="Tables">
             <Stat label="Peak wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
@@ -270,10 +281,15 @@ export default function AccountPage() {
         </p>
       </Section>
 
-      <Section title="Dev mode" description="Testing switches for the survival run. Locked behind a password.">
+      <Section
+        title="Dev mode"
+        description={`Testing switches${SURVIVAL_ENABLED ? ' for the survival run' : ''}. Locked behind a password.`}
+      >
         {devModeUnlocked ? (
           <div className="flex flex-col divide-y divide-rule">
             <Toggle on={forceTie} label="Force tie" note="HiLo, not in Daily" onToggle={() => setForceTie(!forceTie)} />
+            {SURVIVAL_ENABLED && (
+              <>
             <Toggle on={showAllGames} label="All games" note="survival" onToggle={() => setShowAllGames(!showAllGames)} />
             <Toggle on={devInfiniteBets} label="Infinite bets" note="survival" onToggle={() => setDevInfiniteBets(!devInfiniteBets)} />
 
@@ -349,6 +365,8 @@ export default function AccountPage() {
                 Clear
               </Button>
             </div>
+              </>
+            )}
 
             <div className="pt-3">
               <Button
