@@ -13,9 +13,9 @@ import type { GameName } from '@/store/types'
 /** One figure in the strip above the game: grey label, mono value (the survival sidebar's style). */
 function Figure({ label, children, tone }: { label: string; children: ReactNode; tone?: 'loss' }) {
   return (
-    <div className="flex items-baseline gap-1.5 bg-surface px-3 py-1.5">
-      <span className="text-xs text-dim">{label}</span>
-      <span className={`num text-[14px] ${tone === 'loss' ? 'text-loss' : 'text-ink'}`}>{children}</span>
+    <div className="flex items-baseline gap-1.5 bg-surface px-2 py-1 sm:px-3 sm:py-1.5">
+      <span className="text-[11px] text-dim sm:text-xs">{label}</span>
+      <span className={`num text-[13px] sm:text-[14px] ${tone === 'loss' ? 'text-loss' : 'text-ink'}`}>{children}</span>
     </div>
   )
 }
@@ -44,7 +44,7 @@ function LadderGame({ game }: { game: GameName }) {
             <span className="text-dim">/{LADDER_RUNGS}</span>
           </Figure>
           <Figure label="All-in">{formatChips(shown.stake)}</Figure>
-          <Figure label="Win more than">{formatChips(shown.stake)}</Figure>
+          <Figure label="To win">{formatChips(shown.stake)}</Figure>
           <Figure label="Lives" tone={lives === 1 ? 'loss' : undefined}>
             {lives}
             <span className="text-dim">/{LADDER_LIVES}</span>

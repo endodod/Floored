@@ -561,11 +561,13 @@ body > div.neon-auth-ui {
 .grid5-board {
   --tile: clamp(1.75rem, min(calc((100cqw - 2.5rem) / 5.56), calc((100cqh - 8.25rem) / 5.56)), 4.75rem);
 }
-/* On a portrait board the top row is as wide as the badges' band: start below it. */
-@container board (max-aspect-ratio: 4 / 5) {
+/* On a phone-sized board the top row is as wide as the badges' band (back /
+   how-to-play, History): start below it. Covers every tall-and-narrow board,
+   not just 4:5 ones, so 360–430px phones of any height are included. */
+@container board (max-width: 640px) and (max-aspect-ratio: 1 / 1) {
   .grid5-board {
-    --tile: clamp(1.75rem, min(calc((100cqw - 2.5rem) / 5.56), calc((100cqh - 12.5rem) / 5.56)), 4.75rem);
-    padding-top: 4.25rem !important;
+    --tile: clamp(1.75rem, min(calc((100cqw - 2.5rem) / 5.56), calc((100cqh - 11.5rem) / 5.56)), 4.75rem);
+    padding-top: 3.25rem !important;
   }
 }
 @container board (max-height: 460px) and (min-aspect-ratio: 5 / 4) {
@@ -684,11 +686,11 @@ body > div.neon-auth-ui {
     inset 0 0 0 1.5px rgba(79, 174, 132, 0.6),
     0 0 16px -6px rgba(79, 174, 132, 0.7);
 }
-/* On a portrait board the tower is as wide as the badges' band: start below it. */
-@container board (max-aspect-ratio: 4 / 5) {
+/* On a phone-sized board the tower is as wide as the badges' band: start below it. */
+@container board (max-width: 640px) and (max-aspect-ratio: 1 / 1) {
   .dt-board {
-    --tile: clamp(1.5rem, min(calc((100cqh - 9.5rem) / 6.75), calc((100cqw - 3rem) / 5.85)), 3.6rem);
-    padding-top: 4.25rem !important;
+    --tile: clamp(1.5rem, min(calc((100cqh - 8.5rem) / 6.75), calc((100cqw - 3rem) / 5.85)), 3.6rem);
+    padding-top: 3.25rem !important;
   }
 }
 @container board (max-height: 420px) and (min-aspect-ratio: 5 / 4) {
@@ -972,6 +974,13 @@ body > div.neon-auth-ui {
   .bac-board { gap: .6rem; }
   .bac-mat button { min-height: 3.5rem; font-size: .8rem; }
 }
+/* Phone boards: both hands (three slots each, the third turned on its side)
+   have to fit across the width, so the cards are sized from the board's width
+   instead of its height. */
+@container board (max-width: 560px) {
+  .bac-board { --card-h: clamp(3rem, calc((100cqw - 4rem) / 5), 5.5rem); }
+  .bac-hands { gap: .5rem; }
+}
 
 /* Sic Bo: the dice dome and dense three-row mat share the board. */
 .sb-board { --die: clamp(2.35rem, 7cqh, 4rem); }
@@ -1137,6 +1146,16 @@ body > div.neon-auth-ui {
 
 /* Very short, wide boards: the readout sits beside the wheel, the outside
    row slims down, and everything clears the bet badge and History. */
+/* Short boards: the payout line under the table repeats what every cell
+   prints, and the badge band can be tighter. */
+@container board (max-height: 440px) {
+  .rl-layout {
+    margin-top: 2rem;
+  }
+  .rl-table > .felt-print {
+    display: none;
+  }
+}
 @container board (max-height: 300px) and (min-aspect-ratio: 8 / 5) {
   .rl-layout {
     --wheel: clamp(5rem, calc(100cqh - 4.5rem), 300px);
@@ -2702,18 +2721,36 @@ body > div.neon-auth-ui {
     grid-template-rows: auto 1fr auto;
     grid-template-areas: 's1 s2 s3' 'c c c' 'y y y';
   }
+  /* Four seats across a phone would clip their plates: two rows of two,
+     dealer first, you in the second row. */
   .hd-table.bj-table {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: 'c c c c' 's1 s2 s3 y';
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'c c' 's1 s2' 's3 y';
     padding: 3rem 0.3rem 0.4rem;
     gap: 0.25rem;
+  }
+  .hd-table.bj-table .tb-avatar {
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+  .hd-table.bj-table .hd-print {
+    display: none;
   }
   .hd-made {
     display: none;
   }
   .hd-oval {
     display: none;
+  }
+}
+/* Tight phone boards: shave the badge band and the row gaps so the seats and
+   the dock still fit on a 640px-tall screen. */
+@container board (max-width: 34rem) and (max-height: 440px) {
+  .hd-table,
+  .ld-table {
+    padding-top: 3rem;
+    gap: 0.1rem 0.4rem;
   }
 }
 /* Short boards: the top seats sit in the band between the corner buttons. */

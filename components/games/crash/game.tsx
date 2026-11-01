@@ -183,15 +183,19 @@ function CrashCurve({
         )}
       </svg>
 
-      {gridSteps(maxMult).map(m => (
-        <span
-          key={m}
-          className="felt-print num pointer-events-none absolute right-1 -translate-y-full pb-0.5"
-          style={{ top: `${(toY(m) / 60) * 100}%`, letterSpacing: '0.06em' }}
-        >
-          {m}×
-        </span>
-      ))}
+      {gridSteps(maxMult).map(m => {
+        // The top gridline's label sits under its line where there is no room above it.
+        const topPct = (toY(m) / 60) * 100
+        return (
+          <span
+            key={m}
+            className={`felt-print num pointer-events-none absolute right-1 ${topPct < 8 ? 'translate-y-0 pt-0.5' : '-translate-y-full pb-0.5'}`}
+            style={{ top: `${topPct}%`, letterSpacing: '0.06em' }}
+          >
+            {m}×
+          </span>
+        )
+      })}
 
       {/* The rocket tip: a lit dot that rides the curve; a burst where it crashed. */}
       <span

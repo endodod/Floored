@@ -13,7 +13,7 @@ export const GAME_STATUS_BAR =
 
 /** Flex arena: grows like Crash / Plinko; add your own flex direction / padding inside. */
 export const GAME_BOARD_ARENA =
-  'table-felt flex-1 min-h-0 w-full min-h-[min(360px,52vh)] [@media(max-height:640px)]:min-h-0 relative overflow-hidden'
+  'table-felt flex-1 min-h-0 w-full min-h-[min(360px,44vh)] [@media(max-height:640px)]:min-h-0 relative overflow-hidden'
 
 /** Centered curve / SVG field (Crash baseline). */
 export const GAME_BOARD_ARENA_CENTER = `${GAME_BOARD_ARENA} flex items-center justify-center`

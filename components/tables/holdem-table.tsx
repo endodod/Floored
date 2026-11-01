@@ -360,7 +360,9 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
         </p>
       </div>
       <div className={GAME_DOCK_ACTIONS}>
-        <div className="flex justify-center gap-2">
+        {/* On phones the three actions size to their labels: with their desktop
+            minimums they do not fit one row and wrap under the fold. */}
+        <div className="flex justify-center gap-2 max-sm:[&>button]:min-w-0">
           <button
             type="button"
             className={`${GAME_DOCK_SECONDARY_BTN} min-w-[4.75rem] px-4`}

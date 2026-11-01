@@ -40,6 +40,10 @@ Read the one that matches the task before changing code:
 - [.md/TODO.md](.md/TODO.md): the owner's current to-do list.
 - [.md/NAVBAR_HANDOFF.md](.md/NAVBAR_HANDOFF.md): the bigger-navbar change (64px on tall
   screens) and the check still to run on it.
+- [.md/MOBILE_UI_HANDOFF.md](.md/MOBILE_UI_HANDOFF.md): the phone-sized UI audit across Daily,
+  Ladder, Tables and all 24 Freeplay games: what was checked (360–412px wide, betting and
+  in-round), the fixes (board badge bands, Ladder strip, Baccarat hands, Tables seat grid,
+  dock floors), the new `scripts/design-check/mobile-check.cjs`, and what is left.
 
 ## Working rules
 

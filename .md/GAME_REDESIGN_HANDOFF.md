@@ -187,6 +187,12 @@ scripts with `NODE_PATH=$(npm root -g)` set. Start the dev server
 # static screens across phone / tablet / 720p / 1080p / 1440p / 150% / 200% zoom
 node scripts/design-check/responsive-check.cjs ./out /freeplay/blackjack /freeplay/roulette
 
+# phones only (Pixel 9 by default): overflow, content cut by a board, controls
+# below the fold, and overlapping buttons. Steps work as in play-game.cjs,
+# plus "auto" (place a chip, then press the dock's primary button).
+node scripts/design-check/mobile-check.cjs ./out /freeplay /freeplay/blackjack \
+  "/ladder|click:Start climbing|wait:800|click:css=[aria-labelledby=\"ladder-games\"] li button"
+
 # the same, after playing into a round (steps: click:<button name>, click:css=<selector>, wait:<ms>)
 node scripts/design-check/play-responsive-check.cjs ./out /freeplay/poker-1p "click:Add 100" "click:Deal" wait:900
 
@@ -194,10 +200,17 @@ node scripts/design-check/play-responsive-check.cjs ./out /freeplay/poker-1p "cl
 node scripts/design-check/play-game.cjs ./out/end.png /freeplay/roulette "click:17 red" "click:Add 100" "click:Spin" wait:1500 "shot:./out/spin.png" wait:3800
 ```
 
-`BASE_URL` overrides the default `http://localhost:3000`. A line starting
-`FAIL` names the view and what overflowed or was clipped; look at the
-screenshot in `./out` for that view. The checks catch overflow and clipping,
-not taste — always look at the screenshots too.
+`BASE_URL` overrides the default `http://localhost:3000`; `W` / `H` / `DSF`
+set mobile-check's viewport. A line starting `FAIL` names the view and what
+overflowed or was clipped; look at the screenshot in `./out` for that view.
+The checks catch overflow and clipping, not taste — always look at the
+screenshots too.
+
+Game pages must pass at 360×640, 390×700 and 412×737 (a phone's visible height
+with the browser's toolbars), in the betting state and after playing into a
+round. Ladder and Daily game pages carry a strip above the game card, and
+Tables' own boards are theirs: run those routes through the flow that opens
+them from their hub, not by their URL alone.
 
 ## The plan: rework all games efficiently
 
