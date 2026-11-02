@@ -3,7 +3,7 @@ import { HOLDEM_BLINDS, HOLDEM_HANDS_PER_LEVEL, HOLDEM_STARTING_STACK } from '@/
 import { LIARS_DICE_PER_SEAT } from '@/games/liars-dice/engine'
 import { SHOWDOWN_HANDS, SHOWDOWN_MAX_BET, SHOWDOWN_MIN_BET, SHOWDOWN_STARTING_STACK } from '@/games/blackjack-showdown/engine'
 import { formatChips } from '@/utils/format'
-import { MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, payoutSplits } from './stakes'
+import { CASH_STAKES, MIN_BUY_IN, TABLES_START_WALLET, TABLE_TIERS, payoutSplits } from './stakes'
 import type { TableGameName } from './types'
 
 /**
@@ -22,30 +22,47 @@ const [sb0, bb0] = HOLDEM_BLINDS[0]!
 const [sb1, bb1] = HOLDEM_BLINDS[1]!
 const [sb2, bb2] = HOLDEM_BLINDS[2]!
 
+/** Cash limits from low to high stakes, worded for the rules text. Figures from CASH_STAKES. */
+const cashEnds = (game: TableGameName) => [CASH_STAKES[game][0]!.limits, CASH_STAKES[game][CASH_STAKES[game].length - 1]!.limits] as const
+const blinds = ([sb, bb]: [number, number]) => `${formatChips(sb)} / ${formatChips(bb)}`
+const [hLow, hHigh] = cashEnds('holdem')
+const [dLow, dHigh] = cashEnds('liars-dice')
+const [bLow, bHigh] = cashEnds('blackjack-showdown')
+const CASH_LIMITS = `Hold’em blinds ${blinds(hLow.blinds!)} to ${blinds(hHigh.blinds!)}, Liar’s Dice antes ${formatChips(dLow.ante!)} to ${formatChips(dHigh.ante!)} a game, Blackjack minimum bets ${formatChips(bLow.bets![0])} to ${formatChips(bHigh.bets![0])}`
+
+/** Laid out in two columns, so each row sets a tournament step beside its cash-table counterpart. */
 export const TABLES_STEPS: TutorialStep[] = [
   {
-    title: 'Pick a game and stakes',
-    body: `Buy in for ${TABLE_TIERS.map((t) => formatChips(t.buyIn)).join(' / ')}. This comes from your Tables wallet and contributes to the prize pool; it is not your bankroll at the table. Each table gets a fresh mix of bot personalities and skill levels.`,
+    title: 'Two ways to play',
+    body: 'Tournaments: pay a fixed buy-in and play for a prize pool until the table is decided. Cash tables: bring any amount of your wallet, play with your own chips and leave whenever you like.',
   },
   {
-    title: 'Buy-ins make the prize pool',
-    body: `The buy-in is separate from your playing bankroll. In Hold’em and Blackjack, every player starts with the same tournament bankroll, shown at their seat; in Liar’s Dice, everyone starts with the same number of dice. No house cut. Texas Hold’em pays ${split(6, 'holdem')} / ${split(4, 'holdem')} at six / four seats; Blackjack Showdown and Liar’s Dice are winner-takes-all.`,
+    title: 'Your own wallet',
+    body: `Tables has its own play money, ${formatChips(TABLES_START_WALLET)} to start, shared by tournaments and cash tables. Below ${formatChips(MIN_BUY_IN)} you can refill it.`,
   },
   {
-    title: 'Play it out',
-    body: 'The table runs until it is decided. Once you are out, your place and prize are banked; watch the rest or leave.',
+    title: 'Tournaments: buy in',
+    body: `Buy in for ${TABLE_TIERS.map((t) => formatChips(t.buyIn)).join(' / ')} from your Tables wallet. The buy-in goes into the prize pool; at the table, everyone starts even: the same tournament bankroll in Hold’em and Blackjack Showdown, the same number of dice in Liar’s Dice.`,
+  },
+  {
+    title: 'Cash tables: your own chips',
+    body: `Sit down with any amount from your wallet. Low, mid or high stakes set only the limits: ${CASH_LIMITS}.`,
+  },
+  {
+    title: 'Tournaments: the prize pool',
+    body: `Every buy-in goes into the pool, with no house cut. Texas Hold’em pays ${split(6, 'holdem')} at six seats and ${split(4, 'holdem')} at four; Blackjack Showdown and Liar’s Dice are winner-takes-all. Once you are out, your place and prize are banked; leave before your place is decided and you finish last with no prize.`,
+  },
+  {
+    title: 'Cash tables: leave any time',
+    body: 'Play until you leave or run out of chips; when you leave, your stack goes back to your wallet. Bots come and go between hands. Blackjack is played against the house dealer, every other cash game against the other players.',
   },
   {
     title: 'Bots play fair',
     body: 'A bot decides only from what a player in its seat could see. Each has its own style (rocks, maniacs, calling stations…), but nothing at the table says which: read it from how they play.',
   },
   {
-    title: 'Leaving costs the buy-in',
-    body: 'Leave a table before your place is decided and you finish last with no prize.',
-  },
-  {
-    title: 'Your own wallet',
-    body: `Tables has its own play money, ${formatChips(TABLES_START_WALLET)} to start. Below ${formatChips(MIN_BUY_IN)} you can refill it.`,
+    title: 'Fresh tables',
+    body: 'Each table gets a new mix of bot personalities and skill levels, whatever the stakes. Higher stakes mean bigger chips, not tougher bots.',
   },
 ]
 export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
