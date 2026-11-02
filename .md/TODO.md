@@ -10,7 +10,8 @@
 - [ ] Survival finish?
   - [ ] Bugs?
   - [ ] Balancing
-- [ ] Story mode — `.md/STORY_MODE_PLAN.md`: phases 1–2 done, next the Dustwater slice (Phase 3)
+- [ ] Story mode — phases 1, 2, 3a done; next 3b (see `.md/STORY_MODE_HANDOFF.md`)
+- [ ] Decide: fix Chicken Road (~193%), HiLo (~142%) and Slots (104.8%) in the other modes? (`.md/BALANCE_AUDIT.md` §9)
 - [ ] New mode
   - [ ] Multiplayer
     - [ ] 1v1

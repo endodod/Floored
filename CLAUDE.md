@@ -5,9 +5,10 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 
 ## Docs
 
-**Next up:** Story mode, `.md/STORY_MODE_PLAN.md`: phases 1–2 are built (economy, odds, save,
-dialogue engine, checks); next is Phase 3, the playable Dustwater slice (build order in its section 11). Cash tables (`.md/TABLES_CASH_HANDOFF.md`) and the four new
-house games (`.md/NEW_GAMES_HANDOFF.md`) are built.
+**Next up:** Story mode. Start with `.md/STORY_MODE_HANDOFF.md` (what is built, what is next,
+every decision), then `.md/STORY_MODE_PLAN.md` (the design). Phases 1, 2 and 3a are built; next
+is 3b (story as a game mode), then the rest of the Dustwater slice. Cash tables and the four new
+house games are built.
 
 Read the one that matches the task before changing code:
 
@@ -23,6 +24,9 @@ Read the one that matches the task before changing code:
   (sit down with any amount of your wallet, play until you leave or run out): rules, stakes,
   how it was built, simulation results, and where the build differs from the plan.
 
+- [.md/STORY_MODE_HANDOFF.md](.md/STORY_MODE_HANDOFF.md): Story mode build state: what exists,
+  the next steps (3b–3f) in detail, owner decisions, and the portrait reference
+  (`.md/story/portrait-styles.html`). **Read first for any story work.**
 - [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): the plan
   for the main mode (12 cities, characters with portraits and choices, minigames, economy,
   losing, build order). Being built; every owner question is answered.

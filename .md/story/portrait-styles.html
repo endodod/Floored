@@ -1,0 +1,490 @@
+<title>Floored Portrait Styles</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one column of four style "tables", each a felt panel with a dialogue mock-up and a 3 × 3 sheet. */
+  :root {
+    color-scheme: dark;
+    --ground: #111612;
+    --surface: #141a15;
+    --raised: #202720;
+    --line: #2b342d;
+    --control: #3a463b;
+    --ink: #ffffff;
+    --soft: #bdbdc0;
+    --dim: #8a8c92;
+    --felt: #4fae84;
+    --felt-deep: #1d4a37;
+    --gold: #d9a441;
+    --loss: #e5566f;
+    --font-body: "Geist", Arial, Helvetica, sans-serif;
+    --font-mono: "Geist Mono", "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding-block: 40px 72px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+  header { display: flex; flex-direction: column; gap: 10px; max-width: 68ch; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+  h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; font-weight: 700; text-wrap: balance; }
+  header p { margin: 0; color: var(--soft); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--font-mono); font-size: 12px; color: var(--dim); }
+  .legend b { color: var(--soft); font-weight: 500; }
+
+  section.style { display: flex; flex-direction: column; gap: 18px; }
+  .style-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+  .letter {
+    font-family: var(--font-mono); font-size: 13px; color: var(--ground); background: var(--gold);
+    border-radius: 999px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-weight: 600;
+    align-self: center;
+  }
+  h2 { margin: 0; font-size: 22px; font-weight: 600; text-wrap: balance; }
+  .tone { font-family: var(--font-mono); font-size: 12px; color: var(--felt); letter-spacing: 0.04em; }
+  .style-head p { margin: 0; flex-basis: 100%; color: var(--soft); max-width: 70ch; }
+
+  .table {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px;
+    border-radius: 6px;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(79, 174, 132, 0.10), transparent 70%),
+      var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  @media (max-width: 860px) { .table { grid-template-columns: minmax(0, 1fr); } }
+
+  /* Dialogue mock-up, built from the game's tokens: the box story scenes would use. */
+  .scenes { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .dialogue {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+    border-radius: 6px;
+    background: rgba(8, 10, 9, 0.66);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  @media (max-width: 460px) { .dialogue { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 12px; } }
+  .dialogue .who { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+  .dialogue .line { margin: 4px 0 14px; font-size: 16px; line-height: 1.5; min-width: 0; }
+  .dialogue .choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn {
+    font: 500 13px var(--font-body); color: var(--soft); background: var(--ground);
+    border: 1px solid var(--control); border-radius: 999px; padding: 7px 14px; cursor: default;
+  }
+  .btn.primary { color: var(--ink); background: var(--felt-deep); border-color: var(--felt); }
+  .where { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 11px; color: var(--dim); margin: 0; }
+
+  .sheet { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 8px; align-items: center; }
+  .sheet .col { font-family: var(--font-mono); font-size: 11px; color: var(--dim); text-align: center; letter-spacing: 0.06em; text-transform: uppercase; }
+  .sheet .row { font-family: var(--font-mono); font-size: 11px; color: var(--soft); writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; letter-spacing: 0.06em; }
+  .sheet svg, .dialogue svg { display: block; width: 100%; height: auto; max-width: 100%; }
+
+  .group { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); max-width: 72ch; }
+  .group h2 { font-size: 26px; }
+  .group p { margin: 0; color: var(--soft); }
+  .pick {
+    display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-radius: 6px;
+    background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); max-width: 72ch;
+  }
+  .pick h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .pick p { margin: 0; color: var(--soft); }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+</style>
+
+<div class="page">
+  <header>
+    <span class="eyebrow">Story mode · The Circuit</span>
+    <h1>Portrait styles to choose from</h1>
+    <p>You picked a mix of C and D; the two mixes come first, then the original four. Four ways to draw the story's cast. Each is drawn in code, so the chosen one becomes a kit of parts for about 30 characters. Every style shows the same three characters in their three expressions, and a story dialogue box as it would sit over the game.</p>
+    <div class="legend">
+      <span><b>Jo</b> · your old dealer friend</span>
+      <span><b>Sloane</b> · the rival</span>
+      <span><b>Vale</b> · won the family club in one hand</span>
+    </div>
+  </header>
+
+  <div id="styles"></div>
+
+  <div class="pick">
+    <h3>Tell me 1 or 2</h3>
+    <p>Pick mix 1 (warm noir, full colour) or mix 2 (monochrome with gold and chip colour). Whichever you choose becomes the style guide, with two finished characters to sign off before the rest are drawn.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ── Shared geometry (viewBox 0 0 200 240). Every style draws the same face plan. ──
+  let uid = 0
+  const FACE = {
+    jo: 'M56,98 C56,60 76,46 100,46 C124,46 144,60 144,98 C144,130 130,160 100,166 C70,160 56,130 56,98 Z',
+    sloane: 'M58,96 C58,58 78,44 100,44 C122,44 142,58 142,96 C142,128 126,158 100,168 C74,158 58,128 58,96 Z',
+    vale: 'M56,96 C56,56 78,42 100,42 C122,42 144,56 144,96 C144,134 132,164 100,172 C68,164 56,134 56,96 Z',
+  }
+  const SHADE = 'M106,36 C128,62 146,104 128,180 L170,180 L170,36 Z'
+
+  const CHARS = {
+    jo: {
+      name: 'Jo', card: 'J', suit: '♣',
+      skin: '#8d5a3b', skinShade: '#6a3f27', hair: '#1f1612', hairShade: '#0d0907',
+      cloth: '#16181a', clothShade: '#0b0c0d', shirt: '#ece6d8', accent: '#d9a441', chip: '#2f7a5a',
+      hairBack: () => [
+        [64, 76, 17], [80, 60, 19], [100, 54, 20], [120, 60, 19], [136, 76, 17], [58, 94, 11], [142, 94, 11], [72, 66, 14], [128, 66, 14],
+      ].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join(''),
+      hairFront: () => '',
+      extra: (P) => `
+        <path d="M52,82 Q100,62 148,82 L150,90 Q100,72 50,90 Z" fill="${P.visor}" opacity="0.95"/>
+        <path d="M44,88 Q100,68 156,88 Q162,98 150,100 Q100,82 50,100 Q38,98 44,88 Z" fill="${P.visor}" opacity="0.7"/>`,
+      clothes: (P) => `
+        <path d="M18,240 C22,202 50,186 84,182 L116,182 C150,186 178,202 182,240 Z" fill="${P.cloth}"/>
+        <path d="M84,182 L100,214 L116,182 Z" fill="${P.shirt}"/>
+        <path d="M86,196 L100,204 L86,212 Z M114,196 L100,204 L114,212 Z" fill="${P.accent}"/>
+        <circle cx="100" cy="204" r="4" fill="${P.accent}"/>`,
+    },
+    sloane: {
+      name: 'Sloane', card: 'Q', suit: '♦',
+      skin: '#ecc8a8', skinShade: '#c99c7c', hair: '#2a1416', hairShade: '#150a0b',
+      cloth: '#a8323f', clothShade: '#6e1f29', shirt: '#151315', accent: '#d9a441', chip: '#b83a50',
+      hairBack: () => '<path d="M48,104 C44,54 72,34 100,34 C130,34 156,54 152,104 L156,160 L132,160 C138,124 136,98 132,82 L68,82 C64,98 62,124 68,160 L44,160 Z"/>',
+      hairFront: (P) => `<path d="M58,90 C60,56 78,42 102,42 C126,42 142,56 142,82 C128,70 108,64 92,60 C82,70 70,82 58,90 Z" fill="${P.hair}"/>`,
+      extra: (P) => `<circle cx="57" cy="128" r="6" fill="none" stroke="${P.accent}" stroke-width="2.6"/><circle cx="143" cy="128" r="6" fill="none" stroke="${P.accent}" stroke-width="2.6"/>`,
+      clothes: (P) => `
+        <path d="M18,240 C22,202 50,186 84,182 L116,182 C150,186 178,202 182,240 Z" fill="${P.cloth}"/>
+        <path d="M84,182 L100,226 L116,182 Z" fill="${P.shirt}"/>
+        <path d="M84,182 L70,196 L92,226 L100,226 Z M116,182 L130,196 L108,226 L100,226 Z" fill="${P.clothShade}"/>`,
+    },
+    vale: {
+      name: 'Vale', card: 'K', suit: '♠',
+      skin: '#dcbca2', skinShade: '#b4917a', hair: '#c9c6bf', hairShade: '#8e8b85',
+      cloth: '#0f1011', clothShade: '#050506', shirt: '#f1ede4', accent: '#d9a441', chip: '#1b1a1f',
+      hairBack: () => '<path d="M54,104 C50,58 74,38 100,38 C128,38 152,58 146,104 C142,84 140,72 132,66 L68,66 C60,72 58,84 54,104 Z"/>',
+      hairFront: (P) => `<path d="M56,90 C56,56 78,40 102,40 C130,40 146,58 144,88 C136,70 120,58 100,58 C86,58 70,68 56,90 Z" fill="${P.hair}"/>
+        <path d="M70,62 C86,52 112,50 132,60" fill="none" stroke="${P.hairShade}" stroke-width="2" opacity="0.7"/>`,
+      extra: (P) => `<path d="M84,134 Q100,126 116,134 Q108,139 100,135 Q92,139 84,134 Z" fill="${P.hair}"/>
+        <path d="M70,128 Q72,142 80,150 M130,128 Q128,142 120,150" fill="none" stroke="${P.skinShade}" stroke-width="1.6" opacity="0.8"/>`,
+      clothes: (P) => `
+        <path d="M18,240 C22,202 50,186 84,182 L116,182 C150,186 178,202 182,240 Z" fill="${P.cloth}"/>
+        <path d="M86,182 L100,236 L114,182 Z" fill="${P.shirt}"/>
+        <path d="M88,190 L100,196 L88,202 Z M112,190 L100,196 L112,202 Z" fill="${P.cloth}"/>
+        <circle cx="136" cy="212" r="7" fill="${P.accent}"/><circle cx="136" cy="212" r="3.2" fill="${P.cloth}"/>`,
+    },
+  }
+
+  // Expressions: brows, eyes and mouth.
+  function brows(e, P) {
+    const s = `fill="none" stroke="${P.brow}" stroke-width="${P.browW}" stroke-linecap="round"`
+    if (e === 'angry') return `<path d="M70,86 L91,95" ${s}/><path d="M109,95 L130,86" ${s}/>`
+    if (e === 'pleased') return `<path d="M70,88 Q80,80 90,86" ${s}/><path d="M110,86 Q120,80 130,88" ${s}/>`
+    return `<path d="M70,90 Q80,86 90,90" ${s}/><path d="M110,90 Q120,86 130,90" ${s}/>`
+  }
+  function eyes(e, P) {
+    if (e === 'pleased') {
+      const s = `fill="none" stroke="${P.eye}" stroke-width="${P.lineW + 0.6}" stroke-linecap="round"`
+      return `<path d="M73,106 Q80,99 87,106" ${s}/><path d="M113,106 Q120,99 127,106" ${s}/>`
+    }
+    const ry = e === 'angry' ? P.eyeRy * 0.62 : P.eyeRy
+    const one = (x) => P.whites
+      ? `<ellipse cx="${x}" cy="104" rx="${P.eyeRx}" ry="${ry}" fill="${P.white}" stroke="${P.line}" stroke-width="${P.lineW * 0.6}"/>
+         <circle cx="${x + 1}" cy="104" r="${Math.min(ry, P.eyeRx) * 0.62}" fill="${P.eye}"/>
+         ${P.glint ? `<circle cx="${x + 2.6}" cy="102" r="1.4" fill="#fff"/>` : ''}`
+      : `<ellipse cx="${x}" cy="104" rx="${P.eyeRx}" ry="${ry}" fill="${P.eye}"/>
+         ${P.glint ? `<circle cx="${x + 2}" cy="102.4" r="1.3" fill="${P.glintColor}"/>` : ''}`
+    return one(80) + one(120)
+  }
+  function mouth(e, P, who) {
+    const s = `stroke="${P.mouthLine}" stroke-width="${P.lineW}" stroke-linecap="round" stroke-linejoin="round"`
+    const y = who === 'vale' ? 4 : 0
+    if (e === 'pleased') {
+      if (who === 'vale') return `<path d="M88,${142 + y} Q104,${150 + y} 116,${138 + y}" fill="none" ${s}/>` // a one-sided smirk
+      return `<path d="M84,138 Q100,156 116,138 Q100,144 84,138 Z" fill="${P.mouthFill}" ${s}/>`
+    }
+    if (e === 'angry') return `<path d="M87,${146 + y} Q100,${137 + y} 113,${146 + y}" fill="none" ${s}/>`
+    return `<path d="M88,${141 + y} Q100,${144 + y} 112,${141 + y}" fill="none" ${s}/>`
+  }
+  const nose = (P) => `<path d="M100,106 Q95,121 99,126 Q103,128 107,124" fill="none" stroke="${P.noseLine}" stroke-width="${P.lineW * 0.8}" stroke-linecap="round"/>`
+
+  /** The figure, painted by a treatment P. Returns SVG children; `defs` collects what it needs. */
+  function figure(who, e, P, id) {
+    const c = CHARS[who]
+    const pal = { ...P, hair: P.mapHair(c), hairShade: P.mapHairShade(c), cloth: P.mapCloth(c), clothShade: P.mapClothShade(c), shirt: P.mapShirt(c), accent: P.mapAccent(c), skinShade: P.mapSkinShade(c), visor: P.visor }
+    const skin = P.skinFill(c, id)
+    const outline = P.outline ? `stroke="${P.line}" stroke-width="${P.lineW}" stroke-linejoin="round"` : ''
+    return `
+      <defs>
+        <clipPath id="face-${id}"><path d="${FACE[who]}"/></clipPath>
+        ${P.defs ? P.defs(c, id) : ''}
+      </defs>
+      <g fill="${pal.hair}" ${outline}>${c.hairBack(pal)}</g>
+      <g ${outline}>${c.clothes(pal)}</g>
+      <path d="M86,150 L86,186 Q100,192 114,186 L114,150 Z" fill="${skin}" ${outline}/>
+      <path d="M86,170 Q100,180 114,170 L114,186 Q100,192 86,186 Z" fill="${pal.skinShade}" opacity="0.55"/>
+      <ellipse cx="${who === 'sloane' ? 59 : 57}" cy="106" rx="7" ry="11" fill="${skin}" ${outline}/>
+      <ellipse cx="${who === 'sloane' ? 141 : 143}" cy="106" rx="7" ry="11" fill="${skin}" ${outline}/>
+      <path d="${FACE[who]}" fill="${skin}" ${outline}/>
+      <g clip-path="url(#face-${id})">${P.shade(c, id)}</g>
+      ${P.cheeks ? `<ellipse cx="74" cy="124" rx="9" ry="5" fill="${P.cheeks}"/><ellipse cx="126" cy="124" rx="9" ry="5" fill="${P.cheeks}"/>` : ''}
+      ${c.hairFront(pal)}
+      ${brows(e, { ...P, brow: P.browColor(c) })}
+      ${eyes(e, P)}
+      ${nose(P)}
+      ${mouth(e, P, who)}
+      ${c.extra(pal)}
+      ${P.rim ? P.rim(who, id) : ''}`
+  }
+
+  const same = (k) => (c) => c[k]
+
+  // ── The four treatments ──
+  const STYLES = [
+    {
+      letter: 'A',
+      name: 'Felt cutout',
+      tone: 'Clean · modern · even-handed',
+      blurb: 'Flat cut-paper shapes in the table palette, no outlines, one hard shadow on each face. Closest to the game boards as they are now, and the easiest to keep consistent across 30 characters.',
+      treat: {
+        outline: false, line: '#111612', lineW: 2.4, whites: false, eyeRx: 5.2, eyeRy: 5.4, eye: '#141414', glint: true, glintColor: '#ffffff',
+        mouthLine: '#3a1c18', mouthFill: '#3a1c18', noseLine: 'rgba(0,0,0,0.28)', browW: 4.2,
+        browColor: (c) => c.hairShade === '#8e8b85' ? '#8e8b85' : '#1a1210', visor: '#2f7a5a',
+        skinFill: same('skin'), mapSkinShade: same('skinShade'), mapHair: same('hair'), mapHairShade: same('hairShade'),
+        mapCloth: same('cloth'), mapClothShade: same('clothShade'), mapShirt: same('shirt'), mapAccent: same('accent'),
+        shade: (c) => `<path d="${SHADE}" fill="${c.skinShade}" opacity="0.75"/>`,
+      },
+      frame: (inner, c, id) => `
+        <rect x="4" y="4" width="192" height="232" rx="10" fill="#17271f"/>
+        <circle cx="100" cy="110" r="84" fill="#1d4a37"/>
+        <g clip-path="url(#frame-${id})">${inner}</g>
+        <defs><clipPath id="frame-${id}"><rect x="4" y="4" width="192" height="232" rx="10"/></clipPath></defs>`,
+    },
+    {
+      letter: 'B',
+      name: 'Court card',
+      tone: 'Classic · casino · storybook',
+      blurb: 'Each character is a face card: ink outlines, flat card colours, hatched shading and a corner index. Jo is the Jack, Sloane the Queen, Vale the King, and every new character gets a rank and suit. The most "casino" of the four.',
+      treat: {
+        outline: true, line: '#1b1a1f', lineW: 2.2, whites: true, white: '#fbf7ee', eyeRx: 6.4, eyeRy: 4.6, eye: '#1b1a1f', glint: false,
+        mouthLine: '#1b1a1f', mouthFill: '#8e2233', noseLine: '#1b1a1f', browW: 3,
+        browColor: () => '#1b1a1f', visor: '#2f7a5a',
+        skinFill: (c) => c.skin === '#8d5a3b' ? '#b07a52' : '#f1d7b6', mapSkinShade: () => 'url(#hatch)',
+        mapHair: (c) => ({ jo: '#1b1a1f', sloane: '#b83a50', vale: '#e9e1cf' }[c.name.toLowerCase()]),
+        mapHairShade: () => '#1b1a1f',
+        mapCloth: (c) => ({ jo: '#2f5c8a', sloane: '#b83a50', vale: '#1b1a1f' }[c.name.toLowerCase()]),
+        mapClothShade: () => '#1b1a1f', mapShirt: () => '#fbf7ee', mapAccent: () => '#d9a441',
+        defs: (c, id) => `<pattern id="hatch-${id}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><line x1="0" y1="0" x2="0" y2="5" stroke="#1b1a1f" stroke-width="1.3"/></pattern>`,
+        shade: (c, id) => `<path d="${SHADE}" fill="url(#hatch-${id})" opacity="0.55"/>`,
+      },
+      frame: (inner, c, id) => `
+        <rect x="4" y="4" width="192" height="232" rx="12" fill="#f3ead8" stroke="#d9a441" stroke-width="2"/>
+        <rect x="22" y="22" width="156" height="196" rx="4" fill="none" stroke="#1b1a1f" stroke-width="1.4"/>
+        <g clip-path="url(#frame-${id})">${inner}</g>
+        <text x="12" y="30" font-family="Georgia, serif" font-size="20" font-weight="700" fill="${c.suit === '♠' || c.suit === '♣' ? '#1b1a1f' : '#b83a50'}">${c.card}</text>
+        <text x="13" y="48" font-size="16" fill="${c.suit === '♠' || c.suit === '♣' ? '#1b1a1f' : '#b83a50'}">${c.suit}</text>
+        <g transform="rotate(180 100 120)">
+          <text x="12" y="30" font-family="Georgia, serif" font-size="20" font-weight="700" fill="${c.suit === '♠' || c.suit === '♣' ? '#1b1a1f' : '#b83a50'}">${c.card}</text>
+          <text x="13" y="48" font-size="16" fill="${c.suit === '♠' || c.suit === '♣' ? '#1b1a1f' : '#b83a50'}">${c.suit}</text>
+        </g>
+        <defs><clipPath id="frame-${id}"><rect x="23" y="23" width="154" height="194" rx="3"/></clipPath></defs>`,
+      fixDefs: true,
+    },
+    {
+      letter: 'C',
+      name: 'Back-room noir',
+      tone: 'Gritty · dramatic · late-night',
+      blurb: 'Near-monochrome figures lit from one side, a gold rim light on the lit edge and halftone dots in the shadows, like a smoky card room under one lamp. Suits a darker story with real stakes.',
+      treat: {
+        outline: false, line: '#0a0c0b', lineW: 2.2, whites: false, eyeRx: 5, eyeRy: 4.4, eye: '#0a0c0b', glint: true, glintColor: '#d9a441',
+        mouthLine: '#141614', mouthFill: '#141614', noseLine: 'rgba(0,0,0,0.45)', browW: 4,
+        browColor: () => '#0d0f0e', visor: '#284a3c',
+        skinFill: (c) => ({ '#8d5a3b': '#6d655d', '#ecc8a8': '#a69f95', '#dcbca2': '#958e86' }[c.skin]),
+        mapSkinShade: () => '#2b2c29',
+        mapHair: (c) => (c.hair === '#c9c6bf' ? '#b9b6ae' : '#0d0f0e'), mapHairShade: () => '#000',
+        mapCloth: (c) => (c.cloth === '#a8323f' ? '#4a2026' : '#101211'), mapClothShade: () => '#060707', mapShirt: () => '#8f8b84', mapAccent: () => '#d9a441',
+        defs: (c, id) => `<pattern id="dots-${id}" width="4.4" height="4.4" patternUnits="userSpaceOnUse"><circle cx="2.2" cy="2.2" r="1.25" fill="#0b0c0b"/></pattern>
+          <linearGradient id="lamp-${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0.18"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/></linearGradient>`,
+        shade: (c, id) => `<path d="${SHADE}" fill="#2b2c29" opacity="0.85"/><path d="M92,36 C116,66 132,104 118,180 L170,180 L170,36 Z" fill="url(#dots-${id})" opacity="0.6"/><rect x="40" y="30" width="80" height="160" fill="url(#lamp-${id})"/>`,
+        rim: (who, id) => `<path d="${FACE[who]}" fill="none" stroke="#d9a441" stroke-width="2.4" stroke-dasharray="0 0" clip-path="url(#rimclip-${id})"/>
+          <defs><clipPath id="rimclip-${id}"><rect x="0" y="0" width="78" height="240"/></clipPath></defs>`,
+      },
+      frame: (inner, c, id) => `
+        <defs><radialGradient id="spot-${id}" cx="0.35" cy="0.25" r="0.85"><stop offset="0" stop-color="#2c2a22"/><stop offset="1" stop-color="#090b0a"/></radialGradient></defs>
+        <rect x="4" y="4" width="192" height="232" rx="4" fill="url(#spot-${id})"/>
+        <g clip-path="url(#frame-${id})">${inner}</g>
+        <rect x="4" y="4" width="192" height="232" rx="4" fill="none" stroke="#2b342d" stroke-width="1.5"/>
+        <defs><clipPath id="frame-${id}"><rect x="4" y="4" width="192" height="232" rx="4"/></clipPath></defs>`,
+    },
+    {
+      letter: 'D',
+      name: 'Chip medallion',
+      tone: 'Warm · friendly · light-hearted',
+      blurb: 'Rounder, softer faces with big eyes and blush, set inside a poker chip in each character’s colour. Reads well even tiny, as a seat avatar at a table. Suits a lighter, funnier story.',
+      treat: {
+        outline: true, line: '#2a1d18', lineW: 1.8, whites: true, white: '#fffaf2', eyeRx: 8, eyeRy: 8.4, eye: '#241815', glint: true,
+        mouthLine: '#4a2a22', mouthFill: '#7d2a2a', noseLine: '#a0705a', browW: 3.6,
+        browColor: (c) => c.hairShade === '#8e8b85' ? '#8e8b85' : '#2a1d18', visor: '#2f7a5a', cheeks: 'rgba(229,86,111,0.28)',
+        skinFill: (c, id) => `url(#skin-${id})`, mapSkinShade: same('skinShade'), mapHair: same('hair'), mapHairShade: same('hairShade'),
+        mapCloth: same('cloth'), mapClothShade: same('clothShade'), mapShirt: same('shirt'), mapAccent: same('accent'),
+        defs: (c, id) => `<radialGradient id="skin-${id}" cx="0.42" cy="0.4" r="0.7"><stop offset="0" stop-color="${lighten(c.skin, 0.16)}"/><stop offset="1" stop-color="${c.skin}"/></radialGradient>`,
+        shade: (c) => `<path d="${SHADE}" fill="${c.skinShade}" opacity="0.28"/>`,
+      },
+      frame: (inner, c, id) => {
+        const dashes = Array.from({ length: 8 }, (_, k) => `<rect x="94" y="22" width="12" height="20" rx="2" fill="#f3ead8" transform="rotate(${k * 45} 100 116)"/>`).join('')
+        return `
+        <circle cx="100" cy="116" r="94" fill="${c.chip}" stroke="#d9a441" stroke-width="2"/>
+        ${dashes}
+        <circle cx="100" cy="116" r="74" fill="#f3ead8"/>
+        <circle cx="100" cy="116" r="70" fill="#1d4a37"/>
+        <g clip-path="url(#frame-${id})"><g transform="translate(100 120) scale(0.74) translate(-100 -112)">${inner}</g></g>
+        <circle cx="100" cy="116" r="70" fill="none" stroke="#d9a441" stroke-width="2"/>
+        <defs><clipPath id="frame-${id}"><circle cx="100" cy="116" r="70"/></clipPath></defs>`
+      },
+    },
+  ]
+
+  function lighten(hex, amt) {
+    const n = parseInt(hex.slice(1), 16)
+    const ch = (v) => Math.round(v + (255 - v) * amt).toString(16).padStart(2, '0')
+    return `#${ch((n >> 16) & 255)}${ch((n >> 8) & 255)}${ch(n & 255)}`
+  }
+
+  // ── Your pick: C + D. D's faces and chip, C's single lamp, rim light and halftone. ──
+  const Cs = STYLES[2], Ds = STYLES[3]
+  const noirLight = (strength) => (c, id) =>
+    `<path d="${SHADE}" fill="#141210" opacity="${0.55 * strength}"/>` +
+    `<path d="M94,36 C118,66 134,104 120,180 L170,180 L170,36 Z" fill="url(#dots-${id})" opacity="${0.5 * strength}"/>` +
+    `<rect x="40" y="30" width="80" height="160" fill="url(#lamp-${id})"/>`
+  const noirChip = (inner, c, id) => {
+    const dashes = Array.from({ length: 8 }, (_, k) => `<rect x="94" y="22" width="12" height="20" rx="2" fill="#f3ead8" transform="rotate(${k * 45} 100 116)"/>`).join('')
+    return `
+      <defs><radialGradient id="spot-${id}" cx="0.36" cy="0.3" r="0.8"><stop offset="0" stop-color="#3a3528"/><stop offset="1" stop-color="#0b0d0c"/></radialGradient></defs>
+      <circle cx="100" cy="116" r="94" fill="${c.chip}" stroke="#d9a441" stroke-width="2"/>
+      ${dashes}
+      <circle cx="100" cy="116" r="74" fill="#f3ead8"/>
+      <circle cx="100" cy="116" r="70" fill="url(#spot-${id})"/>
+      <g clip-path="url(#frame-${id})"><g transform="translate(100 120) scale(0.74) translate(-100 -112)">${inner}</g></g>
+      <circle cx="100" cy="116" r="70" fill="none" stroke="#d9a441" stroke-width="2"/>
+      <defs><clipPath id="frame-${id}"><circle cx="100" cy="116" r="70"/></clipPath></defs>`
+  }
+  const MIXES = [
+    {
+      letter: '1',
+      name: 'Warm noir',
+      tone: 'D’s faces and colour · C’s lamp and shadows',
+      blurb: 'The friendly round faces and full colour of D, lit by C’s single lamp: one side in shadow with halftone dots, a gold rim on the lit edge, a smoky spotlight behind. Characters stay likeable; the rooms feel late and smoky.',
+      treat: {
+        ...Ds.treat,
+        cheeks: 'rgba(229,86,111,0.18)',
+        defs: (c, id) => Ds.treat.defs(c, id) + Cs.treat.defs(c, id),
+        shade: noirLight(1),
+        rim: Cs.treat.rim,
+      },
+      frame: noirChip,
+    },
+    {
+      letter: '2',
+      name: 'Lamp-lit monochrome',
+      tone: 'D’s faces · C’s colour and light',
+      blurb: 'The same round faces, drawn in C’s near-monochrome with only gold and each character’s chip colour left in. Darker and more dramatic; colour marks who someone is (their chip) and what matters (gold).',
+      treat: {
+        ...Ds.treat,
+        line: '#0d0f0e', mouthLine: '#141614', mouthFill: '#3a1c18', noseLine: 'rgba(0,0,0,0.45)', cheeks: null,
+        browColor: () => '#0d0f0e',
+        skinFill: Cs.treat.skinFill, mapSkinShade: Cs.treat.mapSkinShade, mapHair: Cs.treat.mapHair, mapHairShade: Cs.treat.mapHairShade,
+        mapCloth: Cs.treat.mapCloth, mapClothShade: Cs.treat.mapClothShade, mapShirt: Cs.treat.mapShirt, mapAccent: Cs.treat.mapAccent,
+        visor: Cs.treat.visor,
+        defs: (c, id) => Cs.treat.defs(c, id),
+        shade: noirLight(1.25),
+        rim: Cs.treat.rim,
+      },
+      frame: noirChip,
+    },
+  ]
+
+  function portrait(style, who, e, label) {
+    const id = `p${++uid}`
+    let inner = figure(who, e, style.treat, id)
+    // The court card shares one hatch pattern id per portrait.
+    if (style.fixDefs) inner = inner.replace(/url\(#hatch\)/g, `url(#hatch-${id})`)
+    return `<svg viewBox="0 0 200 240" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">${style.frame(inner, CHARS[who], id)}</svg>`
+  }
+
+  const LINES = {
+    A: { who: 'vale', e: 'pleased', line: '“Your grandfather bet the club on a pair of nines. I would have folded.”' },
+    B: { who: 'vale', e: 'pleased', line: '“Your grandfather bet the club on a pair of nines. I would have folded.”' },
+    C: { who: 'vale', e: 'pleased', line: '“Your grandfather bet the club on a pair of nines. I would have folded.”' },
+    D: { who: 'vale', e: 'pleased', line: '“Your grandfather bet the club on a pair of nines. I would have folded.”' },
+  }
+  const EXPR = ['neutral', 'pleased', 'angry']
+  const WHO = ['jo', 'sloane', 'vale']
+
+  const render = (s) => {
+    const d = LINES[s.letter] ?? LINES.A
+    const sheet = [
+      '<span></span>',
+      ...EXPR.map((e) => `<span class="col">${e}</span>`),
+      ...WHO.flatMap((w) => [`<span class="row">${CHARS[w].name}</span>`, ...EXPR.map((e) => portrait(s, w, e, `${CHARS[w].name}, ${e}, style ${s.letter}`))]),
+    ].join('')
+    return `
+      <section class="style" aria-labelledby="h-${s.letter}">
+        <div class="style-head">
+          <span class="letter" aria-hidden="true">${s.letter}</span>
+          <h2 id="h-${s.letter}">${s.name}</h2>
+          <span class="tone">${s.tone}</span>
+          <p>${s.blurb}</p>
+        </div>
+        <div class="table">
+          <div class="scenes">
+          <div class="dialogue">
+            ${portrait(s, d.who, d.e, `Vale, style ${s.letter}`)}
+            <div style="min-width:0">
+              <div class="who">Vale · The Summit</div>
+              <p class="line">${d.line}</p>
+              <div class="choices">
+                <span class="btn">“He didn’t fold. You cheated.”</span>
+                <span class="btn">Say nothing</span>
+                <span class="btn primary">“Deal me in.”</span>
+              </div>
+            </div>
+            <p class="where">Story dialogue box, as it would sit over the game</p>
+          </div>
+          <div class="dialogue">
+            ${portrait(s, 'sloane', 'angry', `Sloane, angry, style ${s.letter}`)}
+            <div style="min-width:0">
+              <div class="who">Sloane · Silver Mesa</div>
+              <p class="line">“You took my seat at Vale’s table. Win the Showdown tonight or don’t bother coming back.”</p>
+              <div class="choices">
+                <span class="btn">“Scared I’ll beat you?”</span>
+                <span class="btn primary">Pay the 3,000 buy-in</span>
+              </div>
+            </div>
+            <p class="where">A boss scene: the choice opens the Blackjack Showdown</p>
+          </div>
+          </div>
+          <div class="sheet">${sheet}</div>
+        </div>
+      </section>`
+  }
+  const out =
+    `<div class="group"><span class="eyebrow">Your pick · C + D</span><h2>Two ways to mix them</h2><p>Both keep D’s round faces, big eyes and the chip frame, and take C’s single lamp, rim light and halftone shadows. They differ in colour.</p></div>` +
+    MIXES.map(render).join('') +
+    `<div class="group"><span class="eyebrow">The first round</span><h2>The four starting styles</h2></div>` +
+    STYLES.map(render).join('')
+  document.getElementById('styles').outerHTML = `<div style="display:flex;flex-direction:column;gap:56px">${out}</div>`
+})()
+</script>

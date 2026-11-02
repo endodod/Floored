@@ -1,7 +1,7 @@
 # Story mode ("The Circuit"): design report
 
-Status: **being built.** Every owner question is answered (section 12). Phases 1–2 are
-done; next is the Dustwater slice (Phase 3). Progress is in section 11. Cash tables, the one dependency, are done.
+Status: **being built.** Every owner question is answered (section 12). Phases 1, 2 and 3a
+are done; the build state and next steps are in [STORY_MODE_HANDOFF.md](STORY_MODE_HANDOFF.md). Cash tables, the one dependency, are done.
 Branch: `claude/friendly-goodall-yvxakz`.
 
 What the owner asked for: a story mode that is the heart of the site. You travel from
