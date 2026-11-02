@@ -10,6 +10,7 @@
 - [ ] Survival finish?
   - [ ] Bugs?
   - [ ] Balancing
+- [ ] Story mode — proposal in `.md/STORY_MODE_PLAN.md`, waiting for owner answers
 - [ ] New mode
   - [ ] Multiplayer
     - [ ] 1v1

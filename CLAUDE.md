@@ -24,6 +24,10 @@ Read the one that matches the task before changing code:
   (sit down with any amount of your wallet, play until you leave or run out): rules, stakes,
   engine/store/UI plan in phases.
 
+- [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): proposal
+  for the main mode (12 cities, characters with portraits and choices, minigames, economy,
+  losing, build order). Not built; waiting for the owner's answers in its section 12.
+
 - [.md/CHALLENGES.md](.md/CHALLENGES.md): Challenges (20 house challenges), Community challenges
   (API, tables, migration to deploy), the Daily Ladder and the 15-rung Ladder.
 
