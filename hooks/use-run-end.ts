@@ -110,6 +110,10 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
           tone: 'loss',
           action: { label: 'Back to ladder', tone: 'primary' },
         }
+      case 'reset':
+        return { text: 'No profit · Run starts over', tone: 'loss', action: { label: 'Back to ladder', tone: 'primary' } }
+      case 'failed':
+        return { text: 'No profit · Daily ladder failed', tone: 'loss', action: { label: 'See results', tone: 'danger' } }
       case 'out':
         return { text: 'Out of lives · Ladder run lost', tone: 'loss', action: { label: 'See results', tone: 'danger' } }
     }

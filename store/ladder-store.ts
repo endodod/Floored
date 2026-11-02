@@ -26,12 +26,18 @@ export interface ClearedRung {
 /** One entry per settled round, used for the share grid. */
 export type LadderEvent = 'clear' | 'checkpoint' | 'fall'
 
-/** `cashed` = player took the pot; `out` = last life lost; `topped` = cleared every rung. */
-export type LadderEndReason = 'cashed' | 'out' | 'topped'
+/**
+ * `cashed` = player took the pot; `out` = last life lost; `topped` = cleared every rung;
+ * `failed` = daily ladder only: a fall before the first checkpoint ends the day's one climb.
+ */
+export type LadderEndReason = 'cashed' | 'out' | 'topped' | 'failed'
 
 export interface LadderLastResult {
-  /** `reset` = a fall before the first checkpoint: the run restarts from the ground, no life lost. */
-  kind: 'clear' | 'checkpoint' | 'fall' | 'reset' | 'push' | 'topped' | 'out'
+  /**
+   * `reset` = a fall before the first checkpoint on the endless ladder: the run restarts from the
+   * ground, no life lost. `failed` = the same fall on the daily ladder: today's climb is over.
+   */
+  kind: 'clear' | 'checkpoint' | 'fall' | 'reset' | 'failed' | 'push' | 'topped' | 'out'
   game: GameName
   multiplier: number
 }
@@ -174,7 +180,7 @@ function createLadderStore({ name, daily }: { name: string; daily: boolean }) {
           endReason,
           finalPot,
           peakRung: s.peakRung,
-          falls: LADDER_LIVES - s.lives,
+          falls: s.log.filter((e) => e === 'fall').length,
           log: s.log,
         }
         set({
@@ -189,8 +195,15 @@ function createLadderStore({ name, daily }: { name: string; daily: boolean }) {
 
       function fall(game: GameName, multiplier: number) {
         const s = get()
-        // Before the first checkpoint there are no lives in play: the run starts over instantly.
+        // Before the first checkpoint there are no lives in play.
         if (!livesActive(s.checkpointRung)) {
+          // The daily ladder is one climb a day: the fall ends it, nothing banked.
+          if (daily) {
+            set({ log: [...s.log, 'fall'], lastResult: { kind: 'failed', game, multiplier } })
+            end('failed', 0)
+            return
+          }
+          // The endless ladder starts over instantly.
           // The daily ladder keeps its date and draw counter, so the restart's picker is seeded too.
           set({ ...freshRun(nextRand()), lastResult: { kind: 'reset', game, multiplier } })
           return

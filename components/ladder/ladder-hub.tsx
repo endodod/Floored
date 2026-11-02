@@ -104,6 +104,16 @@ const TUTORIAL: TutorialStep[] = [
   },
 ]
 
+/** The daily ladder has one climb: a fall before the first checkpoint ends it instead of restarting. */
+const DAILY_TUTORIAL: TutorialStep[] = TUTORIAL.map((step) =>
+  step.title === `${LADDER_LIVES} lives`
+    ? {
+        ...step,
+        body: `Lives start counting once you reach the first checkpoint (rung ${CHECKPOINT_EVERY}) — fall before it and today's climb is over with nothing banked. After that each fall costs a life; lose the last one and you bank your last checkpoint.`,
+      }
+    : step,
+)
+
 function LadderRungs({ rung, cleared, checkpointRung }: { rung: number; cleared: { game: GameName; multiplier: number }[]; checkpointRung: number }) {
   const rows = Array.from({ length: LADDER_RUNGS }, (_, i) => LADDER_RUNGS - i)
   return (
@@ -257,7 +267,7 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
         id={daily ? 'daily-ladder' : 'ladder'}
         title={daily ? 'Daily ladder' : 'Ladder'}
         intro="Climb as high as you can, one all-in round per rung."
-        steps={TUTORIAL}
+        steps={daily ? DAILY_TUTORIAL : TUTORIAL}
         open={tutorial.open}
         onOpenChange={tutorial.setOpen}
       />
@@ -318,7 +328,9 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
               footer={
                 livesActive(s.checkpointRung)
                   ? 'Lose a round and you fall to the last checkpoint with its pot restored.'
-                  : 'Lose a round before the first checkpoint and the run starts over.'
+                  : daily
+                    ? "Lose a round before the first checkpoint and today's climb is over."
+                    : 'Lose a round before the first checkpoint and the run starts over.'
               }
             >
               <LadderRungs rung={s.rung} cleared={s.cleared} checkpointRung={s.checkpointRung} />
@@ -333,7 +345,11 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
               { label: 'Rung', value: s.rung + 1, unit: `/ ${LADDER_RUNGS}`, sub: 'Any profit climbs' },
               livesActive(s.checkpointRung)
                 ? { label: 'Lives', value: s.lives, unit: `of ${LADDER_LIVES}`, tone: s.lives === 1 ? 'loss' : undefined }
-                : { label: 'Lives', value: '—', sub: `From rung ${CHECKPOINT_EVERY}` },
+                : {
+                    label: 'Lives',
+                    value: '—',
+                    sub: daily ? `A loss ends the climb until rung ${CHECKPOINT_EVERY}` : `From rung ${CHECKPOINT_EVERY}`,
+                  },
               {
                 label: 'Checkpoint',
                 value: formatChips(s.checkpointPot),
@@ -409,12 +425,12 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
               }
               note={
                 daily
-                  ? 'One climb a day: once you start, it ends when you cash out, top the ladder or run out of lives. Every player is offered the same games.'
+                  ? `One climb a day: once you start, it ends when you cash out, top the ladder, run out of lives or lose a round before rung ${CHECKPOINT_EVERY}. Every player is offered the same games.`
                   : undefined
               }
             />
           )}
-          <HowItWorks steps={TUTORIAL} />
+          <HowItWorks steps={daily ? DAILY_TUTORIAL : TUTORIAL} />
         </ModeColumns>
       )}
     </div>

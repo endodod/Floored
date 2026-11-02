@@ -37,6 +37,12 @@ export function describeLadderResult(
         body: `${got} on ${label} — no profit before the first checkpoint, so the run starts over with ${formatChips(state.pot)}. Lives only count from checkpoint ${CHECKPOINT_EVERY}.`,
         tone: 'bad',
       }
+    case 'failed':
+      return {
+        title: 'Daily ladder failed',
+        body: `${got} on ${label} — no profit before checkpoint ${CHECKPOINT_EVERY}, so today's climb is over with nothing banked. A new ladder opens at 00:00 UTC.`,
+        tone: 'bad',
+      }
     case 'out':
       return { title: 'Out of lives', body: `${got} on ${label} — no profit. You bank your last checkpoint: ${formatChips(state.finalPot)}.`, tone: 'bad' }
   }

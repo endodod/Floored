@@ -20,7 +20,8 @@ export function LadderResults({
   after?: ReactNode
 }) {
   const [copied, setCopied] = useState(false)
-  const out = record.endReason === 'out'
+  const failed = record.endReason === 'failed'
+  const out = record.endReason === 'out' || failed
 
   async function handleShare() {
     const text = buildLadderShareText(record, `${window.location.origin}${shareUrl}`)
@@ -48,7 +49,8 @@ export function LadderResults({
           Reached rung {record.peakRung}/{LADDER_RUNGS} · {record.falls} fall{record.falls === 1 ? '' : 's'} · started
           with {formatChips(START_POT)}
           {record.endReason === 'topped' && ` · ×${TOP_BONUS} top bonus`}
-          {out && ' · banked your last checkpoint'}
+          {record.endReason === 'out' && ' · banked your last checkpoint'}
+          {failed && ' · fell before the first checkpoint'}
         </p>
       </div>
       <div className="flex flex-wrap gap-2">

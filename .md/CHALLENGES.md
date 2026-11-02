@@ -65,9 +65,12 @@ Challenges (house), Community (player-made), Tables and Freeplay.
   `daily-ladder`). Same rules; the daily one allows **one climb per UTC day**, has no
   Abandon (cash out ends it), and seeds every picker from the date and a draw counter, so
   every player taking the same path sees the same games. A climb left over from an earlier
-  day is closed (banked as it stands) when the page opens. The Ladder's "lives only count
-  from the first checkpoint" rule applies here too: a fall before rung 3 restarts the climb
-  from the ground (with a seeded picker), so the daily's first rungs can be retried.
+  day is closed (banked as it stands) when the page opens. Lives only count from the first
+  checkpoint, as on the Ladder, but a fall before rung 3 **fails the day's climb** (end reason
+  `failed`, nothing banked) instead of restarting it, so the daily can't be retried. The hub,
+  the result card, the Daily ladder row and the game dock all say "Daily ladder failed".
+  (The endless ladder still restarts from the ground; its dock now shows "Back to ladder" after
+  that reset.)
 - Routes `/daily-ladder` and `/daily-ladder/[game]` reuse `components/ladder/ladder-hub.tsx`
   and `ladder-game-page.tsx`. Hooks pick the store by route with `useActiveLadderStore()` /
   `useLadderHub()` (`lib/ladder/active.ts`); the game mode is still `'ladder'`.

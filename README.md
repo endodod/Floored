@@ -39,7 +39,8 @@ the same seeded game pickers for everyone.
 - **3 lives, from the first checkpoint.** Lose a round before rung 3 and the run restarts from
   the ground with a fresh $100 pot (no life spent). After that, each fall costs a life — cash out
   any time between rounds, lose the last life to bank your last checkpoint, or reach the top for a
-  ×2 bonus
+  ×2 bonus. On the **Daily ladder** a loss before rung 3 ends the day's climb instead (failed,
+  nothing banked)
 - The picker shows each game's max multiplier — safe games climb, high-payout games grow the pot
 
 Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`localStorage`). Toggle with

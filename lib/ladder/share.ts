@@ -12,6 +12,7 @@ export const END_LABEL: Record<LadderEndReason, string> = {
   cashed: 'Cashed out',
   out: 'Out of lives',
   topped: 'Topped the ladder',
+  failed: 'Daily ladder failed',
 }
 
 /** Spoiler-free result text — one square per settled rung, in play order. */

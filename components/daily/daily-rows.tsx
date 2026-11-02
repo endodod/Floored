@@ -104,13 +104,19 @@ export function DailyLadderRow({ index }: { index: number }) {
       }
       trackCaption={
         dlClimbing
-          ? `Rung ${dlRung + 1}/${LADDER_RUNGS} · ${dlHasLives ? `${dlLives} of ${LADDER_LIVES} lives` : 'no lives until checkpoint'}`
+          ? `Rung ${dlRung + 1}/${LADDER_RUNGS} · ${dlHasLives ? `${dlLives} of ${LADDER_LIVES} lives` : `a loss before rung ${CHECKPOINT_EVERY} ends it`}`
           : dlRecord
-            ? `Reached rung ${dlRecord.peakRung}/${LADDER_RUNGS}`
+            ? dlRecord.endReason === 'failed'
+              ? 'Fell before the first checkpoint'
+              : `Reached rung ${dlRecord.peakRung}/${LADDER_RUNGS}`
             : `${LADDER_RUNGS} rungs · one climb a day`
       }
       figureLabel={dlRecord ? 'Today' : dlClimbing ? 'Pot' : 'Starting pot'}
-      figure={formatChips(dlRecord ? dlRecord.finalPot : dlClimbing ? dlPot : START_POT)}
+      figure={
+        dlRecord?.endReason === 'failed'
+          ? 'Failed'
+          : formatChips(dlRecord ? dlRecord.finalPot : dlClimbing ? dlPot : START_POT)
+      }
       action={
         <Button asChild className="w-full lg:w-auto">
           <Link href="/daily-ladder">{dlRecord ? 'See results' : dlClimbing ? 'Continue climb' : 'Climb today'}</Link>
