@@ -2766,6 +2766,22 @@ body > div.neon-auth-ui {
     display: none;
   }
 }
+/* Narrow but tall phone boards: a third of the width can't hold two hole cards and the
+   status line side by side, so the line goes under the cards (there is height to spare). */
+@container board (max-width: 34rem) and (min-height: 441px) {
+  .hd-line {
+    height: auto;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .hd-line > span:last-child {
+    align-items: center;
+    max-width: 100%;
+  }
+  .hd-table {
+    --seat-card-h: clamp(2rem, min(10cqh, 16cqw), 3.5rem);
+  }
+}
 /* Tight phone boards: shave the badge band and the row gaps so the seats and
    the dock still fit on a 640px-tall screen. */
 @container board (max-width: 34rem) and (max-height: 440px) {

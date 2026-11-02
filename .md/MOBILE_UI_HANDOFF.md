@@ -98,6 +98,10 @@ after `scrollIntoView`. All 27 game routes pass at 360x640 and 360x740.
 - **Hold'em at 360px** (`components/tables/holdem-table.tsx`): Fold / Check / Raise share
   the row on phones (`PHONE_FIT`), desktop minimums come back at `sm:`. The table also
   caps `--seat-card-h` and trims bottom padding on tight phone boards (`globals.css`).
+- **Hold'em bot seats on tall phones** (412×915, 390×844, 360×740): two hole cards and the
+  status line ("Big blind 20") did not fit a third of the width and were cut 6–13px.
+  On narrow boards at least 441px tall the line now sits under the cards and the seat
+  cards are capped by width (`globals.css`, `.hd-line`). Short phone boards keep the row.
 - **Landscape phones** (height ≤ 500px): `GAME_CARD_FRAME` keeps a `34rem` floor there,
   so the page scrolls instead of crushing the board under the dock. Per-board fixes for
   the boards that still met the badge band: Keno / Mines and Dragon Tower start below it
@@ -122,11 +126,9 @@ All 24 Freeplay games, the four hubs and a Hold'em table are clean at 360×640, 
 3. **Firefox** was not run.
 4. **Not covered:** the Account and how-to-play pages, signed-in state, Cash tables
    (`.md/TABLES_CASH_HANDOFF.md`, not built yet), in-round states other than Baccarat.
-5. **Hold'em at 412×915:** one bot seat's status line ("Big blind 20") was cut by 6px
-   in one run; not chased yet.
-6. `env(safe-area-inset-bottom)` on `<main>` only works with `viewport-fit=cover`, which
+5. `env(safe-area-inset-bottom)` on `<main>` only works with `viewport-fit=cover`, which
    is not set; adding it would also need top/side insets on the navbar.
-7. The overlap detector ignores `position: absolute` controls, so intentional
+6. The overlap detector ignores `position: absolute` controls, so intentional
    overlap (Roulette's chip layer, table chip stacks) is not flagged — but
    neither would a real overlap of two absolutely positioned buttons be.
 
