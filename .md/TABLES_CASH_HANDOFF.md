@@ -303,7 +303,8 @@ figure strip shows wallet, tournament net and cash net.
 **Lobby `app/tables/lobby/page.tsx`:** one page, no category toggle (owner change,
 replacing the earlier Tournaments · Cash tables radiogroup): a **Tournaments** section and
 a **Cash tables** section, each with the three game tiles. Stakes are not on the page:
-tapping a tournament tile opens a dialog with the three buy-ins (each with its 1st/2nd
+tapping a tournament tile opens a dialog with your Tables wallet on top (the cash dialog
+shows it too) and the three buy-ins (each with its 1st/2nd
 prizes for that game's seat count; buy-ins the wallet can't cover are disabled; the choice
 is remembered under `floored-tables-tier`) and **Sit down · buy-in**. The obsolete
 `floored-tables-format` key is removed on load.

@@ -220,6 +220,7 @@ export default function TablesLobbyPage() {
             <DialogTitle>{tourEntry ? `${tourEntry.label} tournament` : 'Tournament'}</DialogTitle>
             <DialogDescription>Choose a buy-in. It goes into the prize pool; bots vary by table.</DialogDescription>
           </DialogHeader>
+          <WalletLine wallet={s.wallet} />
           <StakePicker
             label="Buy-in"
             value={tier}
@@ -250,6 +251,7 @@ export default function TablesLobbyPage() {
             <DialogTitle>Bring chips to the table</DialogTitle>
             <DialogDescription>{cashEntry ? `${cashEntry.label} · no prize pool, leave with your stack.` : ''}</DialogDescription>
           </DialogHeader>
+          <WalletLine wallet={s.wallet} />
           <StakePicker
             label="Table limits"
             value={cashStake}
@@ -311,5 +313,15 @@ function StakePicker({ label, value, onChange, options }: { label: string; value
         )
       })}
     </div>
+  )
+}
+
+/** The Tables wallet, shown in the stake dialogs so buy-ins and chips can be weighed against it. */
+function WalletLine({ wallet }: { wallet: number }) {
+  return (
+    <p className="flex items-baseline justify-between rounded-md bg-ground px-3 py-2 text-[13px] text-soft">
+      <span>Your wallet</span>
+      <span className="num text-[15px] text-ink">{formatChips(wallet)}</span>
+    </p>
   )
 }
