@@ -2,6 +2,8 @@
 
 Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: Freeplay balance, Daily challenge, Ladder, Challenges and Tables, runs in progress included).
 
+The home page welcomes players and sorts the modes into three groups, each a short card that jumps to its rows: **Compete** (Daily challenge, Daily ladder, Challenges, Ladder, Community: the real game modes), **Practise** (Freeplay, to train for each mode) and **Just for fun** (Tables).
+
 Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
 ## Daily challenge
