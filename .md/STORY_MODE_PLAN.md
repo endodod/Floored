@@ -24,10 +24,9 @@ vertical slice (one complete city) before the content for the other eleven (sect
    you can always recover and move on. Gambling is how you move on *faster*. A lucky
    player clears a city in a few nights and an unlucky one takes longer, but nobody gets
    stuck.
-2. **The house still wins over many bets.** Every game, alone or combined with any
-   story skill, keeps its return below 100% (with a few small, deliberate exceptions).
-   Otherwise one game becomes a money printer and the whole economy breaks. A script
-   checks this (section 10).
+2. **The house still wins on any single game.** Games keep their own odds (below 100%
+   return). What makes playing worth it is everything around the bets: hustles, comps
+   and boss purses (section 5). Otherwise one game becomes a money printer.
 3. **Choices drive the story; luck drives the money.** Endings and character outcomes
    depend on what you choose, never on whether you busted. A bad run of luck costs
    money and nights, not the story you want.
@@ -46,8 +45,6 @@ vertical slice (one complete city) before the content for the other eleven (sect
 Map ─► City hub ─┬─► Venue night (12 bets across the venue's games, or one Tables session)
                  ├─► Characters: talk, choices, errands, minigames (limited per night)
                  ├─► Jobs board (hustles: conditions in games, fixed pay)
-                 ├─► Mentor: learn / level a skill
-                 ├─► Shop: one-night items (active items)
                  ├─► Rest (skip to the next night)
                  └─► Boss showdown (buy-in) ─► win: purse, story, next city
 ```
@@ -89,11 +86,11 @@ somewhere.
 - **All three Tables games appear in both formats** (cash rooms and tournaments) across
   the circuit.
 - **City identity:** theme colours (the casino theme), a night-event table, 2–3
-  characters, one mentor, one boss and its own minigame set.
+  characters, one boss and its own minigame set.
 
 ### Bosses
 
-You pay a **buy-in (100× the city min bet)** to enter. Two kinds:
+You pay a **buy-in (60× the city min bet)** to enter. Two kinds:
 
 - **Challenge boss:** a seeded, Daily-style challenge with a fixed number of bets on the
   city's games. The rival's score is shown up front and you have to beat it. Tuned to about
@@ -102,7 +99,7 @@ You pay a **buy-in (100× the city min bet)** to enter. Two kinds:
   above the boss. (Hold'em is six-seat, so the boss doesn't have to be heads-up.) Boss
   bots are named characters with their own bot profiles.
 
-A win pays a **purse of 2× the buy-in**, plays the post-boss scene and unlocks travel. A
+A win pays a **purse of 150×** (2.5× the buy-in), plays the post-boss scene and unlocks travel. A
 loss costs the buy-in, plays a story reaction and sends the rival **away for 2 nights**
 before a rematch. You can always travel **back** to earlier cities (the minigames there
 pay that city's rates, so going back is no farm).
@@ -111,8 +108,8 @@ pay that city's rates, so going back is no farm).
 
 ## 4. Characters, portraits and choices
 
-- **Cast:** about 30–36 characters. Each city has 2–3 locals: a minigame giver, a mentor
-  and a boss. They're joined by recurring ones:
+- **Cast:** about 30–36 characters. Each city has 2–3 locals: a minigame giver, an errand
+  giver and a boss. They're joined by recurring ones:
   - **Jo**, your old dealer friend and companion, who comments on what happens.
   - **Sloane**, the rival, who turns up in several cities.
   - **Vale**, who won your family's club in one hand.
@@ -139,29 +136,49 @@ pay that city's rates, so going back is no farm).
 
 ---
 
-## 5. Money model (starting values, to be tuned by simulation)
+## 5. Money model (simulated, no items or perks)
 
 All amounts are in multiples of the **city min bet (m)**, so one table covers every city.
 
 | Source / cost | Amount | Limit | Risk |
 |---|---|---|---|
-| Minigames | up to **6m** per play at a perfect score (about 4m on average) | each character **once per night**, 2–3 per city | none |
-| Hustles (jobs board) | 3–8m each | 2 per night | none (fixed pay; you meet a game condition) |
-| Errands (story jobs) | 10–25m, one time | 3–5 per city | none |
+| Minigames | up to **3m** per play at a perfect score (about 2m on average) | each character **once per night**, 2–3 per city | none |
+| Errands (story jobs) | 6m each, one time | 4 per city | none |
+| Hustles (jobs board) | 4m each | 2 per night, only by playing | none (fixed pay; you meet a game condition) |
+| **Comps** | **4% of what you wagered that night** | **capped at 10m per night** | none |
 | Venue night | 12 bets, max 20m / 100m / no max | one per night | game edge |
 | Tables session | stake-based | one per night | skill + luck |
 | Lodging | **−3m** per night | every night | — |
-| Boss | buy-in 100m, purse 200m | rematch after 2 nights | about 50/50 |
+| Boss | buy-in 60m, purse 150m | rematch after 2 nights | about 50/50 |
 | Travel fare | 20m of the next city | once | — |
 
-What this gives (to be checked with the simulator, section 10):
+### What the simulation showed (3,000 circuits per player type)
 
-- **Safe-only player** (minigames + hustles, never gambles): about **+9m per night net**,
-  so about **11 nights** to afford the boss buy-in. Slow, but always possible.
-- **Gambling player:** reaches the buy-in in about **2–6 nights** depending on luck and risk.
-- **Simulator targets per city:** median 4–8 nights, safe-only ≤ 14 nights, broke-to-playable
-  (20m) ≤ 3 nights. At roughly 10–15 real minutes per night, that comes to about
-  **1 hour per city and 10–14 hours for the circuit**.
+The **first numbers in this plan were too generous with safe money.** Never gambling
+(minigames only) was as fast as going all in, and faster than normal betting, because every
+bet pays the house edge while the safe income is fixed. In a casino game that's backwards,
+so the numbers above were changed: less safe money, plus **comps** and hustles that reward
+playing. With them:
+
+| Player type | Nights per city (median / worst 10%) | Whole circuit (median) | Busts per circuit | Stuck |
+|---|---|---|---|---|
+| Never gambles (minigames only) | 18 / 82 | ~370 nights | 0 | never |
+| Cautious (5% of bankroll per bet) | 6 / 21 | ~100 | 0 | never |
+| Balanced (15% per bet, max 100m) | 5 / 29 | ~120 | 0 | never |
+| High variance (15% on 10× bets) | 8 / 70 | ~280 | ~31 | rare |
+| Bold (all in, only what's needed) | 4 / 19 | ~85 | ~7 | never |
+
+- **Not too hard:** no player type gets stuck, and normal play clears a city in about 5–6
+  nights.
+- **Gambling now pays:** bold and normal play are 3–4× faster than never gambling. The
+  minigames are the safety net, not the way through.
+- **The long tails come from bosses.** A city in the worst 10% takes 20–30 nights,
+  almost always because of repeated 50/50 boss losses. Possible softeners (Q9): a cheaper
+  rematch, or the rival getting a little weaker after each loss.
+- **Length:** about 100–120 nights for normal play. At 8–10 minutes a night, that's 15–20
+  hours. If that's too long, the levers are fewer cities or a bigger purse.
+- The model is simple (one even-money or 10× game at about 97%, an average minigame
+  score, a 50% boss). Phase 1 replaces it with `sim:story` on the real engines' odds.
 
 ### Why the minigame limit is "per night"
 Nights cost lodging, and a night of venue play costs real money to the house edge. So the
@@ -213,8 +230,8 @@ no pay).
 | Rack 'Em | puzzle | chip runner | sort and stack chips by colour |
 | Slot Mechanic | puzzle | technician | rotate the tiles to connect the reel circuit |
 | Dice Stack | timing | dice hustler | stack dice in a cup without tipping it |
-| Read the Tell | gambling (free) | poker mentor | call or fold against a bot's shown tells |
-| Count the Shoe | gambling (free) | blackjack mentor | keep the running count and call it |
+| Read the Tell | gambling (free) | poker pro | call or fold against a bot's shown tells |
+| Count the Shoe | gambling (free) | blackjack pro | keep the running count and call it |
 | Odds Sense | gambling (free) | bookie | pick the better of two bets, with a streak multiplier |
 | Free Roll | luck (free) | host | one free spin per night, minimum 1m, never a loss |
 
@@ -223,25 +240,13 @@ Phone-sized play is a requirement from day one.
 
 ---
 
-## 8. Skills and items (and the trap to avoid)
+## 8. Skills and items: left out for now
 
-- **Skills** are learned from city mentors for money. At each mentor you **choose 1 of 2**
-  (a choice with a lasting effect), and a later mentor can level it. They reuse the
-  Survival perks that already work inside the games (Hole Card Reader, Mine Sweeper, Crash
-  Cushion and others; `hooks/use-survival-perks.ts`), with a generalised hook that reads
-  the perks of whichever mode is playing.
-- **Trap:** several Survival perks and every payout boost make a game **pay more than it
-  takes** if they're permanent. Examples: Weighted Edge on Coin Flip (65% to win at 2×,
-  about 130%), Hole Card Reader on Blackjack, and Game Boost 1.40×. That's fine in a
-  10-floor run but breaks a persistent economy. So in story mode:
-  - **No permanent payout boosts.** Payout boosts exist only as **one-night items**.
-  - Each perk gets **story-specific level values** where needed, so that game + skill
-    stays below 100% return. The return check (section 10) runs on every pair.
-  - **Slots** is about 104.8% even without perks. It needs a low machine limit or a
-    story-only pay table (Q3).
-- **Items:** the designed but unbuilt active items (`.md/ACTIVE_ITEMS_SPEC.md`: Safety Net,
-  Double Up, Hot Hand and others) become venue shop items that last one night. Building
-  them serves Survival too.
+Owner decision (2026-11-02): **no Survival perks or items in story mode for now.** The
+simulation above is without them. If they're added later, keep in mind that several
+Survival perks and all payout boosts make a game pay out more than it takes in when owned
+permanently (Weighted Edge on Coin Flip about 130%; the dealer's hole card on Blackjack;
+1.40× boosts). They would need story-only values and a return check before going in.
 
 ---
 
@@ -265,7 +270,7 @@ stay within the section 1 rule (below 100%, or capped and one night only).
 | `lib/story/economy.ts` | every number in section 5, as multiples of m |
 | `lib/story/dialogue.ts` | the scene runner (lines, choices, conditions, effects) |
 | `lib/story/minigames/` | pure minigame engines with seeded RNG |
-| `store/story-store.ts` | the save: city, night, money, debt, rep, factions, flags, skills, items, minigame/job availability. Zustand persist with `version` + `migrate` from day one; added to `SYNCED_STORE_KEYS` |
+| `store/story-store.ts` | the save: city, night, money, debt, rep, factions, flags, minigame/job availability. Zustand persist with `version` + `migrate` from day one; added to `SYNCED_STORE_KEYS` |
 | `app/story/` | map, city hub, `app/story/[game]` venue game route, minigame route, Tables route |
 | `components/story/` | map, dialogue box with portraits, hub panels, minigame boards |
 | `scripts/` | `sim:story` and `check:story` (below) |
@@ -275,19 +280,24 @@ stay within the section 1 rule (below 100%, or capped and one night only).
   `wagerCap = min(bankroll, venue max)` the way the other modes do (every game already
   takes its bankroll from the page's `wagerCap`). This needs a small "table max" label in
   the dock so the cap doesn't read as your balance. Dev curse/bless stay off in story.
-- **Perks:** generalise `useSurvivalPerks(game)` into a mode-aware hook. The open checks
-  in `.md/MODE_ADJUSTMENTS_HANDOFF.md` (perks on the redesigned boards) become a
-  **prerequisite**, because story would inherit any perk bug.
+- **Perks:** none in story for now (section 8), so the open perk checks in
+  `.md/MODE_ADJUSTMENTS_HANDOFF.md` don't block story.
 - **Tables:** Tables is kept separate from `GameName` and uses its own wallet. Story needs
   three things:
   - a wallet adapter (story money in, story money out);
   - stakes in multiples of m instead of the fixed 100 / 1k / 10k tiers;
   - named story opponents (a portrait plus a `BotProfile`).
 
-  **Cash tables are only partly built** (`.md/TABLES_CASH_HANDOFF.md`: bot churn, top-up/
-  leave, checks and browser verification remain), so finishing them comes first (Q5).
-- **Survival:** story reuses Survival's perk code and the active-items design. What
-  happens to Survival itself (stay hidden, or retire) is Q4.
+  **Cash tables are playable but unfinished** (checked in the code 2026-11-02). All three
+  boards run cash sessions, and the stakes, wallet and session store exist. What's missing:
+  - bots never come and go (`CHURN` in `lib/tables/stakes.ts` is defined but unused);
+  - there's no top-up button (`topUp` exists in the store, but nothing calls it);
+  - there are no cash checks or cash simulation in `pnpm sim:bots` / `check:tables`;
+  - cash tutorials and the browser checks.
+
+  Story needs sit, play and leave, which work. Bots coming and going and the cash checks
+  should land before story relies on them (Q5).
+- **Survival:** untouched (perks and items are left out).
 
 ### Checks that make later fixes rare
 - **`pnpm check:story` (content):**
@@ -300,8 +310,7 @@ stay within the section 1 rule (below 100%, or capped and one night only).
   (safe-only, cautious, balanced, all-in) using the real engines' odds. It reports nights
   per city, bust rate, boss win rate, debt peaks and time to recover. The section 5
   targets become its pass or fail.
-- **Return check:** every game × skill level × night event in story stays below 100%
-  (with the listed exceptions).
+- **Return check:** every game × night event in story stays below 100%.
 - The usual `npx tsc --noEmit`, `pnpm lint` and `scripts/design-check/mobile-check.cjs`
   extended to the story screens.
 
@@ -311,10 +320,10 @@ stay within the section 1 rule (below 100%, or capped and one night only).
 
 | Phase | What | Done when |
 |---|---|---|
-| 0 | Owner answers (section 12). Finish Cash tables. Close the perk checks in the mode-adjustments handoff | answers recorded here; those handoffs done |
+| 0 | Owner answers (section 12). Finish Cash tables (bot churn, top-up, cash checks) | answers recorded here; cash handoff done |
 | 1 | Economy model + `sim:story` + return check, **no UI** | the simulator meets the section 5 targets |
 | 2 | Save format, dialogue engine, content types, `check:story` | checks pass on placeholder content |
-| 3 | **Vertical slice: Dustwater complete.** Map, hub, venue nights, 2 characters with portraits, 2 minigames, jobs, mentor, a Liar's Dice boss, bust and lender, one choice with a consequence | playable start to finish on desktop and phone; owner playtest |
+| 3 | **Vertical slice: Dustwater complete.** Map, hub, venue nights, 2 characters with portraits, 2 minigames, jobs, comps, a Liar's Dice boss, bust and lender, one choice with a consequence | playable start to finish on desktop and phone; owner playtest |
 | 4 | Tune from the playtest. Change systems now, while only one city exists | owner signs off on the slice |
 | 5 | Content in batches of three cities (acts I–IV), each with its minigames and table games | checks + simulation pass per batch; browser check |
 | 6 | Endings, the post-game World Tour (endless rising stakes), balance pass, docs (README, ARCHITECTURE, BALANCE_AUDIT, tutorials) | docs match the code |
@@ -333,17 +342,15 @@ other eleven are written on top of it.
    art (generated or commissioned)? Or should I build a consistent **layered SVG portrait
    style** in code (cheaper, matches the site, easy to give expressions, but less
    painterly)? Placeholders can be used until the art arrives either way.
-3. **Story-only numbers.** May story mode use its own payout numbers in these places?
-   - (a) perk levels, so game + skill stays below 100% return;
-   - (b) a Slots machine limit or story pay table;
-   - (c) small one-night payout events.
-   Freeplay, Daily, Ladder and Challenges would stay exactly as they are.
-4. **Survival.** Does it stay hidden as it is, or retire once story mode reuses its perks
-   and items?
-5. **Cash tables first?** Story needs them for its venue rooms. Do I finish
-   `.md/TABLES_CASH_HANDOFF.md` as Phase 0, or launch story with tournaments only and add
-   cash rooms later?
+3. **Story-only numbers.** May story mode use (a) a Slots machine limit or story pay table
+   (Slots returns about 104.8%) and (b) small one-night payout events? Freeplay, Daily,
+   Ladder and Challenges would stay exactly as they are.
+4. ~~Survival~~: answered, perks and items are left out of story for now.
+5. **Cash tables first?** They're playable. Do I finish the missing parts (bots coming and
+   going, top-up, cash checks) as Phase 0, or start story now and finish them alongside?
 6. **Tone:** gritty noir, light and comedic, or in between?
 7. **Saves:** one story save (with "New story" behind a confirmation) or several slots?
 8. **Harsher loss option:** I dropped "rock bottom sends you back a city" because minigames
    guarantee recovery. Do you want it back, or a hard mode with it?
+9. **Boss losses:** should a rematch get easier (a cheaper buy-in, or a slightly weaker
+   rival after each loss) to cut the long tails in section 5?
