@@ -5,8 +5,8 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 
 ## Docs
 
-**Next up:** Story mode, `.md/STORY_MODE_PLAN.md` (owner answers in its section 12; four small questions still open;
-build order in section 11). Cash tables (`.md/TABLES_CASH_HANDOFF.md`) and the four new
+**Next up:** Story mode, `.md/STORY_MODE_PLAN.md`: phases 1–2 are built (economy, odds, save,
+dialogue engine, checks); next is Phase 3, the playable Dustwater slice (build order in its section 11). Cash tables (`.md/TABLES_CASH_HANDOFF.md`) and the four new
 house games (`.md/NEW_GAMES_HANDOFF.md`) are built.
 
 Read the one that matches the task before changing code:
@@ -25,7 +25,7 @@ Read the one that matches the task before changing code:
 
 - [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): the plan
   for the main mode (12 cities, characters with portraits and choices, minigames, economy,
-  losing, build order). Not built; four small questions are still open in its section 12.
+  losing, build order). Being built; every owner question is answered.
 
 - [.md/CHALLENGES.md](.md/CHALLENGES.md): Challenges (20 house challenges), Community challenges
   (API, tables, migration to deploy), the Daily Ladder and the 15-rung Ladder.
@@ -62,5 +62,5 @@ Read the one that matches the task before changing code:
   `components/games/playing-card.tsx`). Don't hand-roll colours or buttons in a game.
 - Game changes are visuals-only unless the owner asks otherwise; never change outcomes,
   payouts or timings by accident.
-- Checks: `npx tsc --noEmit` and `pnpm lint`. Lint has three existing errors, in
+- Checks: `npx tsc --noEmit` and `pnpm lint`; for story work also `pnpm check:story` and `pnpm sim:story`. Lint has three existing errors, in
   `lib/game-registry.tsx` and `lib/survival/migrate.ts`.

@@ -10,7 +10,7 @@
 - [ ] Survival finish?
   - [ ] Bugs?
   - [ ] Balancing
-- [ ] Story mode — planned in `.md/STORY_MODE_PLAN.md` (portrait style: C + D mix; start at Phase 1 once section 12 is answered)
+- [ ] Story mode — `.md/STORY_MODE_PLAN.md`: phases 1–2 done, next the Dustwater slice (Phase 3)
 - [ ] New mode
   - [ ] Multiplayer
     - [ ] 1v1

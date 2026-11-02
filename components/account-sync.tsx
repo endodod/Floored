@@ -8,6 +8,7 @@ import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { useTablesStore } from '@/store/tables-store'
 import { useChallengeStore } from '@/store/challenge-store'
+import { useStoryStore } from '@/store/story-store'
 import { SYNCED_STORE_KEYS, type SyncPayload, type SyncedStoreKey } from '@/lib/sync/keys'
 
 /** A persisted zustand store: all the sync needs from it. */
@@ -24,6 +25,7 @@ const STORES: Record<SyncedStoreKey, PersistedStore> = {
   survival: useSurvivalStore as unknown as PersistedStore,
   challenges: useChallengeStore as unknown as PersistedStore,
   'daily-ladder': useDailyLadderStore as unknown as PersistedStore,
+  story: useStoryStore as unknown as PersistedStore,
 }
 
 /**

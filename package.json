@@ -10,7 +10,8 @@
     "postinstall": "prisma generate",
     "sim:bots": "tsx scripts/bots/simulate.ts",
     "check:tables": "tsx scripts/bots/check-engines.ts",
-    "sim:story": "tsx scripts/story/sim.ts"
+    "sim:story": "tsx scripts/story/sim.ts",
+    "check:story": "tsx scripts/story/check-content.ts"
   },
   "dependencies": {
     "@neondatabase/auth": "0.5.0-beta",

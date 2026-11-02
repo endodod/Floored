@@ -1,7 +1,7 @@
 # Story mode ("The Circuit"): design report
 
-Status: **being built.** Every owner question is answered (section 12). Progress is in
-section 11. Cash tables, the one dependency, are done.
+Status: **being built.** Every owner question is answered (section 12). Phases 1–2 are
+done; next is the Dustwater slice (Phase 3). Progress is in section 11. Cash tables, the one dependency, are done.
 Branch: `claude/friendly-goodall-yvxakz`.
 
 What the owner asked for: a story mode that is the heart of the site. You travel from
@@ -336,7 +336,7 @@ Slots gets a story pay table below 100%.
 |---|---|---|
 | 0 | Owner answers (section 12). Finish Cash tables (bot churn, top-up, cash checks) | **Cash tables done 2026-11-02**; only the portrait style / tone is open |
 | 1 | Economy model + `sim:story` + return check, **no UI** | **Done 2026-11-02:** `lib/story/{economy,cities,odds}.ts`, `scripts/story/sim.ts`; targets met (section 5) |
-| 2 | Save format, dialogue engine, content types, `check:story` | checks pass on placeholder content |
+| 2 | Save format, dialogue engine, content types, `check:story` | **Done 2026-11-02:** `store/story-store.ts` (one save, version 1, synced as `story`), `lib/story/{types,dialogue}.ts`, `lib/story/content/` (the cast and Dustwater's scenes and errands), `scripts/story/check-content.ts`; checks pass |
 | 3 | **Vertical slice: Dustwater complete.** Map, hub, venue nights, 2 characters with portraits, 2 minigames, jobs, comps, a Liar's Dice boss, bust and lender, one choice with a consequence | playable start to finish on desktop and phone; owner playtest |
 | 4 | Tune from the playtest. Change systems now, while only one city exists | owner signs off on the slice |
 | 5 | Content in batches of three cities (acts I–IV), each with its minigames and table games | checks + simulation pass per batch; browser check |
