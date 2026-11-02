@@ -170,10 +170,10 @@ export function ModeSelect() {
         </ModeRowList>
       </section>
 
-      {/* ── Practise ── */}
-      <section id="practise" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="practise-title">
-        <SectionTitle suit={1} note="Train for every mode">
-          <span id="practise-title">Practise</span>
+      {/* ── Practise and play: Freeplay to train, Tables for fun ── */}
+      <section id="play" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="play-title">
+        <SectionTitle suit={1} note={TABLES_ENABLED ? 'Train for every mode, or play just for fun' : 'Train for every mode'}>
+          <span id="play-title">{TABLES_ENABLED ? 'Practise and play' : 'Practise'}</span>
         </SectionTitle>
         <ModeRowList>
           {/* ── Freeplay ── */}
@@ -192,16 +192,9 @@ export function ModeSelect() {
               </Button>
             }
           />
-        </ModeRowList>
-      </section>
 
-      {/* ── Just for fun (Tables; toggle in lib/features.ts) ── */}
-      {TABLES_ENABLED && (
-        <section id="fun" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="fun-title">
-          <SectionTitle suit={2} note="Other ways to play, on their own wallet">
-            <span id="fun-title">Just for fun</span>
-          </SectionTitle>
-          <ModeRowList>
+          {/* ── Tables (toggle in lib/features.ts) ── */}
+          {TABLES_ENABLED && (
             <ModeRow
               index={7}
               name="Tables"
@@ -217,9 +210,9 @@ export function ModeSelect() {
                 </Button>
               }
             />
-          </ModeRowList>
-        </section>
-      )}
+          )}
+        </ModeRowList>
+      </section>
     </div>
   )
 }

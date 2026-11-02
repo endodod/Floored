@@ -14,14 +14,14 @@ const GUIDE = [
     body: 'Challenges and the Ladder are the real game: set runs with a fixed start, scored and kept in your records. A new Daily challenge and Daily ladder every day, the same for everyone.',
   },
   {
-    href: '#practise',
+    href: '#play',
     title: 'Practise',
     body: `Freeplay opens all ${GAMES.length} games with a balance you can reset. Train for each mode here: learn a game's odds before you take it into a challenge or up the ladder.`,
   },
   ...(TABLES_ENABLED
     ? [
         {
-          href: '#fun',
+          href: '#play',
           title: 'Just for fun',
           body: "Tables seats you with bots at Hold'em, Liar's Dice and Blackjack Showdown, on a wallet of its own. Nothing there touches your other modes.",
         },
@@ -49,7 +49,7 @@ export default function HomePage() {
 
       <ol className="grid grid-cols-1 gap-3 md:grid-cols-3" aria-label="How Floored works">
         {GUIDE.map((g, i) => (
-          <li key={g.href} className="rise" style={{ '--d': `${80 + i * 60}ms` } as CSSProperties}>
+          <li key={g.title} className="rise" style={{ '--d': `${80 + i * 60}ms` } as CSSProperties}>
             <a
               href={g.href}
               className="group flex h-full flex-col gap-1.5 rounded-md bg-surface px-5 py-4 shadow-[inset_0_0_0_1px_var(--line)] transition-shadow hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.35)]"
