@@ -63,12 +63,12 @@ Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones), Liar'
 
 - Own **Tables wallet** ($10,000, refillable below the smallest buy-in)
 - **One lobby** at `/tables` (no intro page; How it works sits under the tables) with Tournaments and Cash tables side by side; tap a tournament table to pick its buy-in (100 / 1,000 / 10,000) in a dialog, a cash table to pick its limits and how many chips to bring. Each bot's skill is drawn at random per table
-- Every buy-in goes into the prize pool (no rake); Hold'em pays the top two, while Blackjack Showdown and Liar's Dice are winner-takes-all
-- Account Records show the Tables peak balance and resets (wallet refills)
-- Leaving a table before your place is decided forfeits the buy-in
-- Bots decide only from what their seat can see; `pnpm sim:bots` and `pnpm check:tables` test them
+- **Tournaments:** every buy-in goes into the prize pool (no rake); Hold'em pays the top two, while Blackjack Showdown and Liar's Dice are winner-takes-all. Leaving a table before your place is decided forfeits the buy-in
+- **Cash tables:** bring any amount of your wallet and play until you leave or run out. Fixed limits (low, mid, high); top up between hands; leave any time (mid-hand you fold, give up your dice, or stand and leave when the Blackjack hand settles) and your stack goes back to the wallet, also if you close the tab. At 0 chips you sit out until you top up or leave. Bots come and go between hands. Cash Blackjack is played against the house dealer
+- The Tables page shows the wallet, tournament totals and cash net; Account Records show the Tables peak balance and resets (wallet refills)
+- Bots decide only from what their seat can see; `pnpm sim:bots` (`--cash` for cash tables) and `pnpm check:tables` test them
 
-Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HANDOFF.md`.
+Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HANDOFF.md` and `.md/TABLES_CASH_HANDOFF.md`.
 
 ## Freeplay
 

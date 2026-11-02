@@ -1,4 +1,4 @@
-import type { Rng, Standings, TableEngine } from '@/lib/tables/types'
+import type { CashTableOps, Rng, Standings, TableEngine } from '@/lib/tables/types'
 import { placeIn, rankSeats } from '@/lib/tables/standings'
 import { evaluate, fullDeck, labelOf, shuffled } from './evaluator'
 import type {
@@ -163,6 +163,12 @@ function startHand(prev: HoldemState, rng: Rng): HoldemState {
   }
   post(sbSeat, sb, 'small-blind')
   post(bbSeat, bb, 'big-blind')
+  // Cash tables: a player who sat down between hands posts a live big blind (it can check if nobody raises).
+  seats.forEach((s, i) => {
+    if (!s.newcomer) return
+    if (alive(i) && i !== sbSeat && i !== bbSeat) post(i, bb, 'big-blind')
+    s.newcomer = false
+  })
 
   const state: HoldemState = {
     ...prev,
@@ -448,7 +454,8 @@ export const holdemEngine: TableEngine<HoldemState, HoldemView, HoldemAction> = 
   viewFor: viewHoldem,
   toAct: (s) => (s.phase === 'betting' ? s.toAct : null),
   apply: applyHoldem,
-  needsAdvance: (s) => s.phase === 'handOver',
+  // A cash table waits for a second player with chips (the runner seats one).
+  needsAdvance: (s) => s.phase === 'handOver' && (s.config.format !== 'cash' || withChips(s) >= 2),
   advance: (s, rng) => {
     if (s.phase !== 'handOver') throw new Error("Hold'em: nothing to deal")
     return startHand(s, rng)
@@ -459,14 +466,31 @@ export const holdemEngine: TableEngine<HoldemState, HoldemView, HoldemAction> = 
   placeOf: (s, seat) => (s.seats[seat]!.out || s.phase === 'over' ? placeIn(holdemStandings(s), seat) : null),
 }
 
-export const holdemCashOps = {
+function withChips(state: HoldemState): number {
+  return state.seats.filter((s) => !s.out && !s.empty && s.stack > 0).length
+}
+
+export const holdemCashOps: CashTableOps<HoldemState> = {
   betweenHands: (state: HoldemState) => state.phase === 'handOver',
-  sit: (state: HoldemState, seat: number, stack: number, newcomer: boolean) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false, startStack: stack, lastAction: newcomer ? 'big-blind' as HoldemActionKind : null } : s) }),
-  stand: (state: HoldemState, seat: number) => { const stack = state.seats[seat]!.stack; return { stack, state: { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: 0, empty: true, out: false, hole: [], folded: true } : s) } } },
+  sit: (state: HoldemState, seat: number, stack: number, newcomer: boolean) => {
+    if (!state.seats[seat]!.empty) throw new Error(`Hold'em: seat ${seat} is taken`)
+    return { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false, folded: true, hole: [], bet: 0, allIn: false, startStack: stack, lastAction: null, newcomer } : s) }
+  },
+  // Chips already in the pot stay there (a seat leaving mid-hand has folded first).
+  stand: (state: HoldemState, seat: number) => { const stack = state.seats[seat]!.stack; return { stack, state: { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: 0, empty: true, out: false, hole: [], folded: true, newcomer: false } : s) } } },
   addChips: (state: HoldemState, seat: number, amount: number) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: s.stack + amount } : s) }),
   stackBehind: (state: HoldemState, seat: number) => state.seats[seat]!.stack,
   inPlay: (state: HoldemState, seat: number) => state.phase === 'betting' && inHand(state.seats[seat]!),
-  leaveAction: (state: HoldemState, seat: number) => state.phase === 'betting' ? holdemEngine.apply(state, seat, { type: 'fold' }) : state,
+  leaveAction: (state: HoldemState, seat: number) => {
+    if (state.phase !== 'betting' || !inHand(state.seats[seat]!)) return state
+    if (state.toAct === seat) return holdemEngine.apply(state, seat, { type: 'fold' })
+    // Leaving out of turn: fold now; the seat on the clock keeps its turn.
+    const seats = state.seats.map((s, i) => (i === seat ? { ...s, folded: true, lastAction: 'fold' as HoldemActionKind } : s))
+    const pending = state.pending.map((p, i) => (i === seat ? false : p))
+    const log = [...state.log, { hand: state.hand, street: state.street, seat, kind: 'fold' as HoldemActionKind, amount: state.seats[seat]!.bet, potBefore: potOf(state) }]
+    const next = { ...state, seats, pending, log }
+    return seats.filter(inHand).length === 1 ? finishHand(next, false) : next
+  },
   emptySeats: (state: HoldemState) => state.seats.map((s, i) => s.empty ? i : -1).filter((i) => i >= 0),
   handsPlayed: (state: HoldemState) => state.hand,
 }

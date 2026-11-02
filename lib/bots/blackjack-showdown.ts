@@ -51,7 +51,27 @@ const IDEAL = { tightness: 0.5, aggression: 0.5, bluff: 0, risk: 0.5 }
 
 const round10 = (n: number) => Math.round(n / 10) * 10
 
+/**
+ * Cash table: no standings to chase, so each style sizes its bets its own way
+ * (rocks and nits the minimum, regulars 2–4% of the stack, maniacs and
+ * tricksters 5–10% and half as much again after a win, stations a flat 3%),
+ * rounded to the table minimum.
+ */
+function decideCashBet(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): number {
+  const legal = view.legal!.bet!
+  const me = view.seats[view.seat]!
+  const unit = Math.max(1, view.config.minBet)
+  const style = bot.profile.style
+  let share = 0
+  if (style === 'regular') share = 0.02 + rng() * 0.02
+  else if (style === 'maniac' || style === 'trickster') share = (0.05 + rng() * 0.05) * (mind.marks.won ? 1.5 : 1)
+  else if (style === 'station') share = 0.03
+  const bet = Math.round((me.stack * share) / unit) * unit
+  return clamp(bet, legal.min, legal.max)
+}
+
 function decideBet(view: ShowdownView, bot: Bot, mind: BotMind, rng: Rng): number {
+  if (view.config.format === 'cash') return decideCashBet(view, bot, mind, rng)
   const legal = view.legal!.bet!
   const skill = SKILL[bot.skill]
   const risk = clamp(playingProfile(bot, IDEAL).risk + mind.tilt * 0.3, 0, 1)
@@ -188,6 +208,8 @@ function observeShowdown(view: ShowdownView, bot: Bot, mind: BotMind) {
   }
   mind.tilt *= 0.6
   const me = view.seats[view.seat]!
+  if (me.net > 0) mind.marks.won = true
+  else delete mind.marks.won
   if (me.net < 0 && -me.net >= (me.stack - me.net) * 0.25) mind.tilt = Math.max(mind.tilt, bot.profile.tiltProne)
 }
 

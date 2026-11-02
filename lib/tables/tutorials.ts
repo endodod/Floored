@@ -14,6 +14,8 @@ export interface TableTutorial {
   intro: string
   steps: TutorialStep[]
   notes: string[]
+  /** How the game differs at a cash table. */
+  cash: string[]
 }
 
 const pct = (n: number) => `${Math.round(n * 100)}%`
@@ -84,6 +86,14 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       `Prizes: ${split(6, 'holdem')} of the pool at six seats, ${split(4, 'holdem')} at four.`,
       'You have 30 seconds to act; when time runs out you check, or fold if there is a bet.',
     ],
+    cash: [
+      `Blinds stay fixed for the table: ${CASH_STAKES.holdem.map((c) => blinds(c.limits.blinds!)).join(', ')} at low, mid and high stakes.`,
+      'You play with your own chips: sit down with any amount from your wallet, and your stack goes back to the wallet when you leave.',
+      'A player who sits down between hands posts a big blind and is dealt in at once.',
+      'Short of a blind or a call, you are all in for what you have; side pots work as at a tournament.',
+      'Leave between hands with your whole stack. Leaving mid-hand folds your hand; chips already in the pot stay there.',
+      'Top up between hands. At 0 chips you sit out until you top up or leave. Bots come and go between hands.',
+    ],
   },
   'liars-dice': {
     intro: 'Bid on the dice hidden under every cup, or call the last bid a lie.',
@@ -101,6 +111,13 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       'Four seats; winner takes the full prize pool.',
       'You have 30 seconds to act; when time runs out you call “Liar!” (or open with one 2).',
     ],
+    cash: [
+      `Every player with chips antes before each game: ${CASH_STAKES['liars-dice'].map((c) => formatChips(c.limits.ante!)).join(', ')} at low, mid and high stakes. The last player with dice takes the pot.`,
+      'Five dice each, every game, with the same bidding rules.',
+      'A short stack antes all it has and can win at most that much from each other player; the rest of each bigger ante goes back to its owner.',
+      'Leaving mid-game gives up your dice; your ante stays in the pot. Between games you leave with your whole stack.',
+      'Top up between games. At 0 chips you sit out until you top up or leave. Bots come and go between games.',
+    ],
   },
   'blackjack-showdown': {
     intro: `Tournament blackjack: ${SHOWDOWN_HANDS} hands against one dealer, and the most chips wins.`,
@@ -117,6 +134,13 @@ export const TABLE_TUTORIALS: Record<TableGameName, TableTutorial> = {
       `Drop below ${SHOWDOWN_MIN_BET} chips and you are out.`,
       'Four seats; the winner takes the full prize pool. Equal stacks share the prize.',
       'You have 30 seconds to act; when time runs out you bet the minimum, or stand.',
+    ],
+    cash: [
+      `Bets ${CASH_STAKES['blackjack-showdown'].map((c) => (c.limits.bets![1] == null ? `from ${formatChips(c.limits.bets![0])}, no max` : `${formatChips(c.limits.bets![0])}–${formatChips(c.limits.bets![1])}`)).join(', ')} at low, mid and high stakes.`,
+      'You play the house dealer, not the other players: the house pays your wins. Same rules as above, with no hand limit, no rising minimum and no secret bets.',
+      'The house keeps an edge of about 1%, as in solo Blackjack.',
+      'Below the table minimum you may bet your whole stack; a double with too few chips doubles for the rest of your stack.',
+      'With a bet down, leaving stands your hand and you leave once it settles. Top up between hands; at 0 chips you sit out.',
     ],
   },
 }

@@ -1,11 +1,10 @@
 # Tables: Cash tables — handoff
 
-Status as of 2026-10-30: **partly implemented on `claude/new-games-handoff` and
-`main`.** Cash stakes, catalog, wallet/session records, the Hold'em and Blackjack
-cash engine foundations, and the initial runner/lobby/table wiring are present.
-Liar's Dice now has a cash wrapper and board integration. Bot churn, cash-specific
-checks/simulation, top-up/leave UX, tutorials, final documentation and browser
-verification remain; use the phase table below as the source of truth.
+Status as of 2026-11-02: **built** on `claude/friendly-goodall-yvxakz`. All three cash
+tables play end to end: bots come and go, top up, leave in play, sit out at 0 chips,
+reload cashes out, cash checks and `sim:bots --cash` pass, and the browser flow was
+checked (section 3). Section 6 lists where the build differs from this plan and what
+is left.
 
 ## What the owner asked for
 
@@ -388,26 +387,29 @@ per game, short antes get excess back; Blackjack: house edge ~1%). The rules pag
 
 | Phase | What | Done when |
 |---|---|---|
-| 1 | Design and owner answers | **Done** (this file) |
-| 2 | **Partial:** types, empty seats, cash configs/ops, `games/liars-dice/cash.ts`, `settleLiarsPot` and cash defs are in place. | Cash checks and regression comparison still needed. |
-| 3 | Not started: bot churn and `sim:bots --cash`. | Zero illegal actions; section 4 filled in. |
-| 4 | **Partial:** stakes, catalog and persisted wallet/session store are implemented. | Cash tutorials and old-save validation still needed. |
-| 5 | **Partial:** lobby category/dialog, shell, and initial runners for all three boards are implemented. | Churn, top-up/leave behavior, session UI and browser checks remain. |
-| 6 | Not started. | Docs match the code. |
+| 1 | Design and owner answers | **Done** |
+| 2 | Engines: empty seats, cash configs and ops, `games/liars-dice/cash.ts`, `settleLiarsPot` | **Done.** Fixed on 2026-11-02: Liar's Dice never rolled the next round inside a game (the table hung after the first "Liar!"), and took antes with fewer than two players; Blackjack marked cash seats "out" below the tournament minimum, gave a 0-chip seat a betting turn and had no short double; Hold'em never posted the newcomer's big blind and could fold only on its own turn. Tournament output (`check:tables`, `sim:bots` seed 1) is unchanged. |
+| 3 | Bot churn (`lib/tables/cash.ts`) and `sim:bots --cash` | **Done.** 0 illegal actions, 0 chip-conservation errors; results in section 4. |
+| 4 | Stakes, catalog, store, tutorials | **Done.** Cash notes per game on the rules pages (`TABLE_TUTORIALS[game].cash`). |
+| 5 | Runner and UI: churn, top up, leave, sit out, session figures, empty seats, lobby banner | **Done** (see section 6 for the differences). |
+| 6 | Docs | **Done:** README, ARCHITECTURE, BALANCE_AUDIT, this file. |
 
 Update this file's status line and section 4 as phases land.
 
 ---
 
-## 4. Results (fill in during Phase 3)
+## 4. Results (`pnpm sim:bots all --cash`, seed 1, 2026-11-02)
+
+Bot-only sessions with churn: Hold'em 12 × 300 hands, Liar's Dice 60 × 40 games,
+Blackjack 60 × 300 hands. **0 illegal actions and 0 chip-conservation errors** at low and
+high stakes. Each seat draws a random skill, so the columns mix opponents.
 
 | Game | Stake | Rookie | Regular | Shark | Notes |
 |---|---|---|---|---|---|
-| Hold'em (bb/100) | | | | | |
-| Liar's Dice (antes/game) | | | | | |
-| Blackjack (house edge) | | | | | |
-
----
+| Hold'em (bb/100) | low 5/10 | −59.7 | +10.6 | +33.3 | ~34 arrivals and departures, ~10 top ups a session |
+| Hold'em (bb/100) | high 500/1,000 | −48.9 | +2.7 | +35.1 | same churn |
+| Liar's Dice (antes/game) | any | −0.39 | +0.09 | +0.28 | the game scales with the ante, so every stake plays the same |
+| Blackjack (min bets/100 hands) | any | −11.9 | −2.3 | +0.2 | house edge 1.64% of all bets: rookies' misplays; basic strategy alone is about 1% |
 
 ## 5. Owner decisions (2026-10-30)
 
@@ -421,3 +423,27 @@ Update this file's status line and section 4 as phases land.
 7. **Rejoin:** leaving ends the session.
 8. **Bot bankrolls:** unlimited.
 9. **Tournament buy-ins:** 100 / 1,000 / 10,000 (done on this branch).
+
+## 6. As built (2026-11-02): differences from the plan, and what's left
+
+- **Top up** sits with **Leave table** in the corner buttons, at every point of a hand,
+  not in the dock. A top up waits for the next hand (game); the board shows
+  "+X before the next hand" (wider screens) and the stack figure counts it at once.
+  At 0 chips a panel covers the dock with **Top up** and **Leave table**.
+- **Session figures** are in the status bar: brought in (wider screens), stack, net.
+  The stake and limits are next to the game name.
+- **Account Records** stay at two figures per mode (the owner's convention since
+  2026-11-02), so cash net and sessions are on the Tables page, not the Account page.
+- **Hold'em newcomers** in the small-blind spot post only the small blind (in the
+  big-blind spot, the big blind); anywhere else a live big blind.
+- **Liar's Dice** keeps the finished game on the table (for its last reveal) until the
+  next ante; a seat that isn't in the current game watches it. A player who leaves
+  mid-game forfeits the whole ante, also the part a short-anted winner would have
+  returned.
+- **Blackjack:** a seat with 0 chips sits the hand out (`idle`); leaving before your bet
+  sits you out at once; leaving with a bet down stands every decision and leaves at
+  the settle. Chips at risk aren't "behind", so a reload mid-hand loses the bet.
+- **Arrivals** pop in; **departures** just empty the seat (no `g-clear` animation).
+- **Left to do:** the 150% zoom and reduced-motion passes of the browser check; the
+  tournament "watching" pill shares the phone-width overlap the cash pills had (they
+  are hidden on phones now).

@@ -30,6 +30,8 @@ export interface HoldemSeat {
   out: boolean
   /** Cash-table seat without a player. */
   empty?: boolean
+  /** Cash table: sat down between hands, posts a big blind in the next hand it is dealt into. */
+  newcomer?: boolean
   /** Stack at the start of the hand — breaks ties between seats busting in the same hand. */
   startStack: number
   lastAction: HoldemActionKind | null

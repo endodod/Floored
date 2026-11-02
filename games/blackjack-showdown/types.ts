@@ -24,6 +24,8 @@ export interface ShowdownSeat {
   out: boolean
   /** Cash-table seat without a player. */
   empty?: boolean
+  /** Cash table: sitting this hand out (no chips when it was dealt, or left before betting). */
+  idle?: boolean
   outcome: ShowdownOutcome | null
   /** Chips won (+) or lost (−) this hand. */
   net: number

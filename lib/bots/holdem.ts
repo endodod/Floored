@@ -181,7 +181,8 @@ function decideHoldem(view: HoldemView, bot: Bot, mind: BotMind, rng: Rng): Hold
     const raiseLevel = view.currentBet / bb
     const facingRaise = raiseLevel > 1
 
-    if (stackBB <= 12) {
+    // Push / fold is a tournament tool; a cash table only shoves when it is short.
+    if (stackBB <= (view.config.format === 'cash' ? 10 : 12)) {
       // Push / fold.
       const callers = others.filter((s) => !s.allIn).length
       if (facingRaise) {

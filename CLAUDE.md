@@ -5,10 +5,9 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 
 ## Docs
 
-**Planned work, ready to build** (both designs are owner-approved; each file says where to
-start and how to check it): the four new house games in `.md/NEW_GAMES_HANDOFF.md` (start
-with Deck Countdown), and Cash tables in `.md/TABLES_CASH_HANDOFF.md` (start at Phase 2).
-The two are independent and can be built in either order.
+**Next up:** Story mode, `.md/STORY_MODE_PLAN.md` (owner answers recorded in its section 12;
+build order in section 11). Cash tables (`.md/TABLES_CASH_HANDOFF.md`) and the four new
+house games (`.md/NEW_GAMES_HANDOFF.md`) are built.
 
 Read the one that matches the task before changing code:
 
@@ -22,11 +21,11 @@ Read the one that matches the task before changing code:
   selection that favours games not offered yet.
 - [.md/TABLES_CASH_HANDOFF.md](.md/TABLES_CASH_HANDOFF.md): Cash tables, a second Tables category
   (sit down with any amount of your wallet, play until you leave or run out): rules, stakes,
-  engine/store/UI plan in phases.
+  how it was built, simulation results, and where the build differs from the plan.
 
-- [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): proposal
+- [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): the plan
   for the main mode (12 cities, characters with portraits and choices, minigames, economy,
-  losing, build order). Not built; waiting for the owner's answers in its section 12.
+  losing, build order). Not built; a few owner questions are still open in its section 12.
 
 - [.md/CHALLENGES.md](.md/CHALLENGES.md): Challenges (20 house challenges), Community challenges
   (API, tables, migration to deploy), the Daily Ladder and the 15-rung Ladder.

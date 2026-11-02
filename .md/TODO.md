@@ -10,11 +10,11 @@
 - [ ] Survival finish?
   - [ ] Bugs?
   - [ ] Balancing
-- [ ] Story mode — proposal in `.md/STORY_MODE_PLAN.md`, waiting for owner answers
+- [ ] Story mode — planned in `.md/STORY_MODE_PLAN.md` (start at Phase 1 once its remaining questions are answered)
 - [ ] New mode
   - [ ] Multiplayer
     - [ ] 1v1
-    - [ ] Tables: Cash tables category (sit down with your own bankroll, play until you leave or run out) — planned in `.md/TABLES_CASH_HANDOFF.md`, not built
+    - [x] Tables: Cash tables category (sit down with your own bankroll, play until you leave or run out) — built; see `.md/TABLES_CASH_HANDOFF.md`
     - [x] Multiplayer casino games against bots — Tables mode: Hold'em, Liar's Dice, and Blackjack Showdown playable; account records grouped by mode/game (see `.md/BOT_TABLES_HANDOFF.md`)
 - [x] New house games: Sic Bo, Tower of Cards, Deck Countdown, Baccarat — browser verification remains in `.md/NEW_GAMES_HANDOFF.md`
 - [ ] Sound design

@@ -1,6 +1,7 @@
 # Story mode ("The Circuit"): design report
 
-Status: **proposal, waiting for owner answers (section 12). Nothing is built.**
+Status: **planned, not built.** Owner answers so far are recorded in section 12; three
+questions are still open there. Cash tables, the one dependency, are done.
 Branch: `claude/friendly-goodall-yvxakz`.
 
 What the owner asked for: a story mode that is the heart of the site. You travel from
@@ -31,7 +32,7 @@ vertical slice (one complete city) before the content for the other eleven (sect
    depend on what you choose, never on whether you busted. A bad run of luck costs
    money and nights, not the story you want.
 4. **Time only moves when you play.** The game counts in-game **nights**. Nothing depends
-   on the real clock (unless the owner prefers that for minigames, see Q1).
+   on the real clock (the owner chose in-game nights for the minigame limit too).
 5. **No dead ends.** No choice and no loss can lock you out of finishing. A content
    check enforces this.
 6. **Data first.** Cities, characters, scenes, minigames and jobs are typed data files
@@ -115,8 +116,11 @@ pay that city's rates, so going back is no farm).
   - **Vale**, who won your family's club in one hand.
   - **The Notary**, the lender (section 6).
 - **Portraits:** each character has 3 expressions (neutral, pleased, angry), shown in a
-  dialogue box with the line, the speaker and choices. **Where the art comes from is
-  an open question (Q2).**
+  dialogue box with the line, the speaker and choices. **Art is drawn in code** (owner,
+  2026-11-02), as layered vector portraits that must match the quality of the game boards:
+  the casino theme's wood, gold and felt palette, consistent light and line weight, and
+  an expression set per character. A style sheet and two finished characters come first,
+  in the Phase 3 slice, for the owner's sign-off before the rest are drawn.
 - **Choices:** every city has 2–4 real choices (in errands and the boss scenes). A choice
   can:
   - shift standing with **three factions**: Vale's Syndicate, the Old Guard (independent
@@ -184,8 +188,8 @@ playing. With them:
 Nights cost lodging, and a night of venue play costs real money to the house edge. So the
 minigames can't be repeated without the rest of the game moving forward. Because a night
 can always be skipped by resting, a broke player is never stuck. Their limit is the real
-time they spend on minigames, which is slower than gambling. If the owner wants a
-real-clock limit too, see Q1.
+time they spend on minigames, which is slower than gambling. (Owner decision: in-game
+nights only, no real-clock limit.)
 
 ---
 
@@ -255,9 +259,11 @@ permanently (Weighted Edge on Coin Flip about 130%; the dealer's hole card on Bl
 Each night may roll one event from the city's table. Some change only what's offered:
 an extra hustle, a character visit, a rival sighting, a Tables tournament tonight. Others
 change payouts slightly in story mode only ("Wheel pays +10% tonight", "Blackjack 3:2
-naturals pay 3×"). **Payout-changing events need owner approval (Q3)**, because the house
-rule is that games are visuals-only unless you ask. Events that change a game's return
-stay within the section 1 rule (below 100%, or capped and one night only).
+naturals pay 3×"). The owner approved **story-only game settings** (2026-11-02): story
+mode may configure a game (Slots' pay table, a venue's limits, a night's payout event)
+without touching Freeplay, Daily, Ladder or Challenges. Events that change a game's
+return stay within the section 1 rule (below 100%, or capped and one night only), and
+Slots gets a story pay table below 100%.
 
 ---
 
@@ -288,15 +294,9 @@ stay within the section 1 rule (below 100%, or capped and one night only).
   - stakes in multiples of m instead of the fixed 100 / 1k / 10k tiers;
   - named story opponents (a portrait plus a `BotProfile`).
 
-  **Cash tables are playable but unfinished** (checked in the code 2026-11-02). All three
-  boards run cash sessions, and the stakes, wallet and session store exist. What's missing:
-  - bots never come and go (`CHURN` in `lib/tables/stakes.ts` is defined but unused);
-  - there's no top-up button (`topUp` exists in the store, but nothing calls it);
-  - there are no cash checks or cash simulation in `pnpm sim:bots` / `check:tables`;
-  - cash tutorials and the browser checks.
-
-  Story needs sit, play and leave, which work. Bots coming and going and the cash checks
-  should land before story relies on them (Q5).
+  **Cash tables are built** (2026-11-02, `.md/TABLES_CASH_HANDOFF.md`). Story reuses
+  `lib/tables/cash.ts` (seating and churn) and the runner's `cash` option, with story
+  money in place of the Tables wallet.
 - **Survival:** untouched (perks and items are left out).
 
 ### Checks that make later fixes rare
@@ -320,7 +320,7 @@ stay within the section 1 rule (below 100%, or capped and one night only).
 
 | Phase | What | Done when |
 |---|---|---|
-| 0 | Owner answers (section 12). Finish Cash tables (bot churn, top-up, cash checks) | answers recorded here; cash handoff done |
+| 0 | Owner answers (section 12). Finish Cash tables (bot churn, top-up, cash checks) | **Cash tables done 2026-11-02**; questions 6, 8 and 9 still open |
 | 1 | Economy model + `sim:story` + return check, **no UI** | the simulator meets the section 5 targets |
 | 2 | Save format, dialogue engine, content types, `check:story` | checks pass on placeholder content |
 | 3 | **Vertical slice: Dustwater complete.** Map, hub, venue nights, 2 characters with portraits, 2 minigames, jobs, comps, a Liar's Dice boss, bust and lender, one choice with a consequence | playable start to finish on desktop and phone; owner playtest |
@@ -335,21 +335,18 @@ other eleven are written on top of it.
 
 ## 12. Questions for the owner
 
-1. **"Limited to time" for minigames.** My recommendation is **once per character per
-   in-game night**, as in section 5. The alternatives are a real-clock limit (for example
-   each character once per real day) or both. Which do you want?
-2. **Portrait art.** About 30–36 characters × 3 expressions. Will you supply illustrated
-   art (generated or commissioned)? Or should I build a consistent **layered SVG portrait
-   style** in code (cheaper, matches the site, easy to give expressions, but less
-   painterly)? Placeholders can be used until the art arrives either way.
-3. **Story-only numbers.** May story mode use (a) a Slots machine limit or story pay table
-   (Slots returns about 104.8%) and (b) small one-night payout events? Freeplay, Daily,
-   Ladder and Challenges would stay exactly as they are.
-4. ~~Survival~~: answered, perks and items are left out of story for now.
-5. **Cash tables first?** They're playable. Do I finish the missing parts (bots coming and
-   going, top-up, cash checks) as Phase 0, or start story now and finish them alongside?
+Answered (2026-11-02):
+
+1. **Minigame limit:** once per character per **in-game night**, as in section 5.
+2. **Portrait art:** drawn in code, at the quality of the game boards (section 4).
+3. **Story-only numbers:** yes, story mode can configure games such as Slots (section 9).
+4. **Survival:** perks and items are left out of story for now (section 8).
+5. **Cash tables:** finished first (done).
+7. **Saves:** one story save, with "New story" behind a confirmation.
+
+Still open:
+
 6. **Tone:** gritty noir, light and comedic, or in between?
-7. **Saves:** one story save (with "New story" behind a confirmation) or several slots?
 8. **Harsher loss option:** I dropped "rock bottom sends you back a city" because minigames
    guarantee recovery. Do you want it back, or a hard mode with it?
 9. **Boss losses:** should a rematch get easier (a cheaper buy-in, or a slightly weaker

@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { HowItWorks } from '@/components/mode-intro'
 import { TABLES_STEPS } from '@/lib/tables/tutorials'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ChipAmount } from '@/components/tables/table-shell'
 
 const TIER_KEY = 'floored-tables-tier'
 const CASH_STAKE_IDS: CashStakeId[] = ['low', 'mid', 'high']
@@ -70,9 +71,14 @@ export default function TablesPage() {
     (acc, st) => ({ played: acc.played + st.played, won: acc.won + st.won, cashes: acc.cashes + st.cashes, net: acc.net + st.net }),
     { played: 0, won: 0, cashes: 0, net: 0 },
   )
+  const cashTotals = Object.values(s.cashStats).reduce((acc, st) => ({ sessions: acc.sessions + st.sessions, net: acc.net + st.net }), { sessions: 0, net: 0 })
   const broke = s.wallet < MIN_BUY_IN
-  const last = s.lastResult
+  // Show the newer of the last tournament and the last cash session.
+  const lastCash = s.lastCashResult
+  const cashIsNewer = !!lastCash && (!s.lastResult || lastCash.endedAt > s.lastResult.endedAt)
+  const last = cashIsNewer ? null : s.lastResult
   const lastGame = last ? TABLE_GAME_BY_NAME.get(last.game) : null
+  const lastCashGame = cashIsNewer && lastCash ? TABLE_GAME_BY_NAME.get(lastCash.game) : null
   const tourEntry = tourGame ? TABLE_GAME_BY_NAME.get(tourGame)! : null
   const tourSeats = tourEntry ? (isMobile ? tourEntry.phoneSeats : tourEntry.seats) : 0
   const cashEntry = cashGame ? TABLE_GAME_BY_NAME.get(cashGame)! : null
@@ -143,12 +149,38 @@ export default function TablesPage() {
         </div>
       )}
 
+      {lastCash && lastCashGame && (
+        <div
+          className={cn(
+            'rise relative overflow-hidden rounded-md bg-surface px-5 py-4',
+            lastCash.cashedOut - lastCash.broughtIn > 0 ? 'shadow-[inset_2px_0_0_var(--felt)]' : lastCash.cashedOut < lastCash.broughtIn ? 'shadow-[inset_2px_0_0_var(--loss)]' : 'shadow-[inset_2px_0_0_var(--line)]',
+          )}
+          role="status"
+        >
+          <p
+            className={cn(
+              'text-[15px] font-semibold',
+              lastCash.cashedOut > lastCash.broughtIn ? 'text-felt glow-felt' : lastCash.cashedOut < lastCash.broughtIn ? 'text-loss glow-loss' : 'text-ink',
+            )}
+          >
+            Left the {lastCashGame.cash.label} table <span className="num">{signed(lastCash.cashedOut - lastCash.broughtIn, formatChips)}</span>
+          </p>
+          <p className="mt-0.5 text-[13px] leading-5 text-soft">
+            Brought {formatChips(lastCash.broughtIn)}, left with {formatChips(lastCash.cashedOut)} after {lastCash.hands}{' '}
+            {lastCash.game === 'liars-dice' ? (lastCash.hands === 1 ? 'game' : 'games') : lastCash.hands === 1 ? 'hand' : 'hands'}.
+          </p>
+          <button type="button" onClick={s.dismissCashResult} className="absolute right-3 top-3 text-[12px] text-dim hover:text-ink" aria-label="Dismiss">
+            ✕
+          </button>
+        </div>
+      )}
+
       <FigureStrip
         items={[
           { label: 'Wallet', value: formatChips(s.wallet), sub: s.refills ? `${s.refills} refill${s.refills > 1 ? 's' : ''}` : 'Tables play money' },
-          { label: 'Tables played', value: totals.played },
-          { label: 'Won', value: totals.won, sub: `${totals.cashes} in the money` },
-          { label: 'Net', value: signed(totals.net, formatChips), tone: toneOf(totals.net) },
+          { label: 'Tournaments', value: totals.played, sub: `${totals.won} won · ${totals.cashes} in the money` },
+          { label: 'Tournament net', value: signed(totals.net, formatChips), tone: toneOf(totals.net) },
+          { label: 'Cash net', value: signed(cashTotals.net, formatChips), tone: toneOf(cashTotals.net), sub: `${cashTotals.sessions} session${cashTotals.sessions === 1 ? '' : 's'}` },
         ]}
       />
 
@@ -200,7 +232,7 @@ export default function TablesPage() {
               <li key={g.name}>
                 <GameTile
                   index={i + TABLE_GAMES.length}
-                  label={g.label}
+                  label={g.cash.label}
                   symbol={g.symbol}
                   sub={`${seats} seats · ${g.cash.format}`}
                   meta={<span className="text-xs text-soft">{g.cash.sub}</span>}
@@ -251,7 +283,7 @@ export default function TablesPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Bring chips to the table</DialogTitle>
-            <DialogDescription>{cashEntry ? `${cashEntry.label} · no prize pool, leave with your stack.` : ''}</DialogDescription>
+            <DialogDescription>{cashEntry ? `${cashEntry.cash.label} · no prize pool, leave with your stack.` : ''}</DialogDescription>
           </DialogHeader>
           <WalletLine wallet={s.wallet} />
           <StakePicker
@@ -265,9 +297,12 @@ export default function TablesPage() {
               value: cashGame ? limitsLabel(cashGame, cashStakeFor(cashGame, id)) : '',
             }))}
           />
-          <input type="number" min={1} max={s.wallet} value={buyIn} onChange={(event) => setBuyIn(Math.max(0, Math.floor(Number(event.target.value))))} className="num w-full rounded border border-line bg-ground px-3 py-2 text-ink" aria-label="Chips to bring" />
-          <div className="flex gap-2">{[['¼', .25], ['½', .5], ['All', 1]].map(([label, fraction]) => <button key={String(label)} type="button" onClick={() => setBuyIn(Math.max(1, Math.floor(s.wallet * Number(fraction))))} className="rounded border border-control px-3 py-1 text-sm text-soft">{label}</button>)}</div>
-          <DialogFooter><Button onClick={sitDownCash} disabled={buyIn < 1 || buyIn > s.wallet || !!pending}>Sit down</Button></DialogFooter>
+          <ChipAmount value={buyIn} max={s.wallet} onChange={setBuyIn} label="Chips to bring" />
+          <DialogFooter>
+            <Button onClick={sitDownCash} disabled={buyIn < 1 || buyIn > s.wallet || !!pending}>
+              Sit down · <span className="num ml-1">{formatChips(Math.max(0, buyIn))}</span>
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

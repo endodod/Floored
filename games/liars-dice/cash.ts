@@ -1,7 +1,12 @@
 import { createLiars, liarsConfig, liarsEngine, removeLiarsSeat, viewLiars } from './engine'
 import type { LiarsAction, LiarsState, LiarsView } from './types'
-import type { Rng, Standings, TableEngine } from '@/lib/tables/types'
+import type { CashTableOps, Rng, Standings, TableEngine } from '@/lib/tables/types'
 
+/**
+ * A cash Liar's Dice table: a run of ordinary games, each with an ante from every
+ * seat that has chips. `game` is the current game, or the last one once it is over
+ * (kept so the table can show its final reveal); `seatMap` maps its seats to table seats.
+ */
 export interface LiarsCashState {
   config: { seats: number; ante: number; dicePerSeat: number }
   stacks: number[]
@@ -25,14 +30,18 @@ export function settleLiarsPot(antes: number[], winner: number): number[] {
     : ante - Math.min(ante, winnerAnte))
 }
 
+const canAnte = (state: LiarsCashState) => state.stacks.filter((stack, seat) => !state.empty[seat] && stack > 0).length
+const between = (state: LiarsCashState) => state.game == null || state.game.phase === 'over'
+
 function start(state: LiarsCashState, rng: Rng): LiarsCashState {
+  // Nobody antes unless at least two seats can play.
+  if (canAnte(state) < 2) return state
   const stacks = [...state.stacks], antes = new Array(state.config.seats).fill(0), seatMap: number[] = []
   for (let seat = 0; seat < state.config.seats; seat++) {
     if (state.empty[seat] || stacks[seat]! <= 0) continue
     const ante = Math.min(state.config.ante, stacks[seat]!)
     stacks[seat]! -= ante; antes[seat] = ante; seatMap.push(seat)
   }
-  if (seatMap.length < 2) return { ...state, stacks, antes, seatMap, game: null }
   const game = liarsEngine.advance(createLiars(liarsConfig(seatMap.length)), rng)
   return { ...state, stacks, antes, seatMap, game, games: state.games + 1 }
 }
@@ -40,17 +49,21 @@ function start(state: LiarsCashState, rng: Rng): LiarsCashState {
 function finish(state: LiarsCashState, game: LiarsState): LiarsCashState {
   const innerWinner = game.seats.findIndex((seat) => !seat.out)
   const winner = state.seatMap[innerWinner] ?? -1
-  if (winner < 0) return { ...state, game: null }
+  if (winner < 0) throw new Error("Liar's Dice cash: a finished game has no winner")
   const stacks = [...state.stacks]
   const payouts = settleLiarsPot(state.antes, winner)
   for (let seat = 0; seat < stacks.length; seat++) stacks[seat]! += payouts[seat]!
-  return { ...state, stacks, antes: new Array(stacks.length).fill(0), game: null, seatMap: [] }
+  // The finished game stays on the table (its last reveal) until the next one starts.
+  return { ...state, stacks, antes: new Array(stacks.length).fill(0), game }
 }
 
-function innerSeat(state: LiarsCashState, seat: number) { return state.seatMap.indexOf(seat) }
+function innerSeat(state: LiarsCashState, seat: number) { return state.game ? state.seatMap.indexOf(seat) : -1 }
 export function viewLiarsCash(state: LiarsCashState, seat: number): LiarsCashView {
   const inner = innerSeat(state, seat)
-  const base = state.game && inner >= 0 ? viewLiars(state.game, inner) : { seat: inner, config: liarsConfig(0), phase: 'reveal' as const, round: 0, bid: null, bidder: null, toAct: null, dice: [], diceCounts: [], totalDice: 0, out: [], log: [], lastReveal: null, canCallLiar: false, canBid: false }
+  // A seat that isn't in the current game (it sat down after the ante, or has no chips) watches it:
+  // the public part of any seat's view, with no dice of its own.
+  const watch = (game: LiarsState) => ({ ...viewLiars(game, 0), dice: [], canCallLiar: false, canBid: false })
+  const base = state.game ? (inner >= 0 ? viewLiars(state.game, inner) : watch(state.game)) : { seat: inner, config: liarsConfig(0), phase: 'reveal' as const, round: 0, bid: null, bidder: null, toAct: null, dice: [], diceCounts: [], totalDice: 0, out: [], log: [], lastReveal: null, canCallLiar: false, canBid: false }
   const tableSeat = (innerSeat: number | null) => innerSeat == null ? null : state.seatMap[innerSeat] ?? null
   const diceCounts = state.empty.map((empty, tableSeat) => {
     const mapped = innerSeat(state, tableSeat)
@@ -89,32 +102,36 @@ export function viewLiarsCash(state: LiarsCashState, seat: number): LiarsCashVie
 
 export const liarsCashEngine: TableEngine<LiarsCashState, LiarsCashView, LiarsAction> = {
   viewFor: viewLiarsCash,
-  toAct: (state) => state.game?.toAct == null ? null : state.seatMap[state.game.toAct] ?? null,
+  toAct: (state) => state.game?.phase !== 'bidding' || state.game.toAct == null ? null : state.seatMap[state.game.toAct] ?? null,
   apply: (state, seat, action) => {
     const inner = innerSeat(state, seat)
     if (!state.game || inner < 0) throw new Error("Liar's Dice cash: seat cannot act")
     const game = liarsEngine.apply(state.game, inner, action)
     return liarsEngine.isOver(game) ? finish({ ...state, game }, game) : { ...state, game }
   },
-  needsAdvance: (state) => state.game == null,
-  advance: start,
+  // Between games: the next ante and roll (once two seats can play). In a game: the next round's roll.
+  needsAdvance: (state) => between(state) ? canAnte(state) >= 2 : liarsEngine.needsAdvance(state.game!),
+  advance: (state, rng) => between(state) ? start(state, rng) : { ...state, game: liarsEngine.advance(state.game!, rng) },
   timeoutAction: (state, seat) => state.game ? liarsEngine.timeoutAction(state.game, innerSeat(state, seat)) : { type: 'bid', bid: { count: 1, face: 2 } },
   isOver: () => false,
   standings: (): Standings => [],
   placeOf: () => null,
 }
 
-export const liarsCashOps = {
-  betweenHands: (state: LiarsCashState) => state.game == null,
-  sit: (state: LiarsCashState, seat: number, stack: number) => ({ ...state, stacks: state.stacks.map((value, i) => i === seat ? stack : value), empty: state.empty.map((value, i) => i === seat ? false : value) }),
+export const liarsCashOps: CashTableOps<LiarsCashState> = {
+  betweenHands: between,
+  sit: (state: LiarsCashState, seat: number, stack: number) => {
+    if (!state.empty[seat]) throw new Error(`Liar's Dice: seat ${seat} is taken`)
+    return { ...state, stacks: state.stacks.map((value, i) => i === seat ? stack : value), empty: state.empty.map((value, i) => i === seat ? false : value) }
+  },
   stand: (state: LiarsCashState, seat: number) => ({ stack: state.stacks[seat]!, state: { ...state, stacks: state.stacks.map((value, i) => i === seat ? 0 : value), empty: state.empty.map((value, i) => i === seat ? true : value) } }),
   addChips: (state: LiarsCashState, seat: number, amount: number) => ({ ...state, stacks: state.stacks.map((value, i) => i === seat ? value + amount : value) }),
   stackBehind: (state: LiarsCashState, seat: number) => state.stacks[seat]!,
-  inPlay: (state: LiarsCashState, seat: number) => state.game != null && innerSeat(state, seat) >= 0,
+  inPlay: (state: LiarsCashState, seat: number) => !between(state) && innerSeat(state, seat) >= 0 && !state.game!.seats[innerSeat(state, seat)]!.out,
   leaveAction: (state: LiarsCashState, seat: number) => {
     const inner = innerSeat(state, seat)
-    if (!state.game || inner < 0) return state
-    const game = removeLiarsSeat(state.game, inner)
+    if (between(state) || inner < 0) return state
+    const game = removeLiarsSeat(state.game!, inner)
     return liarsEngine.isOver(game) ? finish({ ...state, game }, game) : { ...state, game }
   },
   emptySeats: (state: LiarsCashState) => state.empty.map((value, i) => value ? i : -1).filter((i) => i >= 0),

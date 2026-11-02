@@ -880,9 +880,13 @@ Numbers live in `lib/tables/stakes.ts` and the engines.
 | Wallet | 10,000; refill to 10,000 when below 100 |
 | Buy-ins | 100 · 1,000 · 10,000 (bot skills are randomized per seat) |
 | Prize pool | all buy-ins, no rake; Hold'em 65/35 at 6 seats / 70/30 at 4; Blackjack Showdown and Liar's Dice winner-takes-all |
-| Account Records | peak Tables balance and resets (wallet refills); played / won / net totals show on the Tables page |
+| Account Records | peak Tables balance and resets (wallet refills); the Tables page shows tournaments played (won, in the money), tournament net and cash net (sessions) |
+| Cash tables | any amount from the wallet, play until you leave or reach 0; no rake, no prizes |
+| Cash stakes | Hold'em blinds 5/10 · 50/100 · 500/1,000; Liar's Dice ante 50 · 500 · 5,000 a game; Blackjack bets 10–500 · 100–5,000 · from 1,000 (no max) |
+| Cash bots | sit with 40–200 big blinds / 5–25 antes / 20–100 minimum bets; between hands (games): leave at 0, leave 6% a hand (15% a game) when above twice their sit stack, leave 1% (3%) any hand, top up to their sit stack 50% of the time below half of it; an empty seat fills after 1–3 hands; never fewer than two bots (`CHURN`, `BOT_SIT_RANGE` in `lib/tables/stakes.ts`) |
+| Cash Blackjack | the house pays wins (3:2 blackjack, double on two cards, no split, dealer hits ≤ 16): house edge about 1% with basic strategy; a short stack bets or doubles for what it has |
 | Hold'em | 1,500 stack; blinds 10/20, 15/30, 25/50, 50/100, 75/150, 100/200, 150/300, 200/400, 300/600, 500/1000, 800/1600, 1200/2400; up every 5 hands |
 | Liar's Dice | 5 dice each, 1s wild, opening bid not on 1s |
 | Turn timer | 30 s (stall = check / fold, or call liar) |
 
-Player EV with equal skill is 0 (no rake).
+Player EV with equal skill is 0 (no rake), at tournaments and at the Hold'em and Liar's Dice cash tables. Cash Blackjack is played against the house.

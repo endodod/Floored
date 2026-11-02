@@ -1,6 +1,6 @@
 # Bot Tables — handoff
 
-**Next:** a Cash tables category (bring your own bankroll, no prizes) is planned in
+**Cash tables** (bring your own bankroll, no prizes) are built: see
 [TABLES_CASH_HANDOFF.md](TABLES_CASH_HANDOFF.md).
 
 ## Status (2026-10-29)

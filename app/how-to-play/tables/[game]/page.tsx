@@ -66,6 +66,20 @@ export default async function TableHowToPlayPage({ params }: { params: Params })
         </ul>
       </section>
 
+      <section className="rise flex flex-col gap-4 [--d:270ms]" aria-labelledby="cash-table">
+        <SectionTitle suit={2} note="Bring any amount · leave with your stack">
+          <span id="cash-table">At a cash table</span>
+        </SectionTitle>
+        <ul className="flex flex-col">
+          {tutorial.cash.map((note, i) => (
+            <li key={note} className="flex gap-3 border-t border-rule py-3 text-[13px] leading-5 text-soft">
+              <Suit index={i + 1} className="w-4 shrink-0 pt-0.5 text-center text-[11px] opacity-70" />
+              {note}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section className="rise flex flex-col gap-4 [--d:300ms]" aria-labelledby="other-tables">
         <SectionTitle suit={3} note="Tables mode">
           <span id="other-tables">Other table games</span>

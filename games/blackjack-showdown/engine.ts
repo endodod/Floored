@@ -1,6 +1,6 @@
 import { calculateHandValue, dealerShouldHit, isBlackjack, isBust } from '@/games/blackjack/engine'
 import type { BlackjackCard } from '@/games/blackjack/types'
-import type { Rng, Standings, TableEngine } from '@/lib/tables/types'
+import type { CashTableOps, Rng, Standings, TableEngine } from '@/lib/tables/types'
 import { placeIn, rankSeats } from '@/lib/tables/standings'
 import type {
   Card,
@@ -89,11 +89,14 @@ export function createShowdown(config: ShowdownConfig): ShowdownState {
   }
 }
 
+/** In this hand: not out, not an empty cash seat, not sitting the hand out. */
+const playing = (s: ShowdownSeat) => !s.out && !s.empty && !s.idle
+
 function nextAlive(seats: ShowdownSeat[], from: number, pred: (s: ShowdownSeat) => boolean = () => true): number {
   const n = seats.length
   for (let k = 1; k <= n; k++) {
     const i = (from + k) % n
-    if (!seats[i]!.out && !seats[i]!.empty && pred(seats[i]!)) return i
+    if (playing(seats[i]!) && pred(seats[i]!)) return i
   }
   return -1
 }
@@ -101,13 +104,15 @@ function nextAlive(seats: ShowdownSeat[], from: number, pred: (s: ShowdownSeat) 
 /** Seats in turn order for this hand, starting with `first`. */
 function turnOrder(state: Pick<ShowdownState, 'seats' | 'first'>): number[] {
   const n = state.seats.length
-  return Array.from({ length: n }, (_, k) => (state.first + k) % n).filter((i) => !state.seats[i]!.out && !state.seats[i]!.empty)
+  return Array.from({ length: n }, (_, k) => (state.first + k) % n).filter((i) => playing(state.seats[i]!))
 }
 
 function startHand(prev: ShowdownState, rng: Rng): ShowdownState {
   const { config } = prev
   const shoe = prev.shoe.length < config.reshuffleAt ? newShoe(config.decks, rng) : prev.shoe
-  const seats = prev.seats.map((s) => ({ ...s, bet: 0, cards: [], done: false, doubled: false, outcome: null, net: 0 }))
+  const cash = config.format === 'cash'
+  // Cash: a seat with no chips sits the hand out (its player can top up or leave).
+  const seats = prev.seats.map((s) => ({ ...s, bet: 0, cards: [], done: false, doubled: false, outcome: null, net: 0, ...(cash ? { idle: s.stack <= 0 } : {}) }))
   // The first bettor rotates round the table; the very first one is drawn.
   const first = prev.first < 0 ? nextAlive(seats, Math.floor(rng() * seats.length) - 1 + seats.length) : nextAlive(seats, prev.first)
   return { ...prev, seats, shoe, first, dealer: [], phase: 'betting', hand: prev.hand + 1, toAct: first }
@@ -126,7 +131,8 @@ export function legalFor(state: ShowdownState, seat: number): ShowdownLegal | nu
       bet: null,
       canHit: true,
       canStand: true,
-      canDouble: s.cards.length === 2 && s.stack >= s.bet * 2,
+      // Cash: a short stack doubles for whatever it has left.
+      canDouble: s.cards.length === 2 && (state.config.format === 'cash' ? s.stack > s.bet : s.stack >= s.bet * 2),
     }
   }
   return null
@@ -167,7 +173,7 @@ function nextToPlay(state: ShowdownState, after: number): ShowdownState {
 
 function playDealer(state: ShowdownState): ShowdownState {
   // Only draw if some hand is still live (not bust, not a paid blackjack).
-  const live = state.seats.some((s) => !s.out && !isBust(s.cards) && !isBlackjack(s.cards))
+  const live = state.seats.some((s) => playing(s) && !isBust(s.cards) && !isBlackjack(s.cards))
   if (!live) return state
   let dealer = state.dealer
   let shoe = state.shoe
@@ -190,12 +196,14 @@ export function outcomeOf(cards: Card[], dealer: Card[]): ShowdownOutcome {
 
 function settle(state: ShowdownState): ShowdownState {
   const busts = [...state.busts]
+  const cash = state.config.format === 'cash'
   const seats = state.seats.map((s, i) => {
-    if (s.out) return s
+    if (s.out || (cash && !playing(s))) return s
     const outcome = outcomeOf(s.cards, state.dealer)
     const net = outcome === 'blackjack' ? Math.floor(s.bet * 1.5) : outcome === 'win' ? s.bet : outcome === 'push' ? 0 : -s.bet
     const stack = s.stack + net
-    const out = stack < showdownMinBetForHand(state.hand + 1)
+    // Cash tables have no "out": a seat at 0 sits out until it tops up.
+    const out = !cash && stack < showdownMinBetForHand(state.hand + 1)
     if (out) busts.push({ seat: i, hand: state.hand, stack })
     return { ...s, outcome, net, stack, done: true, out }
   })
@@ -229,7 +237,7 @@ function applyShowdown(prev: ShowdownState, seat: number, action: ShowdownAction
   } else if (action.type === 'hit' || action.type === 'double') {
     if (action.type === 'double') {
       if (!legal.canDouble) throw new Error(`Showdown: seat ${seat} cannot double`)
-      s.bet *= 2
+      s.bet += Math.min(s.bet, s.stack - s.bet)
       s.doubled = true
     }
     s.cards = [...s.cards, shoe[0]!]
@@ -263,14 +271,40 @@ export function viewShowdown(state: ShowdownState, seat: number): ShowdownView {
   }
 }
 
-export const showdownCashOps = {
+const seatedWithChips = (state: ShowdownState) => state.seats.filter((s) => !s.empty && s.stack > 0).length
+const atRisk = (state: ShowdownState) => state.phase === 'betting' || state.phase === 'playing'
+
+export const showdownCashOps: CashTableOps<ShowdownState> = {
   betweenHands: (state: ShowdownState) => state.phase === 'handOver',
-  sit: (state: ShowdownState, seat: number, stack: number) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false } : s) }),
-  stand: (state: ShowdownState, seat: number) => { const stack = state.seats[seat]!.stack; return { stack, state: { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: 0, empty: true, out: false } : s) } } },
+  sit: (state: ShowdownState, seat: number, stack: number) => {
+    if (!state.seats[seat]!.empty) throw new Error(`Showdown: seat ${seat} is taken`)
+    return { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack, empty: false, out: false, idle: true, bet: 0, cards: [], done: false, doubled: false, outcome: null, net: 0 } : s) }
+  },
+  stand: (state: ShowdownState, seat: number) => {
+    const stack = showdownCashOps.stackBehind(state, seat)
+    return { stack, state: { ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: 0, bet: 0, cards: [], empty: true, out: false, idle: true } : s) } }
+  },
   addChips: (state: ShowdownState, seat: number, amount: number) => ({ ...state, seats: state.seats.map((s, i) => i === seat ? { ...s, stack: s.stack + amount } : s) }),
-  stackBehind: (state: ShowdownState, seat: number) => state.seats[seat]!.stack,
-  inPlay: (state: ShowdownState, seat: number) => state.phase === 'playing' && !state.seats[seat]!.done,
-  leaveAction: (state: ShowdownState) => state,
+  // A bet on the table is at risk until the hand settles: it isn't behind.
+  stackBehind: (state: ShowdownState, seat: number) => {
+    const s = state.seats[seat]!
+    return atRisk(state) && playing(s) ? s.stack - s.bet : s.stack
+  },
+  inPlay: (state: ShowdownState, seat: number) => {
+    const s = state.seats[seat]!
+    return playing(s) && ((state.phase === 'betting' && s.bet > 0) || state.phase === 'playing')
+  },
+  // Before its bet a seat can sit the hand out at once; with a bet down the runner stands it and waits for the settle.
+  leaveAction: (state: ShowdownState, seat: number) => {
+    const s = state.seats[seat]!
+    if (state.phase !== 'betting' || s.bet > 0 || !playing(s)) return state
+    const seats = state.seats.map((x, i) => (i === seat ? { ...x, idle: true } : x))
+    const next = { ...state, seats }
+    if (state.toAct !== seat) return next
+    const bettor = nextAlive(seats, seat, (o) => o.bet === 0)
+    if (bettor !== -1) return { ...next, toAct: bettor }
+    return seats.some(playing) ? deal(next) : { ...next, toAct: null, phase: 'handOver' }
+  },
   emptySeats: (state: ShowdownState) => state.seats.map((s, i) => s.empty ? i : -1).filter((i) => i >= 0),
   handsPlayed: (state: ShowdownState) => state.hand,
 }
@@ -288,7 +322,7 @@ export const showdownEngine: TableEngine<ShowdownState, ShowdownView, ShowdownAc
   viewFor: viewShowdown,
   toAct: (s) => (s.phase === 'betting' || s.phase === 'playing' ? s.toAct : null),
   apply: applyShowdown,
-  needsAdvance: (s) => s.phase === 'handOver',
+  needsAdvance: (s) => s.phase === 'handOver' && (s.config.format !== 'cash' || seatedWithChips(s) >= 1),
   advance: (s, rng) => {
     if (s.phase !== 'handOver') throw new Error('Showdown: nothing to deal')
     return startHand(s, rng)

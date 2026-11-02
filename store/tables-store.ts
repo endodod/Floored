@@ -209,7 +209,9 @@ export const useTablesStore = create<TablesStore>()(
         finish: (place, prize) => close(place, prize, false),
         forfeit: () => {
           const open = get().open
-          if (open) close(open.seats, 0, true)
+          // A cash seat is never forfeited: leaving takes its chips behind.
+          if (open?.format === 'cash') get().cashOut()
+          else if (open) close(open.seats, 0, true)
         },
         cancelUnseated: () =>
           set((s) => s.open && !s.open.seated ? s.open.format === 'cash' ? { open: null, wallet: s.wallet + (s.open.stack ?? 0) } : { open: null, wallet: s.wallet + s.open.buyIn } : {}),

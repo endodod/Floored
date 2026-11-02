@@ -9,8 +9,9 @@ import { useTablesStore, type OpenTable } from '@/store/tables-store'
 
 /**
  * One table. You only get here through the lobby's Sit down (which pays the
- * buy-in); a table already dealt on an earlier visit was left, so it is
- * forfeited and you go back to the lobby.
+ * buy-in or brings the chips); a table already dealt on an earlier visit was
+ * left, so it is forfeited (tournament) or cashed out (cash) and you go back
+ * to the lobby.
  */
 export default function TableGamePage({ params }: { params: Promise<{ game: string }> }) {
   const { game } = use(params)
@@ -28,7 +29,10 @@ export default function TableGamePage({ params }: { params: Promise<{ game: stri
       return
     }
     if (s.open.seated) {
-      s.forfeit()
+      // Left on an earlier visit (reload, closed tab): a tournament seat is forfeited,
+      // a cash seat leaves with the chips it had behind.
+      if (s.open.format === 'cash') s.cashOut()
+      else s.forfeit()
       router.replace('/tables')
       return
     }

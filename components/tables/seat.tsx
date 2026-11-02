@@ -24,6 +24,7 @@ export function SeatPlate({
   statusTone = 'neutral',
   className,
   children,
+  empty = false,
 }: {
   name: string
   stack: number | null
@@ -41,7 +42,23 @@ export function SeatPlate({
   statusTone?: 'neutral' | 'win' | 'loss' | 'gold' | 'dim'
   className?: string
   children?: ReactNode
+  /** Cash table: nobody sits here (a dashed outline, no stack). */
+  empty?: boolean
 }) {
+  if (empty) {
+    return (
+      <div className={cn('tb-seat relative flex flex-col items-center', className)} aria-label="Empty seat">
+        <div className="tb-plate tb-plate-empty relative flex items-center gap-2 rounded-full pr-3">
+          <span className="tb-avatar relative flex shrink-0 items-center justify-center rounded-full" aria-hidden />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate text-[12.5px] font-medium text-dim">Empty</span>
+            <span className="num truncate text-[12px] text-dim">&nbsp;</span>
+          </span>
+        </div>
+        <span className="tb-status mt-1 h-4" />
+      </div>
+    )
+  }
   return (
     <div className={cn('tb-seat relative flex flex-col items-center', dim && 'g-dim', className)}>
       <div className={cn('tb-plate relative flex items-center gap-2 rounded-full pr-3', you && 'tb-plate-you', win && 'g-win')}>
