@@ -8,7 +8,7 @@ Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
 A new challenge every day at 00:00 UTC — the same for every player, and you get one attempt.
 
-The Daily challenge page (a tab on the Challenges page) opens on an overview of today's challenge (figures, games, rules); **Play daily** starts the attempt and shows the games, with **How to play** and **Give up** above them.
+The Daily challenge page (also shown at the top of the Challenges page) opens on an overview of today's challenge (figures, games, rules); **Play daily** starts the attempt and shows the games, with **How to play** and **Give up** above them.
 
 - One **shared bankroll** (randomly $1K–$5K) for the whole day
 - **Three random games**, each with a random number of bets (1–3)
@@ -24,7 +24,7 @@ The challenge is generated deterministically from the UTC date (`lib/daily/chall
 ## Ladder
 
 Climb 15 rungs with an all-in pot — one game per rung, never the same game twice. Endless runs on
-`/ladder`; the **Daily ladder** (`/daily-ladder`, a tab on the Ladder page) is one climb a day with
+`/ladder`; the **Daily ladder** (`/daily-ladder`, shown at the top of the Ladder page) is one climb a day with
 the same seeded game pickers for everyone.
 
 - Start with a **$100 pot**; each rung you pick a game and stake the whole pot

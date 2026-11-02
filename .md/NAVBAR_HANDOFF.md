@@ -35,9 +35,10 @@ the wider tall-screen gap only from `sm` up (`gap-4 sm:gap-6 sm:tall:gap-8`);
 re-checked at 360, 390 and 768 — all pass.
 
 **Mode order (2026-11-02):** the bar has five links: Challenges, Ladder, Freeplay,
-Tables, Community (Survival last while it is switched off). The two dailies are tabs
-inside their mode (`components/mode-tabs.tsx`): Daily challenge beside Challenges,
-Daily ladder beside Ladder, and a link stays lit on its tabs (`also` in `MODES`).
+Tables, Community (Survival last while it is switched off). The two dailies live
+inside their mode: the Challenges page shows today's Daily challenge above the house
+challenges, the Ladder page the Daily ladder above the endless ladder
+(`components/daily/daily-rows.tsx`), and a link stays lit on its daily page (`also` in `MODES`).
 Links match a whole path segment (`isUnder`), so `/daily` and `/daily-ladder` never
 cross-light. The start page and the account records use the full order: Daily
 challenge, Daily ladder, Challenges, Ladder, Freeplay, Tables, Community. Inline

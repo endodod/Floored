@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button'
 import { ChallengeCard } from '@/components/challenges/challenge-card'
 import { useStartChallenge } from '@/components/challenges/use-start-challenge'
 import { cn } from '@/lib/utils'
-import { ModeTabs } from '@/components/mode-tabs'
+import { ModeRowList } from '@/components/mode-row'
+import { DailyChallengeRow } from '@/components/daily/daily-rows'
 
 const ALL = 'All'
 
@@ -34,7 +35,6 @@ export default function ChallengesPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
       {dialog}
-      <ModeTabs group="challenges" />
       <PageTitle
         title="Challenges"
         sub={`Themed runs from the house. Every one starts at ${formatChips(CHALLENGE_START_BANKROLL)}: place every bet and finish as high as you can. Retry as often as you like.`}
@@ -65,6 +65,15 @@ export default function ChallengesPage() {
           </Button>
         </div>
       )}
+
+      <section className="flex flex-col gap-4" aria-labelledby="daily-challenge">
+        <SectionTitle suit={0} note="New every day at 00:00 UTC">
+          <span id="daily-challenge">Today</span>
+        </SectionTitle>
+        <ModeRowList>
+          <DailyChallengeRow index={0} />
+        </ModeRowList>
+      </section>
 
       <section className="flex flex-col gap-4" aria-labelledby="house-challenges">
         <SectionTitle suit={1} note={`${shown.length} challenge${shown.length === 1 ? '' : 's'}`}>

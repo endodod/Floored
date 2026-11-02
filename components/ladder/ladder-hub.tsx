@@ -8,7 +8,8 @@ import { dailyLadderRecord, useDailyLadderStore, useLadderStore, usedGames } fro
 import { DAILY_LADDER_HUB, LADDER_HUB } from '@/lib/ladder/active'
 import { dailyDateKey, dailyNumber } from '@/lib/daily/challenge'
 import { DailyCountdown } from '@/components/daily/countdown'
-import { ModeTabs } from '@/components/mode-tabs'
+import { ModeRowList } from '@/components/mode-row'
+import { DailyLadderRow } from '@/components/daily/daily-rows'
 import {
   CHECKPOINT_EVERY,
   LADDER_LIVES,
@@ -212,7 +213,6 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
 
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
-      <ModeTabs group="ladder" />
       <PageTitle
         title={daily && today ? `Daily ladder #${dailyNumber(today)}` : 'Ladder'}
         sub={
@@ -288,6 +288,17 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {!daily && (
+        <section className="flex flex-col gap-4" aria-labelledby="daily-ladder">
+          <SectionTitle suit={0} note="New every day at 00:00 UTC">
+            <span id="daily-ladder">Today</span>
+          </SectionTitle>
+          <ModeRowList>
+            <DailyLadderRow index={0} />
+          </ModeRowList>
+        </section>
+      )}
 
       {climbing ? (
         <ModeColumns
