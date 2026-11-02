@@ -74,6 +74,21 @@ All clean at **360×640, 390×700 and 412×737** for:
 `persist`/`SettingsStore` cast). It is not touched by this branch and predates
 it; everything else typechecks.
 
+## Page scroll / cut-off dock button (fixed)
+
+Owner report: on a phone Blackjack scrolled so the Bet button was reachable, other
+games did not and the button was cut by the bottom edge. Root cause: `<body>` in
+`app/layout.tsx` was `h-screen` (`100vh`), which on mobile browsers is the *large*
+viewport (URL bar retracted), so the bottom of `<main>` (the scroller) sat under the
+browser chrome. Boards use `flex-1 min-h-0`, so they shrank to fit the too-tall body
+and never overflowed, hence no scrolling; Blackjack's tall dock overflowed `<main>`
+so it scrolled. Fix: body `h-dvh` (with `h-screen` fallback), `min-h-dvh` in
+`globals.css`, and a safe-area bottom padding on `<main>`. Desktop is unchanged
+(dvh == vh). Emulated Chromium cannot reproduce vh != dvh, so verify on a real phone.
+`mobile-check.cjs` now also fails when a control below the fold stays unreachable
+after `scrollIntoView`. All 27 game routes pass at 360x640 and 360x740.
+(`pnpm install` was needed first: node_modules was absent.)
+
 ## Known issues and things not done
 
 1. **Hold'em at 360×640 still clips ~6px** at the bottom of the dock. The button

@@ -85,7 +85,7 @@
     color-scheme: dark;
   }
   body {
-    @apply min-h-screen bg-background text-foreground antialiased;
+    @apply min-h-screen min-h-dvh bg-background text-foreground antialiased;
     background-image:
       repeating-linear-gradient(45deg, rgba(79, 174, 132, 0.04) 0 1px, transparent 1px 64px),
       repeating-linear-gradient(-45deg, rgba(79, 174, 132, 0.04) 0 1px, transparent 1px 64px),

@@ -62,7 +62,14 @@ const AUDIT = () => {
   for (const el of document.querySelectorAll('main button, main a, main [role="radio"], main input')) {
     if (!visible(el) || el.closest('[aria-hidden="true"]')) continue
     const r = el.getBoundingClientRect()
-    if (r.bottom > vh + 2 || r.top < -2) offscreen.push(`${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') || el.textContent).trim().slice(0, 20)}" ${r.top < -2 ? 'above' : `below by ${Math.round(r.bottom - vh)}px`}`)
+    if (r.bottom > vh + 2) {
+      // Below the fold is fine only if scrolling brings it fully into view.
+      el.scrollIntoView({ block: 'end' })
+      const r2 = el.getBoundingClientRect()
+      if (r2.bottom > vh + 1) offscreen.push(`${el.tagName.toLowerCase()} "${(el.textContent || '').trim().slice(0, 20)}" UNREACHABLE by scrolling (bottom ${Math.round(r2.bottom)} > ${vh})`)
+      continue
+    }
+    if (r.top < -2) offscreen.push(`${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') || el.textContent).trim().slice(0, 20)}" ${r.top < -2 ? 'above' : `below by ${Math.round(r.bottom - vh)}px`}`)
   }
 
   // Overlapping controls: two clickable siblings in the same row whose boxes intersect noticeably.
