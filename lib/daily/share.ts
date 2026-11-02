@@ -27,7 +27,7 @@ export function buildShareText(record: DailyRecord, url: string): string {
       ? `${formatChips(record.startBankroll)} → 🏳️ Gave up`
       : `${formatChips(record.startBankroll)} → ${formatChips(record.endBankroll)} (${formatMultiplier(m)})`
   return [
-    `Floored Daily #${record.number}`,
+    `Floored Daily challenge #${record.number}`,
     line,
     squares,
     url,

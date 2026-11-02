@@ -52,7 +52,7 @@ export default async function HowToPlayPage({ params }: { params: Params }) {
             <Link href={`/freeplay/${entry.name}`}>Play in Freeplay →</Link>
           </Button>
         }
-        note="Freeplay is play money with no pressure. The rules are the same in Daily and Ladder."
+        note="Freeplay is play money with no pressure. The rules are the same in the Daily challenge and the Ladder."
       />
 
       <HowItWorks steps={tutorial.steps} delay={180} />

@@ -71,8 +71,9 @@ Challenges (house), Community (player-made), Tables and Freeplay.
 - Routes `/daily-ladder` and `/daily-ladder/[game]` reuse `components/ladder/ladder-hub.tsx`
   and `ladder-game-page.tsx`. Hooks pick the store by route with `useActiveLadderStore()` /
   `useLadderHub()` (`lib/ladder/active.ts`); the game mode is still `'ladder'`.
-- `/daily` and `/daily-ladder` share a tab strip (`components/daily/daily-tabs.tsx`); the
-  navbar's Daily link covers both.
+- Tab strips (`components/mode-tabs.tsx`): `/daily` sits as the Daily challenge tab beside
+  `/challenges`, and `/daily-ladder` as the Daily ladder tab beside `/ladder`. The navbar's
+  Challenges and Ladder links stay lit on their daily tab.
 
 ## Not done / to check
 

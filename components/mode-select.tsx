@@ -131,10 +131,10 @@ export function ModeSelect() {
   return (
     <div className="flex flex-col gap-12">
       <ul className="divide-y divide-rule overflow-hidden rounded-md bg-surface shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
-        {/* ── Daily ── */}
+        {/* ── Daily challenge ── */}
         <ModeRow
           index={0}
-          name={challenge ? `Daily #${challenge.number}` : 'Daily'}
+          name={challenge ? `Daily challenge #${challenge.number}` : 'Daily challenge'}
             symbol="🗓️"
           description="The same challenge for everyone, one attempt. Place every bet across three games and finish with as much as you can."
           track={
@@ -203,10 +203,27 @@ export function ModeSelect() {
           />
         )}
 
+        {/* ── Challenges ── */}
+        <ModeRow
+          index={2}
+          name="Challenges"
+          symbol="🎯"
+          description={`${PRESET_CHALLENGES.length} themed house challenges: a set of games, a set number of bets on each, ${formatChips(CHALLENGE_START_BANKROLL)} to start. Retry as often as you like.`}
+          track={<UnitTrack total={PRESET_CHALLENGES.length} done={presetsTried} label={`${presetsTried} of ${PRESET_CHALLENGES.length} tried`} />}
+          trackCaption={`${presetsTried}/${PRESET_CHALLENGES.length} tried`}
+          figureLabel={challengeLive ? challengeLive.def.name : 'Starting bankroll'}
+          figure={formatChips(challengeLive ? challengeLive.bankroll : CHALLENGE_START_BANKROLL)}
+          action={
+            <Button asChild variant="outline" className="w-full lg:w-auto">
+              <Link href={challengeLive ? '/challenge' : '/challenges'}>{challengeLive ? 'Continue' : 'Browse'}</Link>
+            </Button>
+          }
+        />
+
         {/* ── Ladder ── */}
         {LADDER_ENABLED && (
           <ModeRow
-            index={2}
+            index={3}
             name="Ladder"
             symbol="🪜"
             description="The endless ladder: go all-in rung after rung, as many runs as you like. Any profit climbs; lose and you fall to the last checkpoint."
@@ -234,26 +251,45 @@ export function ModeSelect() {
           />
         )}
 
-        {/* ── Challenges ── */}
+        {/* ── Freeplay ── */}
         <ModeRow
-          index={3}
-          name="Challenges"
-          symbol="🎯"
-          description={`${PRESET_CHALLENGES.length} themed house challenges: a set of games, a set number of bets on each, ${formatChips(CHALLENGE_START_BANKROLL)} to start. Retry as often as you like.`}
-          track={<UnitTrack total={PRESET_CHALLENGES.length} done={presetsTried} label={`${presetsTried} of ${PRESET_CHALLENGES.length} tried`} />}
-          trackCaption={`${presetsTried}/${PRESET_CHALLENGES.length} tried`}
-          figureLabel={challengeLive ? challengeLive.def.name : 'Starting bankroll'}
-          figure={formatChips(challengeLive ? challengeLive.bankroll : CHALLENGE_START_BANKROLL)}
+          index={4}
+          name="Freeplay"
+          symbol="🎮"
+          description="Every game, no floors and no quotas. Practise anything and reset your balance whenever you like."
+          track={<UnitTrack total={GAMES.length} done={GAMES.length} label={`${GAMES.length} games open`} />}
+          trackCaption={`${GAMES.length} games open`}
+          figureLabel="Balance"
+          figure={hydrated ? formatChips(freeplayBankroll) : '—'}
           action={
             <Button asChild variant="outline" className="w-full lg:w-auto">
-              <Link href={challengeLive ? '/challenge' : '/challenges'}>{challengeLive ? 'Continue' : 'Browse'}</Link>
+              <Link href="/freeplay">Open lobby</Link>
             </Button>
           }
         />
 
+        {/* ── Tables (toggle in lib/features.ts) ── */}
+        {TABLES_ENABLED && (
+          <ModeRow
+            index={5}
+            name="Tables"
+            symbol="🃏"
+            description="Sit down with bots at Hold'em and Liar's Dice. Buy in, outlast the table, take the prize pool."
+            track={<UnitTrack total={TABLE_GAMES.length} done={TABLE_GAMES.length} label={`${TABLE_GAMES.length} table games`} />}
+            trackCaption={`${TABLE_GAMES.length} games · ${hydrated ? tablesPlayed : 0} tables played`}
+            figureLabel="Wallet"
+            figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
+            action={
+              <Button asChild variant="outline" className="w-full lg:w-auto">
+                <Link href="/tables">Explore Tables</Link>
+              </Button>
+            }
+          />
+        )}
+
         {/* ── Community challenges ── */}
         <ModeRow
-          index={4}
+          index={6}
           name="Community"
           symbol="🤝"
           description="Challenges made by players. Try theirs, or sign in and publish your own for others to beat."
@@ -271,7 +307,7 @@ export function ModeSelect() {
         {/* ── Survival (toggle in lib/features.ts) ── */}
         {SURVIVAL_ENABLED && (
           <ModeRow
-            index={5}
+            index={7}
             name="Survival"
             symbol="🛡️"
             description={`Reach each floor's bankroll quota within ${FLOOR_BET_LIMIT} bets or the run ends. Sparks from each floor buy upgrades.`}
@@ -304,42 +340,6 @@ export function ModeSelect() {
             }
           />
         )}
-
-        {/* ── Tables (toggle in lib/features.ts) ── */}
-        {TABLES_ENABLED && (
-          <ModeRow
-            index={6}
-            name="Tables"
-            symbol="🃏"
-            description="Sit down with bots at Hold'em and Liar's Dice. Buy in, outlast the table, take the prize pool."
-            track={<UnitTrack total={TABLE_GAMES.length} done={TABLE_GAMES.length} label={`${TABLE_GAMES.length} table games`} />}
-            trackCaption={`${TABLE_GAMES.length} games · ${hydrated ? tablesPlayed : 0} tables played`}
-            figureLabel="Wallet"
-            figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
-            action={
-              <Button asChild variant="outline" className="w-full lg:w-auto">
-                <Link href="/tables">Explore Tables</Link>
-              </Button>
-            }
-          />
-        )}
-
-        {/* ── Freeplay ── */}
-        <ModeRow
-          index={7}
-          name="Freeplay"
-          symbol="🎮"
-          description="Every game, no floors and no quotas. Practise anything and reset your balance whenever you like."
-          track={<UnitTrack total={GAMES.length} done={GAMES.length} label={`${GAMES.length} games open`} />}
-          trackCaption={`${GAMES.length} games open`}
-          figureLabel="Balance"
-          figure={hydrated ? formatChips(freeplayBankroll) : '—'}
-          action={
-            <Button asChild variant="outline" className="w-full lg:w-auto">
-              <Link href="/freeplay">Open lobby</Link>
-            </Button>
-          }
-        />
       </ul>
 
     </div>

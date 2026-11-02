@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { ChallengeCard } from '@/components/challenges/challenge-card'
 import { useStartChallenge } from '@/components/challenges/use-start-challenge'
 import { cn } from '@/lib/utils'
+import { ModeTabs } from '@/components/mode-tabs'
 
 const ALL = 'All'
 
@@ -33,6 +34,7 @@ export default function ChallengesPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
       {dialog}
+      <ModeTabs group="challenges" />
       <PageTitle
         title="Challenges"
         sub={`Themed runs from the house. Every one starts at ${formatChips(CHALLENGE_START_BANKROLL)}: place every bet and finish as high as you can. Retry as often as you like.`}

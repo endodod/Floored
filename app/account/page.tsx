@@ -302,7 +302,7 @@ export default function AccountPage() {
       >
         {devModeUnlocked ? (
           <div className="flex flex-col divide-y divide-rule">
-            <Toggle on={forceTie} label="Force tie" note="HiLo, not in Daily" onToggle={() => setForceTie(!forceTie)} />
+            <Toggle on={forceTie} label="Force tie" note="HiLo, not in the Daily challenge" onToggle={() => setForceTie(!forceTie)} />
             {SURVIVAL_ENABLED && (
               <>
             <Toggle on={showAllGames} label="All games" note="survival" onToggle={() => setShowAllGames(!showAllGames)} />
@@ -310,7 +310,7 @@ export default function AccountPage() {
 
             <div className="flex items-center justify-between gap-3 py-2.5">
               <span className="text-[13px] text-ink">
-                Luck <span className="ml-1.5 text-dim">not in Daily</span>
+                Luck <span className="ml-1.5 text-dim">not in the Daily challenge</span>
               </span>
               <div className="flex gap-4" role="radiogroup" aria-label="Luck">
                 {[

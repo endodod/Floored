@@ -119,14 +119,14 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
     if (dailyFinished) {
       const action = { label: 'See results', tone: 'primary' as const }
       if (dailyEndReason === 'failed') {
-        return { text: 'Below the min bet · Daily failed', tone: 'loss', action: { ...action, tone: 'danger' } }
+        return { text: 'Below the min bet · Daily challenge failed', tone: 'loss', action: { ...action, tone: 'danger' } }
       }
-      if (dailyEndReason === 'gave-up') return { text: 'Gave up · Daily over', tone: 'neutral', action }
-      return { text: `Daily complete · ${formatChips(dailyBankroll)}`, tone: 'win', action }
+      if (dailyEndReason === 'gave-up') return { text: 'Gave up · Daily challenge over', tone: 'neutral', action }
+      return { text: `Daily challenge complete · ${formatChips(dailyBankroll)}`, tone: 'win', action }
     }
     if (game && dailyBetsUsed >= dailyBets && !dailyRoundOpen) {
       const label = GAME_BY_NAME.get(game)?.label ?? game
-      return { text: `No ${label} bets left`, tone: 'neutral', action: { label: 'Back to Daily', tone: 'primary' } }
+      return { text: `No ${label} bets left`, tone: 'neutral', action: { label: 'Back to Daily challenge', tone: 'primary' } }
     }
   }
 

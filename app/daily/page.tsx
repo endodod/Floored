@@ -10,7 +10,7 @@ import { useHydrated } from '@/hooks/use-hydrated'
 import { formatChips } from '@/utils/format'
 import { DailyCountdown } from '@/components/daily/countdown'
 import { DailyResults } from '@/components/daily/daily-results'
-import { DailyTabs } from '@/components/daily/daily-tabs'
+import { ModeTabs } from '@/components/mode-tabs'
 import type { GameName } from '@/store/types'
 import { FigureStrip, PageTitle, SectionTitle, UnitTrack, signed, toneOf } from '@/components/ui/terminal'
 import { GameTile } from '@/components/game-tile'
@@ -88,9 +88,9 @@ export default function DailyPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
-      <DailyTabs />
+      <ModeTabs group="challenges" />
       <PageTitle
-        title={`Daily #${challenge.number}`}
+        title={`Daily challenge #${challenge.number}`}
         sub={`${dateLabel} · the same challenge for everyone, one attempt.`}
         aside={
           <>
@@ -113,7 +113,7 @@ export default function DailyPage() {
 
       <ModeTutorial
         id="daily"
-        title="Daily"
+        title="Daily challenge"
         intro="The same challenge for everyone, one attempt."
         steps={steps}
         open={tutorial.open}

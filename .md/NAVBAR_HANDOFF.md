@@ -34,15 +34,15 @@ sideways on game pages). Fixed by keeping the phone gap at 16px and applying
 the wider tall-screen gap only from `sm` up (`gap-4 sm:gap-6 sm:tall:gap-8`);
 re-checked at 360, 390 and 768 — all pass.
 
-**Mode order and breakpoint (2026-11-02):** the links follow the owner's order,
-the same as the account page's records: Daily, Daily ladder, Challenges, Ladder,
-Freeplay, Tables, Community (Survival last while it is switched off). Daily ladder
-is now its own link, so a link is active on an exact path segment (`isUnder`), not
-a prefix: `/daily` no longer lights up on `/daily-ladder`. Seven links plus a
-balance figure did not fit at 768px (the bar already ran ~40px over there with
-six), so the inline links and the account button start at `lg` (1024px); below
-that the bar shows the current mode and the menu button. Checked at 768, 1024
-and 1280 on Daily, Daily ladder and Freeplay: no nav overflow.
+**Mode order (2026-11-02):** the bar has five links: Challenges, Ladder, Freeplay,
+Tables, Community (Survival last while it is switched off). The two dailies are tabs
+inside their mode (`components/mode-tabs.tsx`): Daily challenge beside Challenges,
+Daily ladder beside Ladder, and a link stays lit on its tabs (`also` in `MODES`).
+Links match a whole path segment (`isUnder`), so `/daily` and `/daily-ladder` never
+cross-light. The start page and the account records use the full order: Daily
+challenge, Daily ladder, Challenges, Ladder, Freeplay, Tables, Community. Inline
+links start at `md`; checked at 390, 768 and 1280 on the home page, both dailies,
+Challenges, Ladder and Freeplay: no nav overflow.
 
 ## Next on the TODO
 
