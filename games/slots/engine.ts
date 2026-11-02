@@ -1,7 +1,7 @@
 import type { SlotsState, SlotsSymbol } from './types'
 
 // Weighted reel — rarer symbols = higher payouts
-const REEL: { symbol: SlotsSymbol; weight: number }[] = [
+export const REEL: { symbol: SlotsSymbol; weight: number }[] = [
   { symbol: 'cherry',  weight: 8 },
   { symbol: 'bar',     weight: 6 },
   { symbol: 'bell',    weight: 4 },
@@ -21,7 +21,7 @@ function spinReel(): SlotsSymbol {
   return 'cherry'
 }
 
-function resolveReels(
+export function resolveReels(
   reels: [SlotsSymbol, SlotsSymbol, SlotsSymbol],
 ): { multiplier: number; winType: string | null } {
   // Wilds substitute for the best non-wild symbol on the payline

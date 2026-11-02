@@ -1,7 +1,7 @@
 # Story mode ("The Circuit"): design report
 
-Status: **planned, not built.** Owner answers are recorded in section 12; four small
-questions are still open there. Cash tables, the one dependency, are done.
+Status: **being built.** Every owner question is answered (section 12). Progress is in
+section 11. Cash tables, the one dependency, are done.
 Branch: `claude/friendly-goodall-yvxakz`.
 
 What the owner asked for: a story mode that is the heart of the site. You travel from
@@ -143,6 +143,7 @@ pay that city's rates, so going back is no farm).
 ## 5. Money model (simulated, no items or perks)
 
 All amounts are in multiples of the **city min bet (m)**, so one table covers every city.
+The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below).
 
 | Source / cost | Amount | Limit | Risk |
 |---|---|---|---|
@@ -152,38 +153,50 @@ All amounts are in multiples of the **city min bet (m)**, so one table covers ev
 | **Comps** | **4% of what you wagered that night** | **capped at 10m per night** | none |
 | Venue night | 12 bets, max 20m / 100m / no max | one per night | game edge |
 | Tables session | stake-based | one per night | skill + luck |
-| Lodging | **−3m** per night | every night | — |
-| Boss | buy-in 60m, purse 150m | rematch after 2 nights | about 50/50 |
+| Lodging | **−3m** per night; **free below 10m** (you sleep in your car) | every night | — |
+| Boss | **buy-in 50m, purse 150m** | rematch after 2 nights, same difficulty | about 50/50 |
 | Travel fare | 20m of the next city | once | — |
 
-### What the simulation showed (3,000 circuits per player type)
+### What the simulation showed (`pnpm sim:story`, 3,000 circuits per player type, 2026-11-02)
 
-The **first numbers in this plan were too generous with safe money.** Never gambling
-(minigames only) was as fast as going all in, and faster than normal betting, because every
-bet pays the house edge while the safe income is fixed. In a casino game that's backwards,
-so the numbers above were changed: less safe money, plus **comps** and hustles that reward
-playing. With them:
+The simulator plays whole circuits over each city's **real game list**, with each game's
+odds taken from its engine (`lib/story/odds.ts`):
 
-| Player type | Nights per city (median / worst 10%) | Whole circuit (median) | Busts per circuit | Stuck |
+| Player type | Nights per city (median / worst 10%) | Whole circuit (median) | Busts per circuit | Back to 10m after a bust |
 |---|---|---|---|---|
-| Never gambles (minigames only) | 18 / 82 | ~370 nights | 0 | never |
-| Cautious (5% of bankroll per bet) | 6 / 21 | ~100 | 0 | never |
-| Balanced (15% per bet, max 100m) | 5 / 29 | ~120 | 0 | never |
-| High variance (15% on 10× bets) | 8 / 70 | ~280 | ~31 | rare |
-| Bold (all in, only what's needed) | 4 / 19 | ~85 | ~7 | never |
+| Never gambles (minigames only) | 15 / 86 | ~359 nights | 0 | — |
+| Cautious (5% a bet, safest bet in the city) | 5 / 20 | ~96 | 0 | — |
+| Balanced (15% a bet, any game played its usual way) | 5 / 43 | ~172 | 0 | 2 nights |
+| High variance (15% on the riskiest bets) | 10 / 86 | ~346 | ~25 | 2 nights |
+| Bold (all in, only what's needed) | 3 / 17 | ~75 | ~4 | 2 nights |
 
-- **Not too hard:** no player type gets stuck, and normal play clears a city in about 5–6
-  nights.
-- **Gambling now pays:** bold and normal play are 3–4× faster than never gambling. The
-  minigames are the safety net, not the way through.
-- **The long tails come from bosses.** A city in the worst 10% takes 20–30 nights,
-  almost always because of repeated 50/50 boss losses. (Owner, 2026-11-02: rematches stay
-  as hard; the tails are accepted.) Softeners considered and rejected: a cheaper
-  rematch, or the rival getting a little weaker after each loss.
-- **Length:** about 100–120 nights for normal play. At 8–10 minutes a night, that's 15–20
-  hours. If that's too long, the levers are fewer cities or a bigger purse.
-- The model is simple (one even-money or 10× game at about 97%, an average minigame
-  score, a 50% boss). Phase 1 replaces it with `sim:story` on the real engines' odds.
+- **Nobody gets stuck**, and normal play clears a city in about 5 nights.
+- **Gambling pays:** cautious and bold play are 4–5× faster than never gambling; the
+  minigames are the safety net.
+- **A bust costs about 2 nights**, thanks to the free car below 10m (without it, climbing
+  back from $0 took weeks of nights).
+- **The long tails come from bosses** lost at 50/50. (Owner, 2026-11-02: rematches stay as
+  hard; the tails are accepted.) Softeners considered and rejected: a cheaper rematch, or
+  a weaker rival after each loss.
+- **Length:** about 75–170 nights depending on how you play (cautious ~96). At 8–10 minutes
+  a night that is roughly 12–25 hours.
+- **Tuning made in Phase 1:** the boss buy-in went from 60m to 50m (purse stays 150m), which
+  cut the cautious circuit from ~123 to ~96 nights; the free car was added.
+
+### Story-only game settings (approved by the owner; `lib/story/odds.ts`)
+
+The return check found five games whose base numbers don't fit a persistent economy. Story
+mode plays them with its own settings; Freeplay, Daily, Ladder and Challenges are unchanged.
+
+| Game | Base game | Story setting |
+|---|---|---|
+| Chicken Road | step 2 returns **135%**, step 5 **193%** (the step table outpays its danger) | each step priced to return 96% |
+| HiLo | one guess on the likelier side returns **142%** (2× on a ~67% guess, ties keep the stake) | a right guess pays (0.96 − tie chance) ÷ its chance: 96% |
+| Slots | **104.8%** | three cherries 4× (5), bells 12× (15), diamonds 24× (25): 96.4% |
+| Mines | fair; rounding tips some stops to **100.3%** | cash-outs pay 97% of the fair price |
+| 1-Player Poker | about **48%** (jacks only return the stake; the dealt hand never pays) | a richer table (jacks 2×, two pair 4×, trips 6× … royal 800×): about 96% |
+
+Fair 100% bets (Wheel red, Coin Flip) stay as they are.
 
 ### Why the minigame limit is "per night"
 Nights cost lodging, and a night of venue play costs real money to the house edge. So the
@@ -322,7 +335,7 @@ Slots gets a story pay table below 100%.
 | Phase | What | Done when |
 |---|---|---|
 | 0 | Owner answers (section 12). Finish Cash tables (bot churn, top-up, cash checks) | **Cash tables done 2026-11-02**; only the portrait style / tone is open |
-| 1 | Economy model + `sim:story` + return check, **no UI** | the simulator meets the section 5 targets |
+| 1 | Economy model + `sim:story` + return check, **no UI** | **Done 2026-11-02:** `lib/story/{economy,cities,odds}.ts`, `scripts/story/sim.ts`; targets met (section 5) |
 | 2 | Save format, dialogue engine, content types, `check:story` | checks pass on placeholder content |
 | 3 | **Vertical slice: Dustwater complete.** Map, hub, venue nights, 2 characters with portraits, 2 minigames, jobs, comps, a Liar's Dice boss, bust and lender, one choice with a consequence | playable start to finish on desktop and phone; owner playtest |
 | 4 | Tune from the playtest. Change systems now, while only one city exists | owner signs off on the slice |
@@ -354,12 +367,11 @@ Answered (2026-11-02):
    round faces and chip frame, C's single lamp, rim light and halftone shadows. The tone
    follows: warm noir, likeable characters with real stakes and dry humour. Two colour
    versions are drawn at https://claude.ai/artifact/E936D6NasWdu8dVrVryPvZ (1: full
-   colour, 2: monochrome with gold and chip colour); the owner picks one.
+   colour, 2: monochrome with gold and chip colour); the owner picked **mix 1**.
 
-Still open (asked 2026-11-02):
+10. **Mix 1** (warm noir, full colour).
+11. **The player** is an unnamed "you" with no portrait.
+12. **Story sits first** on the home page and in the navbar.
+13. **Draft names** are kept for now (they live in data files).
 
-10. Mix 1 or mix 2.
-11. The player: unnamed "you" with no portrait (recommended), or a named character with a
-    portrait?
-12. Where story sits: first on the home page and in the navbar (recommended)?
-13. The draft names (Jo, Sloane, Vale, the Notary; the twelve cities): keep for now?
+Nothing is open. Build from Phase 1 (section 11).

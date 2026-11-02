@@ -354,7 +354,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Step mults:** 0.9, 1.5, 2, 3, 4.5, 7, 11, 17, 25, 40; death **10%–90%** by step.
 - **Loss:** Death → **0**; cash out < bet on early steps (e.g. step 1 **0.9×**).
 - **Edge cases:** Safe Lane perk forces one safe crossing.
-- **Optimal EV:** **Path-dependent** (cash-out step); always cash step 1 → **0.9 × 0.9 = 0.81×** before boosts.
+- **Optimal EV:** **Above 100% from step 2.** You start on step 1 (0.9×, cash out with no risk); moving on survives step 1's 10% danger, so cashing out on step 2 returns 0.9 × 1.5 = **135%**, step 3 **153%**, step 4 **184%**, step 5 **193%** (the peak), step 8 still ~87%. Checked by `pnpm sim:story` (2026-11-02). The step table is not priced against its own danger; story mode plays it with steps priced to 96% (`lib/story/odds.ts`).
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard.
 - **Game Perk — Safe Lane:** **30–75%** proc per round; the first Advance uses `advanceChickenRoundSafe` (guaranteed step success) and that lane is ringed in felt until taken.
@@ -457,7 +457,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Payouts:** Royal **800×**, straight flush **50×**, four **25×**, full house **9×**, flush **6×**, straight **4×**, trips **3×**, two pair **2×**, jacks+ **1×**.
 - **Loss:** No hand **0**.
 - **Edge cases:** Hold Harmony **58%** bias to held ranks on draw (normal); blessed/cursed dev paths.
-- **Optimal EV:** **Strategy-dependent**; jacks+ at **1×** is sub-bet return multiplier (profit = bet × mult).
+- **Optimal EV:** about **48%** with plain holds (measured by `pnpm sim:story`, 2026-11-02): the multiplier is the total return (jacks or better only gives the stake back) and the dealt hand never pays. Story mode uses a richer table, about 96%.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard.
 - **Game Perk — Hold Harmony:** **30–75%** proc; draw favors held ranks.
@@ -471,7 +471,7 @@ Freeplay min bet = **1** (`bet-panel.tsx`).
 - **Bet range:** min–max.
 - **Wins:** Cash out at current mult; wrong guess loses all.
 - **Edge cases:** Tie preserves mult; go again; Hot Streak **25%** chance +1 extra streak step (`bumpStreak`).
-- **Optimal EV:** **Player-dependent** (cash-out depth); fair-card guess ≈ **50%** per step before ties.
+- **Optimal EV:** **Above 100%.** The opening card is 3–K and you can call the likelier side, which wins about **67%** of the time on average for **2×**, and a tie keeps the stake: one guess then cash out returns about **142%** (`pnpm sim:story`, 2026-11-02). Story mode prices each right guess at (0.96 − tie chance) ÷ its chance.
 - **Worst case:** −1× bet.
 - **Game Boost:** Standard.
 - **Game Perk — Hot Streak:** **25%** on correct guess to `bumpStreak` (extra streak step) — **not** in proc table; always checked if perk owned.
@@ -723,7 +723,10 @@ All 24 games are currently marked `availableSurvival: true` in the catalog.
 ### Game EV outliers
 | Issue | Detail |
 |-------|--------|
-| **Slots ~104.8% RTP** | Base reel weights yield >1.0× EV — strongest grind game without perks. |
+| **Chicken Road up to ~193%** | Cashing out on step 2–6 returns 135–193% (see the game's section). The strongest game in every mode, Daily, Ladder and Challenges included. |
+| **HiLo ~142%** | One guess on the likelier side, then cash out. |
+| **Slots ~104.8% RTP** | Base reel weights yield >1.0× EV. |
+| **1-Player Poker ~48%** | The weakest game by far. |
 | **Street cups ~83.3%** | 2.5× on 1/3 — still the weakest fixed-odds game. |
 | **Keno 5-pick ~87%** | Raised from ~56% by the new hit table. |
 | **Chicken race 90%** | Below fair 1.0 but above street cups. |
