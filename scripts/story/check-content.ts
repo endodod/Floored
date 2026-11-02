@@ -70,6 +70,15 @@ for (const c of CHARACTERS) if (c.city && !cityIds.has(c.city)) fail(`character 
 for (const e of ERRANDS) {
   if (!cityIds.has(e.city)) fail(`errand ${e.id}: unknown city`)
   if (!characterIds.has(e.giver)) fail(`errand ${e.id}: unknown giver "${e.giver}"`)
+  readCond(e.opens, `errand ${e.id}`)
+  if (e.goal.kind === 'minigame') {
+    const g = e.goal.minigame
+    if (!CHARACTERS.some((c) => c.minigame === g && c.city === e.city)) fail(`errand ${e.id}: no one in ${e.city} offers the ${g} minigame`)
+  }
+  if (e.goal.kind === 'streak') {
+    const city = CITIES.find((c) => c.id === e.city)
+    if (city && city.games !== 'all-seen' && !city.games.includes(e.goal.game)) fail(`errand ${e.id}: ${e.goal.game} isn't played in ${e.city}`)
+  }
 }
 
 for (const scene of SCENES) {
@@ -160,7 +169,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   const m = st().minBet()
   if (st().money !== 200 || m !== 5) fail('a new story starts in Dustwater with $200')
   // The arrival scene: lines, a choice, the end's effects.
-  if (!st().startScene('dustwater-arrival')) fail('arrival scene would not start')
+  if (!st().playQueued() || st().scene?.id !== 'dustwater-arrival') fail('a new story queues the arrival scene')
   let guard = 0
   while (st().scene && guard++ < 50) {
     const step = st().currentStep()!
@@ -169,9 +178,30 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   }
   if (!st().flags['arrived-dustwater'] || st().factions.underground !== 1) fail('arrival scene effects (flag, faction) not applied')
   if (st().startScene('dustwater-arrival')) fail('a once-only scene played twice')
-  // Minigames pay once per giver per night.
-  const paid = st().payMinigame('marta', 1)
-  if (paid !== 3 * m || st().payMinigame('marta', 1) !== 0) fail('minigame pays 3m at a perfect score, once a night')
+  // Minigames pay once per giver per night; a good shift finishes Marta's errand (once she's met).
+  useStoryStore.setState({ flags: { ...st().flags, 'met-marta': true, 'met-pike': true } })
+  const m0 = st().money
+  const paid = st().playMinigame('marta', 'last-orders', 1)
+  if (paid !== 3 * m || st().playMinigame('marta', 'last-orders', 1) !== 0) fail('minigame pays 3m at a perfect score, once a night')
+  if (st().errands['dustwater-marta-shift'] !== 'done' || st().money !== m0 + 3 * m + 6 * m) fail('a perfect shift finishes the bar-shift errand (6m)')
+  // A night at the dive: table limit, bets, a streak errand, comps and hustles at the end.
+  if (st().startNight(2)) fail('the high-roller room needs reputation 3')
+  if (!st().startNight(0)) fail('a night at the dive starts')
+  if (st().wagerCap() !== Math.min(st().money, 20 * m)) fail('the dive caps a bet at 20m')
+  for (let k = 0; k < 3; k++) {
+    st().placeBet('street-cups', m)
+    st().resolve('street-cups', 2.5 * m, true)
+  }
+  if (st().errands['dustwater-pike-marks'] !== 'done') fail('three Street Cups wins in a row finish Pike\'s errand')
+  if (st().errands['dustwater-marta-bet'] === 'done') fail('a 2.5× win must not finish the 3× errand')
+  st().placeBet('hilo', m)
+  st().resolve('hilo', 3 * m, true)
+  if (st().errands['dustwater-marta-bet'] !== 'done') fail('a 3× win finishes the trucker\'s-bet errand')
+  if (st().betsLeft() !== 8) fail('four rounds leave 8 of 12 bets')
+  const night = st().endNight()
+  if (!night.played || night.comps !== Math.round(0.04 * 4 * m) || night.lodging !== 3 * m || st().tonight) fail('the night ends with comps (4% of bets) and lodging')
+  if (st().errands['dustwater-jo-stake'] !== 'done') fail('a night up finishes Jo\'s seed-money errand')
+  if (night.hustles.length !== 2) fail('two hustles on the board each night')
   // Lodging, and the free car below 10m.
   const before = st().money
   st().endNight()
@@ -179,6 +209,11 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   useStoryStore.setState({ money: 9 * m })
   st().endNight()
   if (st().money !== 9 * m) fail('below 10m you sleep in the car for free')
+  // A bust: below the minimum after a night queues the bust scene and costs a reputation tier.
+  useStoryStore.setState({ money: 2 })
+  const rep = st().rep
+  if (!st().endNight().bust || st().rep !== rep - 1 || !st().queue.includes('dustwater-bust')) fail('a bust costs reputation and queues the bust scene')
+  useStoryStore.setState({ queue: [] })
   // A marker: lent 20m, repaid 1.5×, half of each win's profit.
   useStoryStore.setState({ money: 0 })
   if (!st().takeMarker() || st().money !== 20 * m || st().owed !== 30 * m) fail('a marker lends 20m and is owed at 30m')
@@ -186,7 +221,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (st().money !== 25 * m || st().owed !== 25 * m) fail('half of a win goes to the marker')
   // The boss: buy-in, loss and the 2-night wait, then a win and travel.
   useStoryStore.setState({ money: 200 * m, owed: 0 })
-  if (!st().enterBoss() || st().money !== 150 * m) fail('the boss buy-in is 50m')
+  if (!st().enterBoss() || st().money !== 150 * m || !st().bossTable) fail('the boss buy-in is 50m and seats you')
   st().bossResult(false)
   if (st().bossAvailable()) fail('the rival leaves after a loss')
   st().endNight()

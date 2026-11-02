@@ -1,4 +1,5 @@
 import type { CityId } from './cities'
+import type { GameName } from '@/store/types'
 
 /**
  * Story content types (.md/STORY_MODE_PLAN.md section 4). Content is data: typed
@@ -57,6 +58,8 @@ export type Effect =
   | { money: number }
   | { rep: number }
   | { errand: string; step: 'start' | 'done' }
+  /** Take a marker from the Notary (only when you're below the minimum bet). */
+  | { marker: true }
 
 export type Speaker = string | 'you' | 'narrator'
 
@@ -96,6 +99,17 @@ export interface Scene {
   nodes: Record<string, SceneNode>
 }
 
+/** What finishes an errand. Checked after every round at the casino and every minigame. */
+export type ErrandGoal =
+  /** Score at least this (0–1) in a character's minigame. */
+  | { kind: 'minigame'; minigame: MinigameId; score: number }
+  /** Win this many rounds in a row at one game. */
+  | { kind: 'streak'; game: GameName; wins: number }
+  /** End a night at the casino up. */
+  | { kind: 'night-up' }
+  /** Win this multiple or more of the stake on one bet. */
+  | { kind: 'big-win'; mult: number }
+
 export interface Errand {
   id: string
   city: CityId
@@ -103,6 +117,9 @@ export interface Errand {
   title: string
   /** What to do, in the player's words. */
   task: string
+  goal: ErrandGoal
+  /** On the jobs board once this holds (or once a scene starts it). */
+  opens?: Condition
   /** Pays this many of the city's minimum bets when done (ERRAND_PAY_M by default). */
   pay?: number
 }
