@@ -218,15 +218,10 @@ export default function AccountPage() {
         }
       >
         <div className="space-y-5">
-          <RecordGroup title="Daily">
+          <RecordGroup title="Daily challenge">
             <Stat label="Challenges played" value={hydrated ? String(dailiesPlayed) : '—'} />
             <Stat label="Streak" value={hydrated ? `${currentStreak(dailyHistory, dailyDateKey())} days` : '—'} />
             <Stat label="Best result" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '—'} />
-          </RecordGroup>
-
-          <RecordGroup title="Freeplay">
-            <Stat label="Peak balance" value={formatChips(freeplayPeakBankroll)} />
-            <Stat label="Resets" value={String(freeplayResetCount)} />
           </RecordGroup>
 
           {LADDER_ENABLED && (
@@ -236,6 +231,8 @@ export default function AccountPage() {
             </RecordGroup>
           )}
 
+          {hydrated && <ChallengeRecords title="Challenges" source="preset" stats={challengeStats} />}
+
           {LADDER_ENABLED && (
             <RecordGroup title="Ladder">
               <Stat label="Best pot" value={hydrated && ladder.runs > 0 ? formatChips(ladder.bestPot) : '—'} />
@@ -243,20 +240,24 @@ export default function AccountPage() {
             </RecordGroup>
           )}
 
+          <RecordGroup title="Freeplay">
+            <Stat label="Peak balance" value={formatChips(freeplayPeakBankroll)} />
+            <Stat label="Resets" value={String(freeplayResetCount)} />
+          </RecordGroup>
+
+          <RecordGroup title="Tables">
+            <Stat label="Peak wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
+            <Stat label="Wallet refills" value={hydrated ? String(tablesRefills) : '—'} />
+          </RecordGroup>
+
+          {hydrated && <ChallengeRecords title="Community challenges" source="community" stats={challengeStats} />}
+
           {SURVIVAL_ENABLED && (
             <RecordGroup title="Survival">
               <Stat label="Best floor" value={String(serverStats ? serverStats.highscore : survivalHighscore)} />
               <Stat label="Wins" value={String(serverStats ? serverStats.wins : survivalWinCount)} />
             </RecordGroup>
           )}
-
-          {hydrated && <ChallengeRecords title="Challenges" source="preset" stats={challengeStats} />}
-          {hydrated && <ChallengeRecords title="Community challenges" source="community" stats={challengeStats} />}
-
-          <RecordGroup title="Tables">
-            <Stat label="Peak wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
-            <Stat label="Wallet refills" value={hydrated ? String(tablesRefills) : '—'} />
-          </RecordGroup>
 
         </div>
       </Section>

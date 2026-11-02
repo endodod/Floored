@@ -68,9 +68,18 @@ const BOARD_ROWS = [
   [1,  4,  7,  10, 13, 16, 19, 22, 25, 28, 31, 34],
 ]
 
-const SPIN_MS = 4600
 /** How long the wheel and ball travel; the round settles a beat after they stop. */
 const SPIN_ANIMATION_MS = 4000
+/** Matches the reduced-motion override on `.roulette-anim` in globals.css. */
+const REDUCED_SPIN_ANIMATION_MS = 400
+/** The beat between the ball coming to rest and the result showing. */
+const SETTLE_BEAT_MS = 150
+/**
+ * Decelerates evenly enough that the wheel is still visibly turning until the last few
+ * hundred ms, so the stop and the result land together (a sharper ease-out looked stopped
+ * a second and a half before the round settled).
+ */
+const SPIN_EASING = 'cubic-bezier(0.25, 0.5, 0.4, 1)'
 
 /** The real European wheel, clockwise from 0; pocket i sits at i × STEP degrees from the top. */
 const POCKETS = EUROPEAN_WHEEL_ORDER
@@ -121,7 +130,7 @@ function RouletteWheel({
   spinning: boolean
   result: number | null
 }) {
-  const transition = `transform ${SPIN_ANIMATION_MS}ms cubic-bezier(0.12, 0.6, 0.14, 1)`
+  const transition = `transform ${SPIN_ANIMATION_MS}ms ${SPIN_EASING}`
   return (
     <svg viewBox="-100 -100 200 200" className="roulette-wheel h-full w-full drop-shadow-[0_24px_40px_rgba(0,0,0,0.65)]" role="img" aria-label={result != null && !spinning ? `Wheel stopped on ${result}` : 'Roulette wheel'}>
       <defs>
@@ -347,6 +356,8 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
     setSpinKey((k) => k + 1)
     setSpinning(true)
 
+    const reducedMotion = document.documentElement.dataset.motion === 'reduced'
+    const settleMs = (reducedMotion ? REDUCED_SPIN_ANIMATION_MS : SPIN_ANIMATION_MS) + SETTLE_BEAT_MS
     settleRef.current = setTimeout(() => {
       setSpinning(false)
       setRound(result)
@@ -382,7 +393,7 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
         },
       )
       setPendingResult(built)
-    }, SPIN_MS)
+    }, settleMs)
   }
 
   const handleNewRound = useCallback(() => {

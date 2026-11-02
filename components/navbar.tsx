@@ -17,13 +17,17 @@ import { FlooredMark } from '@/components/ui/terminal'
 
 const MODES = [
   { href: '/daily', label: 'Daily', enabled: true },
-  { href: '/ladder', label: 'Ladder', enabled: LADDER_ENABLED },
-  { href: '/survival', label: 'Survival', enabled: SURVIVAL_ENABLED },
+  { href: '/daily-ladder', label: 'Daily ladder', enabled: LADDER_ENABLED },
   { href: '/challenges', label: 'Challenges', enabled: true },
-  { href: '/community', label: 'Community', enabled: true },
-  { href: '/tables', label: 'Tables', enabled: TABLES_ENABLED },
+  { href: '/ladder', label: 'Ladder', enabled: LADDER_ENABLED },
   { href: '/freeplay', label: 'Freeplay', enabled: true },
+  { href: '/tables', label: 'Tables', enabled: TABLES_ENABLED },
+  { href: '/community', label: 'Community', enabled: true },
+  { href: '/survival', label: 'Survival', enabled: SURVIVAL_ENABLED },
 ].filter((m) => m.enabled)
+
+/** Segment match, so '/daily' isn't active on '/daily-ladder'. */
+const isUnder = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
 /** Remembers the last value and returns a class that flashes the direction it just moved. */
 function useTick(value: number): string {
@@ -85,7 +89,7 @@ export function Navbar() {
 
   const showSurvivalHud = hydrated && inSurvivalGame && runActive
   const current =
-    MODES.find((m) => pathname.startsWith(m.href))?.label ?? (inChallenge ? 'Challenge' : inAccount ? 'Account' : null)
+    MODES.find((m) => isUnder(pathname, m.href))?.label ?? (inChallenge ? 'Challenge' : inAccount ? 'Account' : null)
 
   let figure: React.ReactNode = null
   if (hydrated && inDailyLadder) {
@@ -106,18 +110,18 @@ export function Navbar() {
             <span className="text-[15px] font-semibold tracking-[-0.01em] tall:text-lg">Floored</span>
           </Link>
 
-          {current && <span className="text-[13px] text-dim md:hidden tall:text-sm">{current}</span>}
+          {current && <span className="text-[13px] text-dim lg:hidden tall:text-sm">{current}</span>}
 
-          <div className="hidden h-12 items-stretch gap-5 md:flex lg:gap-6 tall:h-16 lg:tall:gap-8">
+          <div className="hidden h-12 items-stretch gap-5 lg:flex xl:gap-6 tall:h-16 xl:tall:gap-8">
             {MODES.map((m) => {
-              const active = pathname.startsWith(m.href)
+              const active = isUnder(pathname, m.href)
               return (
                 <Link
                   key={m.href}
                   href={m.href}
                   aria-current={active ? 'page' : undefined}
                   data-active={active}
-                  className={`mark-line flex items-center text-[13px] font-medium transition-colors tall:text-[15px] ${
+                  className={`mark-line flex items-center whitespace-nowrap text-[13px] font-medium transition-colors tall:text-[15px] ${
                     active ? 'text-ink' : 'text-dim hover:text-ink'
                   }`}
                 >
@@ -149,7 +153,7 @@ export function Navbar() {
               href="/account"
               aria-label="Account"
               aria-current={inAccount ? 'page' : undefined}
-              className={`hidden h-8 w-8 items-center justify-center rounded-full border transition-colors md:flex tall:h-10 tall:w-10 ${
+              className={`hidden h-8 w-8 items-center justify-center rounded-full border transition-colors lg:flex tall:h-10 tall:w-10 ${
                 inAccount ? 'border-felt text-ink' : 'border-control text-soft hover:border-dim hover:text-ink'
               }`}
             >
@@ -160,7 +164,7 @@ export function Navbar() {
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
               aria-expanded={menuOpen}
-              className="-mr-2 flex h-10 w-10 items-center justify-center text-soft md:hidden"
+              className="-mr-2 flex h-10 w-10 items-center justify-center text-soft lg:hidden"
             >
               <Menu className="h-5 w-5 tall:h-6 tall:w-6" strokeWidth={1.5} />
             </button>
@@ -169,7 +173,7 @@ export function Navbar() {
       </nav>
 
       {menuOpen && (
-        <div className="sheet-in fixed inset-0 z-[60] flex flex-col bg-ground md:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+        <div className="sheet-in fixed inset-0 z-[60] flex flex-col bg-ground lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="flex h-12 items-center justify-between border-b border-line px-4 tall:h-16">
             <Link href="/" className="flex items-center gap-2 text-ink">
               <FlooredMark className="tall:h-6 tall:w-6" />
@@ -186,7 +190,7 @@ export function Navbar() {
           </div>
           <ul className="flex flex-col px-4 py-2">
             {[{ href: '/', label: 'Home' }, ...MODES, { href: '/account', label: 'Account' }].map((m) => {
-              const active = m.href === '/' ? pathname === '/' : pathname.startsWith(m.href)
+              const active = m.href === '/' ? pathname === '/' : isUnder(pathname, m.href)
               const desktopOnly = m.href === '/survival'
               return (
                 <li key={m.href} className="border-b border-rule">
