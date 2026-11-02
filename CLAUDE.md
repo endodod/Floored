@@ -5,7 +5,7 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 
 ## Docs
 
-**Next up:** Story mode, `.md/STORY_MODE_PLAN.md` (owner answers recorded in its section 12;
+**Next up:** Story mode, `.md/STORY_MODE_PLAN.md` (owner answers in its section 12; portrait style still to pick;
 build order in section 11). Cash tables (`.md/TABLES_CASH_HANDOFF.md`) and the four new
 house games (`.md/NEW_GAMES_HANDOFF.md`) are built.
 
@@ -25,7 +25,7 @@ Read the one that matches the task before changing code:
 
 - [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): the plan
   for the main mode (12 cities, characters with portraits and choices, minigames, economy,
-  losing, build order). Not built; a few owner questions are still open in its section 12.
+  losing, build order). Not built; only the portrait style (and tone) is still open.
 
 - [.md/CHALLENGES.md](.md/CHALLENGES.md): Challenges (20 house challenges), Community challenges
   (API, tables, migration to deploy), the Daily Ladder and the 15-rung Ladder.

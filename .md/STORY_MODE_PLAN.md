@@ -1,7 +1,7 @@
 # Story mode ("The Circuit"): design report
 
-Status: **planned, not built.** Owner answers so far are recorded in section 12; three
-questions are still open there. Cash tables, the one dependency, are done.
+Status: **planned, not built.** Owner answers are recorded in section 12; only the
+portrait style (and with it the tone) is still open. Cash tables, the one dependency, are done.
 Branch: `claude/friendly-goodall-yvxakz`.
 
 What the owner asked for: a story mode that is the heart of the site. You travel from
@@ -177,7 +177,8 @@ playing. With them:
 - **Gambling now pays:** bold and normal play are 3–4× faster than never gambling. The
   minigames are the safety net, not the way through.
 - **The long tails come from bosses.** A city in the worst 10% takes 20–30 nights,
-  almost always because of repeated 50/50 boss losses. Possible softeners (Q9): a cheaper
+  almost always because of repeated 50/50 boss losses. (Owner, 2026-11-02: rematches stay
+  as hard; the tails are accepted.) Softeners considered and rejected: a cheaper
   rematch, or the rival getting a little weaker after each loss.
 - **Length:** about 100–120 nights for normal play. At 8–10 minutes a night, that's 15–20
   hours. If that's too long, the levers are fewer cities or a bigger purse.
@@ -211,7 +212,7 @@ There is no reset. Losing costs these, from mild to harsh:
 
 Going all in is always survivable: the worst case is a few nights of minigames. My earlier
 idea of sending you back a city on "rock bottom" is **dropped**, because guaranteed safe
-income makes it unnecessary (see Q8 if you want it back).
+income makes it unnecessary (owner, 2026-11-02: no harsher option for now).
 
 ---
 
@@ -320,7 +321,7 @@ Slots gets a story pay table below 100%.
 
 | Phase | What | Done when |
 |---|---|---|
-| 0 | Owner answers (section 12). Finish Cash tables (bot churn, top-up, cash checks) | **Cash tables done 2026-11-02**; questions 6, 8 and 9 still open |
+| 0 | Owner answers (section 12). Finish Cash tables (bot churn, top-up, cash checks) | **Cash tables done 2026-11-02**; only the portrait style / tone is open |
 | 1 | Economy model + `sim:story` + return check, **no UI** | the simulator meets the section 5 targets |
 | 2 | Save format, dialogue engine, content types, `check:story` | checks pass on placeholder content |
 | 3 | **Vertical slice: Dustwater complete.** Map, hub, venue nights, 2 characters with portraits, 2 minigames, jobs, comps, a Liar's Dice boss, bust and lender, one choice with a consequence | playable start to finish on desktop and phone; owner playtest |
@@ -344,10 +345,13 @@ Answered (2026-11-02):
 5. **Cash tables:** finished first (done).
 7. **Saves:** one story save, with "New story" behind a confirmation.
 
+8. **Harsher loss option:** no, not for now. Busting costs money, nights and reputation;
+   nobody is sent back a city.
+9. **Boss losses:** rematches don't get easier. Same buy-in, same rival, after the 2-night
+   wait.
+
 Still open:
 
-6. **Tone:** gritty noir, light and comedic, or in between?
-8. **Harsher loss option:** I dropped "rock bottom sends you back a city" because minigames
-   guarantee recovery. Do you want it back, or a hard mode with it?
-9. **Boss losses:** should a rematch get easier (a cheaper buy-in, or a slightly weaker
-   rival after each loss) to cut the long tails in section 5?
+6. **Tone:** gritty noir, light and comedic, or in between. Tied to the portrait style:
+   four options (A felt cutout, B court card, C back-room noir, D chip medallion) are drawn
+   at https://claude.ai/artifact/E936D6NasWdu8dVrVryPvZ for the owner to pick from.

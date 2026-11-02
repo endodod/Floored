@@ -10,7 +10,7 @@
 - [ ] Survival finish?
   - [ ] Bugs?
   - [ ] Balancing
-- [ ] Story mode — planned in `.md/STORY_MODE_PLAN.md` (start at Phase 1 once its remaining questions are answered)
+- [ ] Story mode — planned in `.md/STORY_MODE_PLAN.md` (start at Phase 1 once the portrait style is picked)
 - [ ] New mode
   - [ ] Multiplayer
     - [ ] 1v1
