@@ -300,7 +300,7 @@ cash?: {
 **Hub `app/tables/page.tsx`:** two lines explaining Tournaments and Cash tables; the
 figure strip shows wallet, tournament net and cash net.
 
-**Lobby `app/tables/lobby/page.tsx`:** one page, no category toggle (owner change,
+**Lobby `app/tables/page.tsx`** (it is `/tables` itself since 2026-11-02; the old intro page is gone, its How it works steps sit under the tiles, and `/tables/lobby` redirects): one page, no category toggle (owner change,
 replacing the earlier Tournaments · Cash tables radiogroup): a **Tournaments** section and
 a **Cash tables** section, each with the three game tiles. Stakes are not on the page:
 tapping a tournament tile opens a dialog with your Tables wallet on top (the cash dialog

@@ -1,6 +1,6 @@
 # Floored
 
-Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: Freeplay balance, Daily, Ladder, Challenges and Tables, runs in progress included).
+Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: Freeplay balance, Daily challenge, Ladder, Challenges and Tables, runs in progress included).
 
 Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
@@ -60,7 +60,7 @@ both in collapsible lists. Details in `.md/CHALLENGES.md`.
 Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones), Liar's Dice, or Blackjack Showdown.
 
 - Own **Tables wallet** ($10,000, refillable below the smallest buy-in)
-- **One lobby** with Tournaments and Cash tables side by side; tap a tournament table to pick its buy-in (100 / 1,000 / 10,000) in a dialog, a cash table to pick its limits and how many chips to bring. Each bot's skill is drawn at random per table
+- **One lobby** at `/tables` (no intro page; How it works sits under the tables) with Tournaments and Cash tables side by side; tap a tournament table to pick its buy-in (100 / 1,000 / 10,000) in a dialog, a cash table to pick its limits and how many chips to bring. Each bot's skill is drawn at random per table
 - Every buy-in goes into the prize pool (no rake); Hold'em pays the top two, while Blackjack Showdown and Liar's Dice are winner-takes-all
 - Account Records track the Tables peak wallet, refills, and each game's results
 - Leaving a table before your place is decided forfeits the buy-in
@@ -117,7 +117,7 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 - Zustand (client-side state)
 - Radix UI (primitives)
 - Framer Motion (animations)
-- Neon Postgres + Prisma, Neon Auth (optional accounts; Freeplay / Daily / Ladder / Challenges / Tables progress, community challenges syncs to your account)
+- Neon Postgres + Prisma, Neon Auth (optional accounts; Freeplay / Daily challenge / Ladder / Challenges / Tables progress, community challenges syncs to your account)
 
 ## Development
 

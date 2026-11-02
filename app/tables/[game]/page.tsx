@@ -24,12 +24,12 @@ export default function TableGamePage({ params }: { params: Promise<{ game: stri
     started.current = true
     const s = useTablesStore.getState()
     if (!isTableGame(game) || !s.open || s.open.game !== game) {
-      router.replace('/tables/lobby')
+      router.replace('/tables')
       return
     }
     if (s.open.seated) {
       s.forfeit()
-      router.replace('/tables/lobby')
+      router.replace('/tables')
       return
     }
     s.markSeated()

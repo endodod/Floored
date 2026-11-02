@@ -77,9 +77,9 @@ export function TableShell({
   function leave() {
     if (cash) {
       cashOut()
-      router.push('/tables/lobby')
+      router.push('/tables')
     } else if (place == null) setConfirmLeave(true)
-    else router.push('/tables/lobby')
+    else router.push('/tables')
   }
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export function TableShell({
                     Watch
                   </button>
                 )}
-                <button type="button" onClick={() => router.push('/tables/lobby')} className={GAME_DOCK_SECONDARY_BTN}>
+                <button type="button" onClick={() => router.push('/tables')} className={GAME_DOCK_SECONDARY_BTN}>
                   Tables
                 </button>
                 <button
@@ -220,7 +220,7 @@ export function TableShell({
               onClick={() => {
                 setConfirmLeave(false)
                 forfeit()
-                router.push('/tables/lobby')
+                router.push('/tables')
               }}
             >
               Leave and forfeit

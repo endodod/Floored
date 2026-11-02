@@ -19,7 +19,7 @@ playing into a round. No engine, payout, rule or timing change: layout only.
 
 **Routes and states**
 
-- Hubs: `/`, `/freeplay`, `/daily`, `/ladder`, `/tables`, `/tables/lobby`.
+- Hubs: `/`, `/freeplay`, `/daily`, `/ladder`, `/tables`.
 - All 24 Freeplay games, betting state and in-round (`auto`: place a chip, press
   the dock's primary button), plus settled state for the fast games (Baccarat,
   Sic Bo, Dragon Tiger, Andar Bahar, Run Dice, Coin Flip, Over-Under, Wheel,
@@ -27,7 +27,7 @@ playing into a round. No engine, payout, rule or timing change: layout only.
 - Daily: `/daily` → **Play daily** → today's game page.
 - Ladder: `/ladder` → **Start climbing** → the rung's game page (with the
   Rung / All-in / To win / Lives strip above the card).
-- Tables: `/tables/lobby` → each of Texas Hold'em, Liar's Dice and Blackjack
+- Tables: `/tables` → each of Texas Hold'em, Liar's Dice and Blackjack
   Showdown, at the table once the bots have started.
 
 **Per page** the audit flags, and every finding below came from it:
@@ -139,7 +139,7 @@ then:
 
 ```bash
 # phones: the whole app's game pages and hubs
-node scripts/design-check/mobile-check.cjs ./out /freeplay /daily /ladder /tables/lobby \
+node scripts/design-check/mobile-check.cjs ./out /freeplay /daily /ladder /tables \
   /freeplay/blackjack /freeplay/roulette
 
 # a game played into a round, then the settled state
@@ -148,7 +148,7 @@ node scripts/design-check/mobile-check.cjs ./out "/freeplay/baccarat|auto|wait:4
 # Ladder / Tables need the flow that opens them
 node scripts/design-check/mobile-check.cjs ./out \
   "/ladder|click:Start climbing|wait:800|click:css=[aria-labelledby=\"ladder-games\"] li button" \
-  "/tables/lobby|click:css=[aria-labelledby=\"tables-games\"] li:nth-child(1) button|wait:600|click:Sit down ·|wait:2500"
+  "/tables|click:css=[aria-labelledby=\"tables-games\"] li:nth-child(1) button|wait:600|click:Sit down ·|wait:2500"
 ```
 
 `W=390 H=700` (and `DSF`) change the viewport; `BASE_URL` changes the server.
