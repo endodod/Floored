@@ -122,9 +122,11 @@ All 24 Freeplay games, the four hubs and a Hold'em table are clean at 360×640, 
 3. **Firefox** was not run.
 4. **Not covered:** the Account and how-to-play pages, signed-in state, Cash tables
    (`.md/TABLES_CASH_HANDOFF.md`, not built yet), in-round states other than Baccarat.
-5. `env(safe-area-inset-bottom)` on `<main>` only works with `viewport-fit=cover`, which
+5. **Hold'em at 412×915:** one bot seat's status line ("Big blind 20") was cut by 6px
+   in one run; not chased yet.
+6. `env(safe-area-inset-bottom)` on `<main>` only works with `viewport-fit=cover`, which
    is not set; adding it would also need top/side insets on the navbar.
-6. The overlap detector ignores `position: absolute` controls, so intentional
+7. The overlap detector ignores `position: absolute` controls, so intentional
    overlap (Roulette's chip layer, table chip stacks) is not flagged — but
    neither would a real overlap of two absolutely positioned buttons be.
 
@@ -144,7 +146,7 @@ node scripts/design-check/mobile-check.cjs ./out "/freeplay/baccarat|auto|wait:4
 # Ladder / Tables need the flow that opens them
 node scripts/design-check/mobile-check.cjs ./out \
   "/ladder|click:Start climbing|wait:800|click:css=[aria-labelledby=\"ladder-games\"] li button" \
-  "/tables/lobby|click:css=[aria-labelledby=\"tables-games\"] li:nth-child(1) button|wait:2500"
+  "/tables/lobby|click:css=[aria-labelledby=\"tables-games\"] li:nth-child(1) button|wait:600|click:Sit down ·|wait:2500"
 ```
 
 `W=390 H=700` (and `DSF`) change the viewport; `BASE_URL` changes the server.

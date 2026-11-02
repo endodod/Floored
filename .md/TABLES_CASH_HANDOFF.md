@@ -300,14 +300,17 @@ cash?: {
 **Hub `app/tables/page.tsx`:** two lines explaining Tournaments and Cash tables; the
 figure strip shows wallet, tournament net and cash net.
 
-**Lobby `app/tables/lobby/page.tsx`:** a category radiogroup at the top, same style
-as the stakes radiogroup: **Tournaments · Cash tables** (remember it in
-localStorage, key `floored-tables-format`, wrapped in try/catch like the tier).
+**Lobby `app/tables/lobby/page.tsx`:** one page, no category toggle (owner change,
+replacing the earlier Tournaments · Cash tables radiogroup): a **Tournaments** section and
+a **Cash tables** section, each with the three game tiles. Stakes are not on the page:
+tapping a tournament tile opens a dialog with the three buy-ins (each with its 1st/2nd
+prizes for that game's seat count; buy-ins the wallet can't cover are disabled; the choice
+is remembered under `floored-tables-tier`) and **Sit down · buy-in**. The obsolete
+`floored-tables-format` key is removed on load.
 
-- Tournaments: unchanged.
-- Cash tables: stakes radiogroup Low / Mid / High (each card shows the three games'
-  limits in one line, e.g. "5/10 · ante 50 · bets 10–500"); the three game tiles
-  with `catalog.cash` labels; **Sit down** opens a dialog (`components/ui/dialog`)
+- Tournaments: rules unchanged, only the stake choice moved into the dialog.
+- Cash tables: the three game tiles with `catalog.cash` labels; **Sit down** opens a dialog (`components/ui/dialog`)
+  with the Low / Mid / High limits for that game (e.g. "Ante 50") above the amount:
   "Bring chips to the table": amount field with stepper, pills **¼ · ½ · All** of
   the wallet (the dock pill style), preset to All, the stake's limits line, and
   **Sit down** (disabled only when the amount is 0 or above the wallet).

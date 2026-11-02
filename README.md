@@ -46,7 +46,7 @@ Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`loca
 Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones), Liar's Dice, or Blackjack Showdown.
 
 - Own **Tables wallet** ($10,000, refillable below the smallest buy-in)
-- **Stakes:** buy-ins of 100 / 1,000 / 10,000; each bot's skill is drawn at random per table
+- **One lobby** with Tournaments and Cash tables side by side; tap a tournament table to pick its buy-in (100 / 1,000 / 10,000) in a dialog, a cash table to pick its limits and how many chips to bring. Each bot's skill is drawn at random per table
 - Every buy-in goes into the prize pool (no rake); Hold'em pays the top two, while Blackjack Showdown and Liar's Dice are winner-takes-all
 - Account Records track the Tables peak wallet, refills, and each game's results
 - Leaving a table before your place is decided forfeits the buy-in
