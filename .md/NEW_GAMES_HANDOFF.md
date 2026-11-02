@@ -49,7 +49,7 @@ Do every line for each game. File paths are from the repo root.
 | 1 | `games/<id>/types.ts`, `games/<id>/engine.ts` | Pure engine (section 2–5 of this file). No React, no `Math.random` outside the engine. |
 | 2 | `store/types.ts` | `'<id>'` in `GameName`. |
 | 3 | `lib/game-catalog.ts` | A `GAMES[]` entry at the end (pos 19–22). Fields in the table below. |
-| 4 | `lib/ladder/rules.ts` | `GAME_MAX_MULT['<id>']` (values below). `LADDER_RUNGS` stays 18 (section 7, decision 1): in the first game's commit, change its comment to "18 rungs, one game each; with more games than rungs, some are left over each climb". |
+| 4 | `lib/ladder/rules.ts` | `GAME_MAX_MULT['<id>']` (values below). `LADDER_RUNGS` is now 15 (changed after this handoff; see [CHALLENGES.md](CHALLENGES.md)). |
 | 5 | `components/games/<id>/game.tsx` | The component, exported as `<Pascal>Game`, same props as every game: `{ mode, bankroll, onBet?, onResolve }`. |
 | 6 | `lib/game-registry.tsx` | Import it and add it to `GAME_REGISTRY`. |
 | 7 | `lib/game-tutorials.ts` | `GAME_TUTORIALS['<id>']` (text below; keep the figures equal to the engine). |
@@ -658,7 +658,7 @@ Implementation:
 
 ## 7. Owner decisions (all answered, 2026-10-30)
 
-1. **Ladder length: keep 18 rungs.** With 22 games, four are left over each climb.
+1. **Ladder length: keep 18 rungs** (superseded: the ladder is 15 rungs since the Daily Ladder change). With 22 games, four are left over each climb.
    Update the `LADDER_RUNGS` comment in `lib/ladder/rules.ts` (first game's commit) and
    the README's Ladder line "every game once per run" → "one game per rung, never the
    same game twice". The picker's "`n` on offer · `GAMES.length` games left" note already adapts.

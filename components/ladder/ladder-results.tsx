@@ -1,18 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { LadderRecord } from '@/store/ladder-store'
 import { LADDER_RUNGS, START_POT, TOP_BONUS } from '@/lib/ladder/rules'
 import { END_LABEL, buildLadderShareText } from '@/lib/ladder/share'
 import { formatChips } from '@/utils/format'
 import { Button } from '@/components/ui/button'
 
-export function LadderResults({ record, onNewRun }: { record: LadderRecord; onNewRun: () => void }) {
+export function LadderResults({
+  record,
+  onNewRun,
+  shareUrl = '/ladder',
+  after,
+}: {
+  record: LadderRecord
+  /** Absent on the daily ladder: one run a day. */
+  onNewRun?: () => void
+  shareUrl?: string
+  after?: ReactNode
+}) {
   const [copied, setCopied] = useState(false)
   const out = record.endReason === 'out'
 
   async function handleShare() {
-    const text = buildLadderShareText(record, `${window.location.origin}/ladder`)
+    const text = buildLadderShareText(record, `${window.location.origin}${shareUrl}`)
     try {
       if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
         await navigator.share({ text })
@@ -44,7 +55,8 @@ export function LadderResults({ record, onNewRun }: { record: LadderRecord; onNe
         <Button variant="outline" onClick={handleShare}>
           {copied ? 'Copied' : 'Share result'}
         </Button>
-        <Button onClick={onNewRun}>New run</Button>
+        {onNewRun && <Button onClick={onNewRun}>New run</Button>}
+        {after}
       </div>
     </section>
   )

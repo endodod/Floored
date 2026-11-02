@@ -13,6 +13,7 @@ export function pickRungOffers(
   available: readonly GameName[],
   seen: ReadonlySet<GameName>,
   count: number = PICKS_PER_RUNG,
+  rand: () => number = Math.random,
 ): GameName[] {
   const pool = available.map((name) => ({ name, weight: seen.has(name) ? 1 : UNSEEN_GAME_WEIGHT }))
   const picks: GameName[] = []
@@ -20,7 +21,7 @@ export function pickRungOffers(
 
   while (picks.length < target) {
     const total = pool.reduce((sum, entry) => sum + entry.weight, 0)
-    let roll = Math.random() * total
+    let roll = rand() * total
     let index = pool.findIndex((entry) => (roll -= entry.weight) < 0)
     if (index === -1) index = pool.length - 1
     const [picked] = pool.splice(index, 1)

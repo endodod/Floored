@@ -4,7 +4,9 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { useDailyStore } from '@/store/daily-store'
-import { useLadderStore } from '@/store/ladder-store'
+import { useStore } from 'zustand'
+import { useActiveLadderStore } from '@/lib/ladder/active'
+import { useChallengeStore } from '@/store/challenge-store'
 import type { GameName } from '@/store/types'
 import { applyResolveModifiers } from '@/lib/survival/apply-modifiers'
 import { evaluateMissionsOnGame } from '@/lib/survival/mission-evaluator'
@@ -255,12 +257,13 @@ export function useDailyGameBankroll(game: GameName, bets: number) {
 }
 
 export function useLadderGameBankroll(game: GameName) {
-  const pot = useLadderStore((s) => s.pot)
-  const status = useLadderStore((s) => s.status)
-  const currentGame = useLadderStore((s) => s.currentGame)
-  const openRound = useLadderStore((s) => s.openRound)
-  const placeBet = useLadderStore((s) => s.placeBet)
-  const resolve = useLadderStore((s) => s.resolve)
+  const ladder = useActiveLadderStore()
+  const pot = useStore(ladder, (s) => s.pot)
+  const status = useStore(ladder, (s) => s.status)
+  const currentGame = useStore(ladder, (s) => s.currentGame)
+  const openRound = useStore(ladder, (s) => s.openRound)
+  const placeBet = useStore(ladder, (s) => s.placeBet)
+  const resolve = useStore(ladder, (s) => s.resolve)
 
   const roundOpen = openRound?.game === game
   // Only the picked game gets the pot; once its round settles the wallet is empty until the next pick.
@@ -271,7 +274,49 @@ export function useLadderGameBankroll(game: GameName) {
 
   const handleBet = useCallback(
     (amount: number) => {
-      if (useLadderStore.getState().openRound?.game !== game) roundCreditedRef.current = 0
+      if (ladder.getState().openRound?.game !== game) roundCreditedRef.current = 0
+      placeBet(game, amount)
+    },
+    [game, placeBet, ladder],
+  )
+
+  const handleResolve = useCallback(
+    <R extends GameResolvePayload>(result: R): R => {
+      const settle = result.settleFloorBet !== false
+      const credit = result.payoutAlreadyCredited
+        ? result.payout - roundCreditedRef.current
+        : result.payout
+      roundCreditedRef.current = settle ? 0 : roundCreditedRef.current + result.payout
+      resolve(game, credit, settle)
+      return result
+    },
+    [game, resolve],
+  )
+
+  return { pot, wagerCap, roundOpen, handleBet, handleResolve }
+}
+
+/** Challenges: like the Daily — a shared bankroll and a set number of bets per game. */
+export function useChallengeGameBankroll(game: GameName) {
+  const bankroll = useChallengeStore((s) => s.attempt?.bankroll ?? 0)
+  const finished = useChallengeStore((s) => s.attempt?.finished ?? true)
+  const openRound = useChallengeStore((s) => s.attempt?.openRound ?? null)
+  const used = useChallengeStore((s) => s.attempt?.progress[game]?.betsUsed ?? 0)
+  const bets = useChallengeStore((s) => s.attempt?.def.games.find((g) => g.game === game)?.bets ?? 0)
+  const placeBet = useChallengeStore((s) => s.placeBet)
+  const resolve = useChallengeStore((s) => s.resolve)
+
+  const betsRemaining = Math.max(0, bets - used)
+  const roundOpen = openRound === game
+  // With no bets left the game sees an empty wallet, so it can't start another round.
+  const wagerCap = !finished && (betsRemaining > 0 || roundOpen) ? Math.max(0, bankroll) : 0
+
+  // Payout already credited by partial resolves (Plinko balls) in the current round.
+  const roundCreditedRef = useRef(0)
+
+  const handleBet = useCallback(
+    (amount: number) => {
+      if (useChallengeStore.getState().attempt?.openRound !== game) roundCreditedRef.current = 0
       placeBet(game, amount)
     },
     [game, placeBet],
@@ -290,5 +335,5 @@ export function useLadderGameBankroll(game: GameName) {
     [game, resolve],
   )
 
-  return { pot, wagerCap, roundOpen, handleBet, handleResolve }
+  return { bankroll, wagerCap, bets, betsRemaining, roundOpen, finished, handleBet, handleResolve }
 }

@@ -10,14 +10,17 @@ import { formatChips } from '@/utils/format'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
 import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
 import { useTablesStore } from '@/store/tables-store'
-import { useLadderStore } from '@/store/ladder-store'
+import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
+import { useChallengeStore } from '@/store/challenge-store'
 import { FlooredMark } from '@/components/ui/terminal'
 
 const MODES = [
   { href: '/daily', label: 'Daily', enabled: true },
   { href: '/ladder', label: 'Ladder', enabled: LADDER_ENABLED },
   { href: '/survival', label: 'Survival', enabled: SURVIVAL_ENABLED },
+  { href: '/challenges', label: 'Challenges', enabled: true },
+  { href: '/community', label: 'Community', enabled: true },
   { href: '/tables', label: 'Tables', enabled: TABLES_ENABLED },
   { href: '/freeplay', label: 'Freeplay', enabled: true },
 ].filter((m) => m.enabled)
@@ -55,7 +58,10 @@ export function Navbar() {
   const tablesWallet = useTablesStore((s) => s.wallet)
   const dailyBankroll = useDailyStore((s) => s.bankroll)
   const ladderPot = useLadderStore((s) => s.pot)
+  const challengeBankroll = useChallengeStore((s) => s.attempt?.bankroll ?? null)
   const ladderStatus = useLadderStore((s) => s.status)
+  const dailyLadderPot = useDailyLadderStore((s) => s.pot)
+  const dailyLadderStatus = useDailyLadderStore((s) => s.status)
   const runActive = useSurvivalStore((s) => s.runActive)
   const bankroll = useSurvivalStore((s) => s.bankroll)
   const quotaTarget = useSurvivalStore((s) => s.quotaTarget)
@@ -63,10 +69,12 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   const inFreeplay = pathname.startsWith('/freeplay')
-  const inDaily = pathname.startsWith('/daily')
+  const inDailyLadder = pathname.startsWith('/daily-ladder')
+  const inDaily = pathname.startsWith('/daily') && !inDailyLadder
   const inLadder = pathname.startsWith('/ladder')
   const inTables = pathname.startsWith('/tables')
   const inAccount = pathname.startsWith('/account')
+  const inChallenge = pathname === '/challenge' || pathname.startsWith('/challenge/')
   const inSurvivalGame = pathname.startsWith('/survival/')
 
   // Stores are persisted to localStorage, so their values are only known after the
@@ -76,11 +84,16 @@ export function Navbar() {
   useEffect(() => setMenuOpen(false), [pathname])
 
   const showSurvivalHud = hydrated && inSurvivalGame && runActive
-  const current = MODES.find((m) => pathname.startsWith(m.href))?.label ?? (inAccount ? 'Account' : null)
+  const current =
+    MODES.find((m) => pathname.startsWith(m.href))?.label ?? (inChallenge ? 'Challenge' : inAccount ? 'Account' : null)
 
   let figure: React.ReactNode = null
-  if (hydrated && inDaily) figure = <BarFigure label="Daily bankroll" value={dailyBankroll} />
+  if (hydrated && inDailyLadder) {
+    if (dailyLadderStatus === 'climbing') figure = <BarFigure label="Pot" value={dailyLadderPot} />
+  } else if (hydrated && inDaily) figure = <BarFigure label="Daily bankroll" value={dailyBankroll} />
   else if (hydrated && inLadder && ladderStatus === 'climbing') figure = <BarFigure label="Pot" value={ladderPot} />
+  else if (hydrated && inChallenge && challengeBankroll != null)
+    figure = <BarFigure label="Challenge bankroll" value={challengeBankroll} />
   else if (hydrated && inTables) figure = <BarFigure label="Wallet" value={tablesWallet} />
   else if (hydrated && inFreeplay) figure = <BarFigure label="Balance" value={freeplayBankroll} />
 
@@ -93,9 +106,9 @@ export function Navbar() {
             <span className="text-[15px] font-semibold tracking-[-0.01em] tall:text-lg">Floored</span>
           </Link>
 
-          {current && <span className="text-[13px] text-dim sm:hidden tall:text-sm">{current}</span>}
+          {current && <span className="text-[13px] text-dim md:hidden tall:text-sm">{current}</span>}
 
-          <div className="hidden h-12 items-stretch gap-6 sm:flex tall:h-16 tall:gap-8">
+          <div className="hidden h-12 items-stretch gap-5 md:flex lg:gap-6 tall:h-16 lg:tall:gap-8">
             {MODES.map((m) => {
               const active = pathname.startsWith(m.href)
               return (
@@ -136,7 +149,7 @@ export function Navbar() {
               href="/account"
               aria-label="Account"
               aria-current={inAccount ? 'page' : undefined}
-              className={`hidden h-8 w-8 items-center justify-center rounded-full border transition-colors sm:flex tall:h-10 tall:w-10 ${
+              className={`hidden h-8 w-8 items-center justify-center rounded-full border transition-colors md:flex tall:h-10 tall:w-10 ${
                 inAccount ? 'border-felt text-ink' : 'border-control text-soft hover:border-dim hover:text-ink'
               }`}
             >
@@ -147,7 +160,7 @@ export function Navbar() {
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
               aria-expanded={menuOpen}
-              className="-mr-2 flex h-10 w-10 items-center justify-center text-soft sm:hidden"
+              className="-mr-2 flex h-10 w-10 items-center justify-center text-soft md:hidden"
             >
               <Menu className="h-5 w-5 tall:h-6 tall:w-6" strokeWidth={1.5} />
             </button>
@@ -156,7 +169,7 @@ export function Navbar() {
       </nav>
 
       {menuOpen && (
-        <div className="sheet-in fixed inset-0 z-[60] flex flex-col bg-ground sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+        <div className="sheet-in fixed inset-0 z-[60] flex flex-col bg-ground md:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="flex h-12 items-center justify-between border-b border-line px-4 tall:h-16">
             <Link href="/" className="flex items-center gap-2 text-ink">
               <FlooredMark className="tall:h-6 tall:w-6" />

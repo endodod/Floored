@@ -4,9 +4,10 @@ import { useEffect } from 'react'
 import { authClient } from '@/lib/auth/client'
 import { useDailyStore } from '@/store/daily-store'
 import { useFreeplayStore } from '@/store/freeplay-store'
-import { useLadderStore } from '@/store/ladder-store'
+import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { useTablesStore } from '@/store/tables-store'
+import { useChallengeStore } from '@/store/challenge-store'
 import { SYNCED_STORE_KEYS, type SyncPayload, type SyncedStoreKey } from '@/lib/sync/keys'
 
 /** A persisted zustand store: all the sync needs from it. */
@@ -21,6 +22,8 @@ const STORES: Record<SyncedStoreKey, PersistedStore> = {
   ladder: useLadderStore as unknown as PersistedStore,
   tables: useTablesStore as unknown as PersistedStore,
   survival: useSurvivalStore as unknown as PersistedStore,
+  challenges: useChallengeStore as unknown as PersistedStore,
+  'daily-ladder': useDailyLadderStore as unknown as PersistedStore,
 }
 
 /**

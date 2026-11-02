@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth/client'
 import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
-import { useLadderStore } from '@/store/ladder-store'
+import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useTablesStore } from '@/store/tables-store'
@@ -27,6 +27,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
+import { useChallengeStore } from '@/store/challenge-store'
+import { ChallengeRecords } from '@/components/challenges/challenge-records'
 
 const MOTION_OPTIONS: { value: MotionPreference; label: string }[] = [
   { value: 'system', label: 'Match system' },
@@ -122,6 +124,8 @@ export default function AccountPage() {
   const dailiesPlayed = Object.keys(dailyHistory).length
   const bestDaily = bestMultiplier(dailyHistory)
   const ladder = ladderStats(useLadderStore((s) => s.history))
+  const dailyLadder = ladderStats(useDailyLadderStore((s) => s.history))
+  const challengeStats = useChallengeStore((s) => s.stats)
   const {
     motion, setMotion,
     autoReBet, setAutoReBet,
@@ -226,6 +230,13 @@ export default function AccountPage() {
           </RecordGroup>
 
           {LADDER_ENABLED && (
+            <RecordGroup title="Daily ladder">
+              <Stat label="Climbs" value={hydrated ? String(dailyLadder.runs) : '—'} />
+              <Stat label="Best pot" value={hydrated && dailyLadder.runs > 0 ? formatChips(dailyLadder.bestPot) : '—'} />
+            </RecordGroup>
+          )}
+
+          {LADDER_ENABLED && (
             <RecordGroup title="Ladder">
               <Stat label="Best pot" value={hydrated && ladder.runs > 0 ? formatChips(ladder.bestPot) : '—'} />
               <Stat label="Highest rung · tops" value={hydrated ? `${ladder.bestRung} · ${ladder.tops}` : '—'} />
@@ -238,6 +249,9 @@ export default function AccountPage() {
               <Stat label="Wins" value={String(serverStats ? serverStats.wins : survivalWinCount)} />
             </RecordGroup>
           )}
+
+          {hydrated && <ChallengeRecords title="Challenges" source="preset" stats={challengeStats} />}
+          {hydrated && <ChallengeRecords title="Community challenges" source="community" stats={challengeStats} />}
 
           <RecordGroup title="Tables">
             <Stat label="Peak wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />

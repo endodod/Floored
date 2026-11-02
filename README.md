@@ -1,6 +1,6 @@
 # Floored
 
-Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: Freeplay balance, Daily, Ladder and Tables, runs in progress included).
+Browser-based casino simulation — no real money. Accounts are optional (sign in to keep your progress on your account: Freeplay balance, Daily, Ladder, Challenges and Tables, runs in progress included).
 
 Live at [floored.paulkuehn.ch](https://floored.paulkuehn.ch)
 
@@ -23,7 +23,9 @@ The challenge is generated deterministically from the UTC date (`lib/daily/chall
 
 ## Ladder
 
-Climb 18 rungs with an all-in pot — one game per rung, never the same game twice.
+Climb 15 rungs with an all-in pot — one game per rung, never the same game twice. Endless runs on
+`/ladder`; the **Daily Ladder** (`/daily-ladder`, a tab on the Daily page) is one climb a day with
+the same seeded game pickers for everyone.
 
 - Start with a **$100 pot**; each rung you pick a game and stake the whole pot
 - **Six games on offer each rung**, drawn at random from the games you haven't used this run;
@@ -40,6 +42,18 @@ Climb 18 rungs with an all-in pot — one game per rung, never the same game twi
 
 Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`localStorage`). Toggle with
 `LADDER_ENABLED` in `lib/features.ts`.
+
+## Challenges
+
+Twenty themed house challenges (`/challenges`): each has 2–6 games and 1–6 bets per game, and
+starts at 1,000. Place every bet and finish with as high a bankroll as you can — the Daily's rules,
+but retry as often as you like. Each challenge keeps your **tries** and **best bankroll** (only
+attempts with every bet placed count).
+
+**Community** (`/community`): challenges made by players under the same rules. Anyone can play;
+creating one needs an account. Your tries and best are kept the same way, and each community
+challenge shows how often it was played and its top score. The profile (Account → Records) shows
+both in collapsible lists. Details in `.md/CHALLENGES.md`.
 
 ## Tables
 
@@ -103,7 +117,7 @@ Every game has a rules page at `/how-to-play/[game]` (content in `lib/game-tutor
 - Zustand (client-side state)
 - Radix UI (primitives)
 - Framer Motion (animations)
-- Neon Postgres + Prisma, Neon Auth (optional accounts; Freeplay / Daily / Ladder / Tables progress syncs to your account)
+- Neon Postgres + Prisma, Neon Auth (optional accounts; Freeplay / Daily / Ladder / Challenges / Tables progress, community challenges syncs to your account)
 
 ## Development
 
@@ -122,15 +136,20 @@ Open http://localhost:3000 to run locally.
 app/
   daily/           # Daily challenge hub + game routes
   ladder/          # Ladder hub + game routes
+  daily-ladder/    # Daily ladder hub + game routes
+  challenges/      # House challenges list
+  community/       # Community challenges list + create
+  challenge/       # The challenge in progress + game routes
   freeplay/        # Freeplay lobby + game routes
   how-to-play/     # Rules page per game
 components/        # React components and shared UI
   games/           # One component per game
 games/             # Pure game engines and logic (TS)
-store/             # Zustand stores (daily, ladder, freeplay, settings)
+store/             # Zustand stores (daily, ladder + daily ladder, challenge, freeplay, settings)
 lib/
   daily/           # Daily challenge generation and sharing
   ladder/          # Ladder rules, rung offers and sharing
+  challenges/      # Challenge presets, limits and validation
 .md/               # Project docs — start with ARCHITECTURE.md
 ```
 

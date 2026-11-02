@@ -87,7 +87,7 @@ export function DragonTigerGame({ mode, bankroll, onBet, onResolve }: { mode: Ga
     if (totalBet < minBet || totalBet > bankroll || !lock()) return
     const betMap = bets
     const first = dragonPeek.perkEffective ? (peek ?? drawCard()) : undefined
-    const result = mode !== 'daily' && mode !== 'ladder' && (blessed || cursed) ? (blessed ? winGame(betMap) : loseGame(betMap)) : dealDragonTiger(betMap, first)
+    const result = mode !== 'daily' && mode !== 'ladder' && mode !== 'challenge' && (blessed || cursed) ? (blessed ? winGame(betMap) : loseGame(betMap)) : dealDragonTiger(betMap, first)
     const keys = Object.keys(betMap) as DragonTigerBet[]
     const betLabel = keys.map((key) => LABELS[key]).join(', ')
     // Turn over the side the player backed first; a Tie-only ticket leads with Dragon.

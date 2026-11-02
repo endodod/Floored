@@ -72,7 +72,7 @@ export function TowerOfCardsGame({ mode, bankroll, onBet, onResolve }: { mode: G
     if (!playing || animationLock.current) return
     const callInfo = { step: round.step, pick } as TowerCall
     animationLock.current = true; setAnimating(true)
-    const dev = mode !== 'daily' && mode !== 'ladder'
+    const dev = mode !== 'daily' && mode !== 'ladder' && mode !== 'challenge'
     const next = dev && blessed ? winCall(round, callInfo) : dev && cursed ? loseCall(round, callInfo) : callTower(round, callInfo, net.perkEffective)
     window.setTimeout(() => { settle(next); setAnimating(false); animationLock.current = false }, 300)
   }

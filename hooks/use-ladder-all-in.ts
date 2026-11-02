@@ -6,7 +6,8 @@ import type { GameMode } from '@/store/types'
 
 /** True on ladder routes — for shared dock parts that don't receive the game mode. */
 export function useIsLadderRoute(): boolean {
-  return usePathname()?.startsWith('/ladder') ?? false
+  const path = usePathname()
+  return (path?.startsWith('/ladder') || path?.startsWith('/daily-ladder')) ?? false
 }
 
 /**

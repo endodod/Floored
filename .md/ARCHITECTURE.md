@@ -5,7 +5,7 @@ what the modes are and how they play, see the [README](../README.md).
 
 Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zustand
 (persisted to `localStorage`) · optional accounts via Neon Auth + Prisma/Postgres
-(finished survival runs, and Freeplay / Daily / Ladder / Tables / Survival progress; see **Account sync**).
+(finished survival runs, and Freeplay / Daily / Daily Ladder / Ladder / Challenges / Tables / Survival progress, plus community challenges; see **Account sync**).
 
 ---
 
@@ -17,18 +17,19 @@ Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Zu
 | `app/how-to-play/[game]/` | Static rules page per game (content in `lib/game-tutorials.ts`). |
 | `app/account/` | Local settings, motion preference, dev mode, sign-in. |
 | `app/api/run/` | Survival run sync for signed-in players (`lib/survival/run-sync.ts`). |
-| `app/api/state/` | Account sync of the Freeplay, Daily, Ladder, Tables and Survival stores (`components/account-sync.tsx`, `lib/sync/keys.ts`). |
+| `app/api/community/` | Community challenges: list, create, tries and best results (see [CHALLENGES.md](CHALLENGES.md)). |
+| `app/api/state/` | Account sync of the Freeplay, Daily, Daily Ladder, Ladder, Challenges, Tables and Survival stores (`components/account-sync.tsx`, `lib/sync/keys.ts`). |
 | `games/<name>/` | `types.ts` + `engine.ts` — pure game logic, no React. |
 | `components/games/<name>/game.tsx` | One React component per game, plus sub-components in the same folder. |
 | `components/` | Shared UI: navbar, lobby, game tiles, game chrome, mode intros, tutorials. |
 | `components/ui/` | Primitives: shadcn-style `button`, `dialog`, … and `terminal.tsx` (page title, section title, figure strip, unit tracks, suits). |
 | `lib/game-catalog.ts` | `GAMES[]` — label, subtitle and mode availability for every game. |
 | `lib/game-registry.tsx` | `GAME_REGISTRY` — the only file that imports all game components. |
-| `lib/daily/`, `lib/ladder/`, `lib/survival/` | Mode rules. `lib/ladder/rules.ts` also holds `GAME_MAX_MULT` (the "up to …×" captions). |
+| `lib/daily/`, `lib/ladder/`, `lib/challenges/`, `lib/survival/` | Mode rules. `lib/ladder/active.ts` picks the endless or daily ladder store by route. `lib/ladder/rules.ts` also holds `GAME_MAX_MULT` (the "up to …×" captions). |
 | `lib/tables/`, `lib/bots/`, `components/tables/` | Tables mode: table games against bots, kept apart from `GameName` / `GAMES` / `GAME_REGISTRY` (own catalog, registry, store `store/tables-store.ts`). See [BOT_TABLES_HANDOFF.md](BOT_TABLES_HANDOFF.md). |
 | `lib/features.ts` | `SURVIVAL_ENABLED`, `LADDER_ENABLED` — turning one off hides its entry points and 404s its routes. |
-| `store/` | Zustand stores: `freeplay`, `daily`, `ladder`, `survival`, `settings`; shared types in `store/types.ts`. |
-| `hooks/use-game-bankroll.ts` | `use{Freeplay,Survival,Daily,Ladder}GameBankroll` — each mode's bankroll math for the `[game]` pages. |
+| `store/` | Zustand stores: `freeplay`, `daily`, `ladder` (two instances: endless and daily), `challenge`, `survival`, `settings`; shared types in `store/types.ts`. |
+| `hooks/use-game-bankroll.ts` | `use{Freeplay,Survival,Daily,Ladder,Challenge}GameBankroll` — each mode's bankroll math for the `[game]` pages. |
 | `utils/format.ts` | `formatChips`, `formatMultiplier` — always use these for money and multipliers. |
 | `utils/rng.ts` | Seeded RNG (`createRng`, `seedFromString`) for anything that must be reproducible (daily challenge, survival floors and missions). |
 
@@ -50,12 +51,12 @@ bankroll hook does the math (`bankroll - betAmount + payout`) and the mode's
 bookkeeping. A push returns the stake (`payout === betAmount`).
 
 ### Modes inside a game
-Components take `mode: GameMode` (`freeplay | daily | ladder | survival`).
+Components take `mode: GameMode` (`freeplay | daily | ladder | challenge | survival`; the daily ladder plays as `ladder`).
 Survival perks are read with `useSurvivalPerks(game)`; the minimum bet comes from
 `useGameMinBet`; run endings (bust, floor done, rung lost, Daily out of bets or day over) from `useRunEnd`,
 which shows them in the dock's result row and swaps Leave / Next for the run's action (no modals); the
 Ladder's all-in pot from `useLadderAllIn`. Dev curse/bless/force-tie toggles only
-apply in Freeplay and Survival, never in Daily or Ladder.
+apply in Freeplay and Survival, never in Daily, Ladder or Challenges.
 
 ### Match history
 The settled round's entry is staged in `pendingResult` and pushed into
@@ -143,7 +144,7 @@ Constants and formulas live in `lib/survival/balance.ts`; the full numbers are i
 
 ## Account sync
 
-Signed-in players' Freeplay, Daily, Ladder, Tables and Survival stores (a Survival
+Signed-in players' Freeplay, Daily, Daily Ladder, Ladder, Challenges, Tables and Survival stores (a Survival
 run in progress included) follow the account
 (`components/account-sync.tsx`, mounted in `app/layout.tsx`; route `app/api/state`;
 table `UserState`, one row per user and store holding the store's persisted

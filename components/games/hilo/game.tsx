@@ -107,7 +107,7 @@ type PendingResult = GamePendingResult
 export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   const router = useRouter()
   const { autoReBet, forceTie: forceTieSetting } = useSettingsStore()
-  const forceTie = forceTieSetting && mode !== 'daily' && mode !== 'ladder'
+  const forceTie = forceTieSetting && mode !== 'daily' && mode !== 'ladder' && mode !== 'challenge'
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()

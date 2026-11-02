@@ -11,9 +11,12 @@ import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features
 import { useTablesStore } from '@/store/tables-store'
 import { TABLE_GAMES } from '@/lib/tables/catalog'
 import { TABLES_START_WALLET } from '@/lib/tables/stakes'
-import { useLadderStore } from '@/store/ladder-store'
+import { dailyLadderRecord, useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
+import { useChallengeStore } from '@/store/challenge-store'
+import { PRESET_CHALLENGES } from '@/lib/challenges/presets'
+import { CHALLENGE_START_BANKROLL } from '@/lib/challenges/types'
 import { CHECKPOINT_EVERY, LADDER_LIVES, LADDER_RUNGS, START_POT, livesActive } from '@/lib/ladder/rules'
-import { dailyDateKey, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
+import { dailyDateKey, dailyNumber, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
 import { dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
 import { useDailyStore } from '@/store/daily-store'
 import { useFreeplayStore } from '@/store/freeplay-store'
@@ -87,6 +90,15 @@ export function ModeSelect() {
   const ladderLives = useLadderStore((s) => s.lives)
   const ladderHasLives = useLadderStore((s) => livesActive(s.checkpointRung))
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
+  const dlStatus = useDailyLadderStore((s) => s.status)
+  const dlDate = useDailyLadderStore((s) => s.date)
+  const dlRung = useDailyLadderStore((s) => s.rung)
+  const dlPot = useDailyLadderStore((s) => s.pot)
+  const dlLives = useDailyLadderStore((s) => s.lives)
+  const dlHasLives = useDailyLadderStore((s) => livesActive(s.checkpointRung))
+  const dlHistory = useDailyLadderStore((s) => s.history)
+  const challengeAttempt = useChallengeStore((s) => s.attempt)
+  const challengeStats = useChallengeStore((s) => s.stats)
   const tablesWallet = useTablesStore((s) => s.wallet)
   const tablesPlayed = useTablesStore((s) => s.history.length)
   const ladderClimbing = hydrated && ladderStatus === 'climbing'
@@ -101,6 +113,14 @@ export function ModeSelect() {
   const dailyTotal = challenge ? totalDailyBets(challenge) : 6
   const dailyStarted = dailyUsed > 0
   const dailyCta = todayRecord ? 'See results' : dailyStarted || (dailyIsToday && dailyOpened) ? 'Continue' : 'Play today'
+
+  const dlClimbing = hydrated && dlStatus === 'climbing' && dlDate === today
+  const dlRecord = today ? dailyLadderRecord(dlHistory, today) : undefined
+  const challengeLive = hydrated && challengeAttempt && !challengeAttempt.finished ? challengeAttempt : null
+  const presetsTried = hydrated
+    ? PRESET_CHALLENGES.filter((c) => (challengeStats[`preset:${c.id}`]?.tries ?? 0) > 0).length
+    : 0
+  const communityPlayed = hydrated ? Object.values(challengeStats).filter((x) => x.source === 'community').length : 0
 
   function handleSurvivalClick() {
     if (isMobile) return
@@ -150,13 +170,46 @@ export function ModeSelect() {
           }
         />
 
-        {/* ── Ladder ── */}
+        {/* ── Daily ladder ── */}
         {LADDER_ENABLED && (
           <ModeRow
             index={1}
+            name={today ? `Daily Ladder #${dailyNumber(today)}` : 'Daily Ladder'}
+            symbol="📅"
+            description="Today's ladder: the same game pickers for everyone and a single climb. Bank as big a pot as you can."
+            track={
+              <UnitTrack
+                total={LADDER_RUNGS}
+                done={dlClimbing ? dlRung : dlRecord ? dlRecord.peakRung : 0}
+                current={dlClimbing ? dlRung : undefined}
+                checkpointEvery={CHECKPOINT_EVERY}
+                label={dlClimbing ? `On rung ${dlRung + 1} of ${LADDER_RUNGS}` : `${LADDER_RUNGS} rungs`}
+              />
+            }
+            trackCaption={
+              dlClimbing
+                ? `Rung ${dlRung + 1}/${LADDER_RUNGS} · ${dlHasLives ? `${dlLives} of ${LADDER_LIVES} lives` : 'no lives until checkpoint'}`
+                : dlRecord
+                  ? `Reached rung ${dlRecord.peakRung}/${LADDER_RUNGS}`
+                  : `${LADDER_RUNGS} rungs · one climb a day`
+            }
+            figureLabel={dlRecord ? 'Today' : dlClimbing ? 'Pot' : 'Starting pot'}
+            figure={formatChips(dlRecord ? dlRecord.finalPot : dlClimbing ? dlPot : START_POT)}
+            action={
+              <Button asChild variant="outline" className="w-full lg:w-auto">
+                <Link href="/daily-ladder">{dlRecord ? 'See results' : dlClimbing ? 'Continue climb' : 'Climb today'}</Link>
+              </Button>
+            }
+          />
+        )}
+
+        {/* ── Ladder ── */}
+        {LADDER_ENABLED && (
+          <ModeRow
+            index={2}
             name="Ladder"
             symbol="🪜"
-            description="Go all-in rung after rung. Any profit climbs, every game once per run; lose and you fall to the last checkpoint."
+            description="The endless ladder: go all-in rung after rung, as many runs as you like. Any profit climbs; lose and you fall to the last checkpoint."
             track={
               <UnitTrack
                 total={LADDER_RUNGS}
@@ -181,10 +234,44 @@ export function ModeSelect() {
           />
         )}
 
+        {/* ── Challenges ── */}
+        <ModeRow
+          index={3}
+          name="Challenges"
+          symbol="🎯"
+          description={`${PRESET_CHALLENGES.length} themed house challenges: a set of games, a set number of bets on each, ${formatChips(CHALLENGE_START_BANKROLL)} to start. Retry as often as you like.`}
+          track={<UnitTrack total={PRESET_CHALLENGES.length} done={presetsTried} label={`${presetsTried} of ${PRESET_CHALLENGES.length} tried`} />}
+          trackCaption={`${presetsTried}/${PRESET_CHALLENGES.length} tried`}
+          figureLabel={challengeLive ? challengeLive.def.name : 'Starting bankroll'}
+          figure={formatChips(challengeLive ? challengeLive.bankroll : CHALLENGE_START_BANKROLL)}
+          action={
+            <Button asChild variant="outline" className="w-full lg:w-auto">
+              <Link href={challengeLive ? '/challenge' : '/challenges'}>{challengeLive ? 'Continue' : 'Browse'}</Link>
+            </Button>
+          }
+        />
+
+        {/* ── Community challenges ── */}
+        <ModeRow
+          index={4}
+          name="Community"
+          symbol="🤝"
+          description="Challenges made by players. Try theirs, or sign in and publish your own for others to beat."
+          track={<UnitTrack total={1} done={communityPlayed > 0 ? 1 : 0} label={`${communityPlayed} community challenges played`} />}
+          trackCaption={`${communityPlayed} played`}
+          figureLabel="Starting bankroll"
+          figure={formatChips(CHALLENGE_START_BANKROLL)}
+          action={
+            <Button asChild variant="outline" className="w-full lg:w-auto">
+              <Link href="/community">Browse</Link>
+            </Button>
+          }
+        />
+
         {/* ── Survival (toggle in lib/features.ts) ── */}
         {SURVIVAL_ENABLED && (
           <ModeRow
-            index={2}
+            index={5}
             name="Survival"
             symbol="🛡️"
             description={`Reach each floor's bankroll quota within ${FLOOR_BET_LIMIT} bets or the run ends. Sparks from each floor buy upgrades.`}
@@ -221,7 +308,7 @@ export function ModeSelect() {
         {/* ── Tables (toggle in lib/features.ts) ── */}
         {TABLES_ENABLED && (
           <ModeRow
-            index={3}
+            index={6}
             name="Tables"
             symbol="🃏"
             description="Sit down with bots at Hold'em and Liar's Dice. Buy in, outlast the table, take the prize pool."
@@ -239,7 +326,7 @@ export function ModeSelect() {
 
         {/* ── Freeplay ── */}
         <ModeRow
-          index={4}
+          index={7}
           name="Freeplay"
           symbol="🎮"
           description="Every game, no floors and no quotas. Practise anything and reset your balance whenever you like."

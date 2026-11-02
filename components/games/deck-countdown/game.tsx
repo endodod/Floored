@@ -57,7 +57,7 @@ export function DeckCountdownGame({ mode, bankroll, onBet, onResolve }: { mode: 
     if (!playing || animationLock.current) return
     animationLock.current = true
     setAnimating(true)
-    const dev = mode !== 'daily' && mode !== 'ladder'
+    const dev = mode !== 'daily' && mode !== 'ladder' && mode !== 'challenge'
     const raw = dev ? blessed ? winFlip(round) : cursed ? loseFlip(round) : null : null
     const next = raw ?? (burn.perkEffective && !burnUsed ? flipWithBurn(round) : flipDeckCountdown(round))
     if (!raw && burn.perkEffective && !burnUsed && round.deck.length && round.flipped.some(c => c.rank === round.deck[round.deck.length - 1]?.rank)) setBurnUsed(true)

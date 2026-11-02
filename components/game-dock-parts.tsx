@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
 import { useOpeningTicketActive } from '@/hooks/use-opening-ticket'
 import { useIsLadderRoute } from '@/hooks/use-ladder-all-in'
+import { useLadderHub } from '@/lib/ladder/active'
 import { useRouteMode, useRunEndStatus, type RunEndStatus } from '@/hooks/use-run-end'
 import { getOpeningTicketCapMultiplier } from '@/lib/survival/survival-perks'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -82,11 +83,12 @@ export function GameDockBackButton({
 }) {
   const router = useRouter()
   const game = useParams<{ game?: string }>()?.game
+  const ladderHub = useLadderHub()
   if (!visible) return null
   return (
     <div className="absolute left-3 top-3 z-10 flex gap-2">
-      <button type="button" onClick={() => router.push(`/${mode}`)} className={BOARD_CORNER_BTN}>
-        {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily' : mode === 'ladder' ? '← Ladder' : '← All games'}
+      <button type="button" onClick={() => router.push(mode === 'ladder' ? ladderHub : `/${mode}`)} className={BOARD_CORNER_BTN}>
+        {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily' : mode === 'challenge' ? '← Challenge' : mode === 'ladder' ? '← Ladder' : '← All games'}
       </button>
       {game && (
         <Link href={`/how-to-play/${game}`} className={`${BOARD_CORNER_BTN} inline-flex items-center gap-1.5`}>

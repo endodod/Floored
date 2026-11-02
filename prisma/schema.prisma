@@ -86,7 +86,7 @@ model LeaderboardEntry {
   completedAt DateTime  @default(now())
 }
 
-// One row per signed-in user and synced store (freeplay, daily, ladder, tables):
+// One row per signed-in user and synced store (see SYNCED_STORE_KEYS):
 // the store's persisted localStorage value, so progress follows the account
 // across devices. Written in batches by components/account-sync.tsx.
 model UserState {
@@ -97,4 +97,35 @@ model UserState {
   updatedAt DateTime @updatedAt
 
   @@id([userId, key])
+}
+
+// Community challenges (Challenges mode, see .md/CHALLENGES.md): made by signed-in
+// players, playable by anyone. `tries` counts every started attempt; the best
+// completed result is kept per signed-in player in CommunityChallengeScore.
+model CommunityChallenge {
+  id            String                   @id @default(cuid())
+  name          String
+  theme         String
+  description   String                   @default("")
+  minBet        Int
+  games         Json // [{ game: GameName, bets: number }], 2–6 games, 1–6 bets each
+  createdById   String // Neon Auth user id
+  createdByName String
+  tries         Int                      @default(0)
+  createdAt     DateTime                 @default(now())
+  scores        CommunityChallengeScore[]
+
+  @@index([createdAt])
+}
+
+model CommunityChallengeScore {
+  challengeId String
+  challenge   CommunityChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userId      String // Neon Auth user id
+  displayName String
+  best        Float // bankrolls can pass the 32-bit Int range
+  updatedAt   DateTime           @updatedAt
+
+  @@id([challengeId, userId])
+  @@index([challengeId, best])
 }

@@ -104,7 +104,7 @@ export function AndarBaharGame({ mode, bankroll, onBet, onResolve }: { mode: Gam
     const betMap = bets
     const betSide = (Object.keys(betMap)[0] ?? 'andar') as AndarBaharSide
     onBet?.(totalBet); setLastBet(totalBet); setLastSide(betSide); setLastBets(betMap); setBets({}); setPlaced([]); setPending(null); setQuoteIdx(pickQuote(quoteIdx))
-    const result = mode !== 'daily' && mode !== 'ladder' && sideCount.perkEffective
+    const result = mode !== 'daily' && mode !== 'ladder' && mode !== 'challenge' && sideCount.perkEffective
       ? blessed ? winGame(betMap) : loseGame(betMap)
       : blessed ? winGame(betMap) : cursed ? loseGame(betMap) : dealAndarBahar(betMap)
     setRound({ ...result, stage: 'dealing', andar: [], bahar: [], matchCard: null })

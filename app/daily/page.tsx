@@ -10,6 +10,7 @@ import { useHydrated } from '@/hooks/use-hydrated'
 import { formatChips } from '@/utils/format'
 import { DailyCountdown } from '@/components/daily/countdown'
 import { DailyResults } from '@/components/daily/daily-results'
+import { DailyTabs } from '@/components/daily/daily-tabs'
 import type { GameName } from '@/store/types'
 import { FigureStrip, PageTitle, SectionTitle, UnitTrack, signed, toneOf } from '@/components/ui/terminal'
 import { GameTile } from '@/components/game-tile'
@@ -87,6 +88,7 @@ export default function DailyPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
+      <DailyTabs />
       <PageTitle
         title={`Daily #${challenge.number}`}
         sub={`${dateLabel} · the same challenge for everyone, one attempt.`}

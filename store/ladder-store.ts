@@ -14,6 +14,8 @@ import {
   livesActive,
 } from '@/lib/ladder/rules'
 import { pickRungOffers } from '@/lib/ladder/offers'
+import { dailyDateKey } from '@/lib/daily/challenge'
+import { createRng, seedFromString } from '@/utils/rng'
 
 export interface ClearedRung {
   game: GameName
@@ -36,6 +38,8 @@ export interface LadderLastResult {
 
 export interface LadderRecord {
   endedAt: string
+  /** Daily ladder only: the UTC day the run belongs to. */
+  date?: string
   endReason: LadderEndReason
   finalPot: number
   peakRung: number
@@ -55,7 +59,11 @@ interface OpenRound {
   returned: number
 }
 
-interface LadderStore {
+export interface LadderStore {
+  /** Daily ladder only: the UTC day of the run in progress (or of the last one). */
+  date: string | null
+  /** Daily ladder only: pickers drawn this run, so every draw has its own seed. */
+  draws: number
   status: 'idle' | 'climbing' | 'over'
   /** Rungs cleared so far. */
   rung: number
@@ -79,6 +87,8 @@ interface LadderStore {
   history: LadderRecord[]
 
   startRun: () => void
+  /** Daily ladder: drop a run left over from an earlier day. No-op on the endless ladder. */
+  syncToday: () => void
   /** Draws the picker for the current rung if it is missing (a run saved before the offer pool). */
   ensureOffers: () => void
   pickGame: (game: GameName | null) => void
@@ -88,7 +98,7 @@ interface LadderStore {
   /** A round left mid-way (navigated away) counts as a fall. */
   abandonOpenRound: () => void
   cashOut: () => void
-  /** Gives up the current run between rounds: nothing is banked or recorded, back to the start screen. */
+  /** Gives up the current run between rounds: nothing is banked or recorded, back to the start screen. Endless ladder only. */
   abandonRun: () => void
   dismissResult: () => void
 }
@@ -99,15 +109,20 @@ const HISTORY_LIMIT = 50
  * Draws the picker for `rung`: never a used game, and games that haven't been offered on an
  * earlier rung are likelier. Offers for later rungs are dropped, so a fall re-draws its rung.
  */
-function drawOffers(rung: number, cleared: ClearedRung[], offers: RungOffers[]): RungOffers[] {
+function drawOffers(
+  rung: number,
+  cleared: ClearedRung[],
+  offers: RungOffers[],
+  rand: () => number = Math.random,
+): RungOffers[] {
   const kept = offers.filter((o) => o.rung < rung)
   const used = new Set(cleared.map((c) => c.game))
   const seen = new Set(kept.flatMap((o) => o.games))
   const available = GAMES.map((g) => g.name).filter((g) => !used.has(g))
-  return [...kept, { rung, games: pickRungOffers(available, seen, PICKS_PER_RUNG) }]
+  return [...kept, { rung, games: pickRungOffers(available, seen, PICKS_PER_RUNG, rand) }]
 }
 
-function freshRun() {
+function freshRun(rand?: () => number) {
   return {
     status: 'climbing' as const,
     rung: 0,
@@ -115,7 +130,7 @@ function freshRun() {
     checkpointRung: 0,
     checkpointPot: START_POT,
     cleared: [],
-    offers: drawOffers(0, [], []),
+    offers: drawOffers(0, [], [], rand),
     currentGame: null,
     openRound: null,
     lives: LADDER_LIVES,
@@ -127,13 +142,35 @@ function freshRun() {
   }
 }
 
-export const useLadderStore = create<LadderStore>()(
+/** Daily ladder: one seeded draw per picker, so everyone on the same path sees the same games. */
+function dailyRand(date: string, draw: number): () => number {
+  return createRng(seedFromString(`floored-daily-ladder-${date}-${draw}`))
+}
+
+/**
+ * The ladder's run state. Two instances: the endless ladder (`useLadderStore`,
+ * start as many runs as you like) and the daily ladder (`useDailyLadderStore`,
+ * one run per UTC day with seeded pickers). Both play the same rules; the game
+ * routes pick the instance by path (lib/ladder/active.ts).
+ */
+function createLadderStore({ name, daily }: { name: string; daily: boolean }) {
+  return create<LadderStore>()(
   persist(
     (set, get) => {
+      /** The next picker's randomness, counting draws in the daily ladder. */
+      function nextRand(): (() => number) | undefined {
+        if (!daily) return undefined
+        const s = get()
+        const draw = s.draws
+        set({ draws: draw + 1 })
+        return dailyRand(s.date ?? dailyDateKey(), draw)
+      }
+
       function end(endReason: LadderEndReason, finalPot: number) {
         const s = get()
         const record: LadderRecord = {
           endedAt: new Date().toISOString(),
+          ...(daily && s.date ? { date: s.date } : {}),
           endReason,
           finalPot,
           peakRung: s.peakRung,
@@ -154,7 +191,8 @@ export const useLadderStore = create<LadderStore>()(
         const s = get()
         // Before the first checkpoint there are no lives in play: the run starts over instantly.
         if (!livesActive(s.checkpointRung)) {
-          set({ ...freshRun(), lastResult: { kind: 'reset', game, multiplier } })
+          // The daily ladder keeps its date and draw counter, so the restart's picker is seeded too.
+          set({ ...freshRun(nextRand()), lastResult: { kind: 'reset', game, multiplier } })
           return
         }
         const lives = s.lives - 1
@@ -164,7 +202,7 @@ export const useLadderStore = create<LadderStore>()(
           rung: s.checkpointRung,
           pot: s.checkpointPot,
           cleared,
-          offers: drawOffers(s.checkpointRung, cleared, s.offers),
+          offers: drawOffers(s.checkpointRung, cleared, s.offers, nextRand()),
           currentGame: null,
           openRound: null,
           lives,
@@ -187,13 +225,14 @@ export const useLadderStore = create<LadderStore>()(
 
         const rung = s.rung + 1
         const checkpoint = isCheckpoint(rung)
-        const topped = rung === LADDER_RUNGS
+        // `>=`: a climb saved when the ladder had 18 rungs may already be past the new top.
+        const topped = rung >= LADDER_RUNGS
         const cleared = [...s.cleared, { game: round.game, multiplier }]
         set({
           rung,
           peakRung: Math.max(s.peakRung, rung),
           cleared,
-          offers: drawOffers(rung, cleared, s.offers),
+          offers: drawOffers(rung, cleared, s.offers, nextRand()),
           currentGame: null,
           openRound: null,
           checkpointRung: checkpoint ? rung : s.checkpointRung,
@@ -211,15 +250,35 @@ export const useLadderStore = create<LadderStore>()(
       return {
         ...freshRun(),
         status: 'idle',
+        date: null,
+        draws: 0,
         history: [],
 
-        startRun: () => set({ ...freshRun() }),
+        startRun: () => {
+          if (!daily) return set({ ...freshRun(), draws: 0 })
+          const today = dailyDateKey()
+          const s = get()
+          // One run a day: a run already started or finished today can't be restarted.
+          if (s.date === today && s.status !== 'idle') return
+          if (s.history.some((r) => r.date === today)) return
+          set({ ...freshRun(dailyRand(today, 0)), date: today, draws: 1 })
+        },
+
+        syncToday: () => {
+          if (!daily) return
+          const today = dailyDateKey()
+          const s = get()
+          if (s.date === today) return
+          // A run left over from an earlier day is closed: an open climb banks its pot as it stands.
+          if (s.status === 'climbing' && s.date) end('cashed', s.openRound ? s.checkpointPot : s.pot)
+          set({ ...freshRun(), status: 'idle', date: today, draws: 0, lastResult: null })
+        },
 
         ensureOffers: () => {
           const s = get()
           if (s.status !== 'climbing') return
           if (s.offers.some((o) => o.rung === s.rung && o.games.length > 0)) return
-          set({ offers: drawOffers(s.rung, s.cleared, s.offers) })
+          set({ offers: drawOffers(s.rung, s.cleared, s.offers, nextRand()) })
         },
 
         pickGame: (game) => {
@@ -268,7 +327,7 @@ export const useLadderStore = create<LadderStore>()(
 
         abandonRun: () => {
           const s = get()
-          if (s.status !== 'climbing' || s.openRound) return
+          if (daily || s.status !== 'climbing' || s.openRound) return
           set({ ...freshRun(), status: 'idle' })
         },
 
@@ -276,7 +335,7 @@ export const useLadderStore = create<LadderStore>()(
       }
     },
     {
-      name: 'floored-ladder',
+      name,
       version: 1,
       migrate: (persisted) => {
         const state = persisted as Partial<LadderStore>
@@ -291,13 +350,25 @@ export const useLadderStore = create<LadderStore>()(
       },
     },
   ),
-)
+  )
+}
+
+export const useLadderStore = createLadderStore({ name: 'floored-ladder', daily: false })
+export const useDailyLadderStore = createLadderStore({ name: 'floored-daily-ladder', daily: true })
+export type LadderStoreHook = typeof useLadderStore
 
 // Keep open tabs in sync — otherwise a stale tab could overwrite a run in progress.
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
-    if (e.key === useLadderStore.persist.getOptions().name) void useLadderStore.persist.rehydrate()
+    for (const store of [useLadderStore, useDailyLadderStore]) {
+      if (e.key === store.persist.getOptions().name) void store.persist.rehydrate()
+    }
   })
+}
+
+/** Today's daily ladder run, if one was played. */
+export function dailyLadderRecord(history: LadderRecord[], date: string): LadderRecord | undefined {
+  return history.find((r) => r.date === date)
 }
 
 /** Games that can't be picked: used on a cleared rung this run. */

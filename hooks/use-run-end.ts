@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { FLOOR_BET_LIMIT, MAX_FLOORS } from '@/lib/survival/balance'
 import { useSurvivalStore } from '@/store/survival-store'
-import { useLadderStore } from '@/store/ladder-store'
+import { useStore } from 'zustand'
+import { useActiveLadderStore, useLadderHub } from '@/lib/ladder/active'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useDailyStore } from '@/store/daily-store'
+import { useChallengeStore } from '@/store/challenge-store'
 import { dailyDateKey, generateDailyChallenge } from '@/lib/daily/challenge'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { formatChips } from '@/utils/format'
@@ -20,11 +22,13 @@ export interface RunEndStatus {
   action?: { label: string; tone: 'primary' | 'danger' }
 }
 
-const MODES: GameMode[] = ['survival', 'freeplay', 'daily', 'ladder']
+const MODES: GameMode[] = ['survival', 'freeplay', 'daily', 'ladder', 'challenge']
 
 /** Game mode from the route — for shared dock parts that don't receive it. */
 export function useRouteMode(): GameMode | null {
   const segment = usePathname()?.split('/')[1]
+  // The daily ladder plays by the ladder's rules.
+  if (segment === 'daily-ladder') return 'ladder'
   return MODES.find((m) => m === segment) ?? null
 }
 
@@ -48,9 +52,10 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
   const noBetsLeft = useSurvivalStore(
     (s) => s.floorBetsPlaced >= FLOOR_BET_LIMIT && !s.floorComplete && s.bankroll < s.quotaTarget,
   )
-  const lastResult = useLadderStore((s) => s.lastResult)
-  const rung = useLadderStore((s) => s.rung)
-  const lives = useLadderStore((s) => s.lives)
+  const ladder = useActiveLadderStore()
+  const lastResult = useStore(ladder, (s) => s.lastResult)
+  const rung = useStore(ladder, (s) => s.rung)
+  const lives = useStore(ladder, (s) => s.lives)
   const freeplayBust = useFreeplayStore((s) => s.bust)
   const game = useRouteGame()
   const dailyDate = useDailyStore((s) => s.date)
@@ -59,6 +64,12 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
   const dailyEndReason = useDailyStore((s) => s.endReason)
   const dailyRoundOpen = useDailyStore((s) => game != null && s.openRound === game)
   const dailyBetsUsed = useDailyStore((s) => (game ? s.progress[game]?.betsUsed ?? 0 : 0))
+  const challengeFinished = useChallengeStore((s) => s.attempt?.finished ?? false)
+  const challengeEndReason = useChallengeStore((s) => s.attempt?.endReason ?? null)
+  const challengeBankroll = useChallengeStore((s) => s.attempt?.bankroll ?? 0)
+  const challengeRoundOpen = useChallengeStore((s) => game != null && s.attempt?.openRound === game)
+  const challengeBetsUsed = useChallengeStore((s) => (game ? s.attempt?.progress[game]?.betsUsed ?? 0 : 0))
+  const challengeBets = useChallengeStore((s) => s.attempt?.def.games.find((g) => g.game === game)?.bets ?? 0)
   const dailyBets = useMemo(
     () => generateDailyChallenge(dailyDate ?? dailyDateKey()).games.find((g) => g.game === game)?.bets ?? 0,
     [dailyDate, game],
@@ -119,6 +130,21 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
     }
   }
 
+  if (mode === 'challenge') {
+    if (challengeFinished) {
+      const action = { label: 'See results', tone: 'primary' as const }
+      if (challengeEndReason === 'failed') {
+        return { text: 'Below the min bet · Challenge failed', tone: 'loss', action: { ...action, tone: 'danger' } }
+      }
+      if (challengeEndReason === 'gave-up') return { text: 'Gave up · Challenge over', tone: 'neutral', action }
+      return { text: `Challenge complete · ${formatChips(challengeBankroll)}`, tone: 'win', action }
+    }
+    if (game && challengeBetsUsed >= challengeBets && !challengeRoundOpen) {
+      const label = GAME_BY_NAME.get(game)?.label ?? game
+      return { text: `No ${label} bets left`, tone: 'neutral', action: { label: 'Back to challenge', tone: 'primary' } }
+    }
+  }
+
   if (mode === 'freeplay' && freeplayBust) {
     return { text: 'Out of chips', tone: 'loss', action: { label: 'Refill chips', tone: 'primary' } }
   }
@@ -132,6 +158,7 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
  */
 export function useRunEnd(mode: GameMode, { idle }: { idle: boolean }) {
   const router = useRouter()
+  const ladderHub = useLadderHub()
   const status = useRunEndStatus(mode)
   const floorMinBet = useSurvivalStore((s) => s.floorMinBet)
   const actualBankroll = useSurvivalStore((s) => s.bankroll)
@@ -160,15 +187,19 @@ export function useRunEnd(mode: GameMode, { idle }: { idle: boolean }) {
       return
     }
     if (mode === 'ladder') {
-      router.push('/ladder')
+      router.push(ladderHub)
       return
     }
     if (mode === 'daily') {
       router.push('/daily')
       return
     }
+    if (mode === 'challenge') {
+      router.push('/challenge')
+      return
+    }
     if (mode === 'freeplay') useFreeplayStore.getState().reset()
-  }, [mode, router])
+  }, [mode, router, ladderHub])
 
   return { status, showGameOver, handleGameOver }
 }

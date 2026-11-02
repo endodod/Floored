@@ -18,7 +18,7 @@ export const END_LABEL: Record<LadderEndReason, string> = {
 export function buildLadderShareText(record: LadderRecord, url: string): string {
   const squares = record.log.map((e) => EVENT_SQUARE[e]).join('') + (record.endReason === 'topped' ? '👑' : '')
   return [
-    'Floored Ladder',
+    record.date ? `Floored Daily Ladder ${record.date}` : 'Floored Ladder',
     `Rung ${record.peakRung}/${LADDER_RUNGS} · ${formatChips(record.finalPot)} (${END_LABEL[record.endReason].toLowerCase()})`,
     squares,
     url,
