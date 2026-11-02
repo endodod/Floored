@@ -27,6 +27,13 @@ import { useTableRunner } from './use-table-runner'
 import { useTablesStore } from '@/store/tables-store'
 
 const TURN_MS = 30_000
+/**
+ * On phones the three actions share the row instead of keeping their desktop minimums.
+ * Mobile-first with `sm:` because `max-sm:` is not generated here (the raw `tall` screen
+ * in tailwind.config.ts turns Tailwind's max-* variants off).
+ */
+const PHONE_FIT = '!min-w-0 flex-1 !px-2 sm:flex-none sm:!px-4'
+
 const pause = (s: HoldemState) => (s.hand === 0 ? 500 : s.lastResult?.showdown ? 3400 : 1600)
 
 const KIND_LABEL: Record<HoldemActionKind, string> = {
@@ -362,10 +369,10 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
       <div className={GAME_DOCK_ACTIONS}>
         {/* On phones the three actions size to their labels: with their desktop
             minimums they do not fit one row and wrap under the fold. */}
-        <div className="flex justify-center gap-2 max-sm:[&>button]:min-w-0">
+        <div className="flex w-full justify-center gap-2 sm:w-auto">
           <button
             type="button"
-            className={`${GAME_DOCK_SECONDARY_BTN} min-w-[4.75rem] px-4`}
+            className={`${GAME_DOCK_SECONDARY_BTN} ${PHONE_FIT} sm:!min-w-[4.75rem]`}
             disabled={!yourTurn}
             onClick={() => runner.act({ type: 'fold' })}
           >
@@ -373,7 +380,7 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
           </button>
           <button
             type="button"
-            className={`${GAME_DOCK_SECONDARY_BTN} min-w-[6.5rem] px-4`}
+            className={`${GAME_DOCK_SECONDARY_BTN} ${PHONE_FIT} sm:!min-w-[6.5rem]`}
             disabled={!yourTurn}
             onClick={() => runner.act(legal?.canCheck ? { type: 'check' } : { type: 'call' })}
           >
@@ -381,7 +388,7 @@ export function HoldemTable({ table, onPlayAgain }: { table: OpenTable; onPlayAg
           </button>
           <button
             type="button"
-            className={`${GAME_DOCK_PRIMARY_BTN} min-w-[8.5rem] px-5`}
+            className={`${GAME_DOCK_PRIMARY_BTN} ${PHONE_FIT} sm:!min-w-[8.5rem] sm:!px-5`}
             disabled={!canRaise}
             onClick={() => runner.act({ type: 'raise', to: clampTo(raiseTo) })}
           >

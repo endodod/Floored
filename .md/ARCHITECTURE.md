@@ -106,6 +106,11 @@ live bet there during a round.
 `/opacity` modifier does not work on the token colours (they are CSS variables
 holding hex) — use an arbitrary `rgba()` value instead.
 
+**Phone styles are mobile-first.** `max-sm:` (and every other `max-*` variant) is not
+generated: the raw `tall` screen in `tailwind.config.ts` turns them off. Write the phone value
+as the base class and the desktop value under `sm:`; board-size rules go in `@container board`
+queries in `globals.css`. See `.md/MOBILE_UI_HANDOFF.md`.
+
 **Layout stability.** Nothing on the board or in the dock may move or resize
 between betting, playing and settled. Keep elements mounted and hide them with
 `invisible pointer-events-none`; use fixed-height slots (`min-h-10`, `h-9`)

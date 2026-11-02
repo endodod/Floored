@@ -89,29 +89,41 @@ so it scrolled. Fix: body `h-dvh` (with `h-screen` fallback), `min-h-dvh` in
 after `scrollIntoView`. All 27 game routes pass at 360x640 and 360x740.
 (`pnpm install` was needed first: node_modules was absent.)
 
-## Known issues and things not done
+## Second pass: Hold'em, landscape, dialogs (fixed)
 
-1. **Hold'em at 360×640 still clips ~6px** at the bottom of the dock. The button
-   row now fits one line; the card itself is 6px short because the seat plates
-   and their status lines cannot shrink further. Options for the next session,
-   cheapest first: cap `--seat-card-h` on `@container board (max-height: 400px)`,
-   drop the bot status line there (`Small blind`, `Bet 20`), or take the last
-   4px from `.hd-table`'s bottom padding. Verify at 360×640 and 360×700.
-2. **Slots** is reported by the audit as “clipped” for the reel strips. That is a
-   false positive: the strip is deliberately longer than its window. If the
-   script is kept, consider skipping descendants of `.sl-strip`.
-3. **Survival** is disabled (`SURVIVAL_ENABLED = false`) and was not exercised;
-   its game routes share the same shell, so the fixed boards should carry over,
-   but the survival-only dock pieces (opening ticket, perk hints, run-end
-   actions) were not checked at phone sizes.
-4. **Firefox** was not run: the audit used Chromium. The changes are layout
-   primitives (container queries, flex/grid, padding), so a real Pixel 9 check
-   on `floored.paulkuehn.ch` is still worth doing — that is the device the
-   screenshot came from.
-5. **Not covered:** dialogs and sheets (history drawer, Cash out / Give up /
-   Abandon confirmations, mode tutorials, the cash-table chip input), the
-   Account and how-to-play pages, signed-in state, landscape phones, and Cash
-   tables (`.md/TABLES_CASH_HANDOFF.md`).
+- **`max-sm:` does nothing in this project.** `tailwind.config.ts` adds a raw `tall`
+  screen, and Tailwind 3 turns its `max-*` variants off when any screen is not a plain
+  min-width. Write phone styles mobile-first (`base` + `sm:`) instead. The earlier
+  Hold'em button fix relied on `max-sm:` and never applied.
+- **Hold'em at 360px** (`components/tables/holdem-table.tsx`): Fold / Check / Raise share
+  the row on phones (`PHONE_FIT`), desktop minimums come back at `sm:`. The table also
+  caps `--seat-card-h` and trims bottom padding on tight phone boards (`globals.css`).
+- **Landscape phones** (height ≤ 500px): `GAME_CARD_FRAME` keeps a `34rem` floor there,
+  so the page scrolls instead of crushing the board under the dock. Per-board fixes for
+  the boards that still met the badge band: Keno / Mines and Dragon Tower start below it
+  on short boards narrower than 900px, Plinko's risk toggle drops below it on boards
+  narrower than 760px, Slots' reels are capped by the width left beside the pay table.
+- **Dialogs** (`components/ui/dialog.tsx`): capped at `100dvh - 2rem` and scroll inside,
+  so How to play and the confirmations are usable on a sideways phone. The history panel
+  already scrolled.
+- **Check script:** skips Slots' `.sl-strip` (the false positive), scrolls back to the top
+  before the overlap pass (content under the sticky navbar was reported), and does not
+  count page scrolling as a failure at heights ≤ 500px.
+
+All 24 Freeplay games, the four hubs and a Hold'em table are clean at 360×640, 412×915,
+740×360 and 915×412.
+
+## Still open
+
+1. **Real-phone check** of the dvh fix and landscape scrolling (emulation cannot show
+   vh ≠ dvh). Pixel 9 on `floored.paulkuehn.ch` is the device from the original report.
+2. **Survival** is disabled (`SURVIVAL_ENABLED = false`) and was not exercised; its
+   survival-only dock pieces (opening ticket, perk hints, run-end actions) are unchecked.
+3. **Firefox** was not run.
+4. **Not covered:** the Account and how-to-play pages, signed-in state, Cash tables
+   (`.md/TABLES_CASH_HANDOFF.md`, not built yet), in-round states other than Baccarat.
+5. `env(safe-area-inset-bottom)` on `<main>` only works with `viewport-fit=cover`, which
+   is not set; adding it would also need top/side insets on the navbar.
 6. The overlap detector ignores `position: absolute` controls, so intentional
    overlap (Roulette's chip layer, table chip stacks) is not flagged — but
    neither would a real overlap of two absolutely positioned buttons be.

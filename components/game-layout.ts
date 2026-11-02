@@ -2,9 +2,13 @@
  * Shared layout shell so table games match Blackjack / Crash proportions
  * inside the page column (max width + flex arena + control dock).
  */
-/** Frame without background — use with inline gradient for legacy games. */
+/**
+ * Frame without background — use with inline gradient for legacy games.
+ * Landscape phones (and other very short windows) can't fit a board and the dock in the
+ * viewport, so the frame keeps a floor there and the page scrolls instead of crushing the board.
+ */
 export const GAME_CARD_FRAME =
-  'flex-1 min-h-0 w-full max-w-4xl 2xl:max-w-5xl mx-auto rounded-md overflow-hidden flex flex-col border border-line shadow-[0_40px_100px_-40px_rgba(0,0,0,0.95)]'
+  'flex-1 min-h-0 [@media(max-height:500px)]:min-h-[34rem] [@media(max-height:500px)]:shrink-0 w-full max-w-4xl 2xl:max-w-5xl mx-auto rounded-md overflow-hidden flex flex-col border border-line shadow-[0_40px_100px_-40px_rgba(0,0,0,0.95)]'
 
 export const GAME_CARD_SHELL = `${GAME_CARD_FRAME} bg-surface`
 

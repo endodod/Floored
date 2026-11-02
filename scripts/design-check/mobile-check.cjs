@@ -39,7 +39,7 @@ const AUDIT = () => {
   const clipped = []
   for (const el of document.querySelectorAll('main *')) {
     if (!visible(el)) continue
-    if (el.closest('[aria-hidden="true"], .tile-suit, .invisible') || (el.ownerSVGElement && el.tagName.toLowerCase() !== 'svg')) continue
+    if (el.closest('[aria-hidden="true"], .tile-suit, .invisible, .sl-strip') || (el.ownerSVGElement && el.tagName.toLowerCase() !== 'svg')) continue
     const r = el.getBoundingClientRect()
     if (r.width < 4 || r.height < 4) continue
     if (r.right > vw + 1 && !clipper(el)) poking.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ').slice(0, 3).join('.')} +${Math.round(r.right - vw)}px`)
@@ -71,6 +71,11 @@ const AUDIT = () => {
     }
     if (r.top < -2) offscreen.push(`${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') || el.textContent).trim().slice(0, 20)}" ${r.top < -2 ? 'above' : `below by ${Math.round(r.bottom - vh)}px`}`)
   }
+
+  // The reachability pass above scrolls; go back to the top so content that slid under the
+  // sticky navbar is not reported as overlapping it.
+  if (main) main.scrollTop = 0
+  window.scrollTo(0, 0)
 
   // Overlapping controls: two clickable siblings in the same row whose boxes intersect noticeably.
   const clicks = [...document.querySelectorAll('main button, main a, nav a, nav button')].filter(visible)
@@ -157,6 +162,9 @@ const AUDIT = () => {
       res.scrollers = []
       res.offscreen = []
     }
+    // Landscape phones (height <= 500px): the game frame keeps a floor and the page scrolls by
+    // design; unreachable controls are still reported through `offscreen`.
+    if (H <= 500) res.scrollers = []
     const bad =
       res.docOverflow > 0 || res.mainOverflow > 0 || res.scrollers.length > 0 ||
       res.offscreen.length > 0 || res.poking.length > 0 || res.clipped.length > 0 || res.overlaps.length > 0

@@ -601,6 +601,14 @@ body > div.neon-auth-ui {
     font-size: 12px;
   }
 }
+/* Short boards narrow enough that the centred field reaches the badge band
+   (landscape phones): the field starts below the band. */
+@container board (max-height: 460px) and (min-aspect-ratio: 5 / 4) and (max-width: 900px) {
+  .grid5-board {
+    --tile: clamp(1.6rem, calc((100cqh - 4.75rem) / 5.56), 4.75rem) !important;
+    padding-top: 3.25rem !important;
+  }
+}
 
 /* Coin Flip: the coin is sized from the board (height minus the streak, pick
    and hint rows). On a short, wide board the rows stand beside the coin. */
@@ -710,6 +718,12 @@ body > div.neon-auth-ui {
     max-width: 13rem;
     text-align: left;
     font-size: 12px;
+  }
+}
+@container board (max-height: 420px) and (min-aspect-ratio: 5 / 4) and (max-width: 900px) {
+  .dt-board {
+    --tile: clamp(1.35rem, calc((100cqh - 5rem) / 6.75), 3.6rem) !important;
+    padding-top: 3.25rem !important;
   }
 }
 
@@ -1754,7 +1768,8 @@ body > div.neon-auth-ui {
 }
 @container board (max-height: 420px) and (min-aspect-ratio: 3 / 2) {
   .sl-layout {
-    --reel-h: clamp(3.75rem, calc(100cqh - 6.5rem), 9rem);
+    /* Height-led, but capped by the width left beside the 19rem pay table. */
+    --reel-h: clamp(3.75rem, min(calc(100cqh - 6.5rem), calc((100cqw - 25rem) / 3 / 0.82)), 9rem);
     flex-direction: row;
     align-items: center;
     max-width: none;
@@ -1764,6 +1779,13 @@ body > div.neon-auth-ui {
   }
   .sl-pays {
     width: 19rem;
+  }
+}
+/* The risk toggle is centred in the badge band; on boards too narrow for the
+   badges and the toggle side by side it drops below them. */
+@container board (max-width: 760px) {
+  .pl-top {
+    padding-top: 3rem !important;
   }
 }
 @container board (max-height: 260px) {
@@ -2749,7 +2771,9 @@ body > div.neon-auth-ui {
 @container board (max-width: 34rem) and (max-height: 440px) {
   .hd-table,
   .ld-table {
+    --seat-card-h: clamp(1.6rem, 8cqh, 2.6rem);
     padding-top: 3rem;
+    padding-bottom: 0.25rem;
     gap: 0.1rem 0.4rem;
   }
 }
