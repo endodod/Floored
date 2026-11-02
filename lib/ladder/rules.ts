@@ -46,6 +46,14 @@ export function isCheckpoint(rung: number): boolean {
   return rung > 0 && rung % CHECKPOINT_EVERY === 0
 }
 
+/**
+ * Lives only count once the first checkpoint is saved: before that, a fall restarts the run
+ * from the ground with a fresh pot and offers, and costs no life.
+ */
+export function livesActive(checkpointRung: number): boolean {
+  return checkpointRung > 0
+}
+
 export function formatMaxMult(game: GameName): string {
   const max = GAME_MAX_MULT[game]
   if (max == null) return 'varies'

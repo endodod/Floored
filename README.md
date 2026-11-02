@@ -32,8 +32,10 @@ Climb 18 rungs with an all-in pot — one game per rung, never the same game twi
   bigger wins grow the pot faster
 - **Checkpoint every 3 rungs.** Lose a round and you fall back to it: its pot is restored and the
   games used since then are free again. A push replays the rung
-- **3 lives** — cash out any time between rounds, lose the last life to bank your last checkpoint,
-  or reach the top for a ×2 bonus
+- **3 lives, from the first checkpoint.** Lose a round before rung 3 and the run restarts from
+  the ground with a fresh $100 pot (no life spent). After that, each fall costs a life — cash out
+  any time between rounds, lose the last life to bank your last checkpoint, or reach the top for a
+  ×2 bonus
 - The picker shows each game's max multiplier — safe games climb, high-payout games grow the pot
 
 Rules live in `lib/ladder/rules.ts`, run state in `store/ladder-store.ts` (`localStorage`). Toggle with

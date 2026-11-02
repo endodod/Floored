@@ -11,6 +11,7 @@ import {
   START_POT,
   TOP_BONUS,
   isCheckpoint,
+  livesActive,
 } from '@/lib/ladder/rules'
 import { pickRungOffers } from '@/lib/ladder/offers'
 
@@ -27,7 +28,8 @@ export type LadderEvent = 'clear' | 'checkpoint' | 'fall'
 export type LadderEndReason = 'cashed' | 'out' | 'topped'
 
 export interface LadderLastResult {
-  kind: 'clear' | 'checkpoint' | 'fall' | 'push' | 'topped' | 'out'
+  /** `reset` = a fall before the first checkpoint: the run restarts from the ground, no life lost. */
+  kind: 'clear' | 'checkpoint' | 'fall' | 'reset' | 'push' | 'topped' | 'out'
   game: GameName
   multiplier: number
 }
@@ -150,6 +152,11 @@ export const useLadderStore = create<LadderStore>()(
 
       function fall(game: GameName, multiplier: number) {
         const s = get()
+        // Before the first checkpoint there are no lives in play: the run starts over instantly.
+        if (!livesActive(s.checkpointRung)) {
+          set({ ...freshRun(), lastResult: { kind: 'reset', game, multiplier } })
+          return
+        }
         const lives = s.lives - 1
         // Back to the checkpoint: its pot is restored and the games used since then unlock.
         const cleared = s.cleared.slice(0, s.checkpointRung)

@@ -6,7 +6,7 @@ import { GAME_REGISTRY } from '@/lib/game-registry'
 import { useLadderStore } from '@/store/ladder-store'
 import { useLadderGameBankroll } from '@/hooks/use-game-bankroll'
 import { useHydrated } from '@/hooks/use-hydrated'
-import { LADDER_LIVES, LADDER_RUNGS } from '@/lib/ladder/rules'
+import { LADDER_LIVES, LADDER_RUNGS, livesActive } from '@/lib/ladder/rules'
 import { formatChips } from '@/utils/format'
 import type { GameName } from '@/store/types'
 
@@ -25,6 +25,7 @@ function LadderGame({ game }: { game: GameName }) {
   const rung = useLadderStore((s) => s.rung)
   const pot = useLadderStore((s) => s.pot)
   const lives = useLadderStore((s) => s.lives)
+  const hasLives = useLadderStore((s) => livesActive(s.checkpointRung))
   const openRound = useLadderStore((s) => s.openRound)
   const lastResult = useLadderStore((s) => s.lastResult)
   const GameComponent = GAME_REGISTRY[game]
@@ -45,9 +46,15 @@ function LadderGame({ game }: { game: GameName }) {
           </Figure>
           <Figure label="All-in">{formatChips(shown.stake)}</Figure>
           <Figure label="To win">{formatChips(shown.stake)}</Figure>
-          <Figure label="Lives" tone={lives === 1 ? 'loss' : undefined}>
-            {lives}
-            <span className="text-dim">/{LADDER_LIVES}</span>
+          <Figure label="Lives" tone={hasLives && lives === 1 ? 'loss' : undefined}>
+            {hasLives ? (
+              <>
+                {lives}
+                <span className="text-dim">/{LADDER_LIVES}</span>
+              </>
+            ) : (
+              '—'
+            )}
           </Figure>
         </div>
       </div>

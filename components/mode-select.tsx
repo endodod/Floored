@@ -12,7 +12,7 @@ import { useTablesStore } from '@/store/tables-store'
 import { TABLE_GAMES } from '@/lib/tables/catalog'
 import { TABLES_START_WALLET } from '@/lib/tables/stakes'
 import { useLadderStore } from '@/store/ladder-store'
-import { CHECKPOINT_EVERY, LADDER_LIVES, LADDER_RUNGS, START_POT } from '@/lib/ladder/rules'
+import { CHECKPOINT_EVERY, LADDER_LIVES, LADDER_RUNGS, START_POT, livesActive } from '@/lib/ladder/rules'
 import { dailyDateKey, generateDailyChallenge, totalDailyBets } from '@/lib/daily/challenge'
 import { dailyMultiplier, formatMultiplier } from '@/lib/daily/share'
 import { useDailyStore } from '@/store/daily-store'
@@ -85,6 +85,7 @@ export function ModeSelect() {
   const ladderRung = useLadderStore((s) => s.rung)
   const ladderPot = useLadderStore((s) => s.pot)
   const ladderLives = useLadderStore((s) => s.lives)
+  const ladderHasLives = useLadderStore((s) => livesActive(s.checkpointRung))
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
   const tablesWallet = useTablesStore((s) => s.wallet)
   const tablesPlayed = useTablesStore((s) => s.history.length)
@@ -167,7 +168,7 @@ export function ModeSelect() {
             }
             trackCaption={
               ladderClimbing
-                ? `Rung ${ladderRung + 1}/${LADDER_RUNGS} · ${ladderLives} of ${LADDER_LIVES} lives`
+                ? `Rung ${ladderRung + 1}/${LADDER_RUNGS} · ${ladderHasLives ? `${ladderLives} of ${LADDER_LIVES} lives` : 'no lives until checkpoint'}`
                 : `${LADDER_RUNGS} rungs · checkpoint every ${CHECKPOINT_EVERY}`
             }
             figureLabel={ladderClimbing ? 'Pot' : 'Starting pot'}

@@ -10,6 +10,7 @@ import {
   START_POT,
   TOP_BONUS,
   isCheckpoint,
+  livesActive,
 } from '@/lib/ladder/rules'
 import { ladderStats } from '@/lib/ladder/share'
 import { formatMultiplier } from '@/lib/daily/share'
@@ -83,7 +84,7 @@ const TUTORIAL: TutorialStep[] = [
   },
   {
     title: `${LADDER_LIVES} lives`,
-    body: 'Each fall costs a life. Lose the last one and you bank your last checkpoint.',
+    body: `Lives start counting once you reach the first checkpoint (rung ${CHECKPOINT_EVERY}) — fall before it and the run restarts from the ground. After that each fall costs a life; lose the last one and you bank your last checkpoint.`,
   },
   {
     title: 'Cash out, top out or abandon',
@@ -256,8 +257,12 @@ export default function LadderPage() {
           rail={
             <Rail
               title="The ladder"
-              note={`${s.lives} of ${LADDER_LIVES} lives`}
-              footer={`Lose a round and you fall to the last checkpoint with its pot restored.`}
+              note={livesActive(s.checkpointRung) ? `${s.lives} of ${LADDER_LIVES} lives` : `Lives from rung ${CHECKPOINT_EVERY}`}
+              footer={
+                livesActive(s.checkpointRung)
+                  ? 'Lose a round and you fall to the last checkpoint with its pot restored.'
+                  : 'Lose a round before the first checkpoint and the run starts over.'
+              }
             >
               <LadderRungs rung={s.rung} cleared={s.cleared} checkpointRung={s.checkpointRung} />
             </Rail>
@@ -269,7 +274,9 @@ export default function LadderPage() {
             items={[
               { label: 'Pot', value: formatChips(s.pot) },
               { label: 'Rung', value: s.rung + 1, unit: `/ ${LADDER_RUNGS}`, sub: 'Any profit climbs' },
-              { label: 'Lives', value: s.lives, unit: `of ${LADDER_LIVES}`, tone: s.lives === 1 ? 'loss' : undefined },
+              livesActive(s.checkpointRung)
+                ? { label: 'Lives', value: s.lives, unit: `of ${LADDER_LIVES}`, tone: s.lives === 1 ? 'loss' : undefined }
+                : { label: 'Lives', value: '—', sub: `From rung ${CHECKPOINT_EVERY}` },
               {
                 label: 'Checkpoint',
                 value: formatChips(s.checkpointPot),

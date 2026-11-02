@@ -2,6 +2,7 @@ import type { LadderLastResult } from '@/store/ladder-store'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { formatMultiplier } from '@/lib/daily/share'
 import { formatChips } from '@/utils/format'
+import { CHECKPOINT_EVERY } from '@/lib/ladder/rules'
 
 /** Title + body for the result of the last settled round, read against the state it left behind. */
 export function describeLadderResult(
@@ -28,6 +29,12 @@ export function describeLadderResult(
       return {
         title: 'You fell',
         body: `${got} on ${label} — no profit. Back to ${state.rung === 0 ? 'the ground' : `checkpoint ${state.rung}`} with ${formatChips(state.pot)} — ${state.lives} ${state.lives === 1 ? 'life' : 'lives'} left. Games used since the checkpoint are free again.`,
+        tone: 'bad',
+      }
+    case 'reset':
+      return {
+        title: 'Run reset',
+        body: `${got} on ${label} — no profit before the first checkpoint, so the run starts over with ${formatChips(state.pot)}. Lives only count from checkpoint ${CHECKPOINT_EVERY}.`,
         tone: 'bad',
       }
     case 'out':
