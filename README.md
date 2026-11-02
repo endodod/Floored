@@ -24,7 +24,7 @@ The challenge is generated deterministically from the UTC date (`lib/daily/chall
 ## Ladder
 
 Climb 15 rungs with an all-in pot — one game per rung, never the same game twice. Endless runs on
-`/ladder`; the **Daily Ladder** (`/daily-ladder`, a tab on the Ladder page) is one climb a day with
+`/ladder`; the **Daily ladder** (`/daily-ladder`, a tab on the Ladder page) is one climb a day with
 the same seeded game pickers for everyone.
 
 - Start with a **$100 pot**; each rung you pick a game and stake the whole pot

@@ -214,7 +214,7 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-8 pb-12">
       <ModeTabs group="ladder" />
       <PageTitle
-        title={daily && today ? `Daily Ladder #${dailyNumber(today)}` : 'Ladder'}
+        title={daily && today ? `Daily ladder #${dailyNumber(today)}` : 'Ladder'}
         sub={
           daily
             ? `The same pickers for everyone, one climb a day: ${LADDER_RUNGS} rungs all-in, a checkpoint every ${CHECKPOINT_EVERY}.`
@@ -255,7 +255,7 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
 
       <ModeTutorial
         id={daily ? 'daily-ladder' : 'ladder'}
-        title={daily ? 'Daily Ladder' : 'Ladder'}
+        title={daily ? 'Daily ladder' : 'Ladder'}
         intro="Climb as high as you can, one all-in round per rung."
         steps={TUTORIAL}
         open={tutorial.open}

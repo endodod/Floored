@@ -174,7 +174,7 @@ export function ModeSelect() {
         {LADDER_ENABLED && (
           <ModeRow
             index={1}
-            name={today ? `Daily Ladder #${dailyNumber(today)}` : 'Daily Ladder'}
+            name={today ? `Daily ladder #${dailyNumber(today)}` : 'Daily ladder'}
             symbol="📅"
             description="Today's ladder: the same game pickers for everyone and a single climb. Bank as big a pot as you can."
             track={
@@ -196,7 +196,7 @@ export function ModeSelect() {
             figureLabel={dlRecord ? 'Today' : dlClimbing ? 'Pot' : 'Starting pot'}
             figure={formatChips(dlRecord ? dlRecord.finalPot : dlClimbing ? dlPot : START_POT)}
             action={
-              <Button asChild variant="outline" className="w-full lg:w-auto">
+              <Button asChild className="w-full lg:w-auto">
                 <Link href="/daily-ladder">{dlRecord ? 'See results' : dlClimbing ? 'Continue climb' : 'Climb today'}</Link>
               </Button>
             }
@@ -214,7 +214,7 @@ export function ModeSelect() {
           figureLabel={challengeLive ? challengeLive.def.name : 'Starting bankroll'}
           figure={formatChips(challengeLive ? challengeLive.bankroll : CHALLENGE_START_BANKROLL)}
           action={
-            <Button asChild variant="outline" className="w-full lg:w-auto">
+            <Button asChild className="w-full lg:w-auto">
               <Link href={challengeLive ? '/challenge' : '/challenges'}>{challengeLive ? 'Continue' : 'Browse'}</Link>
             </Button>
           }
@@ -244,7 +244,7 @@ export function ModeSelect() {
             figureLabel={ladderClimbing ? 'Pot' : 'Starting pot'}
             figure={formatChips(ladderClimbing ? ladderPot : START_POT)}
             action={
-              <Button asChild variant="outline" className="w-full lg:w-auto">
+              <Button asChild className="w-full lg:w-auto">
                 <Link href="/ladder">{ladderClimbing ? 'Continue climb' : 'Start climb'}</Link>
               </Button>
             }
@@ -256,13 +256,13 @@ export function ModeSelect() {
           index={4}
           name="Freeplay"
           symbol="🎮"
-          description="Every game, no floors and no quotas. Practise anything and reset your balance whenever you like."
+          description="Every game, as many rounds as you like. Practise anything and reset your balance whenever you like."
           track={<UnitTrack total={GAMES.length} done={GAMES.length} label={`${GAMES.length} games open`} />}
           trackCaption={`${GAMES.length} games open`}
           figureLabel="Balance"
           figure={hydrated ? formatChips(freeplayBankroll) : '—'}
           action={
-            <Button asChild variant="outline" className="w-full lg:w-auto">
+            <Button asChild className="w-full lg:w-auto">
               <Link href="/freeplay">Open lobby</Link>
             </Button>
           }
@@ -274,14 +274,14 @@ export function ModeSelect() {
             index={5}
             name="Tables"
             symbol="🃏"
-            description="Sit down with bots at Hold'em and Liar's Dice. Buy in, outlast the table, take the prize pool."
+            description="Hold'em, Liar's Dice and Blackjack Showdown against bots. Buy into a tournament for its prize pool, or bring chips to a cash table."
             track={<UnitTrack total={TABLE_GAMES.length} done={TABLE_GAMES.length} label={`${TABLE_GAMES.length} table games`} />}
             trackCaption={`${TABLE_GAMES.length} games · ${hydrated ? tablesPlayed : 0} tables played`}
             figureLabel="Wallet"
             figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
             action={
-              <Button asChild variant="outline" className="w-full lg:w-auto">
-                <Link href="/tables">Explore Tables</Link>
+              <Button asChild className="w-full lg:w-auto">
+                <Link href="/tables">Choose a table</Link>
               </Button>
             }
           />
@@ -298,7 +298,7 @@ export function ModeSelect() {
           figureLabel="Starting bankroll"
           figure={formatChips(CHALLENGE_START_BANKROLL)}
           action={
-            <Button asChild variant="outline" className="w-full lg:w-auto">
+            <Button asChild className="w-full lg:w-auto">
               <Link href="/community">Browse</Link>
             </Button>
           }
@@ -329,7 +329,6 @@ export function ModeSelect() {
             figureSub={survivalLive ? `quota ${formatChips(quotaTarget)}` : undefined}
             action={
               <Button
-                variant="outline"
                 className="w-full lg:w-auto"
                 onClick={handleSurvivalClick}
                 onMouseEnter={() => !isMobile && router.prefetch('/survival')}
