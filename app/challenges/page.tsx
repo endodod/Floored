@@ -14,6 +14,8 @@ import { useStartChallenge } from '@/components/challenges/use-start-challenge'
 import { cn } from '@/lib/utils'
 import { ModeRowList } from '@/components/mode-row'
 import { DailyChallengeRow } from '@/components/daily/daily-rows'
+import { HowItWorks } from '@/components/mode-intro'
+import { CHALLENGE_STEPS } from '@/lib/challenges/tutorial'
 
 const ALL = 'All'
 
@@ -45,6 +47,8 @@ export default function ChallengesPage() {
         }
       />
 
+      <HowItWorks steps={CHALLENGE_STEPS} />
+
       <FigureStrip
         items={[
           { label: 'Challenges', value: PRESET_CHALLENGES.length },
@@ -67,7 +71,7 @@ export default function ChallengesPage() {
       )}
 
       <section className="flex flex-col gap-4" aria-labelledby="daily-challenge">
-        <SectionTitle suit={0} note="New every day at 00:00 UTC">
+        <SectionTitle suit={2} note="New every day at 00:00 UTC">
           <span id="daily-challenge">Today</span>
         </SectionTitle>
         <ModeRowList>

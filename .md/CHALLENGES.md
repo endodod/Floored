@@ -71,6 +71,9 @@ Challenges (house), Community (player-made), Tables and Freeplay.
 - Routes `/daily-ladder` and `/daily-ladder/[game]` reuse `components/ladder/ladder-hub.tsx`
   and `ladder-game-page.tsx`. Hooks pick the store by route with `useActiveLadderStore()` /
   `useLadderHub()` (`lib/ladder/active.ts`); the game mode is still `'ladder'`.
+- The Challenges page opens with How it works (`lib/challenges/tutorial.ts`: start bankroll, place
+  every bet, min-bet fail, retries and best, one at a time, daily and community); keep it in step
+  with the challenge store and the result screen.
 - No tabs: the Challenges page shows today's Daily challenge row ("Today") above the house
   challenges, and the Ladder page shows the Daily ladder row above the endless ladder. Both rows
   are the home page's (`components/daily/daily-rows.tsx`, built on `components/mode-row.tsx`)
