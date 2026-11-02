@@ -300,6 +300,15 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
         </section>
       )}
 
+      {/* Under the daily: says the climb below is the open-ended one. */}
+      {!daily && (
+        <div className="-mb-4">
+          <SectionTitle suit={1} note="Unlimited runs">
+            Endless ladder
+          </SectionTitle>
+        </div>
+      )}
+
       {climbing ? (
         <ModeColumns
           rail={
