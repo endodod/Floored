@@ -1,7 +1,7 @@
 # Story mode ("The Circuit"): design report
 
-Status: **planned, not built.** Owner answers are recorded in section 12; only the
-portrait style (and with it the tone) is still open. Cash tables, the one dependency, are done.
+Status: **planned, not built.** Owner answers are recorded in section 12; four small
+questions are still open there. Cash tables, the one dependency, are done.
 Branch: `claude/friendly-goodall-yvxakz`.
 
 What the owner asked for: a story mode that is the heart of the site. You travel from
@@ -350,8 +350,16 @@ Answered (2026-11-02):
 9. **Boss losses:** rematches don't get easier. Same buy-in, same rival, after the 2-night
    wait.
 
-Still open:
+6. **Portrait style and tone:** a mix of C (back-room noir) and D (chip medallion): D's
+   round faces and chip frame, C's single lamp, rim light and halftone shadows. The tone
+   follows: warm noir, likeable characters with real stakes and dry humour. Two colour
+   versions are drawn at https://claude.ai/artifact/E936D6NasWdu8dVrVryPvZ (1: full
+   colour, 2: monochrome with gold and chip colour); the owner picks one.
 
-6. **Tone:** gritty noir, light and comedic, or in between. Tied to the portrait style:
-   four options (A felt cutout, B court card, C back-room noir, D chip medallion) are drawn
-   at https://claude.ai/artifact/E936D6NasWdu8dVrVryPvZ for the owner to pick from.
+Still open (asked 2026-11-02):
+
+10. Mix 1 or mix 2.
+11. The player: unnamed "you" with no portrait (recommended), or a named character with a
+    portrait?
+12. Where story sits: first on the home page and in the navbar (recommended)?
+13. The draft names (Jo, Sloane, Vale, the Notary; the twelve cities): keep for now?
