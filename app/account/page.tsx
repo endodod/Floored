@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { authClient } from '@/lib/auth/client'
 import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
 import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
-import { ladderStats } from '@/lib/ladder/share'
+import { dailyLadderStreak, ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useTablesStore } from '@/store/tables-store'
 import { useSettingsStore, type MotionPreference } from '@/store/settings-store'
@@ -121,10 +121,10 @@ export default function AccountPage() {
   const tablesRefills = useTablesStore((s) => s.refills)
   const hydrated = useHydrated()
   const dailyHistory = useDailyStore((s) => s.history)
-  const dailiesPlayed = Object.keys(dailyHistory).length
   const bestDaily = bestMultiplier(dailyHistory)
   const ladder = ladderStats(useLadderStore((s) => s.history))
-  const dailyLadder = ladderStats(useDailyLadderStore((s) => s.history))
+  const dailyLadderHistory = useDailyLadderStore((s) => s.history)
+  const dailyLadder = ladderStats(dailyLadderHistory)
   const challengeStats = useChallengeStore((s) => s.stats)
   const {
     motion, setMotion,
@@ -219,19 +219,16 @@ export default function AccountPage() {
       >
         <div className="space-y-5">
           <RecordGroup title="Daily challenge">
-            <Stat label="Challenges played" value={hydrated ? String(dailiesPlayed) : '—'} />
             <Stat label="Streak" value={hydrated ? `${currentStreak(dailyHistory, dailyDateKey())} days` : '—'} />
             <Stat label="Best result" value={hydrated && bestDaily > 0 ? formatMultiplier(bestDaily) : '—'} />
           </RecordGroup>
 
           {LADDER_ENABLED && (
             <RecordGroup title="Daily ladder">
-              <Stat label="Climbs" value={hydrated ? String(dailyLadder.runs) : '—'} />
-              <Stat label="Best pot" value={hydrated && dailyLadder.runs > 0 ? formatChips(dailyLadder.bestPot) : '—'} />
+              <Stat label="Streak" value={hydrated ? `${dailyLadderStreak(dailyLadderHistory, dailyDateKey())} days` : '—'} />
+              <Stat label="Best result" value={hydrated && dailyLadder.runs > 0 ? formatChips(dailyLadder.bestPot) : '—'} />
             </RecordGroup>
           )}
-
-          {hydrated && <ChallengeRecords title="Challenges" source="preset" stats={challengeStats} />}
 
           {LADDER_ENABLED && (
             <RecordGroup title="Ladder">
@@ -241,16 +238,14 @@ export default function AccountPage() {
           )}
 
           <RecordGroup title="Freeplay">
-            <Stat label="Peak balance" value={formatChips(freeplayPeakBankroll)} />
-            <Stat label="Resets" value={String(freeplayResetCount)} />
+            <Stat label="Peak balance" value={hydrated ? formatChips(freeplayPeakBankroll) : '—'} />
+            <Stat label="Resets" value={hydrated ? String(freeplayResetCount) : '—'} />
           </RecordGroup>
 
           <RecordGroup title="Tables">
-            <Stat label="Peak wallet" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
-            <Stat label="Wallet refills" value={hydrated ? String(tablesRefills) : '—'} />
+            <Stat label="Peak balance" value={hydrated ? formatChips(tablesPeakWallet) : '—'} />
+            <Stat label="Resets" value={hydrated ? String(tablesRefills) : '—'} />
           </RecordGroup>
-
-          {hydrated && <ChallengeRecords title="Community challenges" source="community" stats={challengeStats} />}
 
           {SURVIVAL_ENABLED && (
             <RecordGroup title="Survival">
@@ -259,6 +254,8 @@ export default function AccountPage() {
             </RecordGroup>
           )}
 
+          {hydrated && <ChallengeRecords title="Challenges" source="preset" stats={challengeStats} />}
+          {hydrated && <ChallengeRecords title="Community challenges" source="community" stats={challengeStats} />}
         </div>
       </Section>
 

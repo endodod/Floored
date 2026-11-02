@@ -64,7 +64,7 @@ Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones), Liar'
 - Own **Tables wallet** ($10,000, refillable below the smallest buy-in)
 - **One lobby** at `/tables` (no intro page; How it works sits under the tables) with Tournaments and Cash tables side by side; tap a tournament table to pick its buy-in (100 / 1,000 / 10,000) in a dialog, a cash table to pick its limits and how many chips to bring. Each bot's skill is drawn at random per table
 - Every buy-in goes into the prize pool (no rake); Hold'em pays the top two, while Blackjack Showdown and Liar's Dice are winner-takes-all
-- Account Records track the Tables peak wallet, refills, and each game's results
+- Account Records show the Tables peak balance and resets (wallet refills)
 - Leaving a table before your place is decided forfeits the buy-in
 - Bots decide only from what their seat can see; `pnpm sim:bots` and `pnpm check:tables` test them
 

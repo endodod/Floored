@@ -33,3 +33,16 @@ export function ladderStats(history: LadderRecord[]) {
     tops: history.filter((r) => r.endReason === 'topped').length,
   }
 }
+
+/** Consecutive days with a Daily ladder climb, ending today or yesterday (UTC), like the Daily challenge streak. */
+export function dailyLadderStreak(history: LadderRecord[], today: string): number {
+  const climbed = new Set(history.map((r) => r.date).filter(Boolean))
+  const day = new Date(`${today}T00:00:00Z`)
+  if (!climbed.has(today)) day.setUTCDate(day.getUTCDate() - 1)
+  let streak = 0
+  while (climbed.has(day.toISOString().slice(0, 10))) {
+    streak++
+    day.setUTCDate(day.getUTCDate() - 1)
+  }
+  return streak
+}
