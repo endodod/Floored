@@ -115,7 +115,9 @@ Each game should feel alive and smooth to play, not just look right when
 still. Every redesigned game (including the three done ones and Roulette) gets
 a pass of fluent animations, and **every one of them sits under the motion
 rule so it can be turned off** (Account → Settings → Motion; `<html
-data-motion="reduced">`, see `components/motion-preference.tsx`).
+data-motion="reduced">`, see `components/motion-preference.tsx`). The setting
+defaults to full motion; reduced applies only when the player picks it, or picks
+"Match system" on a device that asks for reduced motion.
 
 What to animate (pick what fits the board; do not overdo it):
 

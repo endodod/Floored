@@ -14,7 +14,7 @@ function resolve(pref: MotionPreference): 'reduced' | 'full' {
  * Runs before first paint: reads the saved setting straight from localStorage
  * so a player who chose reduced motion never sees an entrance animation play.
  */
-export const MOTION_BOOT_SCRIPT = `(function(){try{var p='system';var raw=localStorage.getItem('floored-settings');if(raw){var s=JSON.parse(raw);if(s&&s.state&&s.state.motion)p=s.state.motion}var r=p==='system'?(window.matchMedia('${QUERY}').matches?'reduced':'full'):p;document.documentElement.setAttribute('data-motion',r)}catch(e){}})()`
+export const MOTION_BOOT_SCRIPT = `(function(){try{var p='full';var raw=localStorage.getItem('floored-settings');if(raw){var s=JSON.parse(raw);if(s&&s.state&&s.state.motion&&!(s.state.motion==='system'&&(s.version||0)<5))p=s.state.motion}var r=p==='system'?(window.matchMedia('${QUERY}').matches?'reduced':'full'):p;document.documentElement.setAttribute('data-motion',r)}catch(e){}})()`
 
 /** Keeps <html data-motion> in step with the setting and, on "system", with the OS preference. */
 export function MotionPreferenceSync() {

@@ -24,7 +24,7 @@ interface SettingsStore {
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
-      motion: 'system',
+      motion: 'full',
       setMotion: (v) => set({ motion: v }),
       autoReBet: true,
       setAutoReBet: (v) => set({ autoReBet: v }),
@@ -39,13 +39,15 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'floored-settings',
-      version: 4,
-      migrate: (persisted: unknown) => {
+      version: 5,
+      migrate: (persisted: unknown, version: number) => {
         const state = { ...((persisted ?? {}) as Record<string, unknown>) }
         for (const key of ['soundEnabled', 'uiSoundsEnabled', 'soundVolume', 'gameSoundsEnabled', 'musicEnabled', 'musicVolume']) {
           delete state[key]
         }
-        return state as SettingsStore
+        // v5: full motion became the default; move players still on the old 'system' default over.
+        if (version < 5 && state.motion === 'system') state.motion = 'full'
+        return state as unknown as SettingsStore
       },
     }
   )

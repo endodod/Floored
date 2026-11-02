@@ -272,7 +272,7 @@ export default function AccountPage() {
             </span>
             <div className="flex gap-4" role="radiogroup" aria-label="Motion">
               {MOTION_OPTIONS.map((o) => {
-                const on = (hydrated ? motion : 'system') === o.value
+                const on = (hydrated ? motion : 'full') === o.value
                 return (
                   <button
                     key={o.value}
