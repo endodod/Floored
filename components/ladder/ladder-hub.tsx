@@ -223,12 +223,12 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
         aside={
           <>
             {daily && (
-              <p className="text-[13px] text-dim">
+              <p className="text-[13px] text-dim simple:hidden">
                 New ladder in <DailyCountdown className="num text-ink" />
               </p>
             )}
             {stats.runs > 0 && (
-              <p className="text-[13px] text-dim">
+              <p className="text-[13px] text-dim simple:hidden">
                 Best <span className="num text-ink">{formatChips(stats.bestPot)}</span> · highest rung{' '}
                 <span className="num text-ink">{stats.bestRung}</span> · topped{' '}
                 <span className="num text-ink">{stats.tops}</span>×
@@ -335,6 +335,7 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
                 ? { label: 'Lives', value: s.lives, unit: `of ${LADDER_LIVES}`, tone: s.lives === 1 ? 'loss' : undefined }
                 : { label: 'Lives', value: '—', sub: `From rung ${CHECKPOINT_EVERY}` },
               {
+                detail: true,
                 label: 'Checkpoint',
                 value: formatChips(s.checkpointPot),
                 sub: s.checkpointRung === 0 ? 'Ground floor' : `Rung ${s.checkpointRung}`,
@@ -346,7 +347,7 @@ export function LadderHub({ daily = false }: { daily?: boolean }) {
             <SectionTitle suit={3} note={`${offered.length} on offer · ${available.length} games left`}>
               <span id="ladder-games">Pick the game for rung {s.rung + 1}</span>
             </SectionTitle>
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 simple:grid-cols-2 xl:simple:grid-cols-3">
               {offered.map((entry, i) => {
                 const game = entry.name
                 const isLoading = pending === game

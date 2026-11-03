@@ -12,3 +12,8 @@ export const TABLES_ENABLED = true
 
 /** Story: "The Circuit", the campaign mode. Only Dustwater exists so far; switch off to hide it before merging to main. */
 export const STORY_ENABLED = true
+/**
+ * Simple view (big buttons, fewer words). Off for now: its switches are hidden and a saved
+ * "on" is ignored, so nobody is left in it without a way out. Turn on to bring it back.
+ */
+export const SIMPLE_VIEW_ENABLED = false

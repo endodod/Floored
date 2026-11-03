@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSurvivalStore } from '@/store/survival-store'
@@ -24,6 +25,67 @@ import { Button } from '@/components/ui/button'
 import { SectionTitle, UnitTrack } from '@/components/ui/terminal'
 import { ModeRow, ModeRowList } from '@/components/mode-row'
 import { DailyChallengeRow, DailyLadderRow } from '@/components/daily/daily-rows'
+
+interface SimpleModeCardProps {
+  name: string
+  symbol: string
+  /** What you do here, in a few words. */
+  line: string
+  figureLabel: string
+  figure: ReactNode
+  cta: string
+  href?: string
+  onClick?: () => void
+  disabled?: boolean
+  primary?: boolean
+  index: number
+}
+
+/** Simple view: one mode as a big app card — the symbol, the name, one figure, one button. The whole card is the tap target. */
+function SimpleModeCard({ name, symbol, line, figureLabel, figure, cta, href, onClick, disabled, primary, index }: SimpleModeCardProps) {
+  const body = (
+    <>
+      <span className="flex items-center gap-4">
+        <span aria-hidden className="text-[40px] leading-none">{symbol}</span>
+        <span className="min-w-0">
+          <span className="block text-[24px] font-semibold leading-tight text-ink">{name}</span>
+          <span className="mt-1 block text-[16px] leading-snug text-soft">{line}</span>
+        </span>
+      </span>
+      <span className="flex items-baseline justify-between gap-3 border-t border-rule pt-3">
+        <span className="text-[15px] text-dim">{figureLabel}</span>
+        <span className="num text-[22px] text-ink">{figure}</span>
+      </span>
+      <span
+        className={`flex h-14 items-center justify-center rounded-full text-[18px] font-semibold ${
+          disabled
+            ? 'border border-line bg-raised text-dim'
+            : primary
+              ? 'btn-glow border border-[rgba(217,164,65,0.45)] bg-[linear-gradient(180deg,#286746,#1b4d34)] text-[#fffaf0]'
+              : 'border border-control text-ink group-hover:border-felt group-hover:bg-felt-tint'
+        }`}
+      >
+        {cta}
+      </span>
+    </>
+  )
+  const cls =
+    'rise group flex h-full flex-col gap-4 rounded-xl bg-surface p-5 text-left shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] transition-colors hover:bg-[#17161c] active:scale-[0.99]'
+  const style = { '--d': `${80 + index * 60}ms` } as CSSProperties
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className={cls} style={style}>
+          {body}
+        </Link>
+      ) : (
+        <button type="button" onClick={onClick} disabled={disabled} className={`${cls} w-full disabled:opacity-60`} style={style}>
+          {body}
+        </button>
+      )}
+    </li>
+  )
+}
 
 export function ModeSelect() {
   const router = useRouter()
@@ -90,9 +152,80 @@ export function ModeSelect() {
           </ModeRowList>
         </section>
       )}
+      {/* Simple view: every mode as a big card, one tap each. The grouped lists below stay for the full view. */}
+      <ul className="hidden grid-cols-1 gap-4 simple:grid sm:grid-cols-2">
+        <SimpleModeCard
+          index={0}
+          name="Challenges"
+          symbol="🎯"
+          line="Today’s daily and set challenges."
+          figureLabel="Bankroll"
+          figure={formatChips(challengeLive ? challengeLive.bankroll : CHALLENGE_START_BANKROLL)}
+          cta={challengeLive ? 'Continue' : 'Pick a challenge'}
+          href={challengeLive ? '/challenge' : '/challenges'}
+          primary
+        />
+        {LADDER_ENABLED && (
+          <SimpleModeCard
+            index={1}
+            name="Ladder"
+            symbol="🪜"
+            line="Win to climb. Lose and you drop."
+            figureLabel="Pot"
+            figure={formatChips(ladderClimbing ? ladderPot : START_POT)}
+            cta={ladderClimbing ? 'Continue climb' : 'Climb'}
+            href="/ladder"
+          />
+        )}
+        <SimpleModeCard
+          index={2}
+          name="Freeplay"
+          symbol="🎮"
+          line="Any game. No rules."
+          figureLabel="Balance"
+          figure={hydrated ? formatChips(freeplayBankroll) : '—'}
+          cta="Pick a game"
+          href="/freeplay"
+        />
+        {TABLES_ENABLED && (
+          <SimpleModeCard
+            index={3}
+            name="Tables"
+            symbol="🃏"
+            line="Play cards against bots."
+            figureLabel="Wallet"
+            figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
+            cta="Choose a table"
+            href="/tables"
+          />
+        )}
+        <SimpleModeCard
+          index={4}
+          name="Community"
+          symbol="🤝"
+          line="Challenges made by players."
+          figureLabel="Played"
+          figure={communityPlayed}
+          cta="Browse"
+          href="/community"
+        />
+        {SURVIVAL_ENABLED && (
+          <SimpleModeCard
+            index={5}
+            name="Survival"
+            symbol="🛡️"
+            line="Hit each floor’s target."
+            figureLabel="Bankroll"
+            figure={formatChips(survivalLive ? survivalBankroll : STARTING_BANKROLL)}
+            cta={isMobile ? 'Desktop only' : survivalLive ? 'Continue run' : 'Start run'}
+            onClick={handleSurvivalClick}
+            disabled={isMobile}
+          />
+        )}
+      </ul>
 
       {/* ── Compete: the real game modes ── */}
-      <section id="compete" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="compete-title">
+      <section id="compete" className="flex scroll-mt-24 flex-col gap-4 simple:hidden" aria-labelledby="compete-title">
         <SectionTitle suit={0} note="Scored runs, kept in your records">
           <span id="compete-title">Compete</span>
         </SectionTitle>
@@ -204,7 +337,7 @@ export function ModeSelect() {
       </section>
 
       {/* ── Practise and play: Freeplay to train, Tables for fun ── */}
-      <section id="play" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="play-title">
+      <section id="play" className="flex scroll-mt-24 flex-col gap-4 simple:hidden" aria-labelledby="play-title">
         <SectionTitle suit={1} note={TABLES_ENABLED ? 'Train for every mode, or play just for fun' : 'Train for every mode'}>
           <span id="play-title">{TABLES_ENABLED ? 'Practise and play' : 'Practise'}</span>
         </SectionTitle>

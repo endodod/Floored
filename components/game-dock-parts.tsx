@@ -41,18 +41,18 @@ export const GAME_DOCK_ACTIONS = 'shrink-0 w-full flex flex-col items-center gap
 
 /** A chip: a 44–48px disc, the value on its face in mono. */
 const CHIP_BTN =
-  'chip num flex h-11 w-11 shrink-0 items-center justify-center text-[12px] font-semibold sm:h-12 sm:w-12 sm:text-[13px]'
+  'chip num flex h-11 w-11 shrink-0 items-center justify-center text-[12px] font-semibold sm:h-12 sm:w-12 sm:text-[13px] simple:h-[54px] simple:w-[54px] simple:text-[15px] sm:simple:h-14 sm:simple:w-14'
 
 /** Bet-size shortcuts beside the chips: outlined pills at chip height. */
 const FRAC_BTN =
-  'm-still h-11 shrink-0 whitespace-nowrap rounded-full border border-control px-3 text-[13px] font-semibold text-ink transition-[border-color,background-color,transform,box-shadow] duration-150 hover:border-felt hover:bg-felt-tint hover:shadow-[0_0_18px_-6px_rgba(79,174,132,0.7)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-25 sm:h-12 sm:px-3.5'
+  'm-still h-11 shrink-0 whitespace-nowrap rounded-full border border-control px-3 text-[13px] font-semibold text-ink transition-[border-color,background-color,transform,box-shadow] duration-150 hover:border-felt hover:bg-felt-tint hover:shadow-[0_0_18px_-6px_rgba(79,174,132,0.7)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-25 sm:h-12 sm:px-3.5 simple:h-[54px] simple:px-4 simple:text-[16px] sm:simple:h-14'
 
 const BET_SECTION_TITLE = 'text-xs leading-tight text-dim'
 
 const OUTCOME_COL_LABEL = 'text-xs leading-tight text-dim'
 
 export const GAME_DOCK_GAME_OVER_BTN =
-  'm-still min-w-[10.5rem] h-10 px-7 rounded-full border border-loss bg-loss-tint text-loss font-semibold text-[14px] transition-[background-color,box-shadow,transform] hover:shadow-[0_0_24px_-6px_rgba(229,86,111,0.7)] active:scale-[0.97]'
+  'simple:h-14 simple:min-w-[13rem] simple:text-[18px] m-still min-w-[10.5rem] h-10 px-7 rounded-full border border-loss bg-loss-tint text-loss font-semibold text-[14px] transition-[background-color,box-shadow,transform] hover:shadow-[0_0_24px_-6px_rgba(229,86,111,0.7)] active:scale-[0.97]'
 
 const RUN_STATUS_TONE: Record<RunEndStatus['tone'], string> = {
   win: 'text-felt glow-felt',
@@ -61,17 +61,17 @@ const RUN_STATUS_TONE: Record<RunEndStatus['tone'], string> = {
 }
 
 export const GAME_DOCK_LEAVE_BTN =
-  'm-still h-10 px-5 rounded-full border border-control text-soft hover:border-dim hover:text-ink font-medium text-[14px] transition-colors active:scale-[0.97]'
+  'simple:h-14 simple:px-6 simple:text-[17px] m-still h-10 px-5 rounded-full border border-control text-soft hover:border-dim hover:text-ink font-medium text-[14px] transition-colors active:scale-[0.97]'
 
 export const GAME_DOCK_PRIMARY_BTN =
-  'btn-glow m-still min-w-[10.5rem] h-10 px-7 rounded-full border border-[rgba(217,164,65,0.45)] bg-[linear-gradient(180deg,#286746,#1b4d34)] text-[#fffaf0] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_2px_0_rgba(0,0,0,0.35)] hover:border-gold hover:bg-[linear-gradient(180deg,#327953,#235d3f)] disabled:border-line disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,border-color,box-shadow,transform] active:scale-[0.97]'
+  'simple:h-14 simple:min-w-[13rem] simple:text-[18px] btn-glow m-still min-w-[10.5rem] h-10 px-7 rounded-full border border-[rgba(217,164,65,0.45)] bg-[linear-gradient(180deg,#286746,#1b4d34)] text-[#fffaf0] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_2px_0_rgba(0,0,0,0.35)] hover:border-gold hover:bg-[linear-gradient(180deg,#327953,#235d3f)] disabled:border-line disabled:bg-raised disabled:text-dim disabled:shadow-none font-semibold text-[14px] transition-[background-color,border-color,box-shadow,transform] active:scale-[0.97]'
 
 /** Secondary in-round action (Stand, Cash out alternatives): a raised pill. */
 export const GAME_DOCK_SECONDARY_BTN =
-  'm-still min-w-[5.25rem] h-10 px-6 rounded-full bg-raised text-ink hover:bg-control font-semibold text-[14px] transition-[background-color,transform] active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed'
+  'simple:h-14 simple:min-w-[7rem] simple:text-[18px] m-still min-w-[5.25rem] h-10 px-6 rounded-full bg-raised text-ink hover:bg-control font-semibold text-[14px] transition-[background-color,transform] active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed'
 
 const BOARD_CORNER_BTN =
-  'h-8 rounded-full border border-control bg-ground px-3.5 text-[13px] font-medium text-soft transition-colors hover:border-dim hover:text-ink'
+  'simple:h-11 simple:px-4 simple:text-[15px] simple:text-ink h-8 rounded-full border border-control bg-ground px-3.5 text-[13px] font-medium text-soft transition-colors hover:border-dim hover:text-ink'
 
 /** Top-left of the board between rounds: back to the mode's hub, and this game's How to play page. */
 export function GameDockBackButton({
@@ -196,18 +196,18 @@ export function GameOutcomeColumns({
   const result = formatOutcomeDisplayText(resultSummary)
 
   if (size === 'dock') {
-    const dockLabelCls = 'text-[11px] sm:text-xs text-dim leading-tight mb-0.5 sm:mb-1 shrink-0'
+    const dockLabelCls = 'text-[11px] sm:text-xs text-dim leading-tight mb-0.5 sm:mb-1 shrink-0 simple:text-[13px] sm:simple:text-[14px]'
     const dockBoxCls =
       'flex min-h-[3.25rem] sm:min-h-[4.25rem] flex-col justify-center bg-surface px-1.5 py-1.5 sm:px-3 sm:py-2 text-center'
     return (
       <div className="rise grid w-full grid-cols-3 gap-px overflow-hidden rounded-md bg-line">
         <div className={dockBoxCls}>
           <p className={dockLabelCls}>Your bet</p>
-          <p className="text-xs sm:text-[15px] font-semibold text-ink leading-tight line-clamp-2">{bet}</p>
+          <p className="text-xs sm:text-[15px] font-semibold text-ink leading-tight line-clamp-2 simple:text-[14px] sm:simple:text-[17px]">{bet}</p>
         </div>
         <div className={dockBoxCls}>
           <p className={dockLabelCls}>Result</p>
-          <p className="text-xs sm:text-[15px] font-semibold text-ink leading-tight truncate" title={result}>
+          <p className="text-xs sm:text-[15px] font-semibold text-ink leading-tight truncate simple:text-[14px] sm:simple:text-[17px]" title={result}>
             {result}
           </p>
           {runStatus && (
@@ -220,7 +220,7 @@ export function GameOutcomeColumns({
         </div>
         <div className={dockBoxCls}>
           <p className={dockLabelCls}>Profit</p>
-          <p className={`num text-base sm:text-[22px] leading-tight ${profitColor}`}>
+          <p className={`num text-base sm:text-[22px] leading-tight simple:text-[20px] sm:simple:text-[26px] ${profitColor}`}>
             {profitLabel}
           </p>
         </div>
@@ -293,7 +293,7 @@ export function GameLastBetPanel({
   onToggleHistory: () => void
 }) {
   return (
-    <div className="pointer-events-auto absolute right-3 top-3 z-30 max-w-[min(17rem,56vw)]">
+    <div className="pointer-events-auto absolute right-3 top-3 z-30 max-w-[min(17rem,56vw)] simple:hidden">
       <button
         type="button"
         onClick={onToggleHistory}
@@ -360,15 +360,23 @@ export function GameDockBetRow({
   const ladder = useIsLadderRoute()
   return (
     <div className="flex items-center gap-2.5 flex-wrap justify-center">
-      <span className="text-[14px] text-dim">{ladder ? 'All-in' : label}</span>
-      <span className="num text-xl text-ink">
-        {currentBet > 0 ? formatChips(currentBet) : '—'}
+      <span className="text-[14px] text-dim simple:text-[17px] simple:text-soft">{ladder ? 'All-in' : label}</span>
+      <span className="num text-xl text-ink simple:text-[28px]">
+        {currentBet > 0 ? (
+          formatChips(currentBet)
+        ) : (
+          <>
+            <span className="simple:hidden">—</span>
+            {/* Simple view says what to do next instead of an empty dash. */}
+            <span className="hidden font-sans text-[17px] text-gold simple:inline">tap a chip</span>
+          </>
+        )}
       </span>
       {currentBet > 0 && !ladder && (
         <button
           type="button"
           onClick={onClear}
-          className="h-6 rounded-full border border-control px-2.5 text-xs text-dim transition-colors hover:border-loss hover:text-loss"
+          className="h-6 rounded-full border border-control px-2.5 text-xs text-dim transition-colors hover:border-loss hover:text-loss simple:h-10 simple:px-4 simple:text-[15px]"
         >
           Clear
         </button>
@@ -489,7 +497,7 @@ export function GameDockChipRow({
                 type="button"
                 onClick={() => onAddChip(Math.max(Math.floor(bankroll / 4), minBet ?? 1))}
                 disabled={currentBet >= bankroll || bankroll <= 0}
-                className={FRAC_BTN}
+                className={`${FRAC_BTN} simple:hidden`}
               >
                 ¼
               </button>
@@ -497,7 +505,7 @@ export function GameDockChipRow({
                 type="button"
                 onClick={() => onAddChip(Math.max(Math.floor(bankroll / 2), minBet ?? 1))}
                 disabled={currentBet >= bankroll || bankroll <= 0}
-                className={FRAC_BTN}
+                className={`${FRAC_BTN} simple:hidden`}
               >
                 ½
               </button>
@@ -617,7 +625,9 @@ export function GameDockChipPicker({
               className={`${FRAC_BTN} ${
                 f.value === 'all'
                   ? 'border-gold text-gold hover:border-gold hover:bg-gold-tint hover:shadow-[0_0_18px_-6px_rgba(217,164,65,0.8)]'
-                  : ''
+                  : on
+                    ? ''
+                    : 'simple:hidden'
               } ${on ? 'ring-2 ring-gold ring-offset-2 ring-offset-ground' : ''}`}
             >
               {f.label}
@@ -633,5 +643,5 @@ export function GameDockChipPicker({
 export const GAME_DOCK_RACK_BTN = FRAC_BTN
 
 export function GameBoardHint({ children }: { children: ReactNode }) {
-  return <p className="max-w-md px-2 text-center text-[13px] text-dim">{children}</p>
+  return <p className="max-w-md px-2 text-center text-[13px] text-dim simple:text-[16px] simple:text-soft">{children}</p>
 }

@@ -43,20 +43,25 @@ export default function HomePage() {
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-10 pb-12">
       <div className="flex flex-col gap-3">
         <PageTitle
-          title="Welcome to Floored"
+          title={
+            <>
+              <span className="simple:hidden">Welcome to Floored</span>
+              <span className="hidden simple:inline">What do you want to play?</span>
+            </>
+          }
           sub={`A casino with ${GAMES.length} games and nothing at stake: everything here is play money, nothing costs or pays out real money.`}
           aside={
-            <p className="text-[13px] text-dim">
+            <p className="text-[13px] text-dim simple:hidden">
               Next daily in <DailyCountdown className="num text-ink" />
             </p>
           }
         />
-        <div className="rise [--d:60ms]">
+        <div className="rise [--d:60ms] simple:hidden">
           <HouseQuote />
         </div>
       </div>
 
-      <ol className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4" aria-label="How Floored works">
+      <ol className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 simple:hidden" aria-label="How Floored works">
         {GUIDE.map((g, i) => (
           <li key={g.title} className="rise" style={{ '--d': `${80 + i * 60}ms` } as CSSProperties}>
             <a

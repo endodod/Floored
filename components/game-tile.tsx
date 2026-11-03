@@ -26,6 +26,7 @@ export function GameTile({
   index = 0,
   className,
   roomy = false,
+  simpleRow = false,
 }: {
   label: string
   /** A game-specific symbol shown by the title and used as the tile watermark. */
@@ -49,6 +50,8 @@ export function GameTile({
   className?: string
   /** Larger lobby card with room for longer descriptions and details. */
   roomy?: boolean
+  /** Simple view: one compact row (symbol and name, button on the right) instead of a tall card. */
+  simpleRow?: boolean
 }) {
   const suitIndex = index % 4
   const red = suitIndex === 1 || suitIndex === 2
@@ -71,7 +74,14 @@ export function GameTile({
         disabled={disabled}
         aria-busy={loading || undefined}
         className={cn(
-          cn('tile group flex h-full w-full flex-col rounded-md bg-surface text-left', roomy ? 'min-h-[190px] p-5 sm:min-h-[220px] sm:p-6' : 'min-h-[96px] p-4 sm:min-h-[132px] sm:p-5'),
+          cn(
+            'tile group flex h-full w-full flex-col rounded-md bg-surface text-left',
+            roomy ? 'min-h-[190px] p-5 sm:min-h-[220px] sm:p-6' : 'min-h-[96px] p-4 sm:min-h-[132px] sm:p-5',
+            // Simple view: a centred app card — big symbol, the name, one big Play button.
+            simpleRow
+              ? 'simple:min-h-[76px] simple:flex-row simple:items-center simple:gap-3 simple:px-4 simple:py-3'
+              : 'simple:min-h-[168px] simple:items-center simple:p-4 simple:text-center sm:simple:min-h-[188px]',
+          ),
           disabled ? 'cursor-default' : 'hover:bg-[#17161c]',
           faded && 'opacity-45',
         )}
@@ -79,16 +89,37 @@ export function GameTile({
         <span aria-hidden className={cn('tile-suit', !symbol && red ? 'text-loss' : 'text-ink')}>
           {tileSymbol}
         </span>
-        <span className={cn('flex items-baseline gap-2 text-[17px] font-semibold leading-snug text-ink', corner && 'pr-24')}>
-          <span aria-hidden className="shrink-0 text-[15px] text-gold">{tileSymbol}</span>
+        <span
+          className={cn(
+            'flex items-baseline gap-2 text-[17px] font-semibold leading-snug text-ink',
+            simpleRow
+              ? 'simple:min-w-0 simple:flex-1 simple:items-center simple:gap-3 simple:text-[19px]'
+              : 'simple:flex-col simple:items-center simple:gap-2 simple:text-[19px] sm:simple:text-[21px]',
+            corner && 'pr-24 simple:pr-0',
+          )}
+        >
+          <span aria-hidden className={cn('shrink-0 text-[15px] text-gold simple:leading-none', simpleRow ? 'simple:text-[26px]' : 'simple:text-[34px]')}>{tileSymbol}</span>
           {label}
         </span>
-        {sub && <span className="mt-1 block text-[13px] leading-5 text-dim">{sub}</span>}
-        {children && <span className="mt-3 block">{children}</span>}
-        <span className={cn('mt-auto flex gap-3 pt-3 sm:pt-4', roomy ? 'flex-col items-start' : 'items-baseline justify-between')}>
-          <span className={cn('text-xs text-soft', roomy ? 'whitespace-normal leading-5' : 'truncate')}>{meta}</span>
+        {sub && <span className="mt-1 block text-[13px] leading-5 text-dim simple:hidden">{sub}</span>}
+        {children && <span className="mt-3 block simple:mt-1 simple:text-[15px]">{children}</span>}
+        <span
+          className={cn(
+            'mt-auto flex gap-3 pt-3 sm:pt-4',
+            roomy ? 'flex-col items-start' : 'items-baseline justify-between',
+            simpleRow ? 'simple:mt-0 simple:w-auto simple:shrink-0 simple:pt-0' : 'simple:w-full simple:flex-col simple:items-stretch simple:pt-3',
+          )}
+        >
+          <span className={cn('text-xs text-soft simple:hidden', roomy ? 'whitespace-normal leading-5' : 'truncate')}>{meta}</span>
           <span
-            className={cn('mark-line flex shrink-0 items-center gap-1 font-medium text-ink', roomy ? 'text-[14px]' : 'text-[13px]')}
+            className={cn(
+              'mark-line flex shrink-0 items-center gap-1 font-medium text-ink',
+              roomy ? 'text-[14px]' : 'text-[13px]',
+              // Simple view: the action is a real button, felt green while it can be pressed.
+              simpleRow && 'simple:px-6',
+              'simple:h-12 simple:justify-center simple:rounded-full simple:border simple:border-control simple:text-[17px] simple:font-semibold',
+              !disabled && 'simple:border-[rgba(217,164,65,0.45)] simple:bg-[linear-gradient(180deg,#286746,#1b4d34)] simple:text-[#fffaf0]',
+            )}
             data-active={loading || undefined}
           >
             {loading ? 'Dealing…' : action}

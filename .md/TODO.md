@@ -18,4 +18,5 @@
     - [x] Tables: Cash tables category (sit down with your own bankroll, play until you leave or run out) — built; see `.md/TABLES_CASH_HANDOFF.md`
     - [x] Multiplayer casino games against bots — Tables mode: Hold'em, Liar's Dice, and Blackjack Showdown playable; account records grouped by mode/game (see `.md/BOT_TABLES_HANDOFF.md`)
 - [x] New house games: Sic Bo, Tower of Cards, Deck Countdown, Baccarat — browser verification remains in `.md/NEW_GAMES_HANDOFF.md`
+- [x] Simple view toggle (hidden for now behind `SIMPLE_VIEW_ENABLED` in `lib/features.ts`): big type and buttons, fewer words, phone tab bar (see "Simple view" in `.md/ARCHITECTURE.md`) — awaiting owner feedback; the per-game board hints and in-board labels are still the full-view size
 - [ ] Sound design

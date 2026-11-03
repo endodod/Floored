@@ -149,6 +149,7 @@ export default function TablesPage() {
         </div>
       )}
 
+      {/* Simple view: the navbar already shows the wallet. */}
       {lastCash && lastCashGame && (
         <div
           className={cn(
@@ -176,6 +177,7 @@ export default function TablesPage() {
       )}
 
       <FigureStrip
+        className="simple:hidden"
         items={[
           { label: 'Wallet', value: formatChips(s.wallet), sub: s.refills ? `${s.refills} refill${s.refills > 1 ? 's' : ''}` : 'Tables play money' },
           { label: 'Tournaments', value: totals.played, sub: `${totals.won} won · ${totals.cashes} in the money` },
@@ -197,18 +199,19 @@ export default function TablesPage() {
         <SectionTitle suit={1} note={`Buy-in ${formatChips(MIN_BUY_IN)}–${formatChips(MAX_BUY_IN)} · paid into a prize pool`}>
           <span id="tables-games">Tournaments</span>
         </SectionTitle>
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3 simple:gap-2 sm:simple:gap-3">
           {TABLE_GAMES.map((g, i) => {
             const seats = isMobile ? g.phoneSeats : g.seats
             return (
               <li key={g.name}>
                 <GameTile
                   index={i}
+                  simpleRow
                   label={g.label}
                   symbol={g.symbol}
                   sub={`${seats} seats · ${g.format}`}
                   meta={<span className="num text-xs text-gold">Buy-in from {formatChips(MIN_BUY_IN)}</span>}
-                  action={broke ? 'Not enough' : 'Choose stakes'}
+                  action={broke ? 'Not enough' : <><span className="simple:hidden">Choose stakes</span><span className="hidden simple:inline">Play</span></>}
                   disabled={broke || !!pending}
                   faded={broke || (!!pending && pending !== g.name)}
                   loading={pending === g.name}
@@ -224,7 +227,7 @@ export default function TablesPage() {
         <SectionTitle suit={3} note="Bring any amount · leave with your stack">
           <span id="tables-cash">Cash tables</span>
         </SectionTitle>
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3 simple:gap-2 sm:simple:gap-3">
           {TABLE_GAMES.map((g, i) => {
             const seats = isMobile ? g.phoneSeats : g.seats
             const affordable = s.wallet > 0
@@ -232,11 +235,12 @@ export default function TablesPage() {
               <li key={g.name}>
                 <GameTile
                   index={i + TABLE_GAMES.length}
+                  simpleRow
                   label={g.cash.label}
                   symbol={g.symbol}
                   sub={`${seats} seats · ${g.cash.format}`}
                   meta={<span className="text-xs text-soft">{g.cash.sub}</span>}
-                  action={affordable ? 'Sit down' : 'Not enough'}
+                  action={affordable ? <><span className="simple:hidden">Sit down</span><span className="hidden simple:inline">Play</span></> : 'Not enough'}
                   disabled={!affordable || !!pending}
                   faded={!affordable || (!!pending && pending !== g.name)}
                   loading={pending === g.name}
@@ -335,16 +339,16 @@ function StakePicker({ label, value, onChange, options }: { label: string; value
             disabled={o.disabled}
             onClick={() => onChange(o.id)}
             className={cn(
-              'm-still flex flex-col rounded-md border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+              'm-still flex flex-col rounded-md border px-3 py-2 text-left simple:py-3.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40',
               on ? 'border-felt bg-felt-tint shadow-[0_0_20px_-8px_rgba(79,174,132,0.7)]' : 'border-line bg-surface hover:border-control',
             )}
           >
             <span className="flex items-baseline justify-between gap-3">
               <span className="flex items-center gap-2">
-                <span aria-hidden className="text-sm leading-none">{o.symbol}</span>
-                <span className={cn('text-[13px] font-semibold', on ? 'text-ink' : 'text-soft')}>{o.label}</span>
+                <span aria-hidden className="text-sm leading-none simple:text-xl">{o.symbol}</span>
+                <span className={cn('text-[13px] font-semibold simple:text-[17px]', on ? 'text-ink' : 'text-soft')}>{o.label}</span>
               </span>
-              <span className="num text-[15px] text-ink">{o.value}</span>
+              <span className="num text-[15px] text-ink simple:text-[19px]">{o.value}</span>
             </span>
             {o.note && <span className="num mt-0.5 text-xs text-gold">{o.note}</span>}
           </button>
