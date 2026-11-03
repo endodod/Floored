@@ -86,6 +86,8 @@ export type SceneTrigger =
   | { on: 'boss-loss' }
   /** After a bust in this city. */
   | { on: 'bust' }
+  /** The how-the-nights-work walkthrough: queued after the arrival scene on a new story; replayable from the hub menu. */
+  | { on: 'tutorial' }
 
 export interface Scene {
   id: string

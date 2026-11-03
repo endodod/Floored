@@ -12,11 +12,12 @@
  */
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, ERRANDS, SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, MARKER_M, MARKER_REPAY } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, MARKER_M, MARKER_REPAY, NIGHT_BETS, VENUE_MAX_M } from '@/lib/story/economy'
+import { gamesFor } from '@/lib/story/rotation'
 import type { Condition, Effect } from '@/lib/story/types'
 import { GAMES } from '@/lib/game-catalog'
 import type { TableGameName } from '@/lib/tables/types'
-import { useStoryStore } from '@/store/story-store'
+import { useStoryStore, VENUE_REP } from '@/store/story-store'
 
 /** Ids that saves may already hold. Grow this list as content ships; never remove from it. */
 const SHIPPED = {
@@ -147,9 +148,44 @@ for (const t of ['holdem', 'liars-dice', 'blackjack-showdown'] as TableGameName[
   }
 }
 
+// Room rotation: three games a room, a shared game with the night before, stable per night.
+for (const c of CITIES) {
+  if (c.games === 'all-seen') continue
+  for (const v of [0, 1, 2]) {
+    let prev = gamesFor(c, 0, v)
+    for (let n = 0; n < 60; n++) {
+      const now = gamesFor(c, n, v)
+      const want = Math.min(GAMES_PER_ROOM, c.games.length)
+      if (now.length !== want || new Set(now).size !== want || now.some((g) => !(c.games as string[]).includes(g))) fail(`${c.id} room ${v} night ${n}: bad lineup ${now.join(',')}`)
+      if (n > 0 && !now.some((g) => prev.includes(g))) fail(`${c.id} room ${v} night ${n}: shares no game with the night before`)
+      if (gamesFor(c, n, v).join() !== now.join()) fail(`${c.id} room ${v} night ${n}: lineup not stable`)
+      prev = now
+    }
+  }
+  if (c.games.length > GAMES_PER_ROOM && new Set([0, 1, 2].map((v) => gamesFor(c, 0, v).join())).size < 2) fail(`${c.id}: all three rooms open with the same games`)
+}
+
 // Numbers quoted in dialogue must match the economy.
 const allText = SCENES.flatMap((s) => Object.values(s.nodes).flatMap((n) => (n.kind === 'line' ? [n.text] : [])))
-const WORDS: Record<string, number> = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60 }
+const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, twelve: 12, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, hundred: 100 }
+const word = (w: string | undefined) => WORDS[(w ?? '').toLowerCase()]
+// Jo's walkthrough (and any line in the same shape) must quote the economy as it is.
+const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number | undefined, number | null][] }[] = [
+  { re: /^The dive takes anyone\..*up to (?:a )?(\w+) times/i, what: 'the dive limit', want: (m) => [[word(m[1]), VENUE_MAX_M[0]]] },
+  { re: /^The main floor wants reputation (\w+)\..*up to (?:a )?(\w+) times/i, what: 'the main floor', want: (m) => [[word(m[1]), VENUE_REP[1]], [word(m[2]), VENUE_MAX_M[1]]] },
+  { re: /^The high-roller room wants reputation (\w+)/i, what: 'the high-roller room', want: (m) => [[word(m[1]), VENUE_REP[2]]] },
+  { re: /(\w+) bets a night/i, what: 'bets a night', want: (m) => [[word(m[1]), NIGHT_BETS]] },
+  { re: /its own (\w+) games/i, what: 'games per room', want: (m) => [[word(m[1]), GAMES_PER_ROOM]] },
+  { re: /(\w+) side goals/i, what: 'hustles a night', want: (m) => [[word(m[1]), HUSTLES_PER_NIGHT]] },
+  { re: /back after (\w+) nights/i, what: 'the rematch wait', want: (m) => [[word(m[1]), BOSS_REMATCH_NIGHTS]] },
+]
+for (const t of allText) {
+  for (const q of QUOTES) {
+    const m = t.match(q.re)
+    if (m) for (const [got, want] of q.want(m)) if (got !== want) fail(`a line quotes ${q.what} as "${m[0]}", the economy says ${want}`)
+  }
+}
+if (!QUOTES.every((q) => allText.some((t) => q.re.test(t)))) fail('Jo\'s walkthrough no longer contains every number the checker verifies')
 for (const t of allText) {
   const buyIn = t.match(/(\w+) times the house minimum to sit/i)
   if (buyIn && WORDS[buyIn[1]!.toLowerCase()] !== BOSS_BUYIN_M) fail(`a boss line quotes the buy-in as "${buyIn[1]}", the economy says ${BOSS_BUYIN_M}`)
@@ -169,15 +205,27 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   const m = st().minBet()
   if (st().money !== 200 || m !== 5) fail('a new story starts in Dustwater with $200')
   // The arrival scene: lines, a choice, the end's effects.
+  if (st().queue.join() !== 'dustwater-arrival,dustwater-how-nights-work') fail('a new story queues the arrival scene, then Jo\'s walkthrough')
   if (!st().playQueued() || st().scene?.id !== 'dustwater-arrival') fail('a new story queues the arrival scene')
   let guard = 0
   while (st().scene && guard++ < 50) {
     const step = st().currentStep()!
-    if (step.kind === 'choice') st().pick(step.options[2]!.index)
+    if (step.kind === 'choice') st().pick(step.options[Math.min(2, step.options.length - 1)]!.index)
     else st().advance()
   }
   if (!st().flags['arrived-dustwater'] || st().factions.underground !== 1) fail('arrival scene effects (flag, faction) not applied')
   if (st().startScene('dustwater-arrival')) fail('a once-only scene played twice')
+  // Jo's walkthrough, both branches, to the end; it can be replayed.
+  for (const branch of [0, 1]) {
+    if (!st().playQueued() && !st().startScene('dustwater-how-nights-work')) fail('Jo\'s walkthrough can\'t start')
+    guard = 0
+    while (st().scene && guard++ < 50) {
+      const step = st().currentStep()!
+      if (step.kind === 'choice') st().pick(step.options[branch]!.index)
+      else st().advance()
+    }
+    if (guard >= 50) fail(`Jo's walkthrough branch ${branch} doesn't end`)
+  }
   // Minigames pay once per giver per night; a good shift finishes Marta's errand (once she's met).
   useStoryStore.setState({ flags: { ...st().flags, 'met-marta': true, 'met-pike': true } })
   const m0 = st().money
@@ -199,9 +247,24 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (st().errands['dustwater-marta-bet'] !== 'done') fail('a 3× win finishes the trucker\'s-bet errand')
   if (st().betsLeft() !== 8) fail('four rounds leave 8 of 12 bets')
   const night = st().endNight()
-  if (!night.played || night.comps !== Math.round(0.04 * 4 * m) || night.lodging !== 3 * m || st().tonight) fail('the night ends with comps (4% of bets) and lodging')
+  if (!night.played || night.comps !== Math.round(COMPS_RATE[0] * 4 * m) || night.lodging !== 3 * m || st().tonight) fail('the night ends with comps (the dive share of bets) and lodging')
   if (st().errands['dustwater-jo-stake'] !== 'done') fail('a night up finishes Jo\'s seed-money errand')
   if (night.hustles.length !== 2) fail('two hustles on the board each night')
+  // Comps by room: a better room gives a bigger share, each with its own cap.
+  const repBefore = st().rep
+  for (const v of [1, 2] as const) {
+    useStoryStore.setState({ money: 500 * m, rep: 3 })
+    st().startNight(v)
+    st().placeBet('hilo', 100 * m)
+    st().resolve('hilo', 0, true)
+    const n = st().endNight()
+    if (n.comps !== Math.round(Math.min(COMPS_RATE[v] * 100 * m, COMPS_CAP_M[v] * m))) fail(`room ${v} comps are ${COMPS_RATE[v] * 100}% of bets`)
+  }
+  useStoryStore.setState({ money: 5000 * m, rep: 3 })
+  st().startNight(2)
+  for (let k = 0; k < 4; k++) { st().placeBet('hilo', 400 * m); st().resolve('hilo', 0, true) }
+  if (st().endNight().comps !== COMPS_CAP_M[2] * m) fail(`room 2 comps stop at ${COMPS_CAP_M[2]}m`)
+  useStoryStore.setState({ rep: repBefore })
   // Lodging, and the free car below 10m.
   const before = st().money
   st().endNight()

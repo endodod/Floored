@@ -238,6 +238,7 @@ export const useStoryStore = create<StoryStore>()(
         newStory: () => {
           set({ ...fresh(), started: true, startedAt: new Date().toISOString(), visited: [STARTING_CITY] })
           queue(get().sceneFor({ on: 'arrival' }))
+          queue(get().sceneFor({ on: 'tutorial' }))
         },
         minBet: m,
         context: () => {
@@ -289,6 +290,8 @@ export const useStoryStore = create<StoryStore>()(
             apply(node.effects ?? [])
             const s = get()
             set({ scene: null, seen: s.seen.includes(cur.id) ? s.seen : [...s.seen, cur.id] })
+            // The next queued scene follows (arrival, then Jo's walkthrough).
+            get().playQueued()
           }
         },
         pick: (index) => {
@@ -394,7 +397,7 @@ export const useStoryStore = create<StoryStore>()(
           const hustles: NightSummary['hustles'] = []
           if (t && t.rounds.length) {
             const turnover = t.rounds.reduce((sum, r) => sum + r.bet, 0)
-            comps = Math.round(Math.min(COMPS_RATE * turnover, COMPS_CAP_M * m()))
+            comps = Math.round(Math.min(COMPS_RATE[t.venue] * turnover, COMPS_CAP_M[t.venue] * m()))
             get().receive(comps)
             for (const h of hustlesFor(s.city, s.night)) {
               const paid = h.met(t.rounds) ? HUSTLE_PAY_M * m() : 0

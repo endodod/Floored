@@ -8,6 +8,19 @@ character without a minigame (no boss field on a city yet). The design is in [ST
 cities, economy, owner decisions in section 12). This file says what exists, what is
 next, and every decision made along the way that the plan doesn't spell out.
 
+**2026-11-03 additions:** (1) rooms rotate games: `lib/story/rotation.ts` `gamesFor(city, night, venue, seen)`
+gives each room `GAMES_PER_ROOM` (3) games a night, seeded by city+night+room (uses the store's
+global `night`, like hustles), sharing at least one game with the same room the night before; the hub's
+door cards and Tonight card use it and `app/story/[game]/page.tsx` redirects to /story for a game not
+in tonight's lineup. (Summit's `all-seen` list grows as games are played, so its lineup can shift
+mid-night; revisit when the Summit is built.) (2) Comps by room: `COMPS_RATE` `[0.04, 0.05, 0.06]`,
+`COMPS_CAP_M` `[10, 15, 20]`; the sim plays one room per player type. (3) Tutorial: scene
+`dustwater-how-nights-work` (trigger `tutorial`, queued after arrival on a new story, replayable) and the
+"How the nights work" card (`components/story/nights-guide.tsx`, hub menu, all numbers from the
+constants). The checker verifies the numbers Jo quotes. (4) The arrival scene now tells the premise (Gilded Floor,
+Vale, the twelve champions). Only Dustwater is playable (title screen and map say so). Guide for
+building cities 2-12: [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md).
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 
@@ -59,7 +72,7 @@ Port that generator to TypeScript; don't redraw from scratch.
   `resolve(game, payout, settle)` credits payout (`settle: false` = partial, Plinko balls).
   Half of each win's **profit** repays a marker. `wagerCap()` = money capped by the venue
   (and 0 once 12 bets are used), `betsLeft()`.
-- `endNight()` (after playing or resting): comps (4% of bets, cap 10m), hustles (2 a night,
+- `endNight()` (after playing or resting): comps (by room: 4% / 5% / 6% of bets, cap 10m / 15m / 20m), hustles (2 a night,
   `hustlesFor(city, night)`, 4m each), night-up errands, lodging (3m) or the car (<10m),
   bust check (money < min bet → rep −1, `stats.busts`, queues the city's `bust` scene).
   Returns a `NightSummary`, also kept in `lastNight` for the hub.

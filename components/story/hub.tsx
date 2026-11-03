@@ -13,14 +13,17 @@ import { CityScene, PersonSpot, PlaceSpot, type SceneSpot } from '@/components/s
 import { DialogueBox } from '@/components/story/dialogue-box'
 import { HudButton, RepStars, StoryHud } from '@/components/story/hud'
 import { NightCard } from '@/components/story/night-card'
+import { NightsGuide } from '@/components/story/nights-guide'
 import { NewsSlips, Notebook } from '@/components/story/notebook'
 import { Portrait } from '@/components/story/portrait'
 import type { SceneArtState } from '@/components/story/scene-art'
 import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, HUSTLE_PAY_M, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M } from '@/lib/story/economy'
+import { SCENES } from '@/lib/story/content'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
+import { gamesFor } from '@/lib/story/rotation'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { sceneConfigFor } from '@/lib/story/scene-theme'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -47,6 +50,7 @@ type Sheet =
   | { kind: 'rest' }
   | { kind: 'road' }
   | { kind: 'notary' }
+  | { kind: 'guide' }
 
 function Face({ id }: { id: string }) {
   return isLook(id) ? <Portrait look={id} className="block w-full [&_svg]:h-auto [&_svg]:w-full" /> : null
@@ -87,7 +91,7 @@ export function StoryHub() {
   const cleared = s.cleared.includes(s.city)
   const fare = s.fareToNext()
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
-  const games = city.games === 'all-seen' ? s.seenGames : city.games
+  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames)
   const broke = s.money < m && !night
   const betsLeft = night ? Math.max(0, NIGHT_BETS - night.bets) : 0
   const inCar = s.money < CAR_BELOW_M * m
@@ -265,7 +269,7 @@ export function StoryHub() {
         body = (
           <>
             <ul className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2.5 overflow-y-auto sm:gap-3">
-              {games.map((g, i) => {
+              {gamesIn(v).map((g, i) => {
                 const entry = GAME_BY_NAME.get(g)
                 return (
                   <li key={g} className="flex">
@@ -302,13 +306,13 @@ export function StoryHub() {
         body = (
           <>
             <SheetNote tone="soft">
-              {NIGHT_BETS} bets across tonight&apos;s games. {stakeNote(v)}.
+              {NIGHT_BETS} bets across tonight&apos;s games. {stakeNote(v)}. Comps {Math.round(COMPS_RATE[v] * 1000) / 10}% back, up to {money(COMPS_CAP_M[v] * m)}.
             </SheetNote>
             <SheetNote tone="gold">
               Once you sit down, this is your room for the night. No switching until you call it a night.
             </SheetNote>
             <ul className="flex flex-wrap gap-1.5" aria-label="Tonight's games">
-              {games.map((g) => (
+              {gamesIn(v).map((g) => (
                 <li key={g} className="flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-[12px] text-soft shadow-[inset_0_0_0_1px_rgba(217,164,65,0.25)]">
                   <span aria-hidden className="text-[14px] leading-none">{GAME_BY_NAME.get(g)?.symbol}</span>
                   {GAME_BY_NAME.get(g)?.label ?? g}
@@ -392,6 +396,24 @@ export function StoryHub() {
           </>
         ),
         close,
+      }
+    }
+    if (w.kind === 'guide') {
+      const tutorial = SCENES.find((sc) => sc.trigger.on === 'tutorial' && sc.city === s.city)
+      return {
+        title: 'How the nights work',
+        kicker: city.name,
+        art: undefined,
+        body: (
+          <NightsGuide
+            city={city}
+            night={s.night}
+            seen={s.seenGames}
+            onReplay={tutorial ? () => { setSheet(null); s.startScene(tutorial.id) } : null}
+          />
+        ),
+        close,
+        size: 'lg' as const,
       }
     }
     if (w.kind === 'notary') {
@@ -581,7 +603,7 @@ export function StoryHub() {
       {menuOpen && (
         <>
           <button type="button" tabIndex={-1} aria-hidden className="absolute inset-0 z-[55] cursor-default" onClick={() => setMenuOpen(false)} />
-          <div className="st-sheet absolute right-2 top-[54px] z-[60] flex w-48 flex-col gap-1 rounded-md p-1.5" role="menu" aria-label="Story menu" onKeyDown={(e) => { if (e.key === 'Escape') setMenuOpen(false) }}>
+          <div className="st-sheet absolute right-2 top-[54px] z-[60] flex w-52 flex-col gap-1 rounded-md p-1.5" role="menu" aria-label="Story menu" onKeyDown={(e) => { if (e.key === 'Escape') setMenuOpen(false) }}>
             <Button
               role="menuitem"
               autoFocus
@@ -592,6 +614,16 @@ export function StoryHub() {
               onClick={() => { setMenuOpen(false); setConfirmNew(true) }}
             >
               New story
+            </Button>
+            <Button
+              role="menuitem"
+              variant="ghost"
+              size="sm"
+              className="justify-start rounded-md"
+              disabled={sceneOn}
+              onClick={() => { setMenuOpen(false); setSheet({ which: { kind: 'guide' }, anchor: { x: 0.9, y: 0.1 } }) }}
+            >
+              How the nights work
             </Button>
           </div>
         </>

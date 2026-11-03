@@ -5,7 +5,7 @@ export const CHARACTERS: Character[] = [
   // Recurring
   { id: 'jo', name: 'Jo', note: "Dealt at your grandfather's club for twenty years. Travels with you, says what you're thinking.", city: null, chip: '#2f7a5a' },
   { id: 'sloane', name: 'Sloane', note: "Vale's protégée. Fast, proud, keeps turning up one city ahead.", city: null, chip: '#b83a50' },
-  { id: 'vale', name: 'Vale', note: 'Won the club in one hand. Owns more of the circuit than anyone admits.', city: null, chip: '#1b1a1f' },
+  { id: 'vale', name: 'Vale', note: "Head of the Syndicate. Won your grandfather's Gilded Floor in one hand, and half the circuit's houses pay Vale rent. Only plays champions: beat all twelve and Vale owes you a seat at the Summit.", city: null, chip: '#1b1a1f' },
   { id: 'notary', name: 'The Notary', note: 'Lends to anyone, forgets nothing. Polite to the point of menace.', city: null, chip: '#6b5a8a' },
 
   // Dustwater

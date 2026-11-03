@@ -27,9 +27,12 @@ export const ERRAND_PAY_M = 6
 export const HUSTLES_PER_NIGHT = 2
 export const HUSTLE_PAY_M = 4
 
-/** Comps: a share of what you bet in a night comes back, capped per night. */
-export const COMPS_RATE = 0.04
-export const COMPS_CAP_M = 10
+/** Comps by room (dive, main floor, high-roller): a share of everything you bet in a night comes back, win or lose, capped per night. */
+export const COMPS_RATE: readonly [number, number, number] = [0.04, 0.05, 0.06]
+export const COMPS_CAP_M: readonly [number, number, number] = [10, 15, 20]
+
+/** Each room draws this many of the city's games each night (see lib/story/rotation.ts). */
+export const GAMES_PER_ROOM = 3
 
 /** Venue table limits: dive, main floor, high-roller room (null = no maximum). */
 export const VENUE_MAX_M: readonly [number, number, number | null] = [20, 100, null]

@@ -70,6 +70,15 @@ Sit down with bots at Texas Hold'em (Sit & Go, six seats, four on phones), Liar'
 
 Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HANDOFF.md` and `.md/TABLES_CASH_HANDOFF.md`.
 
+## Story
+
+**The Circuit**: a story mode with nights, characters and a boss per city. Only the first town, Dustwater, is playable so far.
+
+- A night is one room (dive, main floor, high-roller room, unlocked by reputation) and 12 bets; each room draws its own 3 of the city's games every night and swaps a couple the next night
+- Comps give back a share of what you bet, bigger in better rooms (4% / 5% / 6%, capped); hustles, errands and minigames pay on the side
+- Jo's walkthrough plays after the opening scene, and "How the nights work" is in the story menu
+- Details in `.md/STORY_MODE_HANDOFF.md`; setting up a city in `.md/STORY_CITY_GUIDE.md`
+
 ## Freeplay
 
 Choose any game, start with a healthy balance, and play without pressure or minimum bets.

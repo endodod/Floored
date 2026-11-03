@@ -24,6 +24,9 @@ export function TitleScreen({ onStart }: { onStart: () => void }) {
           <p className="mt-2 max-w-[30rem] text-[13px] leading-relaxed text-soft">
             Play nights at the tables, take work where you find it, and win each city&apos;s boss to move on. Play money only.
           </p>
+          <p className="mt-2 max-w-[30rem] text-[12.5px] leading-relaxed text-gold">
+            Chapter one: Dustwater is open. The other eleven towns are still being built.
+          </p>
           <Button size="lg" className="mt-6 h-12 px-8 text-[15px]" onClick={onStart}>
             Start the story
           </Button>

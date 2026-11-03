@@ -12,6 +12,7 @@
  *   pnpm sim:story 500 --seed 7    fewer circuits, another seed
  */
 import { CITIES, type City } from '@/lib/story/cities'
+import { gamesFor } from '@/lib/story/rotation'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRANDS_PER_CITY,
   HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M,
@@ -63,6 +64,8 @@ interface PlayerType {
   reserve: number
   /** Table maximum used, in m (null = high-roller room). */
   cap: number | null
+  /** The room played in: 0 dive, 1 main floor, 2 high-roller. */
+  venue: 0 | 1 | 2
 }
 
 const all = (city: GameName[]) => city.flatMap((g) => storyOdds(g, poker))
@@ -80,11 +83,11 @@ const riskiest: Pick = (city) => maxBy(all(city).filter((b) => rtpOf(b) >= 0.9),
 const coinFlipLike: Pick = (city) => maxBy(all(city).filter((b) => 1 - lossChanceOf(b) >= 0.4).concat(minBy(all(city), lossChanceOf)), rtpOf)
 
 const TYPES: PlayerType[] = [
-  { name: 'Never gambles', gamble: false, share: 0, pick: safest, reserve: 0, cap: 0 },
-  { name: 'Cautious (5%)', gamble: true, share: 0.05, pick: safest, reserve: 20, cap: VENUE_MAX_M[1] },
-  { name: 'Balanced (15%)', gamble: true, share: 0.15, pick: anyBet, reserve: 10, cap: VENUE_MAX_M[1] },
-  { name: 'High variance', gamble: true, share: 0.15, pick: riskiest, reserve: 10, cap: VENUE_MAX_M[1] },
-  { name: 'Bold (all in)', gamble: true, share: 1, pick: coinFlipLike, bold: true, reserve: 0, cap: null },
+  { name: 'Never gambles', gamble: false, share: 0, pick: safest, reserve: 0, cap: 0, venue: 0 },
+  { name: 'Cautious (5%)', gamble: true, share: 0.05, pick: safest, reserve: 20, cap: VENUE_MAX_M[1], venue: 1 },
+  { name: 'Balanced (15%)', gamble: true, share: 0.15, pick: anyBet, reserve: 10, cap: VENUE_MAX_M[1], venue: 1 },
+  { name: 'High variance', gamble: true, share: 0.15, pick: riskiest, reserve: 10, cap: VENUE_MAX_M[1], venue: 1 },
+  { name: 'Bold (all in)', gamble: true, share: 1, pick: coinFlipLike, bold: true, reserve: 0, cap: null, venue: 2 },
 ]
 
 function draw(b: BetProfile, rng: () => number): number {
@@ -104,14 +107,15 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
   const recoveries: number[] = []
   let busts = 0
   let bosses = 0
+  let totalNights = 0
   const seen = new Set<GameName>()
   for (let c = 0; c < CITIES.length; c++) {
     const city: City = CITIES[c]!
     const next = CITIES[c + 1]
     const ratio = next ? next.minBet / city.minBet : 1
     const fare = next ? TRAVEL_FARE_M * ratio : 0
-    const list: GameName[] = city.games === 'all-seen' ? [...seen] : city.games
-    list.forEach((g) => seen.add(g))
+    const all: GameName[] = city.games === 'all-seen' ? [...seen] : city.games
+    all.forEach((g) => seen.add(g))
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
     let errands = ERRANDS_PER_CITY
@@ -129,6 +133,8 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       }
       // A night: minigames, an errand, then play (or rest), comps, lodging.
       const before = money
+      // Tonight's three games in the room this player uses (night counter runs across the whole circuit).
+      const list = gamesFor(city, totalNights, t.venue, [...seen])
       for (let g = 0; g < city.minigameGivers; g++) money += MINIGAME_MAX_M * (0.45 + rng() * 0.5)
       if (errands > 0) { money += ERRAND_PAY_M; errands-- }
       if (t.gamble && money >= 1) {
@@ -148,10 +154,11 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
             money += stake * (draw(t.pick(list, rng), rng) - 1)
           }
         }
-        money += Math.min(COMPS_RATE * turnover, COMPS_CAP_M)
+        money += Math.min(COMPS_RATE[t.venue] * turnover, COMPS_CAP_M[t.venue])
       }
       if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
       n++
+      totalNights++
       wait = Math.max(0, wait - 1)
       if (before >= 1 && money < 1) { busts++; brokeSince = n }
       if (brokeSince != null && money >= 10) { recoveries.push(n - brokeSince); brokeSince = null }

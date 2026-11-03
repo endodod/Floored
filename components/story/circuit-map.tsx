@@ -145,7 +145,7 @@ export function CircuitMap({ current, cleared, visited, onClose }: { current: st
                   {c.name}
                 </text>
                 <text x={lx} y={ly + (tall ? 16 : 17)} textAnchor={tall ? 'start' : 'middle'} fontSize={tall ? 11 : 12} fill={st === 'ahead' ? '#555a57' : '#a89c84'} className="num">
-                  {st === 'current' ? 'You are here' : st === 'cleared' ? 'Cleared' : st === 'passed' ? 'Passed' : tall ? `$${formatChips(c.minBet)} min · ${c.feel}` : `$${formatChips(c.minBet)} min`}
+                  {st === 'current' ? 'You are here' : st === 'cleared' ? 'Cleared' : st === 'passed' ? 'Passed' : i > 0 ? (tall ? `Coming soon · $${formatChips(c.minBet)} min` : 'Coming soon') : tall ? `$${formatChips(c.minBet)} min · ${c.feel}` : `$${formatChips(c.minBet)} min`}
                 </text>
                 {!tall && st === 'ahead' && (
                   <text x={lx} y={ly + 31} textAnchor="middle" fontSize={11} fontStyle="italic" fill="#4a4f4c">

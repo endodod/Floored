@@ -109,6 +109,12 @@ pay that city's rates, so going back is no farm).
 
 ## 4. Characters, portraits and choices
 
+**Premise.** Six months ago your grandfather owned the Gilded Floor: forty tables, a brass bar,
+Jo dealing the late shift. Vale (head of the Syndicate; half the circuit's houses pay Vale rent)
+sat down and won the deed in one hand. He left you his car, his debts and a three-word note:
+get it back. Vale doesn't play strangers, only champions: twelve towns, a house champion in each.
+Beat all twelve and Vale owes you a seat at the Summit; win there and the Gilded Floor is yours.
+
 - **Cast:** about 30–36 characters. Each city has 2–3 locals: a minigame giver, an errand
   giver and a boss. They're joined by recurring ones:
   - **Jo**, your old dealer friend and companion, who comments on what happens.
@@ -150,25 +156,31 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 | Minigames | up to **3m** per play at a perfect score (about 2m on average) | each character **once per night**, 2–3 per city | none |
 | Errands (story jobs) | 6m each, one time | 4 per city | none |
 | Hustles (jobs board) | 4m each | 2 per night, only by playing | none (fixed pay; you meet a game condition) |
-| **Comps** | **4% of what you wagered that night** | **capped at 10m per night** | none |
-| Venue night | 12 bets, max 20m / 100m / no max | one per night | game edge |
+| **Comps** | **a share of what you wagered that night, win or lose, by room: 4% dive / 5% main floor / 6% high-roller** | **capped per night at 10m / 15m / 20m** | none |
+| Venue night | 12 bets, max 20m / 100m / no max; each room deals its own 3 of the city's games each night (`lib/story/rotation.ts`) | one per night | game edge |
 | Tables session | stake-based | one per night | skill + luck |
 | Lodging | **−3m** per night; **free below 10m** (you sleep in your car) | every night | — |
 | Boss | **buy-in 50m, purse 150m** | rematch after 2 nights, same difficulty | about 50/50 |
 | Travel fare | 20m of the next city | once | — |
 
-### What the simulation showed (`pnpm sim:story`, 3,000 circuits per player type, 2026-11-02)
+### What the simulation showed (`pnpm sim:story`, 1,000 circuits per player type, seed 1, 2026-11-03)
 
 The simulator plays whole circuits over each city's **real game list**, with each game's
-odds taken from its engine (`lib/story/odds.ts`):
+odds taken from its engine (`lib/story/odds.ts`). Since 2026-11-03 it models the room
+rotation (a player only picks from their room's 3 games that night, in the room they use:
+cautious, balanced and high-variance play the main floor, bold the high-roller room) and the
+per-room comps. Before = one comps rate (4%, cap 10m) and every game of the city available.
 
-| Player type | Nights per city (median / worst 10%) | Whole circuit (median) | Busts per circuit | Back to 10m after a bust |
+| Player type | Nights per city, before → after (median / worst 10%) | Whole circuit, before → after (median) | Busts per circuit | Back to 10m after a bust |
 |---|---|---|---|---|
-| Never gambles (minigames only) | 15 / 86 | ~359 nights | 0 | — |
-| Cautious (5% a bet, safest bet in the city) | 5 / 20 | ~96 | 0 | — |
-| Balanced (15% a bet, any game played its usual way) | 5 / 43 | ~172 | 0 | 2 nights |
-| High variance (15% on the riskiest bets) | 10 / 86 | ~346 | ~25 | 2 nights |
-| Bold (all in, only what's needed) | 3 / 17 | ~75 | ~4 | 2 nights |
+| Never gambles (minigames only) | 15 / 86 → 15 / 86 | ~358 → ~358 nights | 0 | — |
+| Cautious (5% a bet, safest bet in the city) | 5 / 20 → 5 / 20 | ~94 → ~94 | 0 | — |
+| Balanced (15% a bet, any game played its usual way) | 5 / 43 → 5 / 37 | ~169 → ~145 | 0 | 2 → 4 nights |
+| High variance (15% on the riskiest bets) | 9 / 84 → 7 / 71 | ~327 → ~274 | ~24 → ~6 | 2 nights |
+| Bold (all in, only what's needed) | 3 / 17 → 3 / 18 | ~75 → ~78 | ~3.6 → ~3.0 | 2 nights |
+
+The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
+bet softens the losses. No other numbers were retuned.
 
 - **Nobody gets stuck**, and normal play clears a city in about 5 nights.
 - **Gambling pays:** cautious and bold play are 4–5× faster than never gambling; the
