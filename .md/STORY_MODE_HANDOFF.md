@@ -1,8 +1,10 @@
 # Story mode — handoff
 
-Branch: `claude/friendly-goodall-yvxakz`. Status as of 2026-11-02: **phases 1, 2 and
-3a are built and pushed; work stopped at the start of 3b** (owner asked to stop and hand
-off). The design is in [STORY_MODE_PLAN.md](STORY_MODE_PLAN.md) (read it first: rules,
+Branch: `claude/friendly-goodall-yvxakz`. Status as of 2026-11-02: **phases 1, 2, 3a, 3b and 3c are built and pushed; next is 3d (minigames)**.
+2026-11-03: 3b (story game mode) and 3c (portraits, dialogue box, hub, navbar, home) built.
+Hub placeholders to replace: minigame buttons and the boss "Sit down" button are disabled
+"Soon" (`components/story/hub.tsx`) until 3d/3e. Hub finds the boss as the city's one
+character without a minigame (no boss field on a city yet). The design is in [STORY_MODE_PLAN.md](STORY_MODE_PLAN.md) (read it first: rules,
 cities, economy, owner decisions in section 12). This file says what exists, what is
 next, and every decision made along the way that the plan doesn't spell out.
 
@@ -85,7 +87,7 @@ Run Dice, Over-Under; minigame givers Marta (Last Orders) and Pike (Shuffle Trac
 boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city but is
 **out of the slice** (needs the Tables wallet adapter; do it with a later city).
 
-### 3b. Story as a game mode (was in progress; nothing written yet)
+### 3b. Story as a game mode (DONE 2026-11-03)
 1. `lib/features.ts`: add `STORY_ENABLED = true` (lets the owner hide it before merging to
    main, since only Dustwater will exist). Gate routes/nav/home on it.
 2. `store/types.ts`: add `'story'` to `GameMode`; fix whatever `tsc` flags. Game
@@ -113,7 +115,7 @@ boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city 
    games and only during a night (`tonight`), else redirect to `/story`. Header pills: min
    bet, table max, bets left, money.
 
-### 3c. Screens
+### 3c. Screens (DONE 2026-11-03; files: `lib/story/portraits.ts`, `components/story/{portrait,dialogue-box,hub}.tsx`, `app/story/page.tsx`, `app/story/layout.tsx`; expressions neutral/pleased/angry)
 - `lib/story/portraits.ts` (port of the mix-1 generator: SVG string per character look and
   expression; static code-generated markup) + `components/story/portrait.tsx`. Looks needed:
   jo, sloane, vale (in the reference), notary (bald, round glasses, dark suit, purple chip

@@ -4,10 +4,19 @@ import { PageTitle, Suit } from '@/components/ui/terminal'
 import { DailyCountdown } from '@/components/daily/countdown'
 import { HouseQuote } from '@/components/house-quote'
 import { GAMES } from '@/lib/game-catalog'
-import { TABLES_ENABLED } from '@/lib/features'
+import { STORY_ENABLED, TABLES_ENABLED } from '@/lib/features'
 
 /** How the site fits together: each card jumps to its group of modes below. */
 const GUIDE = [
+  ...(STORY_ENABLED
+    ? [
+        {
+          href: '#story',
+          title: 'Story',
+          body: 'The Circuit is a campaign: play nights, take work and beat each city\'s boss to move on. Its money is its own and touches nothing else.',
+        },
+      ]
+    : []),
   {
     href: '#compete',
     title: 'Compete',
@@ -47,7 +56,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <ol className="grid grid-cols-1 gap-3 md:grid-cols-3" aria-label="How Floored works">
+      <ol className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4" aria-label="How Floored works">
         {GUIDE.map((g, i) => (
           <li key={g.title} className="rise" style={{ '--d': `${80 + i * 60}ms` } as CSSProperties}>
             <a

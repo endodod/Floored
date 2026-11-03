@@ -8,15 +8,17 @@ import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
-import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, STORY_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
 import { useTablesStore } from '@/store/tables-store'
 import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
 import { useChallengeStore } from '@/store/challenge-store'
+import { useStoryStore } from '@/store/story-store'
 import { FlooredMark } from '@/components/ui/terminal'
 
 /** `also` lists the other pages a mode's tabs hold, so the link stays lit on them. */
 const MODES = [
+  { href: '/story', label: 'Story', also: [], enabled: STORY_ENABLED },
   { href: '/challenges', label: 'Challenges', also: ['/daily'], enabled: true },
   { href: '/ladder', label: 'Ladder', also: ['/daily-ladder'], enabled: LADDER_ENABLED },
   { href: '/freeplay', label: 'Freeplay', also: [], enabled: true },
@@ -61,6 +63,7 @@ export function Navbar() {
   const pathname = usePathname() ?? '/'
   const freeplayBankroll = useFreeplayStore((s) => s.bankroll)
   const tablesWallet = useTablesStore((s) => s.wallet)
+  const storyMoney = useStoryStore((s) => s.money)
   const dailyBankroll = useDailyStore((s) => s.bankroll)
   const ladderPot = useLadderStore((s) => s.pot)
   const challengeBankroll = useChallengeStore((s) => s.attempt?.bankroll ?? null)
@@ -77,6 +80,7 @@ export function Navbar() {
   const inDailyLadder = pathname.startsWith('/daily-ladder')
   const inDaily = pathname.startsWith('/daily') && !inDailyLadder
   const inLadder = pathname.startsWith('/ladder')
+  const inStory = pathname === '/story' || pathname.startsWith('/story/')
   const inTables = pathname.startsWith('/tables')
   const inAccount = pathname.startsWith('/account')
   const inChallenge = pathname === '/challenge' || pathname.startsWith('/challenge/')
@@ -99,6 +103,7 @@ export function Navbar() {
   else if (hydrated && inLadder && ladderStatus === 'climbing') figure = <BarFigure label="Pot" value={ladderPot} />
   else if (hydrated && inChallenge && challengeBankroll != null)
     figure = <BarFigure label="Challenge bankroll" value={challengeBankroll} />
+  else if (hydrated && inStory) figure = <BarFigure label="Money" value={storyMoney} />
   else if (hydrated && inTables) figure = <BarFigure label="Wallet" value={tablesWallet} />
   else if (hydrated && inFreeplay) figure = <BarFigure label="Balance" value={freeplayBankroll} />
 

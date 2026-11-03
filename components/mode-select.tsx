@@ -6,12 +6,14 @@ import { useSurvivalStore } from '@/store/survival-store'
 import { FLOOR_BET_LIMIT, MAX_FLOORS, STARTING_BANKROLL } from '@/lib/survival/balance'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useHydrated } from '@/hooks/use-hydrated'
-import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, STORY_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
 import { useTablesStore } from '@/store/tables-store'
 import { TABLE_GAMES } from '@/lib/tables/catalog'
 import { TABLES_START_WALLET } from '@/lib/tables/stakes'
 import { useLadderStore } from '@/store/ladder-store'
 import { useChallengeStore } from '@/store/challenge-store'
+import { useStoryStore } from '@/store/story-store'
+import { CITIES } from '@/lib/story/cities'
 import { PRESET_CHALLENGES } from '@/lib/challenges/presets'
 import { CHALLENGE_START_BANKROLL } from '@/lib/challenges/types'
 import { CHECKPOINT_EVERY, LADDER_LIVES, LADDER_RUNGS, START_POT, livesActive } from '@/lib/ladder/rules'
@@ -40,6 +42,11 @@ export function ModeSelect() {
   const challengeAttempt = useChallengeStore((s) => s.attempt)
   const challengeStats = useChallengeStore((s) => s.stats)
   const tablesWallet = useTablesStore((s) => s.wallet)
+  const storyStarted = useStoryStore((s) => s.started)
+  const storyCity = useStoryStore((s) => s.city)
+  const storyMoney = useStoryStore((s) => s.money)
+  const storyCleared = useStoryStore((s) => s.cleared.length)
+  const storyLive = hydrated && storyStarted
   const tablesPlayed = useTablesStore((s) => s.history.length)
   const ladderClimbing = hydrated && ladderStatus === 'climbing'
   const survivalLive = hydrated && runActive
@@ -58,6 +65,32 @@ export function ModeSelect() {
 
   return (
     <div className="flex flex-col gap-12">
+      {/* ── Story: the campaign (toggle in lib/features.ts) ── */}
+      {STORY_ENABLED && (
+        <section id="story" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="story-title">
+          <SectionTitle suit={3} note="A campaign across twelve cities">
+            <span id="story-title">Story</span>
+          </SectionTitle>
+          <ModeRowList>
+            <ModeRow
+              index={0}
+              name="The Circuit"
+              symbol="🎲"
+              description="Play nights at the tables, take work, and beat each city's boss to move on. Money, reputation and a rival one city ahead."
+              track={<UnitTrack total={CITIES.length} done={storyLive ? storyCleared : 0} label={`${storyCleared} of ${CITIES.length} cities cleared`} />}
+              trackCaption={storyLive ? `${CITIES.find((c) => c.id === storyCity)?.name} · ${storyCleared}/${CITIES.length} cleared` : `${CITIES.length} cities`}
+              figureLabel="Money"
+              figure={storyLive ? `$${formatChips(storyMoney)}` : '—'}
+              action={
+                <Button asChild className="w-full lg:w-auto">
+                  <Link href="/story">{storyLive ? 'Continue' : 'Begin'}</Link>
+                </Button>
+              }
+            />
+          </ModeRowList>
+        </section>
+      )}
+
       {/* ── Compete: the real game modes ── */}
       <section id="compete" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="compete-title">
         <SectionTitle suit={0} note="Scored runs, kept in your records">
