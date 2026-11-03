@@ -11,7 +11,7 @@ import { ActionSheet, SheetNote } from '@/components/story/action-sheet'
 import { CircuitMap } from '@/components/story/circuit-map'
 import { CityScene, PersonSpot, PlaceSpot, type SceneSpot } from '@/components/story/city-scene'
 import { DialogueBox } from '@/components/story/dialogue-box'
-import { HudButton, RepStars, StoryHud } from '@/components/story/hud'
+import { HudButton, StandingStars, StoryHud } from '@/components/story/hud'
 import { NightCard } from '@/components/story/night-card'
 import { NightsGuide } from '@/components/story/nights-guide'
 import { NewsSlips, Notebook } from '@/components/story/notebook'
@@ -21,13 +21,13 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { sceneConfigFor } from '@/lib/story/scene-theme'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
-import { useStoryStore, VENUE_NAMES, VENUE_REP, type NightSummary, type VenueTier } from '@/store/story-store'
+import { useStoryStore, VENUE_NAMES, type NightSummary, type VenueTier } from '@/store/story-store'
 import { formatChips } from '@/utils/format'
 import type { Character } from '@/lib/story/types'
 
@@ -91,7 +91,7 @@ export function StoryHub() {
   const cleared = s.cleared.includes(s.city)
   const fare = s.fareToNext()
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
-  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames)
+  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, s.openErrandGames())
   const broke = s.money < m && !night
   const betsLeft = night ? Math.max(0, NIGHT_BETS - night.bets) : 0
   const inCar = s.money < CAR_BELOW_M * m
@@ -150,14 +150,14 @@ export function StoryHub() {
         node: (
           <PlaceSpot
             title={VENUE_SHORT[v]}
-            sub={!unlocked ? `Rep ${VENUE_REP[v]} needed` : here ? `Tonight · ${betsLeft} bets` : undefined}
+            sub={!unlocked ? `Standing ${VENUE_REP[v]} needed` : here ? `Tonight · ${betsLeft} bets` : undefined}
             icon={!unlocked ? <Lock className="h-2.5 w-2.5" aria-hidden /> : undefined}
             locked={!unlocked}
             lit={here}
             active={isOpen('venue', v)}
             size={DOOR_SIZE[v]!}
             plateBelow={v !== 2}
-            label={`${VENUE_NAMES[v]}: ${!unlocked ? `locked, needs reputation ${VENUE_REP[v]}` : here ? `tonight, ${betsLeft} bets left` : stakeNote(v)}`}
+            label={`${VENUE_NAMES[v]}: ${!unlocked ? `locked, needs standing ${VENUE_REP[v]}` : here ? `tonight, ${betsLeft} bets left` : stakeNote(v)}`}
             onOpen={open({ kind: 'venue', v })}
           />
         ),
@@ -257,12 +257,12 @@ export function StoryHub() {
         body = (
           <>
             <div className="flex items-center gap-2">
-              <RepStars rep={s.rep} />
+              <StandingStars standing={s.rep()} city={city.name} />
               <SheetNote tone="soft">
-                Needs reputation {VENUE_REP[v]} (you have {s.rep})
+                Needs standing {VENUE_REP[v]}. Finish a job at the tables.
               </SheetNote>
             </div>
-            <SheetNote>The door stays chained until your name is good enough in {city.name}.</SheetNote>
+            <SheetNote>You have standing {s.rep()} in {city.name}. The door stays chained until your name is good enough here.</SheetNote>
           </>
         )
       } else if (here) {
@@ -409,6 +409,7 @@ export function StoryHub() {
             city={city}
             night={s.night}
             seen={s.seenGames}
+            must={s.openErrandGames()}
             onReplay={tutorial ? () => { setSheet(null); s.startScene(tutorial.id) } : null}
           />
         ),
@@ -633,7 +634,7 @@ export function StoryHub() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Start a new story?</DialogTitle>
-            <DialogDescription>This erases your current story save: money, reputation, cities cleared. It can&apos;t be undone.</DialogDescription>
+            <DialogDescription>This erases your current story save: money, standing in every town, cities cleared. It can&apos;t be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="secondary" onClick={() => setConfirmNew(false)}>Keep playing</Button>

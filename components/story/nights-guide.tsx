@@ -4,12 +4,12 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import type { City } from '@/lib/story/cities'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, GAMES_PER_ROOM, HUSTLE_PAY_M,
-  HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRAND_STANDING, GAMES_PER_ROOM,
+  HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
-import { VENUE_NAMES, VENUE_REP } from '@/store/story-store'
+import { VENUE_NAMES } from '@/store/story-store'
 import { formatChips } from '@/utils/format'
 import type { GameName } from '@/store/types'
 
@@ -30,7 +30,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
  * lib/story/economy.ts (and the store's room table) and shown in the current
  * city's dollars, so it can't drift from the game.
  */
-export function NightsGuide({ city, night, seen, onReplay }: { city: City; night: number; seen: GameName[]; onReplay: (() => void) | null }) {
+export function NightsGuide({ city, night, seen, must, onReplay }: { city: City; night: number; seen: GameName[]; must: GameName[]; onReplay: (() => void) | null }) {
   const m = city.minBet
   const pct = (r: number) => `${Math.round(r * 1000) / 10}%`
   const exBet = 2
@@ -55,7 +55,7 @@ export function NightsGuide({ city, night, seen, onReplay }: { city: City; night
             {([0, 1, 2] as const).map((v) => (
               <tr key={v} className="border-t border-white/10">
                 <td className="py-1 pr-1.5 text-ink">{ROOM_SHORT[v]}</td>
-                <td className="py-1 pr-1.5">{VENUE_REP[v] === 0 ? 'Anyone' : `Rep ${VENUE_REP[v]}`}</td>
+                <td className="py-1 pr-1.5">{VENUE_REP[v] === 0 ? 'Anyone' : `Standing ${VENUE_REP[v]}`}</td>
                 <td className="num py-1 pr-1.5">{VENUE_MAX_M[v] == null ? 'No limit' : money(VENUE_MAX_M[v]! * m)}</td>
                 <td className="num py-1">{pct(COMPS_RATE[v])} · max {money(COMPS_CAP_M[v] * m)}</td>
               </tr>
@@ -65,12 +65,25 @@ export function NightsGuide({ city, night, seen, onReplay }: { city: City; night
         <p className="text-dim">Bet limits are {VENUE_MAX_M[0]}× and {VENUE_MAX_M[1]}× the minimum bet ({money(m)}).</p>
       </Section>
 
+      <Section title="Standing">
+        <p>
+          Standing is how a town sees you. It starts at {0} in every town you reach, and a town you go back to remembers what you left. {STANDING_MAX} is the most one will give you.
+        </p>
+        <p>
+          It goes up {ERRAND_STANDING} for each job you finish at the tables (a streak, a night up, a big win). Minigames pay money, never standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
+        </p>
+        <p>
+          The dive is always open. The main floor wants standing {VENUE_REP[1]}; the high-roller room wants {VENUE_REP[2]}: no bet limit and the best comps, which is where you build the back-table money.
+        </p>
+      </Section>
+
       <Section title="Tonight's games">
         <p>Each room deals its own {GAMES_PER_ROOM} of {city.name}&apos;s games. Each night a room swaps a couple and keeps at least one.</p>
+        <p className="text-dim">The dive keeps dealing any game an open job names, so the job can always be worked.</p>
         <ul className="flex flex-col gap-0.5">
           {([0, 1, 2] as const).map((v) => (
             <li key={v}>
-              <span className="text-ink">{VENUE_NAMES[v]}:</span> {gamesFor(city, night, v, seen).map(label).join(', ') || 'none yet'}
+              <span className="text-ink">{VENUE_NAMES[v]}:</span> {gamesFor(city, night, v, seen, must).map(label).join(', ') || 'none yet'}
             </li>
           ))}
         </ul>
@@ -105,13 +118,13 @@ export function NightsGuide({ city, night, seen, onReplay }: { city: City; night
 
       <Section title="Going bust & the Notary">
         <p>
-          Fall below the minimum bet ({money(m)}) and you are bust: you lose a point of reputation. The Notary will lend you a marker of {money(MARKER_M * m)}, repaid at {MARKER_REPAY}×. Half the profit from each win goes to it until it is square.
+          Fall below the minimum bet ({money(m)}) and you are bust: you lose {BUST_STANDING} standing in this town. The Notary will lend you a marker of {money(MARKER_M * m)}, repaid at {MARKER_REPAY}×. Half the profit from each win goes to it until it is square.
         </p>
       </Section>
 
       <Section title="The boss">
         <p>
-          Each city has a boss at the back table. The buy-in is {money(BOSS_BUYIN_M * m)} ({BOSS_BUYIN_M}× the minimum) and a win pays a {money(BOSS_PURSE_M * m)} purse, opens the road out and earns a reputation point. Lose and the rival is back after {BOSS_REMATCH_NIGHTS} nights, with the same buy-in.
+          Each city has a boss at the back table. The buy-in is {money(BOSS_BUYIN_M * m)} ({BOSS_BUYIN_M}× the minimum) and a win pays a {money(BOSS_PURSE_M * m)} purse and opens the road out. Lose and the rival is back after {BOSS_REMATCH_NIGHTS} nights, with the same buy-in.
         </p>
       </Section>
 

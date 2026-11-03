@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { forwardRef, type ReactNode } from 'react'
 import { ChevronLeft, Star } from 'lucide-react'
 import { CITY_BY_ID } from '@/lib/story/cities'
-import { NIGHT_BETS } from '@/lib/story/economy'
+import { NIGHT_BETS, STANDING_MAX } from '@/lib/story/economy'
 import { useStoryStore, VENUE_NAMES } from '@/store/story-store'
 import { cn } from '@/lib/utils'
 import { formatChips } from '@/utils/format'
@@ -31,15 +31,19 @@ function ChipStack({ className }: { className?: string }) {
   )
 }
 
-/** Reputation as five stars. */
-export function RepStars({ rep, className }: { rep: number; className?: string }) {
+/** Standing in a town, as a row of STANDING_MAX stars. */
+export function StandingStars({ standing, city, className }: { standing: number; city?: string; className?: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-[1px]', className)} role="img" aria-label={`Reputation ${rep} of 5`}>
-      {[0, 1, 2, 3, 4].map((i) => (
+    <span
+      className={cn('inline-flex items-center gap-[1px]', className)}
+      role="img"
+      aria-label={`Standing ${standing} of ${STANDING_MAX}${city ? ` in ${city}` : ''}`}
+    >
+      {Array.from({ length: STANDING_MAX }, (_, i) => (
         <Star
           key={i}
           aria-hidden
-          className={cn('h-[11px] w-[11px] sm:h-3 sm:w-3', i < rep ? 'fill-gold text-gold drop-shadow-[0_0_4px_rgba(217,164,65,0.6)]' : 'fill-transparent text-[#5a4a2e]')}
+          className={cn('h-[11px] w-[11px] sm:h-3 sm:w-3', i < standing ? 'fill-gold text-gold drop-shadow-[0_0_4px_rgba(217,164,65,0.6)]' : 'fill-transparent text-[#5a4a2e]')}
           strokeWidth={2}
         />
       ))}
@@ -80,8 +84,8 @@ export const HudButton = forwardRef<HTMLButtonElement, { icon: ReactNode; label:
 
 /**
  * The story HUD: the city and night on a wood title plate, money as a chip
- * stack, the marker in red when one is owed, reputation as stars and, while a
- * night is on, the bets left. `back` adds a link back to the city scene;
+ * stack, the marker in red when one is owed, standing in this town as stars and,
+ * while a night is on, the bets left. `back` adds a link back to the city scene;
  * `actions` sits at the right (the hub's Jobs, Map and menu buttons).
  */
 export function StoryHud({ back, title, actions, className }: { back?: boolean; title?: string; actions?: ReactNode; className?: string }) {
@@ -89,7 +93,7 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
   const night = useStoryStore((s) => s.night)
   const moneyNow = useStoryStore((s) => s.money)
   const owed = useStoryStore((s) => s.owed)
-  const rep = useStoryStore((s) => s.rep)
+  const rep = useStoryStore((s) => s.rep())
   const tonight = useStoryStore((s) => s.tonight)
   const city = CITY_BY_ID.get(cityId)!
   const betsLeft = tonight ? Math.max(0, NIGHT_BETS - tonight.bets) : null
@@ -113,7 +117,7 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
         <p className="flex items-center gap-1.5 whitespace-nowrap text-[10.5px] font-semibold uppercase leading-[13px] tracking-[0.12em] text-[#d9b779]">
           <span className="num">Night {night + 1}</span>
           {tonight && <span className="hidden lg:inline">· {VENUE_NAMES[tonight.venue]}</span>}
-          <RepStars rep={rep} className="sm:hidden" />
+          <StandingStars standing={rep} city={city.name} className="lg:hidden" />
         </p>
       </div>
 
@@ -125,9 +129,11 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
         </span>
       </div>
 
-      <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 sm:flex')}>
-        <span className="felt-print !text-[9px] !tracking-[0.16em]">Rep</span>
-        <RepStars rep={rep} />
+      <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 lg:flex')} role="group" aria-label={`Standing in ${city.name}`}>
+        <span className="felt-print block max-w-[240px] truncate !text-[9px] !tracking-[0.1em]" title={`Standing in ${city.name}`}>
+          Standing in {city.name}
+        </span>
+        <StandingStars standing={rep} city={city.name} />
       </div>
 
       {betsLeft != null && (

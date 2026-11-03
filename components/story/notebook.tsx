@@ -6,6 +6,7 @@ import { Portrait } from '@/components/story/portrait'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import type { Errand } from '@/lib/story/types'
 import { CHARACTER_BY_ID } from '@/lib/story/content/characters'
+import { errandStanding } from '@/lib/story/economy'
 import { formatChips } from '@/utils/format'
 
 const money = (n: number) => `$${formatChips(n)}`
@@ -13,7 +14,8 @@ const isLook = (id: string): id is PortraitLook => (PORTRAIT_LOOKS as string[]).
 
 /**
  * The jobs notebook: a matchbook that opens from the HUD with tonight's two
- * hustles (ticked once met tonight) and the open errands, plus last night's net.
+ * hustles (ticked once met tonight) and the open errands, each marked with the
+ * standing it earns (or "Pays only"), plus last night's net.
  */
 export function Notebook({
   hustles,
@@ -100,6 +102,9 @@ export function Notebook({
                     <span className="min-w-0 flex-1">
                       <span className="block text-[13.5px] font-bold leading-5">{e.title}</span>
                       <span className="block text-[12.5px] leading-[17px] text-[#5a4f43]">{e.task}</span>
+                      <span className={`mt-0.5 block font-mono text-[10px] font-bold uppercase tracking-[0.14em] ${errandStanding(e) ? 'text-[#1d5a3e]' : 'text-[#6f6354]'}`}>
+                        {errandStanding(e) ? `+${errandStanding(e)} standing` : 'Pays only'}
+                      </span>
                       <span className="sr-only">From {CHARACTER_BY_ID.get(e.giver)?.name ?? e.giver}</span>
                     </span>
                   </li>
