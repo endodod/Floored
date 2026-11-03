@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Crown } from 'lucide-react'
-import { GAME_BOARD_ARENA, GAME_CONTROL_DOCK, GAME_STATUS_BAR } from '@/components/game-layout'
+import { GAME_CONTROL_DOCK, GAME_STATUS_BAR } from '@/components/game-layout'
 import { CUPS, ROUNDS, SWAP_MS, guess, next, score, start, type TrackerState } from '@/lib/story/minigames/shuffle-tracker'
 
 const REDUCED_STEP_MS = 1000
@@ -90,9 +90,9 @@ export function ShuffleTrackerBoard({ onFinish }: { onFinish: (score: number) =>
         <span className="num text-[13px] text-soft">Round {game.round + 1} of {ROUNDS}</span>
         <span className="num text-[13px] text-dim">{game.shuffle.swaps.length} swaps · {game.right} right</span>
       </div>
-      <div className={`${GAME_BOARD_ARENA} flex flex-col items-center justify-center gap-5 px-4`}>
+      <div className="table-felt relative flex min-h-[88px] w-full flex-1 flex-col items-center justify-center gap-3 overflow-hidden px-4 sm:gap-5">
         <p className="text-sm font-semibold text-ink" aria-live="polite" data-testid="st-headline">{headline}</p>
-        <div className="relative h-32 w-full max-w-[360px]">
+        <div className="relative h-[clamp(72px,16vh,128px)] w-full max-w-[360px] shrink-0">
           {Array.from({ length: CUPS }, (_, cup) => {
             const slot = slotOf[cup]!
             const marked = swapping != null && (slotOf[cup] === swapping[0] || slotOf[cup] === swapping[1])

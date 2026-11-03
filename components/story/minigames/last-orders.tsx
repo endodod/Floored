@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { GAME_BOARD_ARENA, GAME_CONTROL_DOCK, GAME_STATUS_BAR } from '@/components/game-layout'
+import { GAME_CONTROL_DOCK, GAME_STATUS_BAR } from '@/components/game-layout'
 import { DRINKS, ROUNDS, score, start, tap, type LastOrdersState } from '@/lib/story/minigames/last-orders'
 
 const SHOW_MS = 650
@@ -66,15 +66,15 @@ export function LastOrdersBoard({ onFinish }: { onFinish: (score: number) => voi
         <span className="num text-[13px] text-soft">Order {Math.min(game.round + 1, ROUNDS)} of {ROUNDS}</span>
         <span className="num text-[13px] text-dim">{game.cleared} cleared</span>
       </div>
-      <div className={`${GAME_BOARD_ARENA} flex flex-col items-center justify-center gap-4 px-4`}>
+      <div className="table-felt relative flex min-h-[88px] w-full flex-1 flex-col items-center justify-center gap-2 overflow-hidden px-4 sm:gap-4">
         <p className="text-sm font-semibold text-ink" aria-live="polite" data-testid="lo-headline">{headline}</p>
         <div
-          className={`flex h-24 w-24 items-center justify-center rounded-md bg-ground/60 text-5xl shadow-[inset_0_0_0_1px_var(--line)] ${flash === 'miss' && phase === 'done' ? 'text-loss' : ''}`}
+          className={`flex h-[clamp(48px,12vh,96px)] w-[clamp(48px,12vh,96px)] shrink-0 items-center justify-center rounded-md bg-ground/60 text-[clamp(1.75rem,6vh,3rem)] shadow-[inset_0_0_0_1px_var(--line)] ${flash === 'miss' && phase === 'done' ? 'text-loss' : ''}`}
           aria-hidden
         >
           {big}
         </div>
-        <ol className="flex flex-wrap justify-center gap-1.5" aria-label="Order progress">
+        <ol className="flex shrink-0 flex-wrap justify-center gap-1.5" aria-label="Order progress">
           {game.order.map((_, i) => (
             <li
               key={i}
@@ -83,7 +83,7 @@ export function LastOrdersBoard({ onFinish }: { onFinish: (score: number) => voi
           ))}
         </ol>
       </div>
-      <div className={`${GAME_CONTROL_DOCK} py-3`}>
+      <div className={`${GAME_CONTROL_DOCK} py-2 sm:py-3`}>
         <div className="mx-auto grid max-w-[420px] grid-cols-3 gap-2">
           {DRINKS.map((d, i) => (
             <button
@@ -93,7 +93,7 @@ export function LastOrdersBoard({ onFinish }: { onFinish: (score: number) => voi
               onClick={() => press(i)}
               aria-label={d.label}
               data-drink={i}
-              className={`flex h-16 items-center justify-center rounded-md border text-3xl transition-colors duration-150 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-felt ${
+              className={`flex h-[clamp(44px,8vh,64px)] items-center justify-center rounded-md border text-3xl transition-colors duration-150 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-felt ${
                 lit === i ? 'border-gold bg-gold-tint' : 'border-line bg-raised hover:border-control'
               } ${phase === 'input' ? '' : 'opacity-60'}`}
             >

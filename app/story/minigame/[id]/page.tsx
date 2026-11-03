@@ -86,7 +86,11 @@ function Minigame({ id }: { id: MinigameId }) {
             </div>
           </div>
           {stage !== 'done' && <p className={`shrink-0 text-[13px] ${showPay ? 'text-gold' : 'text-dim'}`} data-testid="pay-note">
-            {showPay ? `Pays up to ${money(maxPay)} tonight` : 'Practice — already paid tonight'}
+            {showPay
+              ? stage === 'intro'
+                ? `Pays up to ${money(maxPay)} — only your first game each night pays; after that it's practice.`
+                : `Pays up to ${money(maxPay)} tonight`
+              : `Practice — ${giver.name} already paid you tonight. Come back tomorrow night for another paid shift.`}
           </p>}
 
           {stage === 'intro' && (
@@ -105,7 +109,7 @@ function Minigame({ id }: { id: MinigameId }) {
             <div className="flex flex-col gap-3 st-card rounded-md p-4" data-testid="result">
               <p className="num text-2xl font-semibold text-ink">{Math.round(result.score * 100)}%</p>
               <p className="text-[13px] text-soft" data-testid="result-pay">
-                {result.payable ? `You earned ${money(result.paid)}.` : 'Practice round: no pay. Errands still count.'}
+                {result.payable ? `You earned ${money(result.paid)}.` : `Practice round: no pay. ${giver.name} already paid you tonight, so come back tomorrow night for another paid shift. Errands still count.`}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={begin}>Play again</Button>
