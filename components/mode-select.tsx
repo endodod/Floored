@@ -217,6 +217,18 @@ export function ModeSelect() {
         {LADDER_ENABLED && (
           <SimpleModeCard
             index={1}
+            name={today ? `Daily Ladder #${dailyNumber(today)}` : 'Daily Ladder'}
+            symbol="📅"
+            line="Today’s climb. One try."
+            figureLabel={dlRecord ? 'Today' : 'Pot'}
+            figure={formatChips(dlRecord ? dlRecord.finalPot : dlClimbing ? dlPot : START_POT)}
+            cta={dlRecord ? 'See results' : dlClimbing ? 'Continue climb' : 'Climb today'}
+            href="/daily-ladder"
+          />
+        )}
+        {LADDER_ENABLED && (
+          <SimpleModeCard
+            index={2}
             name="Ladder"
             symbol="🪜"
             line="Win to climb. Lose and you drop."
@@ -226,6 +238,26 @@ export function ModeSelect() {
             href="/ladder"
           />
         )}
+        <SimpleModeCard
+          index={3}
+          name="Challenges"
+          symbol="🎯"
+          line="Set games, set bets. Retry anytime."
+          figureLabel="Bankroll"
+          figure={formatChips(challengeLive ? challengeLive.bankroll : CHALLENGE_START_BANKROLL)}
+          cta={challengeLive ? 'Continue' : 'Pick a challenge'}
+          href={challengeLive ? '/challenge' : '/challenges'}
+        />
+        <SimpleModeCard
+          index={4}
+          name="Community"
+          symbol="🤝"
+          line="Challenges made by players."
+          figureLabel="Played"
+          figure={communityPlayed}
+          cta="Browse"
+          href="/community"
+        />
         {SURVIVAL_ENABLED && (
           <SimpleModeCard
             index={2}
@@ -248,7 +280,7 @@ export function ModeSelect() {
             figureLabel="Wallet"
             figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
             cta="Play Tables"
-            href="/tables"
+            href="/tables/lobby"
           />
         )}
         <SimpleModeCard

@@ -141,7 +141,9 @@ export default function TablesLobbyPage() {
         </div>
       )}
 
+      {/* Simple view: the navbar already shows the wallet. */}
       <FigureStrip
+        className="simple:hidden"
         items={[
           { label: 'Wallet', value: formatChips(s.wallet), sub: s.refills ? `${s.refills} refill${s.refills > 1 ? 's' : ''}` : 'Tables play money' },
           { label: 'Tables played', value: totals.played, detail: true },

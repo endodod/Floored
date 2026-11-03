@@ -9,7 +9,8 @@ const TABS = [
   { href: '/', label: 'Home', icon: '🏠', enabled: true },
   { href: '/daily', label: 'Daily', icon: '🗓️', enabled: true },
   { href: '/ladder', label: 'Ladder', icon: '🪜', enabled: LADDER_ENABLED },
-  { href: '/tables', label: 'Tables', icon: '🃏', enabled: TABLES_ENABLED },
+  // Straight to the lobby: in Simple view every tap counts.
+  { href: '/tables/lobby', match: '/tables', label: 'Tables', icon: '🃏', enabled: TABLES_ENABLED },
   { href: '/freeplay', label: 'Games', icon: '🎮', enabled: true },
 ].filter((t) => t.enabled)
 
@@ -18,7 +19,7 @@ function isGameRoute(pathname: string): boolean {
   const [mode, sub] = pathname.split('/').filter(Boolean)
   if (!sub) return false
   if (mode === 'tables' && sub === 'lobby') return false
-  return ['daily', 'ladder', 'survival', 'tables', 'freeplay'].includes(mode ?? '')
+  return ['daily', 'daily-ladder', 'ladder', 'challenge', 'survival', 'tables', 'freeplay'].includes(mode ?? '')
 }
 
 /**
@@ -37,7 +38,8 @@ export function SimpleTabBar() {
     >
       <ul className="flex">
         {TABS.map((t) => {
-          const active = t.href === '/' ? pathname === '/' : pathname.startsWith(t.href)
+          const prefix = 'match' in t && t.match ? t.match : t.href
+          const active = prefix === '/' ? pathname === '/' : pathname.startsWith(prefix)
           return (
             <li key={t.href} className="flex-1">
               <Link

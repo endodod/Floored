@@ -126,8 +126,9 @@ it lives in the shared pieces — `Button` sizes, `PageTitle` (sub hidden), `Sec
 `StartPanel`, `GameTile` (centred card with a Play button), `GAME_STATUS_BAR`, the dock buttons and chips
 (¼ / ½ hidden, All in kept), the bet row ("tap a chip"), the dock quote, and the board's history corner.
 The home page has its own big mode cards (`SimpleModeCard` in `components/mode-select.tsx`), and phones get a
-bottom tab bar (`components/simple-tab-bar.tsx`, not on game tables). New UI: say what the player needs right
-now, and mark the rest `simple:hidden`. Never change behaviour per view — both views play the same game.
+bottom tab bar (`components/simple-tab-bar.tsx`, not on game tables). Simple view also cuts taps: Tables go straight to
+the lobby (both tournaments and cash tables on one screen as compact `GameTile simpleRow` rows). New UI: say
+what the player needs right now, and mark the rest `simple:hidden`. Never change behaviour per view — both views play the same game.
 
 **Tailwind JIT.** Class names must appear literally in source. Never build them
 from data (`bg-${color}-500`); store colours as hex and apply them via `style`.
