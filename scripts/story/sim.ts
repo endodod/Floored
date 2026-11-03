@@ -118,7 +118,11 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     all.forEach((g) => seen.add(g))
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
-    let errands = ERRANDS_PER_CITY
+    let standing = 0 // Standing starts at 0 in every town
+    let minigameErrandLeft = 1
+    let streakErrandLeft = 1
+    let bigWinErrandLeft = 1
+    let nightUpErrandLeft = 1
     let wait = 0
     let brokeSince: number | null = null
     for (;;) {
@@ -126,17 +130,27 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
         bosses++
         if (rng() < 0.5) {
           money += BOSS_PURSE_M - BOSS_BUYIN_M
+          // Boss win no longer gives standing
           break
         }
         money -= BOSS_BUYIN_M
         wait = BOSS_REMATCH_NIGHTS
       }
-      // A night: minigames, an errand, then play (or rest), comps, lodging.
+      // Venue allowed by current standing: dive 0, main floor 1, high-roller 2
+      const venue: 0 | 1 | 2 = t.venue === 2 && standing >= 2 ? 2 : t.venue >= 1 && standing >= 1 ? 1 : 0
+      const cap = VENUE_MAX_M[venue]
       const before = money
-      // Tonight's three games in the room this player uses (night counter runs across the whole circuit).
-      const list = gamesFor(city, totalNights, t.venue, [...seen])
+
+      // Tonight's games in the room played tonight
+      const list = gamesFor(city, totalNights, venue, [...seen])
+
+      // Minigames (once per giver per night)
       for (let g = 0; g < city.minigameGivers; g++) money += MINIGAME_MAX_M * (0.45 + rng() * 0.5)
-      if (errands > 0) { money += ERRAND_PAY_M; errands-- }
+      if (minigameErrandLeft > 0 && city.minigameGivers > 0) {
+        money += ERRAND_PAY_M // Minigame errand gives money only, no standing
+        minigameErrandLeft--
+      }
+
       if (t.gamble && money >= 1) {
         for (let h = 0; h < HUSTLES_PER_NIGHT; h++) if (rng() < 0.75) money += HUSTLE_PAY_M
         let turnover = 0
@@ -145,22 +159,68 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
           if (need > 0) {
             const stake = Math.min(money, need)
             turnover += stake
-            money += stake * (draw(t.pick(list, rng), rng) - 1)
+            const mult = draw(t.pick(list, rng), rng)
+            money += stake * (mult - 1)
+            if (mult > 1) {
+              if (bigWinErrandLeft > 0 && mult >= 2) {
+                money += ERRAND_PAY_M
+                standing = Math.min(5, standing + 1)
+                bigWinErrandLeft--
+              }
+              if (streakErrandLeft > 0) {
+                money += ERRAND_PAY_M
+                standing = Math.min(5, standing + 1)
+                streakErrandLeft--
+              }
+            }
           }
         } else {
+          let curStreak = 0
+          let maxStreak = 0
+          let hitBigWin = false
           for (let k = 0; k < NIGHT_BETS && money >= 1; k++) {
-            const stake = Math.max(1, Math.min(money, money * t.share, t.cap ?? Infinity))
+            const stake = Math.max(1, Math.min(money, money * t.share, cap ?? Infinity))
             turnover += stake
-            money += stake * (draw(t.pick(list, rng), rng) - 1)
+            const mult = draw(t.pick(list, rng), rng)
+            money += stake * (mult - 1)
+            if (mult > 1) {
+              curStreak++
+              if (curStreak > maxStreak) maxStreak = curStreak
+              if (mult >= 2) hitBigWin = true
+            } else if (mult < 1) {
+              curStreak = 0
+            }
+          }
+          if (streakErrandLeft > 0 && maxStreak >= 2) {
+            money += ERRAND_PAY_M
+            standing = Math.min(5, standing + 1)
+            streakErrandLeft--
+          }
+          if (bigWinErrandLeft > 0 && hitBigWin) {
+            money += ERRAND_PAY_M
+            standing = Math.min(5, standing + 1)
+            bigWinErrandLeft--
           }
         }
-        money += Math.min(COMPS_RATE[t.venue] * turnover, COMPS_CAP_M[t.venue])
+        money += Math.min(COMPS_RATE[venue] * turnover, COMPS_CAP_M[venue])
       }
+
+      // Night-up errand: checked if money ended up on the night
+      if (t.gamble && nightUpErrandLeft > 0 && money > before) {
+        money += ERRAND_PAY_M
+        standing = Math.min(5, standing + 1)
+        nightUpErrandLeft--
+      }
+
       if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
       n++
       totalNights++
       wait = Math.max(0, wait - 1)
-      if (before >= 1 && money < 1) { busts++; brokeSince = n }
+      if (before >= 1 && money < 1) {
+        busts++
+        brokeSince = n
+        standing = Math.max(0, standing - 1) // Bust drops standing by 1 in current town
+      }
       if (brokeSince != null && money >= 10) { recoveries.push(n - brokeSince); brokeSince = null }
       if (n > 1000) return { nights, busts, bosses, recoveries, stuck: true }
     }

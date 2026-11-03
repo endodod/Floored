@@ -73,14 +73,14 @@ stakes; every house game in 2+ cities; shipped ids (`SHIPPED`) still exist; the 
 save played through (arrival, walkthrough, a night, comps by room, bust, marker, boss, travel).
 **Numbers quoted in dialogue must match the economy.** Checked today: the boss buy-in ("fifty times
 the house minimum to sit"), the Notary's marker ("twenty times the minimum, repaid at one and a
-half"), and Jo's walkthrough (dive/main floor limits and reputation, bets a night, games per room,
+half"), and Jo's walkthrough (dive/main floor limits and standing, bets a night, games per room,
 side goals, rematch wait; the `QUOTES` list). Prefer "times the house minimum" phrasing; if you
 quote a new number, add its regex to `QUOTES` or `WORDS` there.
 
 ## 4. Errands and hustles
 
-**Errands** (`Errand`: `id`, `city`, `giver`, `title`, `task`, `goal`, `opens?`, `pay?`): 4 per city
-(`ERRANDS_PER_CITY`), 6m each (`ERRAND_PAY_M`), paid when done. `goal`: `minigame`
+**Errands** (`Errand`: `id`, `city`, `giver`, `title`, `task`, `goal`, `opens?`, `pay?`, `rep?`): 4 per city
+(`ERRANDS_PER_CITY`), 6m each (`ERRAND_PAY_M`), paid when done. **Standing rule:** every city needs at least 2 early gambling errands plus a third (3 gambling errands total, e.g. streak, night-up, big-win), so the high-roller room opens before the boss. Gambling goals default to `rep: 1`; minigame goals have `rep: 0` (pays money only). If an open errand names a game, that game is guaranteed to be in the dive rotation (`pinnedErrandGames`). `goal`: `minigame`
 `{ minigame, score 0-1 }` (checked on every play of that giver's minigame, practice included),
 `streak` `{ game, wins }` (the game must be in the city's list), `night-up` (end a night at the
 casino up), `big-win` `{ mult }` (one bet returning mult x the stake or more). `opens` is a
@@ -108,7 +108,7 @@ Profile and rules live in `lib/story/boss.ts` (Dustwater: `CUTTER_HALE` bot, `BO
 `bossOutcome(standings, over)`: you win when the rival's seat is out before yours). The page is
 `app/story/boss/page.tsx`: it runs the city's Tables game (Liar's Dice) with a `TableHostContext`
 host (`components/tables/table-shell.tsx` lets a non-Tables mode supply the buy-in, bots and result),
-calls `enterBoss()` (buy-in `BOSS_BUYIN_M` 50m) and `bossResult(won)` (purse 150m, +1 reputation,
+calls `enterBoss()` (buy-in `BOSS_BUYIN_M` 50m) and `bossResult(won)` (purse 150m, sets `<city>-cleared`; boss win no longer gives standing,
 sets `<city>-cleared`; a loss, or leaving, sets a return `BOSS_REMATCH_NIGHTS` (2) nights later with
 the same terms). Cities whose `boss` is `challenge` need a seeded challenge page (not built). Per
 city: a boss `Bot` (keep it out of the general bot pool), the boss game's table component, and the
@@ -153,7 +153,7 @@ sit on the street at both layouts (screenshots below).
 7. Scene art (section 8) or accept the generic street.
 8. Checks: `npx tsc --noEmit`, `pnpm lint` (3 known errors: `lib/game-registry.tsx` x2,
    `lib/survival/migrate.ts`), `pnpm check:story`, `pnpm sim:story` (add `500` for a quick run).
-   Run the sim after any economy or game-list change; it models the room rotation and room comps.
+   Run the sim after any economy or game-list change; it models the room rotation, room comps and the standing path.
 9. Playwright at 390x844 and 1440x900 (`deviceScaleFactor` 1, `pnpm dev`): new story or set
    `floored-story` in localStorage, play arrival, talk to everyone, play a night in each room
    (set `rep` to 3), end the night (receipt), the map, the boss. Look at the screenshots.

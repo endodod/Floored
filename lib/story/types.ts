@@ -124,4 +124,11 @@ export interface Errand {
   opens?: Condition
   /** Pays this many of the city's minimum bets when done (ERRAND_PAY_M by default). */
   pay?: number
+  /** Standing earned in the errand's town when finished. Defaults to 1 for gambling goals (streak, night-up, big-win) and 0 for minigame goals. */
+  rep?: number
+}
+
+/** Standing earned in town when this errand finishes: 1 for gambling goals, 0 for minigame shifts, or an explicit override. */
+export function errandRep(e: Errand): number {
+  return e.rep ?? (e.goal.kind === 'minigame' ? 0 : 1)
 }

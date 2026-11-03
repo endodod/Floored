@@ -64,7 +64,7 @@ Map ─► City hub ─┬─► Venue night (12 bets across the venue's games, 
 
 The stakes rise about ×2–2.5 per city. You start with **$200** (40× the first min bet).
 Each city has **2–3 venues**: a dive (max bet 20× the min), the main floor (max 100×) and a
-**high-roller room** (no max, opened by Reputation), so going all in is always possible
+**high-roller room** (no max, opened at Standing 2, earned by gambling jobs), so going all in is always possible
 somewhere.
 
 | # | Act | City (fictional) | Feel | House games | Tables | Boss | Min bet |
@@ -302,7 +302,7 @@ Slots gets a story pay table below 100%.
 | `lib/story/economy.ts` | every number in section 5, as multiples of m |
 | `lib/story/dialogue.ts` | the scene runner (lines, choices, conditions, effects) |
 | `lib/story/minigames/` | pure minigame engines with seeded RNG |
-| `store/story-store.ts` | the save: city, night, money, debt, rep, factions, flags, minigame/job availability. Zustand persist with `version` + `migrate` from day one; added to `SYNCED_STORE_KEYS` |
+| `store/story-store.ts` | the save: city, night, money, debt, standing (per town), factions, flags, minigame/job availability. Zustand persist with `version` + `migrate` from day one; added to `SYNCED_STORE_KEYS` |
 | `app/story/` | map, city hub, `app/story/[game]` venue game route, minigame route, Tables route |
 | `components/story/` | map, dialogue box with portraits, hub panels, minigame boards |
 | `scripts/` | `sim:story` and `check:story` (below) |
@@ -385,5 +385,6 @@ Answered (2026-11-02):
 11. **The player** is an unnamed "you" with no portrait.
 12. **Story sits first** on the home page and in the navbar.
 13. **Draft names** are kept for now (they live in data files).
+14. **Standing (replaces global reputation):** per town, starts at 0, max 5. Earned from gambling errands (+1 each for streak, night-up, big-win; 0 for minigames). Dive needs 0, main floor 1, high-roller 2. Bust −1 (min 0). Boss win gives 0. Open errand games are pinned to the dive.
 
 Nothing is open. Build from Phase 1 (section 11).

@@ -31,10 +31,11 @@ function ChipStack({ className }: { className?: string }) {
   )
 }
 
-/** Reputation as five stars. */
-export function RepStars({ rep, className }: { rep: number; className?: string }) {
+/** Standing as five stars. */
+export function RepStars({ rep, city, className }: { rep: number; city?: string; className?: string }) {
+  const label = city ? `Standing in ${city}: ${rep} of 5` : `Standing ${rep} of 5`
   return (
-    <span className={cn('inline-flex items-center gap-[1px]', className)} role="img" aria-label={`Reputation ${rep} of 5`}>
+    <span className={cn('inline-flex items-center gap-[1px]', className)} role="img" aria-label={label} title={label}>
       {[0, 1, 2, 3, 4].map((i) => (
         <Star
           key={i}
@@ -89,7 +90,7 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
   const night = useStoryStore((s) => s.night)
   const moneyNow = useStoryStore((s) => s.money)
   const owed = useStoryStore((s) => s.owed)
-  const rep = useStoryStore((s) => s.rep)
+  const rep = useStoryStore((s) => s.rep())
   const tonight = useStoryStore((s) => s.tonight)
   const city = CITY_BY_ID.get(cityId)!
   const betsLeft = tonight ? Math.max(0, NIGHT_BETS - tonight.bets) : null
@@ -113,7 +114,7 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
         <p className="flex items-center gap-1.5 whitespace-nowrap text-[10.5px] font-semibold uppercase leading-[13px] tracking-[0.12em] text-[#d9b779]">
           <span className="num">Night {night + 1}</span>
           {tonight && <span className="hidden lg:inline">· {VENUE_NAMES[tonight.venue]}</span>}
-          <RepStars rep={rep} className="sm:hidden" />
+          <RepStars rep={rep} city={city.name} className="sm:hidden" />
         </p>
       </div>
 
@@ -126,8 +127,8 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
       </div>
 
       <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 sm:flex')}>
-        <span className="felt-print !text-[9px] !tracking-[0.16em]">Rep</span>
-        <RepStars rep={rep} />
+        <span className="felt-print !text-[9px] !tracking-[0.16em]">Standing</span>
+        <RepStars rep={rep} city={city.name} />
       </div>
 
       {betsLeft != null && (

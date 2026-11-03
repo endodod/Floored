@@ -19,7 +19,7 @@ mid-night; revisit when the Summit is built.) (2) Comps by room: `COMPS_RATE` `[
 "How the nights work" card (`components/story/nights-guide.tsx`, hub menu, all numbers from the
 constants). The checker verifies the numbers Jo quotes. (4) The arrival scene now tells the premise (Gilded Floor,
 Vale, the twelve champions). Only Dustwater is playable (title screen and map say so). Guide for
-building cities 2-12: [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md).
+building cities 2-12: [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md). (5) Standing rework: reputation replaced with per-town "standing" (0–5, starts at 0 in every new town, restored when returning). Earned only from gambling errands (+1 for streak, night-up, big-win; 0 for minigames). Rooms: dive always open (0), main floor standing 1, high-roller room standing 2 (`VENUE_REP = [0, 1, 2]`). In Dustwater the three gambling errands reach standing 3, opening the high-roller room before the boss. Bust costs −1 standing (never below 0). Boss win gives 0 standing. While an errand naming a game is open, the dive always includes it (`pinnedErrandGames`). Save version bumped to 2 (`STORY_SAVE_VERSION = 2`), migrating old `rep` capped by finished gambling errands.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
@@ -38,6 +38,7 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Saves | one story save, "New story" behind a confirmation |
 | Harsher loss option | no |
 | Boss rematches | don't get easier (same buy-in, same rival, after 2 nights) |
+| Standing / reputation | per town, starts at 0; earned from gambling errands (+1 for streak, night-up, big-win; 0 for minigames); dive 0, main 1, high-roller 2; bust −1; boss win 0 |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
 | Names | draft names kept (Jo, Sloane, Vale, the Notary, twelve cities) |
@@ -64,8 +65,8 @@ Port that generator to TypeScript; don't redraw from scratch.
 
 ### The save (`store/story-store.ts`) in short
 - Money in **dollars**; rules in multiples of the city's min bet (`minBet()`).
-- `tonight` = a night at a venue: `venue` 0 dive (max 20m) / 1 main floor (max 100m, rep ≥ 1)
-  / 2 high-roller room (no max, rep ≥ 3); `bets` (max `NIGHT_BETS` 12), `openRound`
+- `tonight` = a night at a venue: `venue` 0 dive (max 20m) / 1 main floor (max 100m, standing ≥ 1)
+  / 2 high-roller room (no max, standing ≥ 2); `bets` (max `NIGHT_BETS` 12), `openRound`
   (stake already taken), `rounds` (settled rounds, for hustles and errands), `startMoney`.
 - Game hook contract to use: `placeBet(game, amount)` takes the stake (a second stake in
   the same open round, e.g. a double, adds to it without counting a new bet);
@@ -74,7 +75,7 @@ Port that generator to TypeScript; don't redraw from scratch.
   (and 0 once 12 bets are used), `betsLeft()`.
 - `endNight()` (after playing or resting): comps (by room: 4% / 5% / 6% of bets, cap 10m / 15m / 20m), hustles (2 a night,
   `hustlesFor(city, night)`, 4m each), night-up errands, lodging (3m) or the car (<10m),
-  bust check (money < min bet → rep −1, `stats.busts`, queues the city's `bust` scene).
+  bust check (money < min bet → standing −1 in current town, `stats.busts`, queues the city's `bust` scene).
   Returns a `NightSummary`, also kept in `lastNight` for the hub.
 - Errands: `openErrands()` (not done, and `opens` condition holds or started by a scene);
   goals `minigame` / `streak` / `night-up` / `big-win` are checked automatically and pay
@@ -85,7 +86,7 @@ Port that generator to TypeScript; don't redraw from scratch.
   `startScene(id)`, `currentStep()`, `advance()`, `pick(index)`; `sceneFor(trigger)` finds
   the first matching scene in the city (talk scenes by character).
 - Boss: `enterBoss()` pays 50m and sets `bossTable { seed }`; `bossResult(won)` pays 150m +
-  rep +1 + `<city>-cleared` flag, or sets `bossBackOn = night + 2`. Leaving the boss table
+  `<city>-cleared` flag (boss win no longer gives standing), or sets `bossBackOn = night + 2`. Leaving the boss table
   must count as a loss (see 3e).
 - `travelNext()` needs the city cleared and the fare (20 × next city's min bet).
 - Known gap: `stats.busts` only counts busts found at `endNight()`; a bust mid-night is

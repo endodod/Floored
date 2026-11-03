@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { GAME_REGISTRY } from '@/lib/game-registry'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { CITY_BY_ID } from '@/lib/story/cities'
-import { gamesFor } from '@/lib/story/rotation'
+import { gamesFor, pinnedErrandGames } from '@/lib/story/rotation'
 import { useStoryStore, VENUE_NAMES } from '@/store/story-store'
 import { VENUE_MAX_M } from '@/lib/story/economy'
 import { useStoryGameBankroll } from '@/hooks/use-game-bankroll'
@@ -62,10 +62,12 @@ export default function StoryGamePage({ params }: { params: Promise<{ game: stri
   const venue = useStoryStore((s) => s.tonight?.venue ?? null)
   const nightNo = useStoryStore((s) => s.night)
   const seen = useStoryStore((s) => s.seenGames)
+  const errands = useStoryStore((s) => s.openErrands())
 
   // Only tonight's games in the room you sat down in.
   const city = CITY_BY_ID.get(cityId)
-  const allowed = !!city && venue != null && gamesFor(city, nightNo, venue, seen).includes(game as GameName)
+  const pinned = pinnedErrandGames(errands)
+  const allowed = !!city && venue != null && gamesFor(city, nightNo, venue, seen, pinned).includes(game as GameName)
 
   useEffect(() => {
     if (hydrated && !allowed) router.replace('/story')

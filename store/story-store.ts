@@ -11,7 +11,7 @@ import {
   TRAVEL_FARE_M, VENUE_MAX_M,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
-import type { Effect, Errand, FactionId, MinigameId, SceneTrigger } from '@/lib/story/types'
+import { errandRep, type Effect, type Errand, type FactionId, type MinigameId, type SceneTrigger } from '@/lib/story/types'
 import type { GameName } from './types'
 
 /**
@@ -20,13 +20,13 @@ import type { GameName } from './types'
  * The persisted shape is versioned from the start: bump STORY_SAVE_VERSION and
  * extend `migrate` for any change to it, and never rename a content id.
  */
-export const STORY_SAVE_VERSION = 1
+export const STORY_SAVE_VERSION = 2
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
 export const VENUE_NAMES = ['The dive', 'The main floor', 'The high-roller room'] as const
-/** Reputation each venue asks for. */
-export const VENUE_REP: readonly [number, number, number] = [0, 1, 3]
+/** Standing each venue asks for: dive 0, main floor 1, high-roller room 2. */
+export const VENUE_REP: readonly [number, number, number] = [0, 1, 2]
 
 export interface Tonight {
   venue: VenueTier
@@ -65,8 +65,8 @@ export interface StorySave {
   owed: number
   /** Markers taken in this city (each costs more to repay). */
   markersHere: number
-  /** Reputation 0–5: opens the main floor (1) and the high-roller room (3). */
-  rep: number
+  /** Standing 0–5 per city (earned from gambling errands; dive needs 0, main floor 1, high-roller 2). */
+  standing: Partial<Record<CityId, number>>
   factions: Record<FactionId, number>
   flags: Record<string, true>
   /** Scenes that played (for once-only scenes). */
@@ -103,7 +103,7 @@ const fresh = (): StorySave => ({
   money: START_MONEY,
   owed: 0,
   markersHere: 0,
-  rep: 1,
+  standing: { [STARTING_CITY]: 0 },
   factions: { syndicate: 0, 'old-guard': 0, underground: 0 },
   flags: {},
   seen: [],
@@ -128,6 +128,8 @@ interface StoryActions {
   /** The current city's minimum bet in dollars. */
   minBet: () => number
   context: () => StoryContext
+  /** Standing in the current town (0–5). */
+  rep: () => number
 
   // Scenes
   /** The first scene for a trigger in this city whose condition holds and that may still play. */
@@ -203,8 +205,11 @@ export const useStoryStore = create<StoryStore>()(
           else if ('money' in e) {
             if (e.money >= 0) get().receive(e.money * m())
             else set({ money: Math.max(0, s.money + e.money * m()) })
-          } else if ('rep' in e) set({ rep: Math.max(0, Math.min(5, s.rep + e.rep)) })
-          else if ('errand' in e) set({ errands: { ...s.errands, [e.errand]: e.step === 'start' ? 'started' : 'done' } })
+          } else if ('rep' in e) {
+            const cur = get().rep()
+            const next = Math.max(0, Math.min(5, cur + e.rep))
+            set((st) => ({ standing: { ...st.standing, [st.city]: next } }))
+          } else if ('errand' in e) set({ errands: { ...s.errands, [e.errand]: e.step === 'start' ? 'started' : 'done' } })
           else if ('marker' in e) get().takeMarker()
         }
       }
@@ -212,9 +217,16 @@ export const useStoryStore = create<StoryStore>()(
       const completeErrand = (e: Errand) => {
         if (get().errands[e.id] === 'done') return
         const pay = (e.pay ?? ERRAND_PAY_M) * m()
-        set((s) => ({ errands: { ...s.errands, [e.id]: 'done' } }))
+        const repGain = errandRep(e)
+        const cur = get().rep()
+        const next = Math.min(5, cur + repGain)
+        set((s) => ({
+          errands: { ...s.errands, [e.id]: 'done' },
+          standing: { ...s.standing, [s.city]: next },
+        }))
         get().receive(pay)
-        say(`Errand done: ${e.title} · +$${pay.toLocaleString('en-US')}`)
+        const repNote = repGain > 0 ? ` · +${repGain} standing` : ''
+        say(`Errand done: ${e.title} · +$${pay.toLocaleString('en-US')}${repNote}`)
       }
 
       /** After a settled round: streak and big-win errands. */
@@ -245,6 +257,7 @@ export const useStoryStore = create<StoryStore>()(
           const s = get()
           return { flags: s.flags, factions: s.factions, moneyM: s.money / m() }
         },
+        rep: () => Math.min(5, Math.max(0, get().standing[get().city] ?? 0)),
 
         sceneFor: (trigger) => {
           const s = get()
@@ -278,42 +291,64 @@ export const useStoryStore = create<StoryStore>()(
           const cur = get().scene
           if (!cur) return null
           const scene = SCENE_BY_ID.get(cur.id)
-          return scene ? stepAt(scene, cur.node, get().context()) : null
+          if (!scene) return null
+          return stepAt(scene, cur.node, get().context())
         },
         advance: () => {
           const cur = get().scene
-          const scene = cur && SCENE_BY_ID.get(cur.id)
-          if (!cur || !scene) return
+          if (!cur) return
+          const scene = SCENE_BY_ID.get(cur.id)
+          if (!scene) return
           const node = scene.nodes[cur.node]
-          if (node?.kind === 'line') set({ scene: { ...cur, node: nextAfterLine(scene, cur.node) } })
-          else if (node?.kind === 'end') {
+          if (!node) return
+          if (node.kind === 'line') {
+            set({ scene: { ...cur, node: node.next } })
+            return
+          }
+          if (node.kind === 'end') {
             apply(node.effects ?? [])
-            const s = get()
-            set({ scene: null, seen: s.seen.includes(cur.id) ? s.seen : [...s.seen, cur.id] })
-            // The next queued scene follows (arrival, then Jo's walkthrough).
+            const seen = scene.once !== false && !get().seen.includes(scene.id) ? [...get().seen, scene.id] : get().seen
+            set({ scene: null, seen })
             get().playQueued()
           }
         },
         pick: (index) => {
           const cur = get().scene
-          const scene = cur && SCENE_BY_ID.get(cur.id)
-          if (!cur || !scene) return
-          const { next, effects } = choose(scene, cur.node, index, get().context())
-          apply(effects)
-          set({ scene: { ...cur, node: next } })
+          if (!cur) return
+          const scene = SCENE_BY_ID.get(cur.id)
+          if (!scene) return
+          const node = scene.nodes[cur.node]
+          if (!node || node.kind !== 'choice') return
+          const res = choose(scene, cur.node, index, get().context())
+          apply(res.effects)
+          const target = scene.nodes[res.next]
+          if (target && target.kind === 'end') {
+            apply(target.effects ?? [])
+            const seen = scene.once !== false && !get().seen.includes(scene.id) ? [...get().seen, scene.id] : get().seen
+            set({ scene: null, seen })
+            get().playQueued()
+          } else {
+            set({ scene: { ...cur, node: res.next } })
+          }
         },
 
         receive: (dollars, opts) => {
           const s = get()
-          const amount = Math.max(0, Math.round(dollars))
-          const toMarker = opts?.profit && s.owed > 0 ? Math.min(s.owed, Math.floor(amount * MARKER_GARNISH)) : 0
-          set({ money: s.money + amount - toMarker, owed: s.owed - toMarker })
+          const total = Math.max(0, Math.round(dollars))
+          if (opts?.profit && s.owed > 0) {
+            const repay = Math.min(s.owed, Math.round(total * MARKER_GARNISH))
+            const keep = total - repay
+            set({ money: s.money + keep, owed: s.owed - repay })
+            if (repay > 0) say(`-$${repay.toLocaleString('en-US')} repaid on the Notary's marker (${s.owed - repay > 0 ? `$${(s.owed - repay).toLocaleString('en-US')} left` : 'cleared'})`)
+          } else {
+            set({ money: s.money + total })
+          }
         },
         spend: (dollars) => {
           const s = get()
-          const amount = Math.round(dollars)
-          if (amount < 0 || amount > s.money) return false
-          set({ money: s.money - amount })
+          const cost = Math.max(0, Math.round(dollars))
+          if (s.money < cost) return false
+          set({ money: s.money - cost })
           return true
         },
         takeMarker: () => {
@@ -332,7 +367,7 @@ export const useStoryStore = create<StoryStore>()(
           return ERRANDS.filter((e) => e.city === s.city && s.errands[e.id] !== 'done' && (s.errands[e.id] === 'started' || holds(e.opens, ctx)))
         },
 
-        venueOpen: (venue) => get().rep >= VENUE_REP[venue],
+        venueOpen: (venue) => get().rep() >= VENUE_REP[venue],
         startNight: (venue) => {
           const s = get()
           if (s.tonight || !get().venueOpen(venue) || s.money < m()) return false
@@ -414,6 +449,8 @@ export const useStoryStore = create<StoryStore>()(
           const money = after.money - lodging
           const bust = money < m()
           const summary: NightSummary = { night: after.night + 1, played: !!t, comps, hustles, lodging, car, net: money - before, bust }
+          const curRep = get().rep()
+          const nextRep = bust ? Math.max(0, curRep - 1) : curRep
           set({
             money,
             night: after.night + 1,
@@ -421,7 +458,7 @@ export const useStoryStore = create<StoryStore>()(
             bossBackOn: after.bossBackOn != null && after.night + 1 >= after.bossBackOn ? null : after.bossBackOn,
             tonight: null,
             lastNight: summary,
-            ...(bust ? { rep: Math.max(0, after.rep - 1), stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
+            ...(bust ? { standing: { ...after.standing, [after.city]: nextRep }, stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
           })
           if (bust) queue(get().sceneFor({ on: 'bust' }))
           return summary
@@ -454,7 +491,7 @@ export const useStoryStore = create<StoryStore>()(
           const s = get()
           if (!s.bossTable) return
           if (won) {
-            set({ bossTable: null, cleared: [...s.cleared, s.city], rep: Math.min(5, s.rep + 1), stats: { ...s.stats, bossWins: s.stats.bossWins + 1 }, flags: { ...s.flags, [`${s.city}-cleared`]: true } })
+            set({ bossTable: null, cleared: [...s.cleared, s.city], stats: { ...s.stats, bossWins: s.stats.bossWins + 1 }, flags: { ...s.flags, [`${s.city}-cleared`]: true } })
             get().receive(BOSS_PURSE_M * m(), { profit: true })
             queue(get().sceneFor({ on: 'boss-win' }))
           } else {
@@ -473,7 +510,8 @@ export const useStoryStore = create<StoryStore>()(
           const next = CITIES[i + 1]
           const fare = get().fareToNext()
           if (!next || fare == null || s.tonight || !s.cleared.includes(s.city) || !get().spend(fare)) return false
-          set({ city: next.id, visited: s.visited.includes(next.id) ? s.visited : [...s.visited, next.id], cityNight: 0, markersHere: 0, bossBackOn: null, lastNight: null })
+          const standing = { ...s.standing, [next.id]: s.standing[next.id] ?? 0 }
+          set({ city: next.id, standing, visited: s.visited.includes(next.id) ? s.visited : [...s.visited, next.id], cityNight: 0, markersHere: 0, bossBackOn: null, lastNight: null })
           queue(get().sceneFor({ on: 'arrival' }))
           return true
         },
@@ -489,9 +527,23 @@ export const useStoryStore = create<StoryStore>()(
         return out as StorySave
       },
       migrate: (persisted, version) => {
-        // Version 1 is the first shape; later versions extend this, filling new fields from fresh().
-        if (!persisted || typeof persisted !== 'object' || version > STORY_SAVE_VERSION) return fresh()
-        return { ...fresh(), ...(persisted as Partial<StorySave>) }
+        if (!persisted || typeof persisted !== 'object') return fresh()
+        const data = { ...(persisted as Record<string, unknown>) }
+        if (version < 2) {
+          const cityId = (data.city as CityId) ?? STARTING_CITY
+          const finishedErrands = (data.errands as Record<string, 'started' | 'done'>) ?? {}
+          const maxFromErrands = ERRANDS.filter(
+            (e) => e.city === cityId && finishedErrands[e.id] === 'done' && errandRep(e) > 0,
+          ).reduce((sum, e) => sum + errandRep(e), 0)
+          const oldRep = typeof data.rep === 'number' ? data.rep : 0
+          const standing = {
+            ...((data.standing as Partial<Record<CityId, number>>) ?? {}),
+            [cityId]: Math.min(oldRep, maxFromErrands),
+          }
+          delete data.rep
+          return { ...fresh(), ...(data as Partial<StorySave>), standing }
+        }
+        return { ...fresh(), ...(data as Partial<StorySave>) }
       },
       merge: (persisted, current) => ({ ...current, ...fresh(), ...(persisted as Partial<StorySave>) }),
     },

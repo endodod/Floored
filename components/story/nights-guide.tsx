@@ -7,9 +7,9 @@ import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, GAMES_PER_ROOM, HUSTLE_PAY_M,
   HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M,
 } from '@/lib/story/economy'
-import { gamesFor } from '@/lib/story/rotation'
+import { gamesFor, pinnedErrandGames } from '@/lib/story/rotation'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
-import { VENUE_NAMES, VENUE_REP } from '@/store/story-store'
+import { useStoryStore, VENUE_NAMES, VENUE_REP } from '@/store/story-store'
 import { formatChips } from '@/utils/format'
 import type { GameName } from '@/store/types'
 
@@ -37,9 +37,18 @@ export function NightsGuide({ city, night, seen, onReplay }: { city: City; night
   const exTurnover = NIGHT_BETS * exBet * m
   const exComps = Math.round(Math.min(COMPS_RATE[0] * exTurnover, COMPS_CAP_M[0] * m))
   const label = (g: GameName) => GAME_BY_NAME.get(g)?.label ?? g
+  const errands = useStoryStore((s) => s.openErrands())
+  const pinned = pinnedErrandGames(errands)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+      <Section title="Standing">
+        <p>Standing is how the town sees you, from 0 to 5. You start at 0 in every new town.</p>
+        <p>Finish jobs won at the tables (streaks, nights up, big wins) to earn standing (+1 each). Minigames pay money only.</p>
+        <p>The dive takes anyone (standing 0). The main floor asks for standing {VENUE_REP[1]}. The high-roller room asks for standing {VENUE_REP[2]}: no bet limit, best comps, and where you build the boss buy-in.</p>
+        <p>Go bust and your standing drops by 1 (never below 0).</p>
+      </Section>
+
       <Section title="Rooms">
         <p>A night is one room. Pick it, and stay until you call it a night.</p>
         <table className="w-full border-collapse text-left text-[12px] sm:text-[12.5px]">
@@ -55,7 +64,7 @@ export function NightsGuide({ city, night, seen, onReplay }: { city: City; night
             {([0, 1, 2] as const).map((v) => (
               <tr key={v} className="border-t border-white/10">
                 <td className="py-1 pr-1.5 text-ink">{ROOM_SHORT[v]}</td>
-                <td className="py-1 pr-1.5">{VENUE_REP[v] === 0 ? 'Anyone' : `Rep ${VENUE_REP[v]}`}</td>
+                <td className="py-1 pr-1.5">{VENUE_REP[v] === 0 ? 'Anyone' : `Standing ${VENUE_REP[v]}`}</td>
                 <td className="num py-1 pr-1.5">{VENUE_MAX_M[v] == null ? 'No limit' : money(VENUE_MAX_M[v]! * m)}</td>
                 <td className="num py-1">{pct(COMPS_RATE[v])} · max {money(COMPS_CAP_M[v] * m)}</td>
               </tr>
@@ -70,7 +79,7 @@ export function NightsGuide({ city, night, seen, onReplay }: { city: City; night
         <ul className="flex flex-col gap-0.5">
           {([0, 1, 2] as const).map((v) => (
             <li key={v}>
-              <span className="text-ink">{VENUE_NAMES[v]}:</span> {gamesFor(city, night, v, seen).map(label).join(', ') || 'none yet'}
+              <span className="text-ink">{VENUE_NAMES[v]}:</span> {gamesFor(city, night, v, seen, pinned).map(label).join(', ') || 'none yet'}
             </li>
           ))}
         </ul>
@@ -105,13 +114,13 @@ export function NightsGuide({ city, night, seen, onReplay }: { city: City; night
 
       <Section title="Going bust & the Notary">
         <p>
-          Fall below the minimum bet ({money(m)}) and you are bust: you lose a point of reputation. The Notary will lend you a marker of {money(MARKER_M * m)}, repaid at {MARKER_REPAY}×. Half the profit from each win goes to it until it is square.
+          Fall below the minimum bet ({money(m)}) and you are bust: you lose a point of standing. The Notary will lend you a marker of {money(MARKER_M * m)}, repaid at {MARKER_REPAY}×. Half the profit from each win goes to it until it is square.
         </p>
       </Section>
 
       <Section title="The boss">
         <p>
-          Each city has a boss at the back table. The buy-in is {money(BOSS_BUYIN_M * m)} ({BOSS_BUYIN_M}× the minimum) and a win pays a {money(BOSS_PURSE_M * m)} purse, opens the road out and earns a reputation point. Lose and the rival is back after {BOSS_REMATCH_NIGHTS} nights, with the same buy-in.
+          Each city has a boss at the back table. The buy-in is {money(BOSS_BUYIN_M * m)} ({BOSS_BUYIN_M}× the minimum) and a win pays a {money(BOSS_PURSE_M * m)} purse, opens the road out. Lose and the rival is back after {BOSS_REMATCH_NIGHTS} nights, with the same buy-in.
         </p>
       </Section>
 

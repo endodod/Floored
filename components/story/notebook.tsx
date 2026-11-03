@@ -4,8 +4,9 @@ import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { Portrait } from '@/components/story/portrait'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
-import type { Errand } from '@/lib/story/types'
+import { errandRep, type Errand } from '@/lib/story/types'
 import { CHARACTER_BY_ID } from '@/lib/story/content/characters'
+import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { formatChips } from '@/utils/format'
 
 const money = (n: number) => `$${formatChips(n)}`
@@ -94,16 +95,31 @@ export function Notebook({
             <section aria-label="Errands" className="border-t border-dashed border-[#2a2420]/30 pt-2.5">
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#6f6354]">Errands</p>
               <ul className="mt-1.5 flex flex-col gap-2">
-                {errands.map((e) => (
-                  <li key={e.id} className="flex items-start gap-2.5">
-                    <span className="w-7 shrink-0">{isLook(e.giver) && <Portrait look={e.giver} className="block w-full [&_svg]:h-auto [&_svg]:w-full" />}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[13.5px] font-bold leading-5">{e.title}</span>
-                      <span className="block text-[12.5px] leading-[17px] text-[#5a4f43]">{e.task}</span>
-                      <span className="sr-only">From {CHARACTER_BY_ID.get(e.giver)?.name ?? e.giver}</span>
-                    </span>
-                  </li>
-                ))}
+                {errands.map((e) => {
+                  const rep = errandRep(e)
+                  const namedGame = e.goal.kind === 'streak' ? e.goal.game : null
+                  const gameLabel = namedGame ? (GAME_BY_NAME.get(namedGame)?.label ?? namedGame) : null
+                  return (
+                    <li key={e.id} className="flex items-start gap-2.5">
+                      <span className="w-7 shrink-0">{isLook(e.giver) && <Portrait look={e.giver} className="block w-full [&_svg]:h-auto [&_svg]:w-full" />}</span>
+                      <span className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="block text-[13.5px] font-bold leading-5">{e.title}</span>
+                          <span className={`font-mono text-[10px] font-bold uppercase tracking-[0.08em] ${rep > 0 ? 'text-[#1d5a3e]' : 'text-[#6f6354]'}`}>
+                            {rep > 0 ? `+${rep} standing` : 'pays only'}
+                          </span>
+                        </div>
+                        <span className="block text-[12.5px] leading-[17px] text-[#5a4f43]">{e.task}</span>
+                        {gameLabel && (
+                          <span className="mt-0.5 block text-[11px] font-medium leading-[15px] text-[#8a5a22]">
+                            {gameLabel} is on at the dive while this job is open.
+                          </span>
+                        )}
+                        <span className="sr-only">From {CHARACTER_BY_ID.get(e.giver)?.name ?? e.giver}</span>
+                      </span>
+                    </li>
+                  )
+                })}
               </ul>
             </section>
           )}

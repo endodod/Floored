@@ -1,5 +1,6 @@
 import type { City } from '@/lib/story/cities'
 import { GAMES_PER_ROOM } from '@/lib/story/economy'
+import type { Errand } from '@/lib/story/types'
 import type { GameName } from '@/store/types'
 import { createRng, seedFromString } from '@/utils/rng'
 
@@ -43,9 +44,34 @@ function lineup(cityId: string, list: GameName[], night: number, venue: number):
   return out
 }
 
-/** Tonight's games in one room. `seen` is the games met so far (for the Summit's 'all-seen' list). */
-export function gamesFor(city: City, night: number, venue: number, seen: GameName[] = []): GameName[] {
+/** Games named by open errands that should be guaranteed at the dive. */
+export function pinnedErrandGames(errands: Errand[]): GameName[] {
+  const games: GameName[] = []
+  for (const e of errands) {
+    if (e.goal.kind === 'streak' && e.goal.game && !games.includes(e.goal.game)) {
+      games.push(e.goal.game)
+    }
+  }
+  return games
+}
+
+/** Tonight's games in one room. `seen` is the games met so far (for the Summit's 'all-seen' list).
+ * In the dive (venue 0), any game required by an open errand (`pinned`) is guaranteed to be present.
+ */
+export function gamesFor(city: City, night: number, venue: number, seen: GameName[] = [], pinned: GameName[] = []): GameName[] {
   const list = city.games === 'all-seen' ? seen : city.games
   if (list.length <= GAMES_PER_ROOM) return [...list]
-  return lineup(city.id, list, night, venue)
+  const base = lineup(city.id, list, night, venue)
+  if (venue !== 0 || !pinned.length) return base
+  const uniquePinned = [...new Set(pinned)].filter((g) => list.includes(g))
+  if (!uniquePinned.length) return base
+  const out = [...base]
+  for (const pin of uniquePinned) {
+    if (out.includes(pin)) continue
+    const idx = out.findLastIndex((g) => !uniquePinned.includes(g))
+    if (idx !== -1) {
+      out[idx] = pin
+    }
+  }
+  return out
 }

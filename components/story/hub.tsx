@@ -23,13 +23,13 @@ import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
 import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
-import { gamesFor } from '@/lib/story/rotation'
+import { gamesFor, pinnedErrandGames } from '@/lib/story/rotation'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { sceneConfigFor } from '@/lib/story/scene-theme'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { useStoryStore, VENUE_NAMES, VENUE_REP, type NightSummary, type VenueTier } from '@/store/story-store'
 import { formatChips } from '@/utils/format'
-import type { Character } from '@/lib/story/types'
+import { errandRep, type Character } from '@/lib/story/types'
 
 const money = (n: number) => `$${formatChips(n)}`
 /** The rival who sits at each city's boss table (the one character per city without a minigame). */
@@ -91,7 +91,8 @@ export function StoryHub() {
   const cleared = s.cleared.includes(s.city)
   const fare = s.fareToNext()
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
-  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames)
+  const pinned = pinnedErrandGames(errands)
+  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, pinned)
   const broke = s.money < m && !night
   const betsLeft = night ? Math.max(0, NIGHT_BETS - night.bets) : 0
   const inCar = s.money < CAR_BELOW_M * m
@@ -150,7 +151,7 @@ export function StoryHub() {
         node: (
           <PlaceSpot
             title={VENUE_SHORT[v]}
-            sub={!unlocked ? `Rep ${VENUE_REP[v]} needed` : here ? `Tonight · ${betsLeft} bets` : undefined}
+            sub={!unlocked ? `Standing ${VENUE_REP[v]} needed` : here ? `Tonight · ${betsLeft} bets` : undefined}
             icon={!unlocked ? <Lock className="h-2.5 w-2.5" aria-hidden /> : undefined}
             locked={!unlocked}
             lit={here}
@@ -257,9 +258,9 @@ export function StoryHub() {
         body = (
           <>
             <div className="flex items-center gap-2">
-              <RepStars rep={s.rep} />
+              <RepStars rep={s.rep()} city={city.name} />
               <SheetNote tone="soft">
-                Needs reputation {VENUE_REP[v]} (you have {s.rep})
+                Needs standing {VENUE_REP[v]}. Finish a job at the tables.
               </SheetNote>
             </div>
             <SheetNote>The door stays chained until your name is good enough in {city.name}.</SheetNote>
@@ -340,13 +341,28 @@ export function StoryHub() {
         body: (
           <>
             {c.minigame && <SheetNote>{paid ? 'Already paid tonight. Play again for practice; errands still count.' : 'Pays once a night, by how well you do.'}</SheetNote>}
-            {theirs.map((e) => (
-              <div key={e.id} className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
-                <p className="felt-print !text-[9.5px]">Errand</p>
-                <p className="text-[13px] font-semibold text-ink">{e.title}</p>
-                <p className="text-[12px] leading-[17px] text-dim">{e.task}</p>
-              </div>
-            ))}
+            {theirs.map((e) => {
+              const repGain = errandRep(e)
+              const namedGame = e.goal.kind === 'streak' ? e.goal.game : null
+              const gameLabel = namedGame ? (GAME_BY_NAME.get(namedGame)?.label ?? namedGame) : null
+              return (
+                <div key={e.id} className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
+                  <div className="flex items-center justify-between">
+                    <p className="felt-print !text-[9.5px]">Errand</p>
+                    <span className={`font-mono text-[10px] font-bold uppercase tracking-[0.08em] ${repGain > 0 ? 'text-gold' : 'text-dim'}`}>
+                      {repGain > 0 ? `+${repGain} standing` : 'pays only'}
+                    </span>
+                  </div>
+                  <p className="text-[13px] font-semibold text-ink">{e.title}</p>
+                  <p className="text-[12px] leading-[17px] text-dim">{e.task}</p>
+                  {gameLabel && (
+                    <p className="mt-1 text-[11px] leading-[15px] text-gold">
+                      {gameLabel} is on at the dive while this job is open.
+                    </p>
+                  )}
+                </div>
+              )
+            })}
             <Actions>
               <Button size="sm" variant="outline" disabled={!canTalk} onClick={() => talk(c.id)}>{canTalk ? 'Talk' : 'Nothing new to say'}</Button>
               {c.minigame && (
@@ -633,7 +649,7 @@ export function StoryHub() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Start a new story?</DialogTitle>
-            <DialogDescription>This erases your current story save: money, reputation, cities cleared. It can&apos;t be undone.</DialogDescription>
+            <DialogDescription>This erases your current story save: money, standing, cities cleared. It can&apos;t be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="secondary" onClick={() => setConfirmNew(false)}>Keep playing</Button>
