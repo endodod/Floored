@@ -15,11 +15,18 @@ export default function FreeplayPage() {
             <span className="mt-0.5 block text-xs">Go broke and a game offers a refill to 10K. Nothing here costs or pays real money.</span>
           </>
         }
-        aside={<FreeplaySession />}
+        aside={
+          <div className="simple:hidden">
+            <FreeplaySession />
+          </div>
+        }
       />
       <section className="flex flex-col gap-4" aria-labelledby="freeplay-games">
         <SectionTitle suit={3} note="Every game open">
-          <span id="freeplay-games">Pick a table</span>
+          <span id="freeplay-games">
+            <span className="simple:hidden">Pick a table</span>
+            <span className="hidden simple:inline">Pick a game</span>
+          </span>
         </SectionTitle>
         <Lobby mode="freeplay" />
       </section>

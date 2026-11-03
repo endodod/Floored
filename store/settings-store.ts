@@ -9,6 +9,9 @@ export type MotionPreference = 'system' | 'reduced' | 'full'
 interface SettingsStore {
   motion: MotionPreference
   setMotion: (v: MotionPreference) => void
+  /** Simple view: bigger type and buttons, fewer words. Mirrored on <html data-view>. */
+  simpleView: boolean
+  setSimpleView: (v: boolean) => void
   autoReBet: boolean
   setAutoReBet: (v: boolean) => void
   forceTie: boolean
@@ -26,6 +29,8 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       motion: 'system',
       setMotion: (v) => set({ motion: v }),
+      simpleView: false,
+      setSimpleView: (v) => set({ simpleView: v }),
       autoReBet: true,
       setAutoReBet: (v) => set({ autoReBet: v }),
       forceTie: false,

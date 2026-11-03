@@ -14,6 +14,7 @@ import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
 import { useChallengeStore } from '@/store/challenge-store'
 import { FlooredMark } from '@/components/ui/terminal'
+import { SimpleViewToggle } from '@/components/simple-view-toggle'
 
 const MODES = [
   { href: '/daily', label: 'Daily', enabled: true },
@@ -43,9 +44,9 @@ function BarFigure({ label, value }: { label: string; value: number }) {
   const tick = useTick(value)
   return (
     <p className="flex items-baseline gap-1.5 whitespace-nowrap">
-      <span className="hidden text-xs text-dim md:inline tall:text-[13px]">{label}</span>
+      <span className="hidden text-xs text-dim md:inline tall:text-[13px] sm:simple:inline simple:text-[13px]">{label}</span>
       {/* key re-mounts the span so the flash replays on every change */}
-      <span key={tick} className={`num text-sm text-ink tall:text-base ${tick}`}>
+      <span key={tick} className={`num text-sm text-ink tall:text-base simple:text-lg ${tick}`}>
         {formatChips(value)}
       </span>
     </p>
@@ -106,7 +107,7 @@ export function Navbar() {
             <span className="text-[15px] font-semibold tracking-[-0.01em] tall:text-lg">Floored</span>
           </Link>
 
-          {current && <span className="text-[13px] text-dim md:hidden tall:text-sm">{current}</span>}
+          {current && <span className="text-[13px] text-dim md:hidden tall:text-sm simple:text-[17px] simple:font-semibold simple:text-ink">{current}</span>}
 
           <div className="hidden h-12 items-stretch gap-5 md:flex lg:gap-6 tall:h-16 lg:tall:gap-8">
             {MODES.map((m) => {
@@ -117,7 +118,7 @@ export function Navbar() {
                   href={m.href}
                   aria-current={active ? 'page' : undefined}
                   data-active={active}
-                  className={`mark-line flex items-center text-[13px] font-medium transition-colors tall:text-[15px] ${
+                  className={`mark-line flex items-center text-[13px] font-medium transition-colors tall:text-[15px] simple:text-[17px] ${
                     active ? 'text-ink' : 'text-dim hover:text-ink'
                   }`}
                 >
@@ -143,8 +144,10 @@ export function Navbar() {
             )}
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0 lg:flex-1 lg:justify-end">
+          <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 lg:ml-0 lg:flex-1 lg:justify-end">
             {figure}
+            {/* On a phone in Simple view the menu carries the switch; the bar keeps its room for the figure. */}
+            <SimpleViewToggle className="simple:hidden md:simple:flex" />
             <Link
               href="/account"
               aria-label="Account"
@@ -191,7 +194,7 @@ export function Navbar() {
               return (
                 <li key={m.href} className="border-b border-rule">
                   {desktopOnly ? (
-                    <span className="flex h-14 items-center justify-between text-lg text-dim">
+                    <span className="flex h-14 items-center justify-between text-lg text-dim simple:h-16 simple:text-2xl">
                       {m.label}
                       <span className="text-xs">Desktop only</span>
                     </span>
@@ -199,7 +202,7 @@ export function Navbar() {
                     <Link
                       href={m.href}
                       aria-current={active ? 'page' : undefined}
-                      className={`flex h-14 items-center text-lg ${active ? 'text-ink' : 'text-soft'}`}
+                      className={`flex h-14 items-center text-lg simple:h-16 simple:text-2xl simple:font-semibold ${active ? 'text-ink' : 'text-soft'}`}
                     >
                       <span className="mark-line" data-active={active}>
                         {m.label}
@@ -209,6 +212,9 @@ export function Navbar() {
                 </li>
               )
             })}
+            <li className="py-4 text-lg simple:text-2xl">
+              <SimpleViewToggle variant="row" />
+            </li>
           </ul>
         </div>
       )}

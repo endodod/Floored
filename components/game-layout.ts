@@ -12,8 +12,9 @@ export const GAME_CARD_FRAME =
 
 export const GAME_CARD_SHELL = `${GAME_CARD_FRAME} bg-surface`
 
+/** Simple view: taller, and every game's name and message step up to 16px (it beats the games' own text sizes). */
 export const GAME_STATUS_BAR =
-  'shrink-0 px-4 sm:px-5 h-10 [@media(max-height:640px)]:h-8 gap-4 bg-ground flex items-center justify-between border-b border-line [&>*:first-child]:shrink-0 [&>*:first-child]:whitespace-nowrap [&>*:last-child]:min-w-0 [&>*:last-child]:truncate'
+  'simple:h-12 simple:[&>*]:text-[16px] simple:[&>*]:text-soft simple:[&>*:first-child]:text-ink shrink-0 px-4 sm:px-5 h-10 [@media(max-height:640px)]:h-8 gap-4 bg-ground flex items-center justify-between border-b border-line [&>*:first-child]:shrink-0 [&>*:first-child]:whitespace-nowrap [&>*:last-child]:min-w-0 [&>*:last-child]:truncate'
 
 /** Flex arena: grows like Crash / Plinko; add your own flex direction / padding inside. */
 export const GAME_BOARD_ARENA =

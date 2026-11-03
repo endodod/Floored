@@ -38,6 +38,67 @@ interface ModeRowProps {
   index: number
 }
 
+interface SimpleModeCardProps {
+  name: string
+  symbol: string
+  /** What you do here, in a few words. */
+  line: string
+  figureLabel: string
+  figure: ReactNode
+  cta: string
+  href?: string
+  onClick?: () => void
+  disabled?: boolean
+  primary?: boolean
+  index: number
+}
+
+/** Simple view: one mode as a big app card — the symbol, the name, one figure, one button. The whole card is the tap target. */
+function SimpleModeCard({ name, symbol, line, figureLabel, figure, cta, href, onClick, disabled, primary, index }: SimpleModeCardProps) {
+  const body = (
+    <>
+      <span className="flex items-center gap-4">
+        <span aria-hidden className="text-[40px] leading-none">{symbol}</span>
+        <span className="min-w-0">
+          <span className="block text-[24px] font-semibold leading-tight text-ink">{name}</span>
+          <span className="mt-1 block text-[16px] leading-snug text-soft">{line}</span>
+        </span>
+      </span>
+      <span className="flex items-baseline justify-between gap-3 border-t border-rule pt-3">
+        <span className="text-[15px] text-dim">{figureLabel}</span>
+        <span className="num text-[22px] text-ink">{figure}</span>
+      </span>
+      <span
+        className={`flex h-14 items-center justify-center rounded-full text-[18px] font-semibold ${
+          disabled
+            ? 'border border-line bg-raised text-dim'
+            : primary
+              ? 'btn-glow border border-[rgba(217,164,65,0.45)] bg-[linear-gradient(180deg,#286746,#1b4d34)] text-[#fffaf0]'
+              : 'border border-control text-ink group-hover:border-felt group-hover:bg-felt-tint'
+        }`}
+      >
+        {cta}
+      </span>
+    </>
+  )
+  const cls =
+    'rise group flex h-full flex-col gap-4 rounded-xl bg-surface p-5 text-left shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] transition-colors hover:bg-[#17161c] active:scale-[0.99]'
+  const style = { '--d': `${80 + index * 60}ms` } as CSSProperties
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className={cls} style={style}>
+          {body}
+        </Link>
+      ) : (
+        <button type="button" onClick={onClick} disabled={disabled} className={`${cls} w-full disabled:opacity-60`} style={style}>
+          {body}
+        </button>
+      )}
+    </li>
+  )
+}
+
 /** One mode as a ledger row: what it is, where you are on its track, its money, the way in. */
 function ModeRow({ name, symbol, description, track, trackCaption, figureLabel, figure, figureSub, action, index }: ModeRowProps) {
   return (
@@ -128,9 +189,81 @@ export function ModeSelect() {
     router.push('/survival')
   }
 
+  const dailyFigure = todayRecord
+    ? todayRecord.endReason === 'failed'
+      ? 'Failed'
+      : todayRecord.endReason === 'gave-up'
+        ? 'Gave up'
+        : formatMultiplier(dailyMultiplier(todayRecord))
+    : challenge
+      ? formatChips(dailyStarted ? dailyBankroll : challenge.bankroll)
+      : '—'
+
   return (
     <div className="flex flex-col gap-12">
-      <ul className="divide-y divide-rule overflow-hidden rounded-md bg-surface shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
+      {/* Simple view: the same modes as big cards, one tap each. */}
+      <ul className="hidden grid-cols-1 gap-4 simple:grid sm:grid-cols-2">
+        <SimpleModeCard
+          index={0}
+          name={challenge ? `Daily #${challenge.number}` : 'Daily'}
+          symbol="🗓️"
+          line="Today’s challenge. One try."
+          figureLabel={todayRecord ? 'Today' : 'Bankroll'}
+          figure={dailyFigure}
+          cta={dailyCta}
+          href="/daily"
+          primary
+        />
+        {LADDER_ENABLED && (
+          <SimpleModeCard
+            index={1}
+            name="Ladder"
+            symbol="🪜"
+            line="Win to climb. Lose and you drop."
+            figureLabel="Pot"
+            figure={formatChips(ladderClimbing ? ladderPot : START_POT)}
+            cta={ladderClimbing ? 'Continue climb' : 'Start climb'}
+            href="/ladder"
+          />
+        )}
+        {SURVIVAL_ENABLED && (
+          <SimpleModeCard
+            index={2}
+            name="Survival"
+            symbol="🛡️"
+            line="Hit each floor’s target."
+            figureLabel="Bankroll"
+            figure={formatChips(survivalLive ? survivalBankroll : STARTING_BANKROLL)}
+            cta={isMobile ? 'Desktop only' : survivalLive ? 'Continue run' : 'Start run'}
+            onClick={handleSurvivalClick}
+            disabled={isMobile}
+          />
+        )}
+        {TABLES_ENABLED && (
+          <SimpleModeCard
+            index={3}
+            name="Tables"
+            symbol="🃏"
+            line="Play cards against bots."
+            figureLabel="Wallet"
+            figure={formatChips(hydrated ? tablesWallet : TABLES_START_WALLET)}
+            cta="Play Tables"
+            href="/tables"
+          />
+        )}
+        <SimpleModeCard
+          index={4}
+          name="Freeplay"
+          symbol="🎮"
+          line="Any game. No rules."
+          figureLabel="Balance"
+          figure={hydrated ? formatChips(freeplayBankroll) : '—'}
+          cta="Pick a game"
+          href="/freeplay"
+        />
+      </ul>
+
+      <ul className="divide-y divide-rule overflow-hidden rounded-md bg-surface shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)] simple:hidden">
         {/* ── Daily ── */}
         <ModeRow
           index={0}
@@ -151,17 +284,7 @@ export function ModeSelect() {
               : '3 games · one attempt'
           }
           figureLabel={todayRecord ? 'Today' : 'Bankroll'}
-          figure={
-            todayRecord
-              ? todayRecord.endReason === 'failed'
-                ? 'Failed'
-                : todayRecord.endReason === 'gave-up'
-                ? 'Gave up'
-                : formatMultiplier(dailyMultiplier(todayRecord))
-              : challenge
-                ? formatChips(dailyStarted ? dailyBankroll : challenge.bankroll)
-                : '—'
-          }
+          figure={dailyFigure}
           figureSub={todayRecord ? `ended on ${formatChips(todayRecord.endBankroll)}` : undefined}
           action={
             <Button asChild className="w-full lg:w-auto">

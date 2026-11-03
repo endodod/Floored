@@ -10,9 +10,10 @@ import type { TutorialStep } from '@/components/mode-tutorial'
  */
 export function ModeColumns({ children, rail, className }: { children: ReactNode; rail: ReactNode; className?: string }) {
   return (
-    <div className={cn('grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10', className)}>
-      <div className="flex min-w-0 flex-col gap-10">{children}</div>
-      <aside className="flex flex-col gap-3 lg:sticky lg:top-0">{rail}</aside>
+    <div className={cn('grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 simple:grid-cols-1 simple:gap-6', className)}>
+      <div className="flex min-w-0 flex-col gap-10 simple:gap-6">{children}</div>
+      {/* Simple view keeps the one column: the figures and the game cards already say where you are. */}
+      <aside className="flex flex-col gap-3 lg:sticky lg:top-0 simple:hidden">{rail}</aside>
     </div>
   )
 }
@@ -50,7 +51,7 @@ export function Rail({
 /** "How it works": the tutorial's steps laid out in two columns so they fill the width. */
 export function HowItWorks({ steps, delay = 60 }: { steps: TutorialStep[]; delay?: number }) {
   return (
-    <section className="rise flex flex-col gap-4" style={{ '--d': `${delay}ms` } as CSSProperties} aria-labelledby="how-it-works">
+    <section className="rise flex flex-col gap-4 simple:hidden" style={{ '--d': `${delay}ms` } as CSSProperties} aria-labelledby="how-it-works">
       <SectionTitle suit={0}>
         <span id="how-it-works">How it works</span>
       </SectionTitle>
@@ -86,22 +87,22 @@ export function StartPanel({
 }) {
   return (
     <section
-      className="rise relative overflow-hidden rounded-md bg-surface p-5 shadow-[inset_0_0_0_1px_rgba(79,174,132,0.22),0_0_70px_-30px_rgba(79,174,132,0.55)] sm:p-6"
+      className="rise relative w-full overflow-hidden rounded-md bg-surface p-5 simple:max-w-2xl shadow-[inset_0_0_0_1px_rgba(79,174,132,0.22),0_0_70px_-30px_rgba(79,174,132,0.55)] sm:p-6"
       style={{ '--d': `${delay}ms` } as CSSProperties}
       aria-label="Start"
     >
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <dl className="flex flex-wrap gap-x-8 gap-y-3">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between simple:flex-col simple:items-stretch simple:gap-6">
+        <dl className="flex flex-wrap gap-x-8 gap-y-3 simple:grid simple:grid-cols-2 simple:gap-x-4 simple:gap-y-4 sm:simple:grid-cols-4">
           {figures.map((f) => (
             <div key={f.label}>
-              <dt className="text-xs text-dim">{f.label}</dt>
-              <dd className="num mt-0.5 text-xl leading-7 text-ink">{f.value}</dd>
+              <dt className="text-xs text-dim simple:text-[15px] simple:text-soft">{f.label}</dt>
+              <dd className="num mt-0.5 text-xl leading-7 text-ink simple:text-[26px] simple:leading-9">{f.value}</dd>
             </div>
           ))}
         </dl>
-        <div className="shrink-0">{action}</div>
+        <div className="shrink-0 simple:[&>*]:w-full">{action}</div>
       </div>
-      {note && <p className="mt-4 text-xs leading-5 text-dim">{note}</p>}
+      {note && <p className="mt-4 text-xs leading-5 text-dim simple:hidden">{note}</p>}
     </section>
   )
 }

@@ -8,15 +8,20 @@ export default function HomePage() {
     <div className="mx-auto flex w-full max-w-[1152px] flex-col gap-6 pb-12">
       <div className="flex flex-col gap-3">
         <PageTitle
-          title="Choose a mode"
+          title={
+            <>
+              <span className="simple:hidden">Choose a mode</span>
+              <span className="hidden simple:inline">What do you want to play?</span>
+            </>
+          }
           sub="Casino games for play money. Nothing here costs or pays out real money."
           aside={
-            <p className="text-[13px] text-dim">
+            <p className="text-[13px] text-dim simple:hidden">
               Next daily in <DailyCountdown className="num text-ink" />
             </p>
           }
         />
-        <div className="rise [--d:60ms]">
+        <div className="rise [--d:60ms] simple:hidden">
           <HouseQuote />
         </div>
       </div>

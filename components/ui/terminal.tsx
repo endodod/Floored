@@ -32,8 +32,8 @@ export function PageTitle({
   return (
     <header className={cn('rise flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
-        <h1 className="text-[22px] sm:text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink">{title}</h1>
-        {sub && <p className="mt-1 text-[13px] leading-5 text-dim">{sub}</p>}
+        <h1 className="text-[22px] sm:text-[26px] font-semibold leading-tight tracking-[-0.01em] text-ink simple:text-[32px] sm:simple:text-[38px]">{title}</h1>
+        {sub && <p className="mt-1 text-[13px] leading-5 text-dim simple:hidden">{sub}</p>}
       </div>
       {aside && <div className="flex shrink-0 flex-wrap items-center gap-3 sm:justify-end">{aside}</div>}
     </header>
@@ -58,11 +58,11 @@ export function Suit({ index, className }: { index: number; className?: string }
 export function SectionTitle({ children, note, suit = 2 }: { children: ReactNode; note?: ReactNode; suit?: number }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <h2 className="flex items-baseline gap-2 text-base font-semibold text-ink">
-        <Suit index={suit} className="text-[11px] opacity-80" />
+      <h2 className="flex items-baseline gap-2 text-base font-semibold text-ink simple:text-[22px]">
+        <Suit index={suit} className="text-[11px] opacity-80 simple:hidden" />
         <span>{children}</span>
       </h2>
-      {note && <p className="text-xs text-dim">{note}</p>}
+      {note && <p className="text-xs text-dim simple:hidden">{note}</p>}
     </div>
   )
 }
@@ -83,27 +83,31 @@ export interface Figure {
   unit?: ReactNode
   sub?: ReactNode
   tone?: FigureTone
+  /** Left out in Simple view: a detail, not what the player needs right now. */
+  detail?: boolean
 }
 
 /** One card split by 1px dividers, label over value. Two columns on a phone. */
 export function FigureStrip({ items, className }: { items: Figure[]; className?: string }) {
+  const simpleCount = items.filter((f) => !f.detail).length
   return (
     <dl
       className={cn(
         'rise grid grid-cols-2 gap-px overflow-hidden rounded-md bg-line [--d:80ms]',
         items.length >= 4 ? 'sm:grid-cols-4' : items.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2',
         items.length % 2 === 1 && '[&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1',
+        simpleCount === 1 ? 'simple:grid-cols-1 sm:simple:grid-cols-1' : simpleCount === 3 ? 'simple:grid-cols-3' : 'sm:simple:grid-cols-2',
         className,
       )}
     >
       {items.map((f) => (
-        <div key={f.label} className="bg-surface px-4 py-3 transition-colors hover:bg-[#18171c] sm:px-5 sm:py-4">
-          <dt className="text-xs text-dim">{f.label}</dt>
-          <dd className={cn('num mt-1 text-xl leading-7 text-ink', f.tone && FIGURE_TONE[f.tone])}>
+        <div key={f.label} className={cn('bg-surface px-4 py-3 transition-colors hover:bg-[#18171c] sm:px-5 sm:py-4', f.detail && 'simple:hidden')}>
+          <dt className="text-xs text-dim simple:text-[15px] simple:text-soft">{f.label}</dt>
+          <dd className={cn('num mt-1 text-xl leading-7 text-ink simple:text-[28px] simple:leading-9', f.tone && FIGURE_TONE[f.tone])}>
             {f.value}
-            {f.unit != null && <span className="ml-1 text-sm text-dim">{f.unit}</span>}
+            {f.unit != null && <span className="ml-1 text-sm text-dim simple:text-base">{f.unit}</span>}
           </dd>
-          {f.sub && <dd className="mt-0.5 text-xs text-dim">{f.sub}</dd>}
+          {f.sub && <dd className="mt-0.5 text-xs text-dim simple:hidden">{f.sub}</dd>}
         </div>
       ))}
     </dl>

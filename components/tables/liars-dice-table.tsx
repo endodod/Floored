@@ -281,14 +281,14 @@ export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPla
       <div className={GAME_DOCK_SETTLED_SLOT}>
         {yourTurn ? (
           <div className="flex items-center gap-2">
-            <button type="button" className={GAME_DOCK_RACK_BTN + ' h-9 w-9 px-0 sm:h-9'} aria-label="Fewer dice" disabled={count <= lowest} onClick={() => setCount((c) => c - 1)}>
+            <button type="button" className={GAME_DOCK_RACK_BTN + ' h-9 w-9 px-0 sm:h-9 simple:!h-11 simple:!w-11 simple:!px-0'} aria-label="Fewer dice" disabled={count <= lowest} onClick={() => setCount((c) => c - 1)}>
               −
             </button>
             <p className="num w-36 text-center text-[13px] text-soft">
               <span className="text-[17px] text-ink">{count}</span> × {FACE_WORD[face]}
               {secs != null && secs <= 10 && <span className="text-loss"> · {secs}s</span>}
             </p>
-            <button type="button" className={GAME_DOCK_RACK_BTN + ' h-9 w-9 px-0 sm:h-9'} aria-label="More dice" disabled={count >= v.totalDice} onClick={() => setCount((c) => c + 1)}>
+            <button type="button" className={GAME_DOCK_RACK_BTN + ' h-9 w-9 px-0 sm:h-9 simple:!h-11 simple:!w-11 simple:!px-0'} aria-label="More dice" disabled={count >= v.totalDice} onClick={() => setCount((c) => c + 1)}>
               +
             </button>
           </div>

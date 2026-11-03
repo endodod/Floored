@@ -115,7 +115,7 @@ export function GameFieldWithHistory({
             onToggleHistory={toggle}
           />
         ) : (
-          <div className="pointer-events-auto absolute right-3 top-3 z-30">
+          <div className="pointer-events-auto absolute right-3 top-3 z-30 simple:hidden">
             <button
               type="button"
               onClick={toggle}
