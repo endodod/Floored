@@ -18,7 +18,7 @@ export function GameDockRandomQuote({
 }) {
   const text = GAMBLING_QUOTES[quoteIdx] ?? GAMBLING_QUOTES[0]
   return (
-    <p className={VARIANT_CLASS[variant]}>
+    <p className={`${VARIANT_CLASS[variant]} simple:invisible`}>
       &quot;{text}&quot;
     </p>
   )

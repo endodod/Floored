@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss"
+import plugin from "tailwindcss/plugin"
 
 const config = {
   darkMode: ["class"],
@@ -91,7 +92,12 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // Simple view (Settings → Simple view): `simple:hidden`, `simple:text-lg`. Keys off <html data-view="simple">
+    // and outranks the plain utility it overrides, so `simple:` always wins over the default look.
+    plugin(({ addVariant }) => addVariant("simple", ':is([data-view="simple"] &)')),
+  ],
 } satisfies Config
 
 export default config

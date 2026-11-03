@@ -43,9 +43,9 @@ function Toggle({ on, label, note, onToggle }: { on: boolean; label: string; not
       role="switch"
       aria-checked={on}
       onClick={onToggle}
-      className="flex w-full items-center justify-between gap-4 py-2.5 text-left"
+      className="flex w-full items-center justify-between gap-4 py-2.5 text-left simple:py-4"
     >
-      <span className="text-[13px] text-ink">
+      <span className="text-[13px] text-ink simple:text-[17px]">
         {label}
         {note && <span className="ml-1.5 text-dim">{note}</span>}
       </span>
@@ -128,6 +128,7 @@ export default function AccountPage() {
   const challengeStats = useChallengeStore((s) => s.stats)
   const {
     motion, setMotion,
+    simpleView, setSimpleView,
     autoReBet, setAutoReBet,
     forceTie, setForceTie,
     showAllGames, setShowAllGames,
@@ -259,8 +260,14 @@ export default function AccountPage() {
         </div>
       </Section>
 
-      <Section title="Settings" description="How the tables behave between rounds, and how much the interface moves.">
+      <Section title="Settings" description="How big and busy the screens are, how the tables behave between rounds, and how much the interface moves.">
         <div className="flex flex-col divide-y divide-rule">
+          <Toggle
+            on={hydrated && simpleView}
+            label="Simple view"
+            note="big buttons, fewer words"
+            onToggle={() => setSimpleView(!simpleView)}
+          />
           <Toggle on={autoReBet} label="Auto re-bet" note="repeat your last stake" onToggle={() => setAutoReBet(!autoReBet)} />
           <div className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <span className="text-[13px] text-ink">

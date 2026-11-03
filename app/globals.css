@@ -2810,3 +2810,11 @@ body > div.neon-auth-ui {
     display: none;
   }
 }
+
+/* ── Simple view ─────────────────────────────────────────────────────────────
+   Settings → Simple view sets <html data-view="simple">. Most of it is the
+   `simple:` Tailwind variant on the shared pieces (buttons, titles, tiles, the
+   game dock); what cannot be said per element lives here. */
+:root[data-view='simple'] .tile .mark-line::after {
+  display: none;
+}

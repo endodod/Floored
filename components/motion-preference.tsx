@@ -13,8 +13,9 @@ function resolve(pref: MotionPreference): 'reduced' | 'full' {
 /**
  * Runs before first paint: reads the saved setting straight from localStorage
  * so a player who chose reduced motion never sees an entrance animation play.
+ * It sets <html data-view="simple"> the same way, so Simple view never flashes the full layout.
  */
-export const MOTION_BOOT_SCRIPT = `(function(){try{var p='full';var raw=localStorage.getItem('floored-settings');if(raw){var s=JSON.parse(raw);if(s&&s.state&&s.state.motion&&!(s.state.motion==='system'&&(s.version||0)<5))p=s.state.motion}var r=p==='system'?(window.matchMedia('${QUERY}').matches?'reduced':'full'):p;document.documentElement.setAttribute('data-motion',r)}catch(e){}})()`
+export const MOTION_BOOT_SCRIPT = `(function(){try{var p='full';var raw=localStorage.getItem('floored-settings');if(raw){var s=JSON.parse(raw);if(s&&s.state&&s.state.motion&&!(s.state.motion==='system'&&(s.version||0)<5))p=s.state.motion;if(s&&s.state&&s.state.simpleView)document.documentElement.setAttribute('data-view','simple')}var r=p==='system'?(window.matchMedia('${QUERY}').matches?'reduced':'full'):p;document.documentElement.setAttribute('data-motion',r)}catch(e){}})()`
 
 /** Keeps <html data-motion> in step with the setting and, on "system", with the OS preference. */
 export function MotionPreferenceSync() {
@@ -28,6 +29,19 @@ export function MotionPreferenceSync() {
     mql.addEventListener('change', apply)
     return () => mql.removeEventListener('change', apply)
   }, [motion])
+
+  return null
+}
+
+/** Keeps <html data-view> in step with the Simple view setting; the `simple:` Tailwind variant keys off it. */
+export function SimpleViewSync() {
+  const simpleView = useSettingsStore((s) => s.simpleView)
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (simpleView) root.setAttribute('data-view', 'simple')
+    else root.removeAttribute('data-view')
+  }, [simpleView])
 
   return null
 }

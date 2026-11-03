@@ -92,7 +92,7 @@ export default function DailyPage() {
         sub={`${dateLabel} · the same challenge for everyone, one attempt.`}
         aside={
           <>
-            <p className="text-[13px] text-dim">
+            <p className="text-[13px] text-dim simple:hidden">
               New daily in <DailyCountdown className="num text-ink" />
             </p>
             {playing && (
@@ -217,9 +217,9 @@ export default function DailyPage() {
                 unit: `of ${formatChips(challenge.bankroll)}`,
                 tone: bankroll < challenge.minBet * 3 ? 'gold' : undefined,
               },
-              { label: 'Net', value: signed(net, formatChips), tone: toneOf(net) },
+              { label: 'Net', value: signed(net, formatChips), tone: toneOf(net), detail: true },
               { label: 'Bets left', value: totalBets - usedBets, unit: `/ ${totalBets}` },
-              { label: 'Min bet', value: formatChips(challenge.minBet) },
+              { label: 'Min bet', value: formatChips(challenge.minBet), detail: true },
             ]}
           />
         ) : (
@@ -294,12 +294,12 @@ export default function DailyPage() {
               <ul className="grid grid-cols-1 gap-x-10 sm:grid-cols-3">
                 {challenge.games.map(({ game, bets }) => (
                   <li key={game} className="flex flex-col gap-0.5 border-t border-rule py-3">
-                    <span className="text-[14px] font-medium text-ink">{GAME_BY_NAME.get(game)?.label ?? game}</span>
-                    <span className="flex items-baseline justify-between gap-3 text-xs text-dim">
+                    <span className="text-[14px] font-medium text-ink simple:text-[19px]">{GAME_BY_NAME.get(game)?.label ?? game}</span>
+                    <span className="flex items-baseline justify-between gap-3 text-xs text-dim simple:text-[15px]">
                       <span>
                         <span className="num text-soft">{bets}</span> bet{bets === 1 ? '' : 's'}
                       </span>
-                      <PayoutCaption game={game} className="text-xs text-dim" />
+                      <PayoutCaption game={game} className="text-xs text-dim simple:hidden" />
                     </span>
                   </li>
                 ))}

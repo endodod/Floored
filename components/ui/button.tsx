@@ -17,10 +17,11 @@ const buttonVariants = cva(
         link: "text-ink underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-[34px] px-4",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-6 text-sm",
-        icon: "h-[34px] w-[34px]",
+        // Simple view: app-sized tap targets and type.
+        default: "h-[34px] px-4 simple:h-14 simple:px-7 simple:text-[17px]",
+        sm: "h-8 px-3 text-xs simple:h-12 simple:px-5 simple:text-[15px]",
+        lg: "h-10 px-6 text-sm simple:h-16 simple:px-10 simple:text-xl",
+        icon: "h-[34px] w-[34px] simple:h-14 simple:w-14",
       },
     },
     defaultVariants: {
