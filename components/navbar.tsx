@@ -8,7 +8,7 @@ import { useFreeplayStore } from '@/store/freeplay-store'
 import { useSurvivalStore } from '@/store/survival-store'
 import { formatChips } from '@/utils/format'
 import { FLOOR_BET_LIMIT } from '@/lib/survival/balance'
-import { LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
+import { SIMPLE_VIEW_ENABLED, LADDER_ENABLED, SURVIVAL_ENABLED, TABLES_ENABLED } from '@/lib/features'
 import { useTablesStore } from '@/store/tables-store'
 import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { useDailyStore } from '@/store/daily-store'
@@ -152,7 +152,7 @@ export function Navbar() {
           <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 lg:ml-0 lg:flex-1 lg:justify-end">
             {figure}
             {/* On a phone in Simple view the menu carries the switch; the bar keeps its room for the figure. */}
-            <SimpleViewToggle className="simple:hidden md:simple:flex" />
+            {SIMPLE_VIEW_ENABLED && <SimpleViewToggle className="simple:hidden md:simple:flex" />}
             <Link
               href="/account"
               aria-label="Account"
@@ -217,9 +217,11 @@ export function Navbar() {
                 </li>
               )
             })}
-            <li className="py-4 text-lg simple:text-2xl">
-              <SimpleViewToggle variant="row" />
-            </li>
+            {SIMPLE_VIEW_ENABLED && (
+              <li className="py-4 text-lg simple:text-2xl">
+                <SimpleViewToggle variant="row" />
+              </li>
+            )}
           </ul>
         </div>
       )}

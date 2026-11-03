@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth/client'
-import { LADDER_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
+import { LADDER_ENABLED, SIMPLE_VIEW_ENABLED, SURVIVAL_ENABLED } from '@/lib/features'
 import { useDailyLadderStore, useLadderStore } from '@/store/ladder-store'
 import { dailyLadderStreak, ladderStats } from '@/lib/ladder/share'
 import { useFreeplayStore } from '@/store/freeplay-store'
@@ -262,12 +262,14 @@ export default function AccountPage() {
 
       <Section title="Settings" description="How big and busy the screens are, how the tables behave between rounds, and how much the interface moves.">
         <div className="flex flex-col divide-y divide-rule">
-          <Toggle
-            on={hydrated && simpleView}
-            label="Simple view"
-            note="big buttons, fewer words"
-            onToggle={() => setSimpleView(!simpleView)}
-          />
+          {SIMPLE_VIEW_ENABLED && (
+            <Toggle
+              on={hydrated && simpleView}
+              label="Simple view"
+              note="big buttons, fewer words"
+              onToggle={() => setSimpleView(!simpleView)}
+            />
+          )}
           <Toggle on={autoReBet} label="Auto re-bet" note="repeat your last stake" onToggle={() => setAutoReBet(!autoReBet)} />
           <div className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <span className="text-[13px] text-ink">

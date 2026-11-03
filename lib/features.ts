@@ -9,3 +9,9 @@ export const LADDER_ENABLED = true
 
 /** Tables: multi-seat casino games against bots (Hold'em, Liar's Dice, Blackjack Showdown). */
 export const TABLES_ENABLED = true
+
+/**
+ * Simple view (big buttons, fewer words). Off for now: its switches are hidden and a saved
+ * "on" is ignored, so nobody is left in it without a way out. Turn on to bring it back.
+ */
+export const SIMPLE_VIEW_ENABLED = false

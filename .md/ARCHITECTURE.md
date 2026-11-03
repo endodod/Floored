@@ -117,7 +117,8 @@ between betting, playing and settled. Keep elements mounted and hide them with
 `invisible pointer-events-none`; use fixed-height slots (`min-h-10`, `h-9`)
 whose content swaps; prefer one adaptive button over several conditional ones.
 
-**Simple view.** A setting (`useSettingsStore().simpleView`, switch in the navbar, the phone menu and
+**Simple view.** Currently off: `SIMPLE_VIEW_ENABLED` in `lib/features.ts` hides its switches and ignores a
+saved "on". Flip it to bring it back. A setting (`useSettingsStore().simpleView`, switch in the navbar, the phone menu and
 Account → Settings) that sets `<html data-view="simple">` (boot script in `components/motion-preference.tsx`,
 so it never flashes). Style for it with the `simple:` Tailwind variant (`tailwind.config.ts`), which outranks
 the plain utility it overrides: `simple:hidden` for details, `simple:text-lg` / `simple:h-14` for size. Most of
