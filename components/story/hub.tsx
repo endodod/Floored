@@ -202,7 +202,11 @@ export function StoryHub() {
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" disabled={!s.sceneFor({ on: 'talk', character: c.id })} onClick={() => talk(c.id)}>Talk</Button>
-                      {c.minigame && <Button size="sm" variant="secondary" disabled>Soon</Button>}
+                      {c.minigame && (
+                        <Button asChild size="sm" variant="secondary">
+                          <Link href={`/story/minigame/${c.minigame}`}>{s.minigamePaidTonight(c.id) ? 'Practice' : 'Play'}</Link>
+                        </Button>
+                      )}
                     </div>
                   </li>
                 ))}

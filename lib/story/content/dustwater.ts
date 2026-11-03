@@ -139,7 +139,7 @@ export const DUSTWATER_SCENES: Scene[] = [
 ]
 
 export const DUSTWATER_ERRANDS: Errand[] = [
-  { id: 'dustwater-marta-shift', city: 'dustwater', giver: 'marta', title: 'The bar shift', task: "Get at least 8 of 10 orders right on a shift at Marta's bar.", goal: { kind: 'minigame', minigame: 'last-orders', score: 0.8 }, opens: { flag: 'met-marta' } },
+  { id: 'dustwater-marta-shift', city: 'dustwater', giver: 'marta', title: 'The bar shift', task: "Clear at least 5 of the 6 rounds on a shift at Marta's bar.", goal: { kind: 'minigame', minigame: 'last-orders', score: 0.8 }, opens: { flag: 'met-marta' } },
   { id: 'dustwater-pike-marks', city: 'dustwater', giver: 'pike', title: "Pike's marks", task: 'Win 3 rounds of Street Cups in a row, to show the marks it can be done.', goal: { kind: 'streak', game: 'street-cups', wins: 3 }, opens: { flag: 'met-pike' } },
   { id: 'dustwater-jo-stake', city: 'dustwater', giver: 'jo', title: 'Seed money', task: 'Finish a night at the casino up on the night.', goal: { kind: 'night-up' }, opens: { flag: 'arrived-dustwater' } },
   { id: 'dustwater-marta-bet', city: 'dustwater', giver: 'marta', title: "A trucker's bet", task: 'A trucker bet Marta nobody wins three times their stake in one go. Prove him wrong.', goal: { kind: 'big-win', mult: 3 }, opens: { flag: 'met-marta' } },
