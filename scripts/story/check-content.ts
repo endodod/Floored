@@ -12,12 +12,15 @@
  */
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, ERRANDS, SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, MARKER_M, MARKER_REPAY, NIGHT_BETS, VENUE_MAX_M } from '@/lib/story/economy'
+import {
+  BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, ERRAND_STANDING, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, MARKER_M, MARKER_REPAY, NIGHT_BETS,
+  STANDING_MAX, VENUE_MAX_M, VENUE_REP, errandStanding,
+} from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import type { Condition, Effect } from '@/lib/story/types'
 import { GAMES } from '@/lib/game-catalog'
 import type { TableGameName } from '@/lib/tables/types'
-import { useStoryStore, VENUE_REP } from '@/store/story-store'
+import { useStoryStore } from '@/store/story-store'
 
 /** Ids that saves may already hold. Grow this list as content ships; never remove from it. */
 const SHIPPED = {
@@ -80,6 +83,22 @@ for (const e of ERRANDS) {
     const city = CITIES.find((c) => c.id === e.city)
     if (city && city.games !== 'all-seen' && !city.games.includes(e.goal.game)) fail(`errand ${e.id}: ${e.goal.game} isn't played in ${e.city}`)
   }
+  // Standing comes from jobs won at the tables, never from a minigame (owner decision).
+  if (e.rep != null && (e.rep < 0 || e.rep > STANDING_MAX || !Number.isInteger(e.rep))) fail(`errand ${e.id}: rep ${e.rep} is not a standing step 0–${STANDING_MAX}`)
+  if (e.goal.kind === 'minigame' && errandStanding(e) !== 0) fail(`errand ${e.id}: a minigame job pays money, not standing`)
+  if (e.goal.kind !== 'minigame' && errandStanding(e) === 0) fail(`errand ${e.id}: a job won at the tables should earn standing`)
+}
+
+// The standing path: each city with content needs enough table jobs to open the
+// high-roller room before the boss (2 early jobs plus a third), and its dive must be
+// able to deal the game an open streak job names.
+for (const c of CITIES) {
+  const theirs = ERRANDS.filter((e) => e.city === c.id)
+  if (!theirs.length) continue
+  const tableJobs = theirs.filter((e) => errandStanding(e) > 0).length
+  if (tableJobs < 3) fail(`city ${c.id}: ${tableJobs} table job${tableJobs === 1 ? '' : 's'} give standing (needs 3: 2 early and a third)`)
+  if (tableJobs < VENUE_REP[2]) fail(`city ${c.id}: standing from its jobs (${tableJobs}) can't open the high-roller room (needs ${VENUE_REP[2]})`)
+  if (VENUE_REP[1] > tableJobs) fail(`city ${c.id}: nothing opens the main floor (needs standing ${VENUE_REP[1]})`)
 }
 
 for (const scene of SCENES) {
@@ -167,13 +186,16 @@ for (const c of CITIES) {
 
 // Numbers quoted in dialogue must match the economy.
 const allText = SCENES.flatMap((s) => Object.values(s.nodes).flatMap((n) => (n.kind === 'line' ? [n.text] : [])))
-const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, twelve: 12, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, hundred: 100 }
+const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, twelve: 12, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, hundred: 100 }
 const word = (w: string | undefined) => WORDS[(w ?? '').toLowerCase()]
 // Jo's walkthrough (and any line in the same shape) must quote the economy as it is.
 const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number | undefined, number | null][] }[] = [
-  { re: /^The dive takes anyone\..*up to (?:a )?(\w+) times/i, what: 'the dive limit', want: (m) => [[word(m[1]), VENUE_MAX_M[0]]] },
-  { re: /^The main floor wants reputation (\w+)\..*up to (?:a )?(\w+) times/i, what: 'the main floor', want: (m) => [[word(m[1]), VENUE_REP[1]], [word(m[2]), VENUE_MAX_M[1]]] },
-  { re: /^The high-roller room wants reputation (\w+)/i, what: 'the high-roller room', want: (m) => [[word(m[1]), VENUE_REP[2]]] },
+  { re: /^The dive takes anyone.*up to (?:a )?(\w+) times/i, what: 'the dive limit', want: (m) => [[word(m[1]), VENUE_MAX_M[0]]] },
+  { re: /^The main floor wants standing (\w+)\..*up to (?:a )?(\w+) times/i, what: 'the main floor', want: (m) => [[word(m[1]), VENUE_REP[1]], [word(m[2]), VENUE_MAX_M[1]]] },
+  { re: /^The high-roller room wants standing (\w+)/i, what: 'the high-roller room', want: (m) => [[word(m[1]), VENUE_REP[2]]] },
+  { re: /it goes up (\w+)/i, what: 'the standing a table job earns', want: (m) => [[word(m[1]), ERRAND_STANDING]] },
+  { re: /it drops (\w+)/i, what: 'the standing a bust costs', want: (m) => [[word(m[1]), BUST_STANDING]] },
+  { re: /(\w+) is the most any town gives/i, what: 'the standing cap', want: (m) => [[word(m[1]), STANDING_MAX]] },
   { re: /(\w+) bets a night/i, what: 'bets a night', want: (m) => [[word(m[1]), NIGHT_BETS]] },
   { re: /its own (\w+) games/i, what: 'games per room', want: (m) => [[word(m[1]), GAMES_PER_ROOM]] },
   { re: /(\w+) side goals/i, what: 'hustles a night', want: (m) => [[word(m[1]), HUSTLES_PER_NIGHT]] },
@@ -204,6 +226,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   st().newStory()
   const m = st().minBet()
   if (st().money !== 200 || m !== 5) fail('a new story starts in Dustwater with $200')
+  if (st().rep() !== 0 || st().venueOpen(1) || st().venueOpen(2)) fail('a new story starts at standing 0 with only the dive open')
   // The arrival scene: lines, a choice, the end's effects.
   if (st().queue.join() !== 'dustwater-arrival,dustwater-how-nights-work') fail('a new story queues the arrival scene, then Jo\'s walkthrough')
   if (!st().playQueued() || st().scene?.id !== 'dustwater-arrival') fail('a new story queues the arrival scene')
@@ -232,8 +255,10 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   const paid = st().playMinigame('marta', 'last-orders', 1)
   if (paid !== 3 * m || st().playMinigame('marta', 'last-orders', 1) !== 0) fail('minigame pays 3m at a perfect score, once a night')
   if (st().errands['dustwater-marta-shift'] !== 'done' || st().money !== m0 + 3 * m + 6 * m) fail('a perfect shift finishes the bar-shift errand (6m)')
+  if (st().rep() !== 0) fail('a minigame errand pays money, not standing')
   // A night at the dive: table limit, bets, a streak errand, comps and hustles at the end.
-  if (st().startNight(2)) fail('the high-roller room needs reputation 3')
+  if (st().startNight(1)) fail('the main floor needs standing 1')
+  if (st().startNight(2)) fail('the high-roller room needs standing 2')
   if (!st().startNight(0)) fail('a night at the dive starts')
   if (st().wagerCap() !== Math.min(st().money, 20 * m)) fail('the dive caps a bet at 20m')
   for (let k = 0; k < 3; k++) {
@@ -241,30 +266,33 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     st().resolve('street-cups', 2.5 * m, true)
   }
   if (st().errands['dustwater-pike-marks'] !== 'done') fail('three Street Cups wins in a row finish Pike\'s errand')
+  if (st().rep() !== 1 || !st().venueOpen(1)) fail('a job won at the tables earns standing 1 and opens the main floor')
   if (st().errands['dustwater-marta-bet'] === 'done') fail('a 2.5× win must not finish the 3× errand')
   st().placeBet('hilo', m)
   st().resolve('hilo', 3 * m, true)
   if (st().errands['dustwater-marta-bet'] !== 'done') fail('a 3× win finishes the trucker\'s-bet errand')
+  if (st().rep() !== 2 || !st().venueOpen(2)) fail('a second table job earns standing 2 and opens the high-roller room')
   if (st().betsLeft() !== 8) fail('four rounds leave 8 of 12 bets')
   const night = st().endNight()
   if (!night.played || night.comps !== Math.round(COMPS_RATE[0] * 4 * m) || night.lodging !== 3 * m || st().tonight) fail('the night ends with comps (the dive share of bets) and lodging')
   if (st().errands['dustwater-jo-stake'] !== 'done') fail('a night up finishes Jo\'s seed-money errand')
+  if (st().rep() !== 3) fail('Dustwater\'s three table jobs reach standing 3')
   if (night.hustles.length !== 2) fail('two hustles on the board each night')
   // Comps by room: a better room gives a bigger share, each with its own cap.
-  const repBefore = st().rep
+  const standingBefore = st().standing
   for (const v of [1, 2] as const) {
-    useStoryStore.setState({ money: 500 * m, rep: 3 })
+    useStoryStore.setState({ money: 500 * m, standing: { dustwater: VENUE_REP[2] } })
     st().startNight(v)
     st().placeBet('hilo', 100 * m)
     st().resolve('hilo', 0, true)
     const n = st().endNight()
     if (n.comps !== Math.round(Math.min(COMPS_RATE[v] * 100 * m, COMPS_CAP_M[v] * m))) fail(`room ${v} comps are ${COMPS_RATE[v] * 100}% of bets`)
   }
-  useStoryStore.setState({ money: 5000 * m, rep: 3 })
+  useStoryStore.setState({ money: 5000 * m, standing: { dustwater: VENUE_REP[2] } })
   st().startNight(2)
   for (let k = 0; k < 4; k++) { st().placeBet('hilo', 400 * m); st().resolve('hilo', 0, true) }
   if (st().endNight().comps !== COMPS_CAP_M[2] * m) fail(`room 2 comps stop at ${COMPS_CAP_M[2]}m`)
-  useStoryStore.setState({ rep: repBefore })
+  useStoryStore.setState({ standing: standingBefore })
   // Lodging, and the free car below 10m.
   const before = st().money
   st().endNight()
@@ -272,11 +300,16 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   useStoryStore.setState({ money: 9 * m })
   st().endNight()
   if (st().money !== 9 * m) fail('below 10m you sleep in the car for free')
-  // A bust: below the minimum after a night queues the bust scene and costs a reputation tier.
+  // A bust: below the minimum after a night queues the bust scene and costs standing here.
   useStoryStore.setState({ money: 2 })
-  const rep = st().rep
-  if (!st().endNight().bust || st().rep !== rep - 1 || !st().queue.includes('dustwater-bust')) fail('a bust costs reputation and queues the bust scene')
-  useStoryStore.setState({ queue: [] })
+  const standingAtBust = st().rep()
+  if (!st().endNight().bust || st().rep() !== standingAtBust - BUST_STANDING || !st().queue.includes('dustwater-bust')) fail('a bust costs standing and queues the bust scene')
+  // Never below 0: a bust at standing 0 leaves it at 0, and another town is untouched.
+  const standingAfterBust = st().standing
+  useStoryStore.setState({ queue: [], money: 2, standing: { 'rattlesnake-junction': 2 } })
+  st().endNight()
+  if (st().rep() !== 0 || st().standing['rattlesnake-junction'] !== 2) fail('a bust never takes standing below 0 and only touches this town')
+  useStoryStore.setState({ queue: [], standing: standingAfterBust })
   // A marker: lent 20m, repaid 1.5×, half of each win's profit.
   useStoryStore.setState({ money: 0 })
   if (!st().takeMarker() || st().money !== 20 * m || st().owed !== 30 * m) fail('a marker lends 20m and is owed at 30m')
@@ -292,11 +325,16 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (!st().bossAvailable()) fail('the rival is back after two nights')
   st().enterBoss()
   const sitting = st().money
+  const standingAtBoss = st().rep()
   st().bossResult(true)
   if (!st().cleared.includes('dustwater') || st().money !== sitting + 150 * m) fail('a boss win pays 150m and clears the city')
+  if (st().rep() !== standingAtBoss) fail('a boss win pays the purse and clears the town but gives no standing')
   const fare = st().fareToNext()!
   const holding = st().money
   if (!st().travelNext() || st().city !== 'rattlesnake-junction' || st().money !== holding - fare || fare !== 200) fail('travel to the next city costs 20 of its minimum bets')
+  if (st().rep() !== 0 || !st().venueOpen(0) || st().venueOpen(1)) fail('a town you have not worked starts you at standing 0')
+  useStoryStore.setState({ standing: { dustwater: 3, 'rattlesnake-junction': 2 } })
+  if (st().rep() !== 2 || !st().venueOpen(2)) fail('a town you go back to remembers its standing')
 }
 
 console.log(`${SCENES.length} scenes, ${ERRANDS.length} errands, ${CHARACTERS.length} characters, ${CITIES.length} cities`)

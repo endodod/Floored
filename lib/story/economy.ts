@@ -5,6 +5,8 @@
  * section 5; `pnpm sim:story` checks these numbers against its targets.
  */
 
+import type { ErrandGoal } from './types'
+
 /** Money you start the circuit with, in dollars (40 × Dustwater's $5 minimum bet). */
 export const START_MONEY = 200
 
@@ -22,6 +24,18 @@ export const MINIGAME_MAX_M = 3
 /** One-time story errands per city, and what each pays. */
 export const ERRANDS_PER_CITY = 4
 export const ERRAND_PAY_M = 6
+
+/**
+ * Standing: how a town sees you, 0 to STANDING_MAX, kept per town (the map is in
+ * store/story-store.ts). It rises by ERRAND_STANDING for a job won at the tables,
+ * drops by BUST_STANDING when you go bust, and opens the better rooms.
+ */
+export const ERRAND_STANDING = 1
+export const BUST_STANDING = 1
+export const STANDING_MAX = 5
+
+/** The standing each room asks for: dive, main floor, high-roller room. */
+export const VENUE_REP: readonly [number, number, number] = [0, 1, 2]
 
 /** Jobs board: hustles offered per night (met by playing), and their fixed pay. */
 export const HUSTLES_PER_NIGHT = 2
@@ -55,4 +69,14 @@ export const MARKER_REPAY_STEP = 0.25
 /** In multiples of m: the dollars a multiple stands for in a city. */
 export function dollars(m: number, minBet: number): number {
   return Math.round(m * minBet)
+}
+
+/**
+ * Standing a finished errand earns in its town. Gambling goals (a streak, a night
+ * up, a big win) earn it by default; a minigame job pays money, never standing.
+ * Content may override it with `rep`, and `pnpm check:story` holds it to the rule.
+ */
+export function errandStanding(e: { goal: ErrandGoal; rep?: number }): number {
+  const want = e.rep ?? (e.goal.kind === 'minigame' ? 0 : ERRAND_STANDING)
+  return Math.max(0, Math.min(STANDING_MAX, Math.round(want)))
 }

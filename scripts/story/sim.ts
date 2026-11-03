@@ -5,8 +5,12 @@
  *    bet returning more than 100% fails the run (fair 100% bets are allowed).
  * 2. Circuit simulation: thousands of whole circuits (12 cities) for five player
  *    types, using each city's real game list, the economy constants and the
- *    odds above. Prints nights per city and over the circuit, busts, boss tries,
- *    and recovery time after a bust, and checks the plan's targets.
+ *    odds above. Standing is modelled per town: every town starts the player in
+ *    the dive, TABLE_JOBS_PER_CITY table jobs lift standing one each (minigame
+ *    jobs do not), a bust takes one off, and the player moves up to the best room
+ *    their standing opens (their own preferred room or lower). Prints nights per
+ *    city and over the circuit, busts, boss tries, and recovery time after a bust,
+ *    and checks the plan's targets.
  *
  *   pnpm sim:story                 3,000 circuits per player type
  *   pnpm sim:story 500 --seed 7    fewer circuits, another seed
@@ -14,8 +18,8 @@
 import { CITIES, type City } from '@/lib/story/cities'
 import { gamesFor } from '@/lib/story/rotation'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRANDS_PER_CITY,
-  HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRANDS_PER_CITY,
+  HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
 import type { GameName } from '@/store/types'
@@ -62,11 +66,18 @@ interface PlayerType {
   bold?: boolean
   /** Money kept back when buying into the boss, in m. */
   reserve: number
-  /** Table maximum used, in m (null = high-roller room). */
-  cap: number | null
-  /** The room played in: 0 dive, 1 main floor, 2 high-roller. */
+  /** The best room this player wants: 0 dive, 1 main floor, 2 high-roller. Standing can hold them lower. */
   venue: 0 | 1 | 2
 }
+
+/**
+ * Jobs won at the tables per city, from .md/STORY_CITY_GUIDE.md: every city needs two
+ * early table jobs plus a third, so standing reaches the high-roller room before the
+ * boss. Minigame jobs pay money only, so they are not counted here.
+ */
+const TABLE_JOBS_PER_CITY = 3
+/** The room a standing figure opens: the best one it reaches. */
+const roomFor = (standing: number): 0 | 1 | 2 => (standing >= VENUE_REP[2] ? 2 : standing >= VENUE_REP[1] ? 1 : 0)
 
 const all = (city: GameName[]) => city.flatMap((g) => storyOdds(g, poker))
 const minBy = (xs: BetProfile[], f: (b: BetProfile) => number) => xs.reduce((a, b) => (f(b) < f(a) ? b : a))
@@ -83,11 +94,11 @@ const riskiest: Pick = (city) => maxBy(all(city).filter((b) => rtpOf(b) >= 0.9),
 const coinFlipLike: Pick = (city) => maxBy(all(city).filter((b) => 1 - lossChanceOf(b) >= 0.4).concat(minBy(all(city), lossChanceOf)), rtpOf)
 
 const TYPES: PlayerType[] = [
-  { name: 'Never gambles', gamble: false, share: 0, pick: safest, reserve: 0, cap: 0, venue: 0 },
-  { name: 'Cautious (5%)', gamble: true, share: 0.05, pick: safest, reserve: 20, cap: VENUE_MAX_M[1], venue: 1 },
-  { name: 'Balanced (15%)', gamble: true, share: 0.15, pick: anyBet, reserve: 10, cap: VENUE_MAX_M[1], venue: 1 },
-  { name: 'High variance', gamble: true, share: 0.15, pick: riskiest, reserve: 10, cap: VENUE_MAX_M[1], venue: 1 },
-  { name: 'Bold (all in)', gamble: true, share: 1, pick: coinFlipLike, bold: true, reserve: 0, cap: null, venue: 2 },
+  { name: 'Never gambles', gamble: false, share: 0, pick: safest, reserve: 0, venue: 0 },
+  { name: 'Cautious (5%)', gamble: true, share: 0.05, pick: safest, reserve: 20, venue: 1 },
+  { name: 'Balanced (15%)', gamble: true, share: 0.15, pick: anyBet, reserve: 10, venue: 1 },
+  { name: 'High variance', gamble: true, share: 0.15, pick: riskiest, reserve: 10, venue: 1 },
+  { name: 'Bold (all in)', gamble: true, share: 1, pick: coinFlipLike, bold: true, reserve: 0, venue: 2 },
 ]
 
 function draw(b: BetProfile, rng: () => number): number {
@@ -119,6 +130,8 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
     let errands = ERRANDS_PER_CITY
+    let tableJobs = TABLE_JOBS_PER_CITY
+    let standing = 0
     let wait = 0
     let brokeSince: number | null = null
     for (;;) {
@@ -133,8 +146,11 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       }
       // A night: minigames, an errand, then play (or rest), comps, lodging.
       const before = money
-      // Tonight's three games in the room this player uses (night counter runs across the whole circuit).
-      const list = gamesFor(city, totalNights, t.venue, [...seen])
+      // A new town starts you in the dive; standing opens the rooms above it. The night
+      // counter runs across the whole circuit.
+      const venue = Math.min(t.venue, roomFor(standing)) as 0 | 1 | 2
+      const cap = VENUE_MAX_M[venue] ?? Infinity
+      const list = gamesFor(city, totalNights, venue, [...seen])
       for (let g = 0; g < city.minigameGivers; g++) money += MINIGAME_MAX_M * (0.45 + rng() * 0.5)
       if (errands > 0) { money += ERRAND_PAY_M; errands-- }
       if (t.gamble && money >= 1) {
@@ -143,24 +159,26 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
         if (t.bold) {
           const need = target - money
           if (need > 0) {
-            const stake = Math.min(money, need)
+            const stake = Math.min(money, need, cap)
             turnover += stake
             money += stake * (draw(t.pick(list, rng), rng) - 1)
           }
         } else {
           for (let k = 0; k < NIGHT_BETS && money >= 1; k++) {
-            const stake = Math.max(1, Math.min(money, money * t.share, t.cap ?? Infinity))
+            const stake = Math.max(1, Math.min(money, money * t.share, cap))
             turnover += stake
             money += stake * (draw(t.pick(list, rng), rng) - 1)
           }
         }
-        money += Math.min(COMPS_RATE[t.venue] * turnover, COMPS_CAP_M[t.venue])
+        money += Math.min(COMPS_RATE[venue] * turnover, COMPS_CAP_M[venue])
       }
+      // A table job finished tonight is what lifts standing (minigame jobs pay money only).
+      if (tableJobs > 0) { standing = Math.min(STANDING_MAX, standing + 1); tableJobs-- }
       if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
       n++
       totalNights++
       wait = Math.max(0, wait - 1)
-      if (before >= 1 && money < 1) { busts++; brokeSince = n }
+      if (before >= 1 && money < 1) { busts++; standing = Math.max(0, standing - BUST_STANDING); brokeSince = n }
       if (brokeSince != null && money >= 10) { recoveries.push(n - brokeSince); brokeSince = null }
       if (n > 1000) return { nights, busts, bosses, recoveries, stuck: true }
     }

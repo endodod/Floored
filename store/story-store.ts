@@ -6,9 +6,9 @@ import { CITIES, CITY_BY_ID, type CityId } from '@/lib/story/cities'
 import { ERRAND_BY_ID, ERRANDS, SCENES, SCENE_BY_ID } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, HUSTLE_PAY_M,
-  LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MINIGAME_MAX_M, NIGHT_BETS, START_MONEY,
-  TRAVEL_FARE_M, VENUE_MAX_M,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, HUSTLE_PAY_M,
+  LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY,
+  TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, errandStanding,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
 import type { Effect, Errand, FactionId, MinigameId, SceneTrigger } from '@/lib/story/types'
@@ -19,14 +19,20 @@ import type { GameName } from './types'
  * rules work in multiples of the current city's minimum bet (lib/story/economy.ts).
  * The persisted shape is versioned from the start: bump STORY_SAVE_VERSION and
  * extend `migrate` for any change to it, and never rename a content id.
+ *
+ * Version 2: `rep` (one figure for the whole circuit) became `standing`, a map
+ * of city id to standing, so every town judges you on its own jobs.
  */
-export const STORY_SAVE_VERSION = 1
+export const STORY_SAVE_VERSION = 2
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
 export const VENUE_NAMES = ['The dive', 'The main floor', 'The high-roller room'] as const
-/** Reputation each venue asks for. */
-export const VENUE_REP: readonly [number, number, number] = [0, 1, 3]
+
+/** Standing after a change, clamped to 0..STANDING_MAX, in one town only. */
+function shiftStanding(all: StorySave['standing'], city: CityId, delta: number): StorySave['standing'] {
+  return { ...all, [city]: Math.max(0, Math.min(STANDING_MAX, (all[city] ?? 0) + delta)) }
+}
 
 export interface Tonight {
   venue: VenueTier
@@ -65,8 +71,8 @@ export interface StorySave {
   owed: number
   /** Markers taken in this city (each costs more to repay). */
   markersHere: number
-  /** Reputation 0–5: opens the main floor (1) and the high-roller room (3). */
-  rep: number
+  /** Standing in each town (0–5): opens the main floor (1) and the high-roller room (2). */
+  standing: Partial<Record<CityId, number>>
   factions: Record<FactionId, number>
   flags: Record<string, true>
   /** Scenes that played (for once-only scenes). */
@@ -103,7 +109,7 @@ const fresh = (): StorySave => ({
   money: START_MONEY,
   owed: 0,
   markersHere: 0,
-  rep: 1,
+  standing: {},
   factions: { syndicate: 0, 'old-guard': 0, underground: 0 },
   flags: {},
   seen: [],
@@ -128,6 +134,10 @@ interface StoryActions {
   /** The current city's minimum bet in dollars. */
   minBet: () => number
   context: () => StoryContext
+  /** Standing in the town you are in (0–STANDING_MAX); a new town starts at 0. */
+  rep: () => number
+  /** Games open errands name: the dive always deals them while the job is open. */
+  openErrandGames: () => GameName[]
 
   // Scenes
   /** The first scene for a trigger in this city whose condition holds and that may still play. */
@@ -203,7 +213,7 @@ export const useStoryStore = create<StoryStore>()(
           else if ('money' in e) {
             if (e.money >= 0) get().receive(e.money * m())
             else set({ money: Math.max(0, s.money + e.money * m()) })
-          } else if ('rep' in e) set({ rep: Math.max(0, Math.min(5, s.rep + e.rep)) })
+          } else if ('rep' in e) set({ standing: shiftStanding(s.standing, s.city, e.rep) })
           else if ('errand' in e) set({ errands: { ...s.errands, [e.errand]: e.step === 'start' ? 'started' : 'done' } })
           else if ('marker' in e) get().takeMarker()
         }
@@ -212,9 +222,11 @@ export const useStoryStore = create<StoryStore>()(
       const completeErrand = (e: Errand) => {
         if (get().errands[e.id] === 'done') return
         const pay = (e.pay ?? ERRAND_PAY_M) * m()
-        set((s) => ({ errands: { ...s.errands, [e.id]: 'done' } }))
+        // A job won at the tables is the only thing that raises standing (owner decision).
+        const gain = errandStanding(e)
+        set((s) => ({ errands: { ...s.errands, [e.id]: 'done' }, ...(gain ? { standing: shiftStanding(s.standing, e.city, gain) } : {}) }))
         get().receive(pay)
-        say(`Errand done: ${e.title} · +$${pay.toLocaleString('en-US')}`)
+        say(`Errand done: ${e.title} · +$${pay.toLocaleString('en-US')}${gain ? ` · standing +${gain}` : ''}`)
       }
 
       /** After a settled round: streak and big-win errands. */
@@ -245,6 +257,8 @@ export const useStoryStore = create<StoryStore>()(
           const s = get()
           return { flags: s.flags, factions: s.factions, moneyM: s.money / m() }
         },
+        rep: () => get().standing[get().city] ?? 0,
+        openErrandGames: () => get().openErrands().flatMap((e) => (e.goal.kind === 'streak' ? [e.goal.game] : [])),
 
         sceneFor: (trigger) => {
           const s = get()
@@ -332,7 +346,7 @@ export const useStoryStore = create<StoryStore>()(
           return ERRANDS.filter((e) => e.city === s.city && s.errands[e.id] !== 'done' && (s.errands[e.id] === 'started' || holds(e.opens, ctx)))
         },
 
-        venueOpen: (venue) => get().rep >= VENUE_REP[venue],
+        venueOpen: (venue) => get().rep() >= VENUE_REP[venue],
         startNight: (venue) => {
           const s = get()
           if (s.tonight || !get().venueOpen(venue) || s.money < m()) return false
@@ -421,7 +435,7 @@ export const useStoryStore = create<StoryStore>()(
             bossBackOn: after.bossBackOn != null && after.night + 1 >= after.bossBackOn ? null : after.bossBackOn,
             tonight: null,
             lastNight: summary,
-            ...(bust ? { rep: Math.max(0, after.rep - 1), stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
+            ...(bust ? { standing: shiftStanding(after.standing, after.city, -BUST_STANDING), stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
           })
           if (bust) queue(get().sceneFor({ on: 'bust' }))
           return summary
@@ -454,7 +468,7 @@ export const useStoryStore = create<StoryStore>()(
           const s = get()
           if (!s.bossTable) return
           if (won) {
-            set({ bossTable: null, cleared: [...s.cleared, s.city], rep: Math.min(5, s.rep + 1), stats: { ...s.stats, bossWins: s.stats.bossWins + 1 }, flags: { ...s.flags, [`${s.city}-cleared`]: true } })
+            set({ bossTable: null, cleared: [...s.cleared, s.city], stats: { ...s.stats, bossWins: s.stats.bossWins + 1 }, flags: { ...s.flags, [`${s.city}-cleared`]: true } })
             get().receive(BOSS_PURSE_M * m(), { profit: true })
             queue(get().sceneFor({ on: 'boss-win' }))
           } else {
@@ -489,9 +503,21 @@ export const useStoryStore = create<StoryStore>()(
         return out as StorySave
       },
       migrate: (persisted, version) => {
-        // Version 1 is the first shape; later versions extend this, filling new fields from fresh().
+        // Later versions extend this, filling new fields from fresh().
         if (!persisted || typeof persisted !== 'object' || version > STORY_SAVE_VERSION) return fresh()
-        return { ...fresh(), ...(persisted as Partial<StorySave>) }
+        const old = persisted as Partial<StorySave> & { rep?: number }
+        const base = { ...fresh(), ...old } as StorySave & { rep?: number }
+        if (version < 2) {
+          // Version 1 kept one reputation figure for the whole circuit. Standing is per
+          // town: move it into the town the save is in, capped by what that town's
+          // finished table jobs would have given. Nothing else in the save moves.
+          const cityId = (base.city ?? STARTING_CITY) as CityId
+          const earned = ERRANDS.filter((e) => e.city === cityId && base.errands[e.id] === 'done').reduce((n, e) => n + errandStanding(e), 0)
+          const moved = Math.max(0, Math.min(old.rep ?? 0, earned, STANDING_MAX))
+          base.standing = { ...(old.standing ?? {}), [cityId]: moved }
+          delete base.rep
+        }
+        return base
       },
       merge: (persisted, current) => ({ ...current, ...fresh(), ...(persisted as Partial<StorySave>) }),
     },
