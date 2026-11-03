@@ -63,9 +63,10 @@ Map ─► City hub ─┬─► Venue night (12 bets across the venue's games, 
 ## 3. Cities (12, in four acts)
 
 The stakes rise about ×2–2.5 per city. You start with **$200** (40× the first min bet).
-Each city has **2–3 venues**: a dive (max bet 20× the min), the main floor (max 100×) and a
-**high-roller room** (no max, opened by Reputation), so going all in is always possible
-somewhere.
+Each city has **2–3 venues**: a dive (always open, max bet 20× the min), the main floor
+(max 100×, standing 1) and a **high-roller room** (no max, standing 2), so going all in is
+always possible somewhere. **Standing** is per town: it starts at 0 in every town, is
+remembered when you go back, and only jobs won at the tables raise it (section 5).
 
 | # | Act | City (fictional) | Feel | House games | Tables | Boss | Min bet |
 |---|---|---|---|---|---|---|---|
@@ -154,10 +155,11 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 | Source / cost | Amount | Limit | Risk |
 |---|---|---|---|
 | Minigames | up to **3m** per play at a perfect score (about 2m on average) | each character **once per night**, 2–3 per city | none |
-| Errands (story jobs) | 6m each, one time | 4 per city | none |
+| Errands (story jobs) | 6m each, one time; **+1 standing** in that town for a job won at the tables (a `streak`, `night-up` or `big-win` goal). Minigame jobs pay money only | 4 per city (3 of them table jobs) | none |
 | Hustles (jobs board) | 4m each | 2 per night, only by playing | none (fixed pay; you meet a game condition) |
 | **Comps** | **a share of what you wagered that night, win or lose, by room: 4% dive / 5% main floor / 6% high-roller** | **capped per night at 10m / 15m / 20m** | none |
-| Venue night | 12 bets, max 20m / 100m / no max; each room deals its own 3 of the city's games each night (`lib/story/rotation.ts`) | one per night | game edge |
+| Venue night | 12 bets, max 20m / 100m / no max; each room deals its own 3 of the city's games each night (`lib/story/rotation.ts`), and the dive keeps any game an open errand names | one per night | game edge |
+| Standing | 0 in every town, 5 at most; +1 per table job, −1 per bust (never below 0); opens the main floor at 1 and the high-roller room at 2 | per town (`VENUE_REP` `[0, 1, 2]`) | — |
 | Tables session | stake-based | one per night | skill + luck |
 | Lodging | **−3m** per night; **free below 10m** (you sleep in your car) | every night | — |
 | Boss | **buy-in 50m, purse 150m** | rematch after 2 nights, same difficulty | about 50/50 |
@@ -171,6 +173,10 @@ rotation (a player only picks from their room's 3 games that night, in the room 
 cautious, balanced and high-variance play the main floor, bold the high-roller room) and the
 per-room comps. Before = one comps rate (4%, cap 10m) and every game of the city available.
 
+Since the standing change it also starts each town in the **dive** and moves a player up as
+standing allows: three table jobs a city (`TABLE_JOBS_PER_CITY`, the guide's 2 early + 1),
++1 standing each, −1 per bust, capped at 5.
+
 | Player type | Nights per city, before → after (median / worst 10%) | Whole circuit, before → after (median) | Busts per circuit | Back to 10m after a bust |
 |---|---|---|---|---|
 | Never gambles (minigames only) | 15 / 86 → 15 / 86 | ~358 → ~358 nights | 0 | — |
@@ -181,6 +187,22 @@ per-room comps. Before = one comps rate (4%, cap 10m) and every game of the city
 
 The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
 bet softens the losses. No other numbers were retuned.
+
+**Standing, same day (before → after the gating):**
+
+| Player type | Nights per city (median / worst 10%) | Whole circuit | Busts per circuit | Back to 10m after a bust |
+|---|---|---|---|---|
+| Never gambles | 15 / 86 → 15 / 86 | ~358 → ~358 | 0 → 0 | — |
+| Cautious (5%) | 5 / 20 → 5 / 20 | ~93 → ~97 | 0 → 0 | — |
+| Balanced (15%) | 5 / 37 → 5 / 38 | ~146 → ~148 | 0 → 0 | 3 / 6 → 2 / 4 nights |
+| High variance | 7 / 70 → 6 / 69 | ~260 → ~266 | 6.9 → 6.4 | 2 nights |
+| Bold (all in) | 3 / 19 → 3 / 18 | ~79 → ~79 | 3.1 → 2.8 | 2 nights |
+
+The simulator's poker odds are a Monte Carlo draw, so the medians move about ±2 nights between
+runs; read the table as "unchanged", not as a two-night difference. Gating barely moves them
+because the dive's 20m cap only binds a player's first night in each town, and the table jobs pay
+6m each anyway. Nobody gets stuck, every player type reaches the high-roller room by its third
+night in a town, and normal play still clears a city in about 5 nights.
 
 - **Nobody gets stuck**, and normal play clears a city in about 5 nights.
 - **Gambling pays:** cautious and bold play are 4–5× faster than never gambling; the
@@ -225,8 +247,9 @@ There is no reset. Losing costs these, from mild to harsh:
 
 1. **The money itself, and the nights to rebuild it** (lodging keeps ticking).
 2. **Bust** (bankroll below the dive min bet):
-   - **Reputation drops a tier**, which closes the high-roller room and the best
-     hustles until you earn it back.
+   - **Standing drops 1 in that town** (never below 0), which can close the high-roller
+     room and the main floor until a job at the tables earns it back. Other towns are
+     untouched, and a new town always starts at 0.
    - Characters react in the story (no lasting branch).
    - **The Notary** offers a **marker** (a loan) of 20m. You repay 1.5×, and half of every
      win's profit goes to the debt until it's paid. Each bust raises the next rate. It's
@@ -385,5 +408,20 @@ Answered (2026-11-02):
 11. **The player** is an unnamed "you" with no portrait.
 12. **Story sits first** on the home page and in the navbar.
 13. **Draft names** are kept for now (they live in data files).
+
+Answered (2026-11-03):
+
+14. **Reputation becomes standing in the current town:** per town, 0 in every new town,
+    remembered when you go back, max 5, stored as a city → standing map with `rep()` for the
+    current town.
+15. **Only jobs won at the tables earn it** (a `streak`, `night-up` or `big-win` goal, +1):
+    minigame errands pay money but no standing, so the player is pushed to gamble. The rule is
+    data: optional `rep` on an errand, defaulting to 1 for gambling goals and 0 for minigames,
+    checked by `pnpm check:story`.
+16. **Rooms:** `VENUE_REP` `[0, 1, 2]` — the dive always open, main floor standing 1,
+    high-roller standing 2. Three table jobs a city open the high-roller room before the boss.
+17. **A bust costs 1 standing**; a boss win no longer gives any (it pays the purse and clears
+    the town). Version-1 saves migrate `rep` into the current town, capped by its finished
+    table jobs.
 
 Nothing is open. Build from Phase 1 (section 11).

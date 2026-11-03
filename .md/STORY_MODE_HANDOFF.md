@@ -21,6 +21,21 @@ constants). The checker verifies the numbers Jo quotes. (4) The arrival scene no
 Vale, the twelve champions). Only Dustwater is playable (title screen and map say so). Guide for
 building cities 2-12: [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md).
 
+**2026-11-03, standing (branch `story/standing`):** reputation became **standing in the town
+you are in**. The save keeps `standing: { [cityId]: 0–5 }` and `rep()` reads the current town
+(`store/story-store.ts`); every new town starts at 0 and going back restores what you left.
+Only jobs won at the tables raise it: `ERRAND_STANDING` (1) for a finished errand whose goal is
+`streak`, `night-up` or `big-win`. Minigame errands still pay `ERRAND_PAY_M` but give no
+standing, so the player is pushed to gamble (`errandStanding` in `lib/story/economy.ts`, an
+optional `rep` on the errand overrides it, `pnpm check:story` holds content to the rule). A bust
+costs `BUST_STANDING` (1), never below 0, and a boss win no longer gives any. `VENUE_REP` is now
+`[0, 1, 2]` (dive always open, main floor standing 1, high-roller 2), so Dustwater's three table
+jobs reach the high-roller room before the boss. The dive also keeps dealing any game an open
+errand names (`gamesFor(..., must)`; the card says so), and the jobs book marks each errand
+"+1 standing" or "Pays only". Save version 2 migrates a version-1 `rep` into the current town,
+capped by its finished table jobs. The sim starts every town in the dive and moves up as
+standing allows.
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 
@@ -38,6 +53,8 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Saves | one story save, "New story" behind a confirmation |
 | Harsher loss option | no |
 | Boss rematches | don't get easier (same buy-in, same rival, after 2 nights) |
+| Standing (2026-11-03) | per town, 0 in every new town, remembered when you go back, max 5. +1 for a job won at the tables (`streak`/`night-up`/`big-win`); minigame errands pay money only. A bust −1 (never below 0); a boss win gives none. `VENUE_REP` `[0, 1, 2]`: dive / main floor / high-roller |
+| Rotation pin (2026-11-03) | while an errand naming a game is open, the dive always deals that game (deterministic draw kept) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
 | Names | draft names kept (Jo, Sloane, Vale, the Notary, twelve cities) |
@@ -57,15 +74,16 @@ Port that generator to TypeScript; don't redraw from scratch.
 | 1 Economy | `lib/story/economy.ts`, `lib/story/cities.ts`, `lib/story/odds.ts`, `scripts/story/sim.ts` (`pnpm sim:story`) | Results in plan section 5. Tuning done: boss buy-in 50m (was 60), purse 150m, free lodging below 10m ("the car"). |
 | 1 Story game settings | `lib/story/odds.ts` (`STORY_SETTINGS`, `STORY_CHICKEN_ROAD_MULTS`, `storyHiloMult`, `STORY_SLOTS_PAYS`, `STORY_MINES_EDGE`, `STORY_POKER_PAYS`) | **Defined and simulated only; no engine reads them yet.** See 3b. |
 | 2 Content model | `lib/story/types.ts`, `lib/story/dialogue.ts` (pure scene runner), `lib/story/content/` (`characters.ts`, `dustwater.ts`, `index.ts`) | Dustwater has 7 scenes (arrival, Marta, Pike, boss intro/win/loss, bust) and 4 errands. |
-| 2 Save | `store/story-store.ts` (`floored-story`, version 1, synced as `story` via `lib/sync/keys.ts` + `components/account-sync.tsx`) | |
+| 2 Save | `store/story-store.ts` (`floored-story`, version 2, synced as `story` via `lib/sync/keys.ts` + `components/account-sync.tsx`; v1 → v2 moves `rep` into `standing`) | |
 | 2 Checks | `scripts/story/check-content.ts` (`pnpm check:story`) | Content rules + the save's rules played through (scenes, minigame pay, a night with errands/hustles/comps, bust, marker, boss, travel). |
-| 3a Night rules | `store/story-store.ts`, `lib/story/hustles.ts` | Venues, table limits, bets/payouts, hustles, comps, errand goals, bust → rep −1 + bust scene, marker effect, scene queue, news. |
+| 3a Night rules | `store/story-store.ts`, `lib/story/hustles.ts` | Venues, table limits, bets/payouts, hustles, comps, errand goals, bust → standing −1 + bust scene, marker effect, scene queue, news. |
 | Engine export | `games/slots/engine.ts` exports `REEL` and `resolveReels` | no behaviour change |
 
 ### The save (`store/story-store.ts`) in short
 - Money in **dollars**; rules in multiples of the city's min bet (`minBet()`).
-- `tonight` = a night at a venue: `venue` 0 dive (max 20m) / 1 main floor (max 100m, rep ≥ 1)
-  / 2 high-roller room (no max, rep ≥ 3); `bets` (max `NIGHT_BETS` 12), `openRound`
+- `tonight` = a night at a venue: `venue` 0 dive (max 20m, always open) / 1 main floor
+  (max 100m, standing ≥ 1) / 2 high-roller room (no max, standing ≥ 2); `bets` (max
+  `NIGHT_BETS` 12), `openRound`
   (stake already taken), `rounds` (settled rounds, for hustles and errands), `startMoney`.
 - Game hook contract to use: `placeBet(game, amount)` takes the stake (a second stake in
   the same open round, e.g. a double, adds to it without counting a new bet);
@@ -74,19 +92,21 @@ Port that generator to TypeScript; don't redraw from scratch.
   (and 0 once 12 bets are used), `betsLeft()`.
 - `endNight()` (after playing or resting): comps (by room: 4% / 5% / 6% of bets, cap 10m / 15m / 20m), hustles (2 a night,
   `hustlesFor(city, night)`, 4m each), night-up errands, lodging (3m) or the car (<10m),
-  bust check (money < min bet → rep −1, `stats.busts`, queues the city's `bust` scene).
+  bust check (money < min bet → standing −1 in this town, never below 0, `stats.busts`,
+  queues the city's `bust` scene).
   Returns a `NightSummary`, also kept in `lastNight` for the hub.
 - Errands: `openErrands()` (not done, and `opens` condition holds or started by a scene);
   goals `minigame` / `streak` / `night-up` / `big-win` are checked automatically and pay
-  `ERRAND_PAY_M` (6m) with a `news` line.
+  `ERRAND_PAY_M` (6m) with a `news` line. A `streak`/`night-up`/`big-win` job also adds
+  `errandStanding(e)` standing (1 by default) in its town; a minigame job adds none.
 - `playMinigame(giver, minigame, score 0–1)`: first play per giver per night pays
   `score × 3m`; minigame errands check every play (practice included).
 - Scenes: `queue` (arrival on new story/travel, boss-win/loss, bust), `playQueued()`,
   `startScene(id)`, `currentStep()`, `advance()`, `pick(index)`; `sceneFor(trigger)` finds
   the first matching scene in the city (talk scenes by character).
 - Boss: `enterBoss()` pays 50m and sets `bossTable { seed }`; `bossResult(won)` pays 150m +
-  rep +1 + `<city>-cleared` flag, or sets `bossBackOn = night + 2`. Leaving the boss table
-  must count as a loss (see 3e).
+  the `<city>-cleared` flag (no standing), or sets `bossBackOn = night + 2`. Leaving the
+  boss table must count as a loss (see 3e).
 - `travelNext()` needs the city cleared and the fare (20 × next city's min bet).
 - Known gap: `stats.busts` only counts busts found at `endNight()`; a bust mid-night is
   caught when the night ends.

@@ -22,12 +22,19 @@ playable once it has content. Fields: `id`, `name`, `act` (1-4), `feel`, `minBet
 `TRAVEL_FARE_M` (20) of the NEXT city's `m`. Order in the array is the circuit order.
 
 **Rooms and games.** Each night every room (0 dive, 1 main floor, 2 high-roller) draws
-`GAMES_PER_ROOM` (3) of `games` via `gamesFor(city, night, venue, seen)` in `lib/story/rotation.ts`
-(seeded by city+night+room; keeps at least one game from the room's previous night; offers all if the
-city has 3 or fewer). It uses the store's global `night`. Give a city at least 4-5 games so rotation
-means something. The hub lists lineups; `app/story/[game]/page.tsx` redirects games not in tonight's
-lineup in the room you sat in. `check:story` tests every city's rotation and that every house game
-appears in at least two cities.
+`GAMES_PER_ROOM` (3) of `games` via `gamesFor(city, night, venue, seen, must)` in
+`lib/story/rotation.ts` (seeded by city+night+room; keeps at least one game from the room's previous
+night; offers all if the city has 3 or fewer). It uses the store's global `night`. Give a city at
+least 4-5 games so rotation means something. The rooms are gated by **standing in that town**
+(`VENUE_REP` `[0, 1, 2]` in `lib/story/economy.ts`): the dive always, the main floor at standing 1,
+the high-roller room at 2. The hub lists lineups; `app/story/[game]/page.tsx` redirects games not in
+tonight's lineup in the room you sat in. `check:story` tests every city's rotation and that every
+house game appears in at least two cities.
+
+**Errands pin games into the dive.** While an errand that names a game is open (a `streak` goal such
+as Pike's marks needing Street Cups), `openErrandGames()` feeds `must` into `gamesFor`, and the dive
+always deals that game. The draw stays deterministic; the pin only replaces slots. The errand card
+says so ("Street Cups is on at the dive while this job is open").
 
 ## 2. Characters: `lib/story/content/characters.ts`
 
@@ -73,20 +80,30 @@ stakes; every house game in 2+ cities; shipped ids (`SHIPPED`) still exist; the 
 save played through (arrival, walkthrough, a night, comps by room, bust, marker, boss, travel).
 **Numbers quoted in dialogue must match the economy.** Checked today: the boss buy-in ("fifty times
 the house minimum to sit"), the Notary's marker ("twenty times the minimum, repaid at one and a
-half"), and Jo's walkthrough (dive/main floor limits and reputation, bets a night, games per room,
-side goals, rematch wait; the `QUOTES` list). Prefer "times the house minimum" phrasing; if you
+half"), and Jo's walkthrough (dive/main floor limits, the room standing thresholds, the standing a job
+aims and a bust costs, the standing cap, bets a night, games per room, side goals, rematch wait;
+the `QUOTES` list). Prefer "times the house minimum" phrasing; if you
 quote a new number, add its regex to `QUOTES` or `WORDS` there.
 
 ## 4. Errands and hustles
 
-**Errands** (`Errand`: `id`, `city`, `giver`, `title`, `task`, `goal`, `opens?`, `pay?`): 4 per city
-(`ERRANDS_PER_CITY`), 6m each (`ERRAND_PAY_M`), paid when done. `goal`: `minigame`
+**Errands** (`Errand`: `id`, `city`, `giver`, `title`, `task`, `goal`, `opens?`, `pay?`, `rep?`):
+4 per city (`ERRANDS_PER_CITY`), 6m each (`ERRAND_PAY_M`), paid when done. `goal`: `minigame`
 `{ minigame, score 0-1 }` (checked on every play of that giver's minigame, practice included),
 `streak` `{ game, wins }` (the game must be in the city's list), `night-up` (end a night at the
 casino up), `big-win` `{ mult }` (one bet returning mult x the stake or more). `opens` is a
 `Condition` (usually `{ flag: 'met-<giver>' }` set by their talk scene); a scene can also start it
 with `{ errand, step: 'start' }`. The checker verifies the giver exists, a minigame goal has a giver
 in that city, and a streak game is in the city.
+
+**Standing.** Every errand has an optional `rep` (0-5, `errandStanding` in `lib/story/economy.ts`).
+It defaults to `ERRAND_STANDING` (1) for a goal won at the tables (`streak`, `night-up`, `big-win`)
+and 0 for `minigame`: minigame jobs pay money, never standing, so the player is pushed to gamble.
+Write it out (`rep: 1` / `rep: 0`) so the intent is readable. **Every city needs at least 2 early
+table jobs plus a third** (3 errands that earn standing), so the high-roller room can open before
+the boss; `check:story` fails a city with fewer than 3. Since standing starts at 0 in each town,
+those jobs are the only way up, so make two of them easy to start (a talk scene, not a deep flag
+chain).
 
 **Hustles** (`lib/story/hustles.ts`): two a night, 4m each, paid at the end of a night you played.
 Drawn from a shared `POOL` by `hustlesFor(city, night)` (seeded `hustles:<city>:<night>`, so a reload
@@ -108,9 +125,9 @@ Profile and rules live in `lib/story/boss.ts` (Dustwater: `CUTTER_HALE` bot, `BO
 `bossOutcome(standings, over)`: you win when the rival's seat is out before yours). The page is
 `app/story/boss/page.tsx`: it runs the city's Tables game (Liar's Dice) with a `TableHostContext`
 host (`components/tables/table-shell.tsx` lets a non-Tables mode supply the buy-in, bots and result),
-calls `enterBoss()` (buy-in `BOSS_BUYIN_M` 50m) and `bossResult(won)` (purse 150m, +1 reputation,
-sets `<city>-cleared`; a loss, or leaving, sets a return `BOSS_REMATCH_NIGHTS` (2) nights later with
-the same terms). Cities whose `boss` is `challenge` need a seeded challenge page (not built). Per
+calls `enterBoss()` (buy-in `BOSS_BUYIN_M` 50m) and `bossResult(won)` (purse 150m, sets
+`<city>-cleared`, no standing; a loss, or leaving, sets a return `BOSS_REMATCH_NIGHTS` (2) nights
+later with the same terms). Cities whose `boss` is `challenge` need a seeded challenge page (not built). Per
 city: a boss `Bot` (keep it out of the general bot pool), the boss game's table component, and the
 `boss-intro/win/loss` scenes.
 
@@ -147,16 +164,21 @@ sit on the street at both layouts (screenshots below).
 2. Wire any story game settings the city's games need (section 7), with `pnpm sim:story`.
 3. Characters (section 2), portrait looks, chip colours.
 4. Minigames for its givers (section 5), then their `MinigameId` goals in errands.
-5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; 4 errands.
+5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; 4 errands
+   (3 of them table jobs worth standing, 2 of those easy to start; 1 minigame job that pays only).
    Register in `content/index.ts`. Quote numbers only as the checker allows.
 6. Boss (section 6) and the boss page/table for the city.
 7. Scene art (section 8) or accept the generic street.
 8. Checks: `npx tsc --noEmit`, `pnpm lint` (3 known errors: `lib/game-registry.tsx` x2,
    `lib/survival/migrate.ts`), `pnpm check:story`, `pnpm sim:story` (add `500` for a quick run).
-   Run the sim after any economy or game-list change; it models the room rotation and room comps.
+   Run the sim after any economy or game-list change; it models the room rotation, room comps and
+   per-town standing. **Check the standing path in the sim**: is the city still clearable in about
+   4-8 nights (median) per player type, with nobody stuck and no player type that can't reach the
+   high-roller room before the boss?
 9. Playwright at 390x844 and 1440x900 (`deviceScaleFactor` 1, `pnpm dev`): new story or set
-   `floored-story` in localStorage, play arrival, talk to everyone, play a night in each room
-   (set `rep` to 3), end the night (receipt), the map, the boss. Look at the screenshots.
+   `floored-story` in localStorage, play arrival, talk to everyone, check the rooms lock and unlock
+   as standing rises (0 / 1 / 2), play a night in each room (set `standing` for the town), end the
+   night (receipt), the map, the boss. Look at the screenshots.
 10. When the city ships to main, add its scene/errand/character ids to `SHIPPED` in
     `scripts/story/check-content.ts` (never remove ids). Update the handoff, plan section 11 and
     README.
