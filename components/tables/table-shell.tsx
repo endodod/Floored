@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { GAME_BOARD_ARENA, GAME_CARD_SHELL, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
@@ -18,6 +18,32 @@ import { formatChips } from '@/utils/format'
 import { signed } from '@/components/ui/terminal'
 import { cn } from '@/lib/utils'
 import type { CashControls } from './use-table-runner'
+
+/**
+ * Lets another mode run a table without the Tables store (Story's boss table).
+ * Provide it above a table component and the shell skips the store: it reports
+ * progress to `onProgress`, forfeits through `onForfeit`, leaves to `backHref`,
+ * and shows `result` (when set) in place of the Tables result panel. Without a
+ * provider the shell behaves exactly as Tables mode.
+ */
+export interface TableHost {
+  /** Where the corner button and the result lead. */
+  backHref: string
+  /** The corner button reads "← {backLabel}". */
+  backLabel: string
+  /** Replaces the tier label in the status bar. */
+  statusLabel?: string
+  /** The confirm line for leaving mid-game. */
+  leaveText?: ReactNode
+  /** Called whenever the standings or your place change (and when the table ends). */
+  onProgress: (info: { standings: Standings; place: number | null; over: boolean }) => void
+  /** Leaving before it is decided. */
+  onForfeit: () => void
+  /** The result panel's content; while set, the dock is locked and the panel shows. */
+  result?: ReactNode
+}
+
+export const TableHostContext = createContext<TableHost | null>(null)
 
 const CORNER_BTN =
   'h-8 rounded-full border border-control bg-ground px-3.5 text-[13px] font-medium text-soft transition-colors hover:border-dim hover:text-ink'
@@ -64,6 +90,7 @@ export function TableShell({
   leaveInPlay?: string
 }) {
   const router = useRouter()
+  const host = useContext(TableHostContext)
   const finish = useTablesStore((s) => s.finish)
   const forfeit = useTablesStore((s) => s.forfeit)
   const cashOut = useTablesStore((s) => s.cashOut)
@@ -89,11 +116,16 @@ export function TableShell({
   const prizes = payoutsFor(standings, table.buyIn, table.seats, table.game)
   const prize = place != null ? (prizes[0] ?? 0) : 0
 
+  const onProgress = host?.onProgress
   useEffect(() => {
-    if (isCash || place == null || settled.current) return
+    onProgress?.({ standings, place, over })
+  }, [onProgress, standings, place, over])
+
+  useEffect(() => {
+    if (host || isCash || place == null || settled.current) return
     settled.current = true
     finish(place, prize)
-  }, [isCash, place, prize, finish])
+  }, [host, isCash, place, prize, finish])
 
   // Cash: the store always holds your chips behind, so a reload or a closed tab leaves with exactly that.
   const cashStack = cash?.stack ?? 0
@@ -127,7 +159,10 @@ export function TableShell({
   const allHistory = isCash ? [...history, ...eventEntries].sort((a, b) => b.at.getTime() - a.at.getTime()) : history
 
   function leave() {
-    if (cash) {
+    if (host) {
+      if (host.result != null) router.push(host.backHref)
+      else setConfirmLeave(true)
+    } else if (cash) {
       if (cashLeft) router.push('/tables')
       else if (cash.inPlay) setConfirmCashLeave(true)
       else cash.leave()
@@ -167,7 +202,7 @@ export function TableShell({
         <span className="text-[13px] font-semibold text-ink">
           {isCash ? game.cash.label : game.label}
           <span className="ml-2 hidden font-normal text-dim sm:inline">
-            {stake ? `${stake.label} · ${limitsLabel(table.game, stake)}` : tier.label}
+            {host?.statusLabel ?? (stake ? `${stake.label} · ${limitsLabel(table.game, stake)}` : tier.label)}
           </span>
         </span>
         {cash ? (
@@ -196,7 +231,7 @@ export function TableShell({
       >
         <div className="absolute left-3 top-3 z-20 flex gap-2">
           <button type="button" onClick={leave} className={CORNER_BTN} disabled={!!cash?.leaving}>
-            {isCash ? (cash?.leaving ? 'Leaving…' : 'Leave table') : '← Tables'}
+            {host ? `← ${host.backLabel}` : isCash ? (cash?.leaving ? 'Leaving…' : 'Leave table') : '← Tables'}
           </button>
           {cash && !cashLeft && (
             <button type="button" onClick={openTopUp} className={CORNER_BTN} disabled={cash.leaving || wallet < 1}>
@@ -259,7 +294,18 @@ export function TableShell({
           </p>
         )}
 
-        {showResult && (
+        {host?.result != null && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(10,12,11,0.62)] p-4 backdrop-blur-[2px]">
+            <section
+              className="tb-result rise w-full max-w-sm rounded-md bg-surface p-5 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.95)] shadow-[inset_0_0_0_1px_rgba(217,164,65,0.35)]"
+              aria-live="polite"
+            >
+              {host.result}
+            </section>
+          </div>
+        )}
+
+        {!host && showResult && (
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(10,12,11,0.62)] p-4 backdrop-blur-[2px]">
             <section
               className={cn(
@@ -329,7 +375,7 @@ export function TableShell({
         )}
       </GameFieldWithHistory>
 
-      <div className={GAME_CONTROL_DOCK_M}>
+      <div className={GAME_CONTROL_DOCK_M} inert={host?.result != null}>
         {dock}
         {/* Out of chips: you sit out until you top up or leave. Covers the dock so nothing in it moves. */}
         {cash?.broke && !cashLeft && (
@@ -397,7 +443,11 @@ export function TableShell({
           <DialogHeader>
             <DialogTitle>Leave the table?</DialogTitle>
             <DialogDescription>
-              You forfeit your <span className="num text-ink">{formatChips(table.buyIn)}</span> buy-in and finish last.
+              {host?.leaveText ?? (
+                <>
+                  You forfeit your <span className="num text-ink">{formatChips(table.buyIn)}</span> buy-in and finish last.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-row justify-end">
@@ -408,6 +458,11 @@ export function TableShell({
               variant="destructive"
               onClick={() => {
                 setConfirmLeave(false)
+                if (host) {
+                  host.onForfeit()
+                  router.push(host.backHref)
+                  return
+                }
                 forfeit()
                 router.push('/tables')
               }}

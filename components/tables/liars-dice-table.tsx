@@ -15,6 +15,7 @@ import { minCountFor } from '@/games/liars-dice/engine'
 import type { LiarsCashState, LiarsCashView } from '@/games/liars-dice/cash'
 import type { LiarsAction, LiarsBid, LiarsState, LiarsView } from '@/games/liars-dice/types'
 import { seatBots } from '@/lib/bots/core'
+import type { Bot } from '@/lib/bots/types'
 import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { liarsCashDef, liarsDef, type CashTableDef } from '@/lib/tables/defs'
 import { cashStakeFor } from '@/lib/tables/stakes'
@@ -48,9 +49,12 @@ function Cup({ dice, lifted }: { dice: number; lifted: boolean }) {
   )
 }
 
-export function LiarsDiceTable({ table, onPlayAgain }: { table: OpenTable; onPlayAgain: () => void }) {
+export function LiarsDiceTable({ table, onPlayAgain, bots: botOverrides }: { table: OpenTable; onPlayAgain: () => void; /** Fixed opponents by seat (Story's boss); other seats are drawn as usual. */ bots?: (Bot | null | undefined)[] }) {
   const game = TABLE_GAME_BY_NAME.get('liars-dice')!
-  const tournamentBots = useMemo(() => [null, ...seatBots(table.seats - 1, createRng(table.seed ^ 0x1d1ce))], [table])
+  const tournamentBots = useMemo(() => {
+    const drawn = [null, ...seatBots(table.seats - 1, createRng(table.seed ^ 0x1d1ce))]
+    return botOverrides ? drawn.map((b, i) => (i > 0 ? (botOverrides[i] ?? b) : b)) : drawn
+  }, [table, botOverrides])
   const cash = table.format === 'cash'
   const def = (cash ? liarsCashDef : liarsDef) as unknown as CashTableDef<LiarsState | LiarsCashState, LiarsView | LiarsCashView, LiarsAction>
   const cashOpts = useMemo(

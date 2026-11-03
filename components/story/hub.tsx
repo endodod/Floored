@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -74,6 +75,7 @@ function CircuitMap({ current, cleared }: { current: string; cleared: string[] }
 
 export function StoryHub() {
   const s = useStoryStore()
+  const router = useRouter()
   const [confirmNew, setConfirmNew] = useState(false)
   const city = CITY_BY_ID.get(s.city)!
   const m = city.minBet
@@ -227,7 +229,14 @@ export function StoryHub() {
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" disabled={!bossIntro} onClick={() => bossIntro && s.startScene(bossIntro)}>Talk</Button>
-                    <Button size="sm" variant="secondary" disabled>Soon</Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={!s.bossAvailable() || s.money < BOSS_BUYIN_M * m}
+                      onClick={() => { if (s.enterBoss()) router.push('/story/boss') }}
+                    >
+                      Sit down
+                    </Button>
                   </div>
                 </div>
               </section>
