@@ -137,6 +137,37 @@ boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city 
 - Build from the shared pieces (`components/ui/*`, `GAME_DOCK_*` buttons, tokens); phone
   first (`max-*` variants don't exist; see `.md/MOBILE_UI_HANDOFF.md`).
 
+### 3c+. Hub as a game screen (2026-11-03; visuals only, same store calls)
+The hub is one screen that fits the viewport (no page scroll at 360×740, 390×844, 1440×900):
+- `components/story/hud.tsx` `StoryHud`: wood title plate (city, night, rep stars on phones),
+  chip-stack money, marker owed in red when > 0, rep stars, bets left during a night; `back`
+  links to `/story`. Also used by the minigame and boss pages (boss: no back link, the
+  table's own corner button forfeits with a confirm).
+- `components/story/city-scene.tsx` + `scene-art.tsx`: the drawn street (SVG in code) with
+  hotspots (`PersonSpot`, `PlaceSpot`). Two layouts by the stage's shape: `wide` (1600×790
+  view) and `tall` (600×1060, phones). The art runs past the view box so other aspect ratios
+  see more street. **A city's scene is config** in `lib/story/scene-theme.ts`
+  (palette, pieces with a place per layout, hotspot spots by piece anchor or fixed point);
+  cities without one use `genericScene` (blocks + casino with the city's name). People
+  without a named spot use `p0`–`p3`; a boss without one uses `boss`.
+- Hotspots open `action-sheet.tsx` (bottom sheet below `lg`, a card beside the hotspot
+  from `lg`): venue doors (start the night / tonight's game tiles / chained with the rep
+  needed), people (Talk, Play/Practice, their errands), the boss (Talk, Sit down, buy-in and
+  purse), the Notary (only when broke), Rest/End night at the motel room or the car (under
+  `CAR_BELOW_M`), the road sign (Travel, lit once cleared). The bottom bar repeats the main
+  action (Tables / End the night / The Notary / Hit the road / Rest).
+- HUD buttons: Jobs (`notebook.tsx`, a matchbook with hustles and errands, and last night's
+  tab), Map (`circuit-map.tsx`, road atlas overlay), Menu (New story, behind the confirm).
+  News are paper slips (`NewsSlips`). End of night shows `night-card.tsx` (a receipt);
+  **queued scenes (bust) now play after "Next night"** instead of straight after ending.
+- `dialogue-box.tsx`: speech bubbles with a tail at the speaker's medallion (up to two
+  characters on stage, the other dims), a felt "you" bubble on the right, narrator caption
+  cards; lines type out (36 letters/s; a tap first finishes the line), gold ▼ when done;
+  choices are option cards (1–9 pick, arrows move). Reduced motion: whole lines, no motion.
+- Title screen (`title-screen.tsx`): the Dustwater scene behind "The Circuit".
+- Styles: the `st-*` block at the end of `app/globals.css`; every animation has `.st-motion`
+  (or is listed) under `data-motion='reduced'` and `prefers-reduced-motion`.
+
 ### 3d. Minigames (`lib/story/minigames/*.ts` pure engines + `components/story/minigames/*`, route `app/story/minigame/[id]`)
 - **Last Orders** (Marta): Simon-style memory; 6 drink icons; orders grow 3→8 items over
   rounds; score = rounds cleared ÷ max (errand needs ≥ 0.8).

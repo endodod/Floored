@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { GAME_DOCK_PRIMARY_BTN } from '@/components/game-dock-parts'
+import { StoryHud } from '@/components/story/hud'
 import { LiarsDiceTable } from '@/components/tables/liars-dice-table'
 import { TableHostContext, type TableHost } from '@/components/tables/table-shell'
 import { useHydrated } from '@/hooks/use-hydrated'
@@ -132,11 +133,15 @@ export default function StoryBossPage() {
   )
 
   if (!table) return <div className="flex-1" aria-busy="true" />
+  // The story frame and HUD around the table; leaving goes through the table's own corner button (a forfeit asks first).
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <TableHostContext.Provider value={host}>
-        <LiarsDiceTable table={table} onPlayAgain={noop} bots={BOTS} />
-      </TableHostContext.Provider>
+    <div className="st-screen flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
+      <StoryHud title="The back room" />
+      <div className="st-room flex min-h-0 flex-1 flex-col sm:p-3">
+        <TableHostContext.Provider value={host}>
+          <LiarsDiceTable table={table} onPlayAgain={noop} bots={BOTS} />
+        </TableHostContext.Provider>
+      </div>
     </div>
   )
 }

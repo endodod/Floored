@@ -2821,3 +2821,377 @@ body > div.neon-auth-ui {
     display: none;
   }
 }
+
+/* ── Story mode: the city screen (components/story/*) ──
+   One game screen: a wood-rimmed frame, a HUD bar, the drawn street with its
+   hotspots, a bottom bar, and the overlays (sheets, dialogue, receipt, map).
+   Scene colours live in lib/story/scene-theme.ts; these are the frame pieces.
+   Every decorative animation carries .st-motion and stops under reduced motion. */
+.st-screen {
+  background: #07080b;
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.45),
+    0 0 0 3px #22160d,
+    0 0 0 4px rgba(217, 164, 65, 0.25),
+    0 30px 80px -30px rgba(0, 0, 0, 0.95);
+}
+.st-hud {
+  background: linear-gradient(180deg, #1b130c, #0e0a07);
+  box-shadow: inset 0 -1px 0 rgba(217, 164, 65, 0.35), 0 6px 18px -6px rgba(0, 0, 0, 0.8);
+}
+.st-plate-wood {
+  background: linear-gradient(#5a3b22, #3a2617 45%, #22160d);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.55), 0 2px 6px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.st-rail {
+  background: linear-gradient(180deg, #0e0a07, #17110b);
+  box-shadow: inset 0 1px 0 rgba(217, 164, 65, 0.35);
+}
+/* Hotspots: a door glows gold when you point at it; tonight's door breathes in felt. */
+.st-hit {
+  background: transparent;
+}
+.st-hit:hover,
+.st-hit:focus-visible,
+.st-hit-on {
+  background: rgba(255, 214, 140, 0.12);
+  box-shadow: 0 0 0 1.5px rgba(217, 164, 65, 0.85), 0 0 22px 2px rgba(217, 164, 65, 0.45);
+}
+.st-hit-lit {
+  box-shadow: 0 0 0 1.5px rgba(79, 174, 132, 0.9), 0 0 24px 2px rgba(79, 174, 132, 0.5);
+  animation: st-breathe 2.4s ease-in-out infinite;
+}
+.st-medallion {
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.75));
+}
+.st-medallion::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -14%;
+  width: 150%;
+  height: 26%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 196, 122, 0.35), transparent);
+  z-index: -1;
+}
+.st-spot:hover .st-medallion,
+.st-spot:focus-visible .st-medallion,
+.st-medallion-on {
+  filter: drop-shadow(0 0 10px rgba(217, 164, 65, 0.75)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.75));
+}
+.st-spot:focus-visible .st-plate-wood {
+  box-shadow: inset 0 0 0 1px #d9a441, 0 0 0 2px #d9a441;
+}
+/* Sheets and the text box: dark glass with a gold rim. */
+.st-sheet {
+  background: linear-gradient(180deg, rgba(24, 20, 16, 0.97), rgba(12, 11, 10, 0.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 164, 65, 0.45),
+    0 -10px 40px -10px rgba(0, 0, 0, 0.9);
+  animation: st-sheet-up var(--dur-med) var(--ease-out) both;
+}
+@media (min-width: 1024px) {
+  .st-sheet {
+    box-shadow:
+      inset 0 0 0 1px rgba(217, 164, 65, 0.45),
+      0 24px 60px -18px rgba(0, 0, 0, 0.95);
+    animation-name: st-card-in;
+  }
+}
+/* Rooms off the street (a minigame, the boss table): lamp light over dark wood. */
+.st-room {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(255, 196, 122, 0.12), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 40%, #15110d, #0a0908 80%);
+}
+.st-card {
+  background: linear-gradient(180deg, rgba(24, 20, 16, 0.92), rgba(12, 11, 10, 0.95));
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.4);
+}
+.st-game-tile {
+  background: radial-gradient(ellipse 120% 90% at 30% 20%, #1d3b2b, #12221a 70%);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3);
+}
+.st-vn-dim {
+  background: radial-gradient(ellipse 90% 70% at 50% 60%, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.7));
+}
+/* Dialogue: speech bubbles with a tail at the speaker's medallion (the slot
+   widths match the cast row in dialogue-box.tsx), the player's felt bubble,
+   the narrator's caption card and the answer cards. */
+.st-bubble {
+  --tail-x: calc(min(34cqw, 22cqh) / 2);
+  background: #f4ecd8;
+  box-shadow: 0 0 0 1.5px #d9a441, 0 18px 40px -12px rgba(0, 0, 0, 0.9);
+  animation: st-bubble-in 180ms var(--ease-out) both;
+}
+@media (min-width: 1024px) {
+  .st-bubble {
+    --tail-x: calc(min(17cqw, 32cqh) / 2);
+  }
+}
+.st-bubble::after {
+  content: '';
+  position: absolute;
+  top: calc(100% - 1px);
+  width: 22px;
+  height: 16px;
+  background: #f4ecd8;
+  filter: drop-shadow(0 1.5px 0 #d9a441);
+}
+.st-tail-left::after {
+  left: calc(var(--tail-x) - 11px);
+  clip-path: polygon(0 0, 100% 0, 18% 100%);
+}
+.st-tail-right::after {
+  right: calc(var(--tail-x) - 11px);
+  clip-path: polygon(0 0, 100% 0, 82% 100%);
+}
+.st-bubble-you {
+  background: linear-gradient(180deg, #1f5a40, #163f2d);
+  box-shadow: inset 0 0 0 1.5px rgba(217, 164, 65, 0.7), 0 18px 40px -12px rgba(0, 0, 0, 0.9);
+  border-bottom-right-radius: 4px;
+  animation: st-bubble-in 180ms var(--ease-out) both;
+}
+.st-caption {
+  background: rgba(8, 8, 9, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.35), inset 0 0 0 4px rgba(0, 0, 0, 0.5), inset 0 0 0 5px rgba(217, 164, 65, 0.15);
+  animation: st-fade 220ms ease both;
+}
+.st-next {
+  text-shadow: 0 0 8px rgba(217, 164, 65, 0.8);
+}
+.st-bubble .st-next {
+  color: #a8741f;
+  text-shadow: none;
+}
+.st-option {
+  background: rgba(10, 10, 10, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3), 0 10px 24px -12px rgba(0, 0, 0, 0.9);
+  transition: box-shadow 150ms ease, background-color 150ms ease, translate 150ms var(--ease-out);
+  animation: st-bubble-in 200ms var(--ease-out) both;
+}
+.st-option:hover,
+.st-option:focus-visible,
+.st-option:focus {
+  background: rgba(29, 74, 55, 0.92);
+  box-shadow: inset 0 0 0 1.5px #d9a441, 0 0 22px -4px rgba(217, 164, 65, 0.5);
+  translate: -4px 0;
+}
+.st-option-key {
+  color: #d9a441;
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.6);
+}
+.st-option-chip {
+  opacity: 0;
+  background:
+    radial-gradient(circle, #a92b42 0 42%, transparent 44%),
+    repeating-conic-gradient(#fbfaf6 0deg 20deg, #a92b42 20deg 60deg);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 8px rgba(217, 164, 65, 0.6);
+  transition: opacity 150ms ease;
+}
+.st-option:hover .st-option-chip,
+.st-option:focus .st-option-chip {
+  opacity: 1;
+}
+.st-cast {
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.85));
+}
+.st-cast-on {
+  transform: translateY(-4px) scale(1.04);
+  filter: drop-shadow(0 0 18px rgba(217, 164, 65, 0.45)) drop-shadow(0 18px 28px rgba(0, 0, 0, 0.85));
+}
+.st-cast-off {
+  transform: scale(0.9);
+  opacity: 0.75;
+  filter: brightness(0.45) saturate(0.6) drop-shadow(0 18px 28px rgba(0, 0, 0, 0.85));
+}
+.st-cast-pop {
+  animation: st-cast-pop 260ms var(--ease-spring) both;
+}
+@keyframes st-bubble-in {
+  from { opacity: 0; translate: 0 8px; scale: 0.98; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+@keyframes st-cast-pop {
+  0% { scale: 0.94; }
+  60% { scale: 1.05; }
+  100% { scale: 1; }
+}
+/* Paper: the receipt, the news slips and the jobs matchbook. */
+.st-receipt {
+  background: #efe6d2;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.9);
+  -webkit-mask: linear-gradient(#000, #000) 0 8px / 100% calc(100% - 16px) no-repeat,
+    radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px) 0 0 / 12px 8px repeat-x,
+    radial-gradient(circle at 6px 8px, transparent 5px, #000 5.5px) 0 100% / 12px 8px repeat-x;
+  mask: linear-gradient(#000, #000) 0 8px / 100% calc(100% - 16px) no-repeat,
+    radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px) 0 0 / 12px 8px repeat-x,
+    radial-gradient(circle at 6px 8px, transparent 5px, #000 5.5px) 0 100% / 12px 8px repeat-x;
+  animation: st-receipt-in var(--dur-slow) var(--ease-out) both;
+}
+.st-stamp {
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  padding: 4px 6px;
+  opacity: 0.85;
+}
+.st-slip,
+.st-paper {
+  background: #efe6d2;
+}
+.st-slip {
+  border-radius: 2px;
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.85);
+  animation: st-slip-in var(--dur-med) var(--ease-out) both;
+}
+.st-notebook {
+  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(0, 0, 0, 0.6);
+  animation: st-card-in var(--dur-med) var(--ease-out) both;
+}
+.st-matchbook {
+  background: linear-gradient(180deg, #a3303d, #7a1f2b);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+}
+.st-striker {
+  background: repeating-linear-gradient(0deg, #3a2a20 0 2px, #6b5240 2px 4px);
+}
+/* The circuit map: an atlas on dark card. */
+.st-map {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(217, 164, 65, 0.07), transparent 70%),
+    linear-gradient(180deg, #120e0a, #08080a);
+  animation: st-fade var(--dur-med) ease both;
+}
+.st-title {
+  color: #ffd98a;
+  text-shadow:
+    0 0 6px rgba(255, 190, 90, 0.9),
+    0 0 22px rgba(255, 120, 60, 0.55),
+    0 0 48px rgba(255, 77, 94, 0.35);
+  animation: st-title-flicker 7s linear infinite;
+}
+.st-title-vignette {
+  background: radial-gradient(ellipse 70% 55% at 50% 32%, rgba(5, 6, 11, 0.72), rgba(5, 6, 11, 0.25) 70%, rgba(5, 6, 11, 0.6));
+}
+
+/* Scene motion */
+.st-flicker {
+  animation: st-flicker 5.5s steps(1, end) infinite;
+}
+.st-flicker-slow {
+  animation: st-flicker 11s steps(1, end) infinite;
+}
+.st-chase {
+  animation: st-chase 1.2s steps(1, end) infinite;
+}
+.st-twinkle {
+  animation: st-twinkle 4s ease-in-out infinite;
+}
+.st-lamp {
+  animation: st-lamp 6s ease-in-out infinite;
+}
+.st-bob {
+  animation: st-bob 1.8s ease-in-out infinite;
+}
+.st-ping {
+  animation: st-ping 2s ease-out infinite;
+}
+.st-headlight {
+  animation: st-drive 19s linear infinite;
+}
+@keyframes st-flicker {
+  0%, 61%, 64%, 66%, 100% { fill-opacity: 1; opacity: 1; }
+  62%, 65%, 67%, 72% { fill-opacity: 0.08; opacity: 0.3; }
+}
+@keyframes st-title-flicker {
+  0%, 90%, 92.5%, 100% { opacity: 1; }
+  91%, 93% { opacity: 0.55; }
+}
+@keyframes st-chase {
+  0%, 33% { opacity: 1; }
+  34%, 100% { opacity: 0.35; }
+}
+@keyframes st-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+@keyframes st-lamp {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+@keyframes st-breathe {
+  0%, 100% { box-shadow: 0 0 0 1.5px rgba(79, 174, 132, 0.9), 0 0 16px 0 rgba(79, 174, 132, 0.35); }
+  50% { box-shadow: 0 0 0 1.5px rgba(79, 174, 132, 1), 0 0 28px 4px rgba(79, 174, 132, 0.6); }
+}
+@keyframes st-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes st-ping {
+  0% { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+@keyframes st-drive {
+  0%, 30% { transform: translateX(0); opacity: 0; }
+  31% { opacity: 1; }
+  70% { transform: translateX(var(--st-road, 3000px)); opacity: 1; }
+  71%, 100% { transform: translateX(var(--st-road, 3000px)); opacity: 0; }
+}
+@keyframes st-sheet-up {
+  from { translate: 0 24px; opacity: 0; }
+  to { translate: 0 0; opacity: 1; }
+}
+@keyframes st-card-in {
+  from { scale: 0.96; opacity: 0; }
+  to { scale: 1; opacity: 1; }
+}
+@keyframes st-receipt-in {
+  from { translate: 0 30px; rotate: -2deg; opacity: 0; }
+  to { translate: 0 0; rotate: -0.6deg; opacity: 1; }
+}
+@keyframes st-slip-in {
+  from { translate: 12px -6px; opacity: 0; }
+  to { translate: 0 0; opacity: 1; }
+}
+@keyframes st-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.st-receipt {
+  rotate: -0.6deg;
+}
+:root[data-motion='reduced'] .st-motion,
+:root[data-motion='reduced'] .st-slip,
+:root[data-motion='reduced'] .st-bubble,
+:root[data-motion='reduced'] .st-bubble-you,
+:root[data-motion='reduced'] .st-caption,
+:root[data-motion='reduced'] .st-option,
+:root[data-motion='reduced'] .st-receipt,
+:root[data-motion='reduced'] .st-sheet,
+:root[data-motion='reduced'] .st-notebook,
+:root[data-motion='reduced'] .st-map {
+  animation: none !important;
+}
+:root[data-motion='reduced'] .st-headlight {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-motion,
+  .st-slip,
+  .st-bubble,
+  .st-bubble-you,
+  .st-caption,
+  .st-option,
+  .st-receipt,
+  .st-sheet,
+  .st-notebook,
+  .st-map {
+    animation: none !important;
+  }
+  .st-headlight {
+    display: none;
+  }
+}

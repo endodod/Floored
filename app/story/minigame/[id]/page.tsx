@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { StoryHud } from '@/components/story/hud'
 import { Portrait } from '@/components/story/portrait'
 import { LastOrdersBoard } from '@/components/story/minigames/last-orders'
 import { ShuffleTrackerBoard } from '@/components/story/minigames/shuffle-tracker'
@@ -71,44 +72,49 @@ function Minigame({ id }: { id: MinigameId }) {
   const Board = id === 'last-orders' ? LastOrdersBoard : ShuffleTrackerBoard
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-[560px] flex-1 flex-col gap-3 pb-2">
-      <div className="flex shrink-0 items-center gap-3">
-        <div className="w-12 shrink-0 overflow-hidden rounded-md">
-          {PORTRAIT_LOOKS.includes(look) && <Portrait look={look} size={48} />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-semibold leading-6 text-ink">{info.title}</h1>
-          <p className="text-xs leading-4 text-dim">{info.rule}</p>
+    <div className="st-screen flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
+      <StoryHud back />
+      <div className="st-room relative flex min-h-0 flex-1 flex-col px-3 pt-3 sm:px-4">
+        <div className="mx-auto flex min-h-0 w-full max-w-[560px] flex-1 flex-col gap-3 pb-2">
+          <div className="flex shrink-0 items-center gap-3">
+            <div className="w-12 shrink-0 overflow-hidden rounded-md">
+              {PORTRAIT_LOOKS.includes(look) && <Portrait look={look} size={48} />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg font-semibold leading-6 text-ink">{info.title}</h1>
+              <p className="text-xs leading-4 text-dim">{info.rule}</p>
+            </div>
+          </div>
+          {stage !== 'done' && <p className={`shrink-0 text-[13px] ${showPay ? 'text-gold' : 'text-dim'}`} data-testid="pay-note">
+            {showPay ? `Pays up to ${money(maxPay)} tonight` : 'Practice — already paid tonight'}
+          </p>}
+
+          {stage === 'intro' && (
+            <div className="flex flex-col items-start gap-3 st-card rounded-md p-4">
+              <p className="text-[13px] text-soft">{info.intro}</p>
+              <div className="flex gap-2">
+                <Button size="lg" onClick={begin}>Start</Button>
+                <Button asChild size="lg" variant="ghost"><Link href="/story">Back to {city.name}</Link></Button>
+              </div>
+            </div>
+          )}
+
+          {stage === 'playing' && <Board key={run} onFinish={onFinish} />}
+
+          {stage === 'done' && result && (
+            <div className="flex flex-col gap-3 st-card rounded-md p-4" data-testid="result">
+              <p className="num text-2xl font-semibold text-ink">{Math.round(result.score * 100)}%</p>
+              <p className="text-[13px] text-soft" data-testid="result-pay">
+                {result.payable ? `You earned ${money(result.paid)}.` : 'Practice round: no pay. Errands still count.'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={begin}>Play again</Button>
+                <Button variant="outline" onClick={() => router.push('/story')}>Back to {city.name}</Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      {stage !== 'done' && <p className={`shrink-0 text-[13px] ${showPay ? 'text-gold' : 'text-dim'}`} data-testid="pay-note">
-        {showPay ? `Pays up to ${money(maxPay)} tonight` : 'Practice — already paid tonight'}
-      </p>}
-
-      {stage === 'intro' && (
-        <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4 shadow-[inset_0_0_0_1px_var(--line)]">
-          <p className="text-[13px] text-soft">{info.intro}</p>
-          <div className="flex gap-2">
-            <Button size="lg" onClick={begin}>Start</Button>
-            <Button asChild size="lg" variant="ghost"><Link href="/story">Back to {city.name}</Link></Button>
-          </div>
-        </div>
-      )}
-
-      {stage === 'playing' && <Board key={run} onFinish={onFinish} />}
-
-      {stage === 'done' && result && (
-        <div className="flex flex-col gap-3 rounded-md bg-surface p-4 shadow-[inset_0_0_0_1px_var(--line)]" data-testid="result">
-          <p className="num text-2xl font-semibold text-ink">{Math.round(result.score * 100)}%</p>
-          <p className="text-[13px] text-soft" data-testid="result-pay">
-            {result.payable ? `You earned ${money(result.paid)}.` : 'Practice round: no pay. Errands still count.'}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={begin}>Play again</Button>
-            <Button variant="outline" onClick={() => router.push('/story')}>Back to {city.name}</Button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
