@@ -59,7 +59,22 @@ export function startHiLoRound(betAmount: number): HiLoState {
   }
 }
 
-export function guessHiLo(state: HiLoState, guess: 'higher' | 'lower'): HiLoState {
+/** Story pricing: each right guess multiplies the multiplier by this price for its own odds. */
+export type HiLoPricing = (pWin: number) => number
+
+/** Chance (out of 13 values) that the next card is strictly higher or lower than this one. */
+export function hiloWinChance(current: HiLoCard, guess: 'higher' | 'lower'): number {
+  const n = guess === 'higher' ? 14 - current.value : current.value - 2
+  return n / 13
+}
+
+/** The multiplier a right guess would reach with story pricing (the current one starts at 1). */
+export function storyNextMultiplier(state: HiLoState, guess: 'higher' | 'lower', pricing: HiLoPricing): number {
+  const p = hiloWinChance(state.currentCard!, guess)
+  return p > 0 ? Math.round(Math.max(1, state.multiplier) * pricing(p) * 100) / 100 : 0
+}
+
+export function guessHiLo(state: HiLoState, guess: 'higher' | 'lower', pricing?: HiLoPricing): HiLoState {
   const nextCard = randomCard()
   const current = state.currentCard!
 
@@ -70,7 +85,7 @@ export function guessHiLo(state: HiLoState, guess: 'higher' | 'lower'): HiLoStat
 
   if (isWin) {
     const newStreak = state.streak + 1
-    const newMult = streakMultiplier(newStreak)
+    const newMult = pricing ? storyNextMultiplier(state, guess, pricing) : streakMultiplier(newStreak)
     return {
       ...state,
       nextCard,

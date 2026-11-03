@@ -7,6 +7,7 @@ import { useDailyStore } from '@/store/daily-store'
 import { useStore } from 'zustand'
 import { useActiveLadderStore } from '@/lib/ladder/active'
 import { useChallengeStore } from '@/store/challenge-store'
+import { useStoryStore } from '@/store/story-store'
 import type { GameName } from '@/store/types'
 import { applyResolveModifiers } from '@/lib/survival/apply-modifiers'
 import { evaluateMissionsOnGame } from '@/lib/survival/mission-evaluator'
@@ -336,4 +337,39 @@ export function useChallengeGameBankroll(game: GameName) {
   )
 
   return { bankroll, wagerCap, bets, betsRemaining, roundOpen, finished, handleBet, handleResolve }
+}
+
+/** Story: money is the wallet, capped by the venue; each bet counts against the night's bets. */
+export function useStoryGameBankroll(game: GameName) {
+  const wagerCap = useStoryStore((s) => s.wagerCap())
+  const betsLeft = useStoryStore((s) => s.betsLeft())
+  const money = useStoryStore((s) => s.money)
+  const placeBet = useStoryStore((s) => s.placeBet)
+  const resolve = useStoryStore((s) => s.resolve)
+
+  // Payout already credited by partial resolves (Plinko balls) in the current round.
+  const roundCreditedRef = useRef(0)
+
+  const handleBet = useCallback(
+    (amount: number) => {
+      if (useStoryStore.getState().tonight?.openRound?.game !== game) roundCreditedRef.current = 0
+      placeBet(game, amount)
+    },
+    [game, placeBet],
+  )
+
+  const handleResolve = useCallback(
+    <R extends GameResolvePayload>(result: R): R => {
+      const settle = result.settleFloorBet !== false
+      const credit = result.payoutAlreadyCredited
+        ? result.payout - roundCreditedRef.current
+        : result.payout
+      roundCreditedRef.current = settle ? 0 : roundCreditedRef.current + result.payout
+      resolve(game, credit, settle)
+      return result
+    },
+    [game, resolve],
+  )
+
+  return { bankroll: money, wagerCap, betsLeft, handleBet, handleResolve }
 }

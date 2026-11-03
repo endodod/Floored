@@ -32,6 +32,7 @@ import { pickQuote } from '@/lib/gambling-quotes'
 import { useBetGuard } from '@/hooks/use-bet-guard'
 import { useCurse } from '@/hooks/use-curse'
 import { useBless } from '@/hooks/use-bless'
+import { storyHiloMult } from '@/lib/story/odds'
 import type { HiLoCard, HiLoState } from '@/games/hilo/types'
 import { PlayingCard } from '@/components/games/playing-card'
 import { GAME_DOCK_PRIMARY_BTN } from '@/components/game-dock-parts'
@@ -40,6 +41,7 @@ import {
   cashOutHiLo,
   goAgainHiLo,
   guessHiLo,
+  storyNextMultiplier,
   initHiLo,
   loseGame,
   startHiLoRound,
@@ -107,7 +109,7 @@ type PendingResult = GamePendingResult
 export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
   const router = useRouter()
   const { autoReBet, forceTie: forceTieSetting } = useSettingsStore()
-  const forceTie = forceTieSetting && mode !== 'daily' && mode !== 'ladder' && mode !== 'challenge'
+  const forceTie = forceTieSetting && mode !== 'daily' && mode !== 'ladder' && mode !== 'challenge' && mode !== 'story'
   const { lock, unlock } = useBetGuard()
   const { cursed } = useCurse()
   const { blessed } = useBless()
@@ -154,7 +156,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
 
   function handleGuess(guess: 'higher' | 'lower') {
     if (!isPlaying && !isRiding) return
-    let next = forceTie ? tieGame(round) : blessed ? winGame(round, guess) : cursed ? loseGame(round, guess) : guessHiLo(round, guess)
+    let next = forceTie ? tieGame(round) : blessed ? winGame(round, guess) : cursed ? loseGame(round, guess) : guessHiLo(round, guess, mode === 'story' ? storyHiloMult : undefined)
     if (mode === 'survival' && hiloHotStreak && next.stage === 'riding' && !next.isTie && Math.random() < 0.25) {
       next = bumpStreak(next)
       setHotStreakFlash(true)
@@ -228,7 +230,11 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
 
   const guessArrow = round.lastGuess === 'higher' ? '↑' : round.lastGuess === 'lower' ? '↓' : '↕'
 
+  const storyPriced = mode === 'story'
   const nextMult = isRiding ? streakMultiplier(round.streak + 1) : 0
+  // Story prices each direction by its own odds; the next multiplier depends on where the card landed.
+  const storyMult = (guess: 'higher' | 'lower') =>
+    storyPriced && round.currentCard ? storyNextMultiplier(round, guess, storyHiloMult) : 0
 
 
   return (
@@ -304,6 +310,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
               className={`${GUESS_BTN} hilo-higher`}
             >
               <span className="mr-1.5">↑</span>Higher
+              {storyPriced && storyMult('higher') > 0 && <span className="num ml-1.5">{formatMultiplier(storyMult('higher'))}</span>}
             </button>
             <button
               type="button"
@@ -311,6 +318,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
               className={`${GUESS_BTN} hilo-lower`}
             >
               <span className="mr-1.5">↓</span>Lower
+              {storyPriced && storyMult('lower') > 0 && <span className="num ml-1.5">{formatMultiplier(storyMult('lower'))}</span>}
             </button>
           </div>
           <div className={`absolute inset-x-0 flex gap-3 ${!isRiding ? 'invisible pointer-events-none' : ''}`}>
@@ -322,7 +330,7 @@ export function HiLoGame({ mode, bankroll, onBet, onResolve }: HiLoGameProps) {
               onClick={handleGoAgain}
               className={`${GUESS_BTN} border-gold text-gold hover:bg-gold-tint hover:shadow-[0_0_24px_-6px_rgba(217,164,65,0.8)]`}
             >
-              Go again <span className="num ml-1">{formatMultiplier(nextMult)}</span>
+              Go again {!storyPriced && <span className="num ml-1">{formatMultiplier(nextMult)}</span>}
             </button>
           </div>
         </div>

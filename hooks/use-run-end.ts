@@ -9,6 +9,8 @@ import { useActiveLadderStore, useLadderHub } from '@/lib/ladder/active'
 import { useFreeplayStore } from '@/store/freeplay-store'
 import { useDailyStore } from '@/store/daily-store'
 import { useChallengeStore } from '@/store/challenge-store'
+import { useStoryStore } from '@/store/story-store'
+import { CITY_BY_ID } from '@/lib/story/cities'
 import { dailyDateKey, generateDailyChallenge } from '@/lib/daily/challenge'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { formatChips } from '@/utils/format'
@@ -22,7 +24,7 @@ export interface RunEndStatus {
   action?: { label: string; tone: 'primary' | 'danger' }
 }
 
-const MODES: GameMode[] = ['survival', 'freeplay', 'daily', 'ladder', 'challenge']
+const MODES: GameMode[] = ['survival', 'freeplay', 'daily', 'ladder', 'challenge', 'story']
 
 /** Game mode from the route — for shared dock parts that don't receive it. */
 export function useRouteMode(): GameMode | null {
@@ -70,6 +72,11 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
   const challengeRoundOpen = useChallengeStore((s) => game != null && s.attempt?.openRound === game)
   const challengeBetsUsed = useChallengeStore((s) => (game ? s.attempt?.progress[game]?.betsUsed ?? 0 : 0))
   const challengeBets = useChallengeStore((s) => s.attempt?.def.games.find((g) => g.game === game)?.bets ?? 0)
+  const storyCityName = useStoryStore((s) => CITY_BY_ID.get(s.city)?.name ?? 'the city')
+  const storyNight = useStoryStore((s) => s.tonight != null)
+  const storyOpenRound = useStoryStore((s) => s.tonight?.openRound != null)
+  const storyBetsLeft = useStoryStore((s) => s.betsLeft())
+  const storyBroke = useStoryStore((s) => s.money < s.minBet())
   const dailyBets = useMemo(
     () => generateDailyChallenge(dailyDate ?? dailyDateKey()).games.find((g) => g.game === game)?.bets ?? 0,
     [dailyDate, game],
@@ -145,6 +152,15 @@ export function useRunEndStatus(mode: GameMode | null): RunEndStatus | null {
     }
   }
 
+  if (mode === 'story') {
+    const action = { label: `Back to ${storyCityName}`, tone: 'primary' as const }
+    if (!storyNight) return { text: 'No night started', tone: 'neutral', action }
+    if (!storyOpenRound) {
+      if (storyBetsLeft === 0) return { text: 'Night over', tone: 'neutral', action }
+      if (storyBroke) return { text: 'Out of chips', tone: 'loss', action: { ...action, tone: 'danger' } }
+    }
+  }
+
   if (mode === 'freeplay' && freeplayBust) {
     return { text: 'Out of chips', tone: 'loss', action: { label: 'Refill chips', tone: 'primary' } }
   }
@@ -196,6 +212,10 @@ export function useRunEnd(mode: GameMode, { idle }: { idle: boolean }) {
     }
     if (mode === 'challenge') {
       router.push('/challenge')
+      return
+    }
+    if (mode === 'story') {
+      router.push('/story')
       return
     }
     if (mode === 'freeplay') useFreeplayStore.getState().reset()

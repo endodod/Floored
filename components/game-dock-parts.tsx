@@ -88,7 +88,7 @@ export function GameDockBackButton({
   return (
     <div className="absolute left-3 top-3 z-10 flex gap-2">
       <button type="button" onClick={() => router.push(mode === 'ladder' ? ladderHub : `/${mode}`)} className={BOARD_CORNER_BTN}>
-        {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily challenge' : mode === 'challenge' ? '← Challenge' : mode === 'ladder' ? '← Ladder' : '← All games'}
+        {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily challenge' : mode === 'challenge' ? '← Challenge' : mode === 'ladder' ? '← Ladder' : mode === 'story' ? '← Story' : '← All games'}
       </button>
       {game && (
         <Link href={`/how-to-play/${game}`} className={`${BOARD_CORNER_BTN} inline-flex items-center gap-1.5`}>

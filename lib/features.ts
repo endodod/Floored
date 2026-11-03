@@ -9,3 +9,6 @@ export const LADDER_ENABLED = true
 
 /** Tables: multi-seat casino games against bots (Hold'em, Liar's Dice, Blackjack Showdown). */
 export const TABLES_ENABLED = true
+
+/** Story: "The Circuit", the campaign mode. Only Dustwater exists so far; switch off to hide it before merging to main. */
+export const STORY_ENABLED = true
