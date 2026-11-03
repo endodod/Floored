@@ -190,6 +190,7 @@ export function StoryHub() {
             </section>
 
             {/* People */}
+            {people.length > 0 && (
             <section className={PANEL} aria-labelledby="people-h">
               <SectionTitle suit={1}><span id="people-h">People</span></SectionTitle>
               <ul className="flex flex-col gap-2">
@@ -214,6 +215,17 @@ export function StoryHub() {
                 ))}
               </ul>
             </section>
+            )}
+
+            {/* A city with no story content yet: say so instead of leaving a dead end. */}
+            {!boss && (
+              <section className={PANEL} aria-labelledby="soon-h">
+                <SectionTitle suit={3}><span id="soon-h">Coming soon</span></SectionTitle>
+                <p className="text-[13px] text-soft">
+                  {city.name}&apos;s people and boss are still being written. You can play nights here; the road ends for now.
+                </p>
+              </section>
+            )}
 
             {/* Boss */}
             {boss && (
