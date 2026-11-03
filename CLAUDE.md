@@ -6,8 +6,8 @@ Survival and Freeplay. Built with Next.js 15 (App Router), TypeScript, Tailwind 
 ## Docs
 
 **Next up:** Story mode. Start with `.md/STORY_MODE_HANDOFF.md` (what is built, what is next,
-every decision), then `.md/STORY_MODE_PLAN.md` (the design). Phases 1, 2, 3a, 3b and 3c are built; next
-is 3d (minigames), then 3e (boss) and 3f (finish). Cash tables and the four new
+every decision), then `.md/STORY_MODE_PLAN.md` (the design). Phases 1–3e are built (the whole Dustwater slice is playable); next
+is 3f (finish) and the owner's playtest. Cash tables and the four new
 house games are built.
 
 Read the one that matches the task before changing code:

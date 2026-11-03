@@ -16,6 +16,7 @@ export function ActionSheet({
   art,
   onClose,
   children,
+  size = 'md',
   className,
 }: {
   /** The hotspot's place in the stage, 0–1 each way. */
@@ -26,6 +27,8 @@ export function ActionSheet({
   art?: ReactNode
   onClose: () => void
   children: ReactNode
+  /** `lg`: a near-full-height sheet on phones, a large centred panel from `sm` up. */
+  size?: 'md' | 'lg'
   className?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -52,6 +55,7 @@ export function ActionSheet({
   }, [])
 
   const right = anchor.x >= 0.55
+  const big = size === 'lg'
   return (
     <>
       <button type="button" tabIndex={-1} aria-hidden className="absolute inset-0 z-30 cursor-default bg-black/45 lg:bg-black/20" onClick={onClose} />
@@ -62,13 +66,15 @@ export function ActionSheet({
         tabIndex={-1}
         style={{ ['--ax' as string]: anchor.x } as CSSProperties}
         className={cn(
-          'st-sheet st-motion absolute inset-x-0 bottom-0 z-40 flex max-h-[calc(100%_-_1.5rem)] flex-col gap-3 rounded-t-xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))] outline-none',
-          'lg:inset-x-auto lg:bottom-auto lg:top-1/2 lg:w-[360px] lg:-translate-y-1/2 lg:rounded-xl lg:pb-4',
-          right ? 'lg:right-[calc((1_-_var(--ax))_*_100%_+_3.5rem)]' : 'lg:left-[calc(var(--ax)_*_100%_+_3.5rem)]',
+          'st-sheet st-motion absolute inset-x-0 bottom-0 z-40 flex flex-col gap-3 rounded-t-xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))] outline-none',
+          big
+            ? 'h-[calc(100%_-_1rem)] sm:inset-x-0 sm:bottom-auto sm:top-1/2 sm:mx-auto sm:h-auto sm:max-h-[calc(100%_-_2rem)] sm:w-[min(880px,calc(100%_-_3rem))] sm:-translate-y-1/2 sm:rounded-xl sm:p-6 sm:pb-6'
+            : 'max-h-[calc(100%_-_1.5rem)] lg:inset-x-auto lg:bottom-auto lg:top-1/2 lg:w-[360px] lg:-translate-y-1/2 lg:rounded-xl lg:pb-4',
+          !big && (right ? 'lg:right-[calc((1_-_var(--ax))_*_100%_+_3.5rem)]' : 'lg:left-[calc(var(--ax)_*_100%_+_3.5rem)]'),
           className,
         )}
       >
-        <div aria-hidden className="mx-auto -mt-1.5 h-1 w-10 rounded-full bg-white/15 lg:hidden" />
+        <div aria-hidden className={cn('mx-auto -mt-1.5 h-1 w-10 shrink-0 rounded-full bg-white/15', big ? 'sm:hidden' : 'lg:hidden')} />
         <div className="flex items-center gap-3">
           {art && <div className="w-12 shrink-0 sm:w-14">{art}</div>}
           <div className="min-w-0 flex-1 pt-0.5">
@@ -86,7 +92,7 @@ export function ActionSheet({
             <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
-        <div className="flex min-h-0 flex-col gap-3">{children}</div>
+        <div className={cn('flex min-h-0 flex-col gap-3', big && 'flex-1')}>{children}</div>
       </div>
     </>
   )
