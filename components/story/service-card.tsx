@@ -11,14 +11,15 @@ import { cn } from '@/lib/utils'
  * header, `note` a page from a notebook.
  */
 
-export function ServiceButton({ icon, label, onClick, dot }: { icon: ReactNode; label: string; onClick: () => void; dot?: boolean }) {
+export function ServiceButton({ icon, label, onClick, dot, disabled }: { icon: ReactNode; label: string; onClick: () => void; dot?: boolean; disabled?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-[68px] flex-col items-center gap-1 rounded-md text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+      disabled={disabled}
+      className="group flex w-[68px] flex-col items-center gap-1 rounded-md text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:cursor-default disabled:opacity-45"
     >
-      <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[radial-gradient(circle_at_50%_35%,#2a2118,#120e0b)] text-gold shadow-[inset_0_0_0_1.5px_rgba(217,164,65,0.55),0_4px_10px_-4px_rgba(0,0,0,0.8)] transition-[transform,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[inset_0_0_0_1.5px_rgba(217,164,65,0.95),0_0_14px_-2px_rgba(217,164,65,0.55)] [&_svg]:h-[19px] [&_svg]:w-[19px]">
+      <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[radial-gradient(circle_at_50%_35%,#2a2118,#120e0b)] text-gold shadow-[inset_0_0_0_1.5px_rgba(217,164,65,0.55),0_4px_10px_-4px_rgba(0,0,0,0.8)] transition-[transform,box-shadow] duration-200 group-enabled:group-hover:-translate-y-0.5 group-enabled:group-hover:shadow-[inset_0_0_0_1.5px_rgba(217,164,65,0.95),0_0_14px_-2px_rgba(217,164,65,0.55)] [&_svg]:h-[19px] [&_svg]:w-[19px]">
         {icon}
         {dot && <span aria-hidden className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-gold shadow-[0_0_6px_rgba(217,164,65,0.8)]" />}
       </span>

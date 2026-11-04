@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
-import { ArrowRight, Car, Ellipsis, HandCoins, Lightbulb, Lock, Map as MapIcon, Moon, NotebookPen, UtensilsCrossed } from 'lucide-react'
+import { ArrowRight, Car, Ellipsis, HandCoins, Lightbulb, Lock, Map as MapIcon, MessageCircle, Moon, NotebookPen, UtensilsCrossed } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { SUITS } from '@/components/ui/terminal'
@@ -397,18 +397,20 @@ export function StoryHub() {
                 <p className="text-[12px] leading-[17px] text-dim">{job.task}</p>
               </div>
             )}
-            {/* What they offer besides talk and jobs: a brass button each, opening a paper card. */}
-            {(hasTips(c) || c.sells === 'meal' || c.lends) && (
-              <div className="flex flex-wrap gap-2" role="group" aria-label={`What ${c.name} offers`}>
-                {hasTips(c) && <ServiceButton icon={<Lightbulb aria-hidden />} label="A tip" onClick={() => { setSheet(null); setService({ kind: 'tips', who: c.id }) }} />}
-                {c.sells === 'meal' && <ServiceButton icon={<UtensilsCrossed aria-hidden />} label="Diner" dot={!s.ateTonight()} onClick={() => { setSheet(null); setService({ kind: 'meal', who: c.id }) }} />}
-                {c.lends && <ServiceButton icon={<HandCoins aria-hidden />} label="Loan" onClick={() => { setSheet(null); setService({ kind: 'loan', who: c.id }) }} />}
-              </div>
-            )}
-            <Actions>
-              <Button size="sm" variant={canTalk ? 'default' : 'outline'} disabled={!canTalk} onClick={() => talk(c.id)}>
-                {canTalk ? 'Talk' : 'Nothing new to say'}
-              </Button>
+            {/* Talk and what they offer: a brass button each (the services open a paper card). */}
+            <div className="flex flex-wrap gap-2" role="group" aria-label={`What ${c.name} offers`}>
+              <ServiceButton
+                icon={<MessageCircle aria-hidden />}
+                label={canTalk ? 'Talk' : 'No news'}
+                dot={canTalk}
+                disabled={!canTalk}
+                onClick={() => talk(c.id)}
+              />
+              {hasTips(c) && <ServiceButton icon={<Lightbulb aria-hidden />} label="A tip" onClick={() => { setSheet(null); setService({ kind: 'tips', who: c.id }) }} />}
+              {c.sells === 'meal' && <ServiceButton icon={<UtensilsCrossed aria-hidden />} label="Diner" dot={!s.ateTonight()} onClick={() => { setSheet(null); setService({ kind: 'meal', who: c.id }) }} />}
+              {c.lends && <ServiceButton icon={<HandCoins aria-hidden />} label="Loan" onClick={() => { setSheet(null); setService({ kind: 'loan', who: c.id }) }} />}
+            </div>
+            {(playable || job?.status === 'open') && <Actions>
               {playable && c.minigame && (
                 <Button asChild size="sm">
                   <Link href={`/story/minigame/${c.minigame}`}>Play</Link>
@@ -419,7 +421,7 @@ export function StoryHub() {
                   Drop job
                 </Button>
               )}
-            </Actions>
+            </Actions>}
             {job?.status === 'open' && <p className="text-[11.5px] leading-4 text-dim">Dropping a job pays nothing and frees {c.name} to offer another.</p>}
           </>
         ),
