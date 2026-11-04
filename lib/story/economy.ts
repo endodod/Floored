@@ -46,7 +46,7 @@ export const COMPS_RATE: readonly [number, number, number] = [0.04, 0.05, 0.06]
 export const COMPS_CAP_M: readonly [number, number, number] = [10, 15, 20]
 
 /** Each room draws this many of the city's games each night (see lib/story/rotation.ts). */
-export const GAMES_PER_ROOM = 3
+export const GAMES_PER_ROOM = 4
 
 /** Venue table limits: dive, main floor, high-roller room (null = no maximum). */
 export const VENUE_MAX_M: readonly [number, number, number | null] = [20, 100, null]

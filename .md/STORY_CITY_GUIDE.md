@@ -22,10 +22,10 @@ playable once it has content. Fields: `id`, `name`, `act` (1-4), `feel`, `minBet
 `TRAVEL_FARE_M` (20) of the NEXT city's `m`. Order in the array is the circuit order.
 
 **Rooms and games.** Each night every room (0 dive, 1 main floor, 2 high-roller) draws
-`GAMES_PER_ROOM` (3) of `games` via `gamesFor(city, night, venue, seen, must)` in
+`GAMES_PER_ROOM` (4) of `games` via `gamesFor(city, night, venue, seen, must)` in
 `lib/story/rotation.ts` (seeded by city+night+room; keeps at least one game from the room's previous
-night; offers all if the city has 3 or fewer). It uses the store's global `night`. Give a city at
-least 4-5 games so rotation means something. The rooms are gated by **standing in that town**
+night; offers all if the city has 4 or fewer). It uses the store's global `night`. Give a city at
+least 5-6 games so rotation means something. The rooms are gated by **standing in that town**
 (`VENUE_REP` `[0, 1, 2]` in `lib/story/economy.ts`): the dive always, the main floor at standing 1,
 the high-roller room at 2. The hub lists lineups; `app/story/[game]/page.tsx` redirects games not in
 tonight's lineup in the room you sat in. `check:story` tests every city's rotation and that every

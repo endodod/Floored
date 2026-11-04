@@ -9,7 +9,7 @@ cities, economy, owner decisions in section 12). This file says what exists, wha
 next, and every decision made along the way that the plan doesn't spell out.
 
 **2026-11-03 additions:** (1) rooms rotate games: `lib/story/rotation.ts` `gamesFor(city, night, venue, seen)`
-gives each room `GAMES_PER_ROOM` (3) games a night, seeded by city+night+room (uses the store's
+gives each room `GAMES_PER_ROOM` (4 since 2026-11-04, was 3) games a night, seeded by city+night+room (uses the store's
 global `night`, like hustles), sharing at least one game with the same room the night before; the hub's
 door cards and Tonight card use it and `app/story/[game]/page.tsx` redirects to /story for a game not
 in tonight's lineup. (Summit's `all-seen` list grows as games are played, so its lineup can shift

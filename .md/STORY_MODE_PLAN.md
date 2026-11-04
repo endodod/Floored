@@ -169,7 +169,7 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 
 The simulator plays whole circuits over each city's **real game list**, with each game's
 odds taken from its engine (`lib/story/odds.ts`). Since 2026-11-03 it models the room
-rotation (a player only picks from their room's 3 games that night, in the room they use:
+rotation (a player only picks from their room's games that night, 3 until 2026-11-04 and 4 since, in the room they use:
 cautious, balanced and high-variance play the main floor, bold the high-roller room) and the
 per-room comps. Before = one comps rate (4%, cap 10m) and every game of the city available.
 
@@ -184,6 +184,11 @@ standing allows: three table jobs a city (`TABLE_JOBS_PER_CITY`, the guide's 2 e
 | Balanced (15% a bet, any game played its usual way) | 5 / 43 → 5 / 37 | ~169 → ~145 | 0 | 2 → 4 nights |
 | High variance (15% on the riskiest bets) | 9 / 84 → 7 / 71 | ~327 → ~274 | ~24 → ~6 | 2 nights |
 | Bold (all in, only what's needed) | 3 / 17 → 3 / 18 | ~75 → ~78 | ~3.6 → ~3.0 | 2 nights |
+
+On 2026-11-04 rooms went from 3 games to 4 (`GAMES_PER_ROOM`). Re-run (3000 circuits, seed 1):
+never gambles 15 / 86, ~359 nights; cautious 5 / 19, ~94; balanced 5 / 37, ~147; high variance
+7 / 73, ~276, busts ~9.6 (was ~6.3 in the same run with 3 games: a fourth game more often puts
+a riskier bet in its room); bold 3 / 17, ~77, busts ~2.6. Nothing else moved.
 
 The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
 bet softens the losses. No other numbers were retuned.
