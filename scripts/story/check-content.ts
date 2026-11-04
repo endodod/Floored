@@ -15,8 +15,8 @@
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
-  CAR_BETS, MARKER_M, MARKER_REPAY, ROOM_BETS, SLEEP_COST_M, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
+  CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, ROOM_BETS, SLEEP_COST_M, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { goalKey, jobGivers, kindOf, makeOffers, NIGHT_KINDS, type Job } from '@/lib/story/jobs'
@@ -212,7 +212,7 @@ const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number
   { re: /^The main floor wants standing (\w+)\..*up to (?:a )?(\w+) times/i, what: 'the main floor', want: (m) => [[word(m[1]), VENUE_REP[1]], [word(m[2]), VENUE_MAX_M[1]]] },
   { re: /^The high-roller room wants standing (\w+)/i, what: 'the high-roller room', want: (m) => [[word(m[1]), VENUE_REP[2]]] },
   { re: /it goes up (\w+)/i, what: 'the standing a table job earns', want: (m) => [[word(m[1]), JOB_STANDING]] },
-  { re: /it drops (\w+)/i, what: 'the standing a bust costs', want: (m) => [[word(m[1]), BUST_STANDING]] },
+  { re: /it drops (\w+)/i, what: 'the standing a marker costs', want: (m) => [[word(m[1]), MARKER_STANDING]] },
   { re: /(\w+) is the most any town gives/i, what: 'the standing cap', want: (m) => [[word(m[1]), STANDING_MAX]] },
   { re: /(\w+) bets a night, (\w+) if you slept in a proper bed/i, what: 'bets a night (car, room)', want: (m) => [[word(m[1]), CAR_BETS], [word(m[2]), ROOM_BETS]] },
   { re: /Room 5 costs (\w+) times the minimum/i, what: 'the room in the first town', want: (m) => [[word(m[1]), SLEEP_COST_M.room[0]]] },
@@ -535,10 +535,10 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   {
     useStoryStore.setState({ money: 100 * m })
     const room = st().endNight('room')
-    if (st().money !== 100 * m - 3 * m || room.car || room.nextBets !== ROOM_BETS) fail('a room in the first town is 3m and gives 12 bets')
+    if (st().money !== 100 * m - 3 * m || room.car || room.nextBets !== ROOM_BETS) fail(`a room in the first town is 3m and gives ${ROOM_BETS} bets`)
     const rich = st().money
     const car = st().endNight('car')
-    if (st().money !== rich || !car.car || car.lodging !== 0 || car.nextBets !== CAR_BETS || st().nextBets !== CAR_BETS) fail('the car in the first town is free and gives 8 bets, even with money to spare')
+    if (st().money !== rich || !car.car || car.lodging !== 0 || car.nextBets !== CAR_BETS || st().nextBets !== CAR_BETS) fail(`the car is free and gives ${CAR_BETS} bets, even with money to spare`)
     st().startNight(0)
     if (st().betsLeft() !== CAR_BETS) fail(`a night after the car has ${CAR_BETS} bets`)
     for (let k = 0; k < CAR_BETS; k++) { st().placeBet('hilo', m); st().resolve('hilo', m, true) }
@@ -552,12 +552,21 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   // A bust: below the minimum after a night queues the bust scene and costs standing here.
   useStoryStore.setState({ money: 2 })
   const standingAtBust = st().rep()
-  if (!st().endNight().bust || st().rep() !== standingAtBust - BUST_STANDING || !st().queue.includes('dustwater-bust')) fail('a bust costs standing and queues the bust scene')
+  if (!st().endNight().bust || st().rep() !== standingAtBust || !st().queue.includes('dustwater-bust')) fail('going broke queues the bust scene and costs no standing by itself')
+  {
+    // The Notary's marker is what costs standing (owner decision 2026-11-04).
+    const atMarker = st().rep()
+    const money0 = st().money
+    useStoryStore.setState({ money: 0 })
+    if (!st().takeMarker() || st().rep() !== Math.max(0, atMarker - MARKER_STANDING)) fail(`taking a marker drops standing by ${MARKER_STANDING}`)
+    useStoryStore.setState({ money: money0, owed: 0, markersHere: 0, standing: { dustwater: atMarker } })
+  }
   // Never below 0: a bust at standing 0 leaves it at 0, and another town is untouched.
   const standingAfterBust = st().standing
-  useStoryStore.setState({ queue: [], money: 2, standing: { 'rattlesnake-junction': 2 } })
-  st().endNight()
-  if (st().rep() !== 0 || st().standing['rattlesnake-junction'] !== 2) fail('a bust never takes standing below 0 and only touches this town')
+  useStoryStore.setState({ queue: [], money: 0, standing: { 'rattlesnake-junction': 2 } })
+  st().takeMarker()
+  if (st().rep() !== 0 || st().standing['rattlesnake-junction'] !== 2) fail('a marker never takes standing below 0 and only touches this town')
+  useStoryStore.setState({ owed: 0, markersHere: 0 })
   useStoryStore.setState({ queue: [], standing: standingAfterBust })
   // A marker: lent 20m, repaid 1.5×, half of each win's profit.
   useStoryStore.setState({ money: 0 })
@@ -583,14 +592,9 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   useStoryStore.setState(jobsSaved)
   if (!st().travelNext() || st().city !== 'rattlesnake-junction' || st().money !== holding - fare || fare !== 200) fail('travel to the next city costs 20 of its minimum bets')
   {
-    // After the first town: the car is 1m and a room 4m; the car is paid down to $0, never into debt.
+    // After the first town: the car is still free and a room is 4m.
     const m2 = st().minBet()
-    if (st().sleepCost('car') !== SLEEP_COST_M.car[1] * m2 || st().sleepCost('room') !== SLEEP_COST_M.room[1] * m2) fail('after the first town the car is 1m and a room 4m')
-    const saved = { money: st().money, queue: st().queue, standing: st().standing }
-    useStoryStore.setState({ money: Math.round(m2 / 2) })
-    st().endNight('car')
-    if (st().money !== 0) fail('the car is paid down to $0, never into debt')
-    useStoryStore.setState(saved)
+    if (st().sleepCost('car') !== 0 || st().sleepCost('room') !== SLEEP_COST_M.room[1] * m2) fail('after the first town the car is free and a room 4m')
   }
   if (st().jobs.filter((j) => j.city === 'dustwater').map((j) => j.id).sort().join() !== keptHere) fail('leaving a town keeps its jobs there for your return')
   // Rattlesnake Junction has no people written yet: Jo, who travels, offers there (one job, one person).

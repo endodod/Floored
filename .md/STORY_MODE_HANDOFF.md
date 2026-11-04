@@ -114,6 +114,15 @@ eight / twelve and the room's 3× (checked). The story still can't be lost: brok
 the Notary's marker, and minigame jobs need no bets. Sim: see plan section 5 (the never-gambler
 can finish again; high-variance busts ~1.6).
 
+**2026-11-04, later the same day (owner decision):** the car is **free in every city** (for now),
+nights are **5 bets after the car and 10 after a room** (room still 3m in Dustwater, 4m after; a
+new story starts with 5), and the standing penalty moved: **going broke costs no standing;
+taking a marker from the Notary costs 1** (`MARKER_STANDING`; the Notary's card, the bust scene's
+Notary line, Jo's walkthrough and How the nights work say so). Room 5's label sits above the motel
+roof. Save version 9 caps a save's next night at 10. Sim (3000, seed 1) nights per city median /
+worst 10%: never gambles 23 / 75 (reference), cautious 7 / 20, balanced 6 / 31, high variance
+7 / 50 (busts ~0), bold 3 / 14 (busts ~2.2). All checks pass.
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 
@@ -170,10 +179,10 @@ Port that generator to TypeScript; don't redraw from scratch.
   the same open round, e.g. a double, adds to it without counting a new bet);
   `resolve(game, payout, settle)` credits payout (`settle: false` = partial, Plinko balls).
   Half of each win's **profit** repays a marker. `wagerCap()` = money capped by the venue
-  (and 0 once the night's bets are used: `tonight.limit`, 8 or 12), `betsLeft()`.
+  (and 0 once the night's bets are used: `tonight.limit`, 5 or 10), `betsLeft()`.
 - `endNight()` (after playing or resting): comps (by room: 4% / 5% / 6% of bets, cap 10m / 15m / 20m), hustles (2 a night,
   `hustlesFor(city, night)`, 4m each), night-up jobs, where you sleep (`endNight(place)`: the car or a room, `sleepCost`),
-  bust check (money < min bet → standing −1 in this town, never below 0, `stats.busts`,
+  bust check (money < min bet → `stats.busts`; no standing lost, a marker costs 1,
   queues the city's `bust` scene).
   Returns a `NightSummary`, also kept in `lastNight` for the hub.
 - Jobs: `jobs` (offered and taken, every town), `openJobs()` (taken, this town), `jobAt`,

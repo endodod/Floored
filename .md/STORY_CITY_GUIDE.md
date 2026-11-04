@@ -86,7 +86,7 @@ save played through (arrival, walkthrough, a night, comps by room, bust, marker,
 **Numbers quoted in dialogue must match the economy.** Checked today: the boss buy-in ("fifty times
 the house minimum to sit"), the Notary's marker ("twenty times the minimum, repaid at one and a
 half"), and Jo's walkthrough (dive/main floor limits, the room standing thresholds, the standing a job
-aims and a bust costs, the standing cap, the standing bonus steps and rates, the jobs a town gives at once,
+aims and a marker costs, the standing cap, the standing bonus steps and rates, the jobs a town gives at once,
 bets a night, games per room, side goals, rematch wait; the `QUOTES` list). Prefer "times the house minimum" phrasing; if you
 quote a new number, add its regex to `QUOTES` or `WORDS` there.
 
@@ -131,7 +131,7 @@ city, the minigame is theirs, the streak game is in the city, the pay is in rang
 jobs in a city share a task, and every town can offer at least `STANDING_MAX` different jobs.
 Dustwater: Marta (bar shift, trucker's bet), Pike (marks, lookout rates), Jo (seed money).
 
-Standing starts at 0 in each town and jobs are the only way up (a bust takes one off). What each
+Standing starts at 0 in each town and jobs are the only way up (taking a marker from the Notary takes one off; going broke alone costs none). What each
 step gives:
 
 | Standing | 0 | 1 | 2 | 3 | 4 | 5 |

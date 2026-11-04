@@ -6,8 +6,8 @@ import { CITIES, CITY_BY_ID, type CityId } from '@/lib/story/cities'
 import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
-  MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, NIGHT_BETS, SLEEP_BETS, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
+  MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, NIGHT_BETS, SLEEP_BETS, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
   TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
@@ -40,8 +40,9 @@ import type { GameName } from './types'
  * Version 8: you choose where to sleep (the car or a room); `nextBets` is the next
  * night's bets (8 after the car, 12 after a room) and `tonight.limit` tonight's.
  * Older saves get 12 for their next night (they slept under the old rules).
+ * Version 9: 5 bets after the car, 10 after a room; a save's next night is capped at 10.
  */
-export const STORY_SAVE_VERSION = 8
+export const STORY_SAVE_VERSION = 9
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
@@ -59,7 +60,7 @@ export interface Tonight {
   openRound: { game: GameName; bet: number; credited: number } | null
   rounds: NightRound[]
   startMoney: number
-  /** Bets this night has (from where you slept); NIGHT_BETS in saves from before version 8. */
+  /** Bets this night has (from where you slept); NIGHT_BETS when missing (saves from before version 8). */
   limit?: number
 }
 
@@ -74,7 +75,7 @@ export interface NightSummary {
   /** What sleeping cost, and where. */
   lodging: number
   car: boolean
-  /** Bets the next night has (8 after the car, 12 after a room). */
+  /** Bets the next night has (5 after the car, 10 after a room). */
   nextBets: number
   /** Money change over the night, all in. */
   net: number
@@ -301,8 +302,13 @@ export function migrateStorySave(persisted: unknown, version: number): StorySave
     delete base.minigameNight
   }
   if (version < 8) {
-    // Where you sleep is a choice now; a save's next night keeps the 12 bets it had.
+    // Where you sleep is a choice now; a save's next night keeps the most bets a night has.
     base.nextBets = NIGHT_BETS
+  }
+  if (version < 9) {
+    // Nights are 5 or 10 bets now: nothing over the room's.
+    base.nextBets = Math.min(base.nextBets ?? NIGHT_BETS, NIGHT_BETS)
+    if (base.tonight) base.tonight = { ...base.tonight, limit: Math.min(base.tonight.limit ?? NIGHT_BETS, NIGHT_BETS) }
   }
   return base
 }
@@ -502,8 +508,16 @@ export const useStoryStore = create<StoryStore>()(
           if (s.money >= m()) return false
           const lent = MARKER_M * m()
           const repay = Math.round(lent * (MARKER_REPAY + MARKER_REPAY_STEP * s.markersHere))
-          set({ money: s.money + lent, owed: s.owed + repay, markersHere: s.markersHere + 1, stats: { ...s.stats, markers: s.stats.markers + 1 } })
-          say(`The Notary lends $${lent.toLocaleString('en-US')} · you owe $${repay.toLocaleString('en-US')}`)
+          // The town hears about it: a marker costs standing here (going broke on its own doesn't).
+          const lost = Math.min(MARKER_STANDING, s.standing[s.city] ?? 0)
+          set({
+            money: s.money + lent,
+            owed: s.owed + repay,
+            markersHere: s.markersHere + 1,
+            stats: { ...s.stats, markers: s.stats.markers + 1 },
+            standing: shiftStanding(s.standing, s.city, -MARKER_STANDING),
+          })
+          say(`The Notary lends $${lent.toLocaleString('en-US')} · you owe $${repay.toLocaleString('en-US')}${lost ? ` · standing -${lost}` : ''}`)
           return true
         },
 
@@ -668,7 +682,7 @@ export const useStoryStore = create<StoryStore>()(
             bossBackOn: after.bossBackOn != null && after.night + 1 >= after.bossBackOn ? null : after.bossBackOn,
             tonight: null,
             lastNight: summary,
-            ...(bust ? { standing: shiftStanding(after.standing, after.city, -BUST_STANDING), stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
+            ...(bust ? { stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
           })
           if (bust) queue(get().sceneFor({ on: 'bust' }))
           queue(get().sceneFor({ on: 'dawn' }))

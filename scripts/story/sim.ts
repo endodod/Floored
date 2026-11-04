@@ -6,7 +6,8 @@
  * 2. Circuit simulation: thousands of whole circuits (12 cities) for five player
  *    types, using each city's real game list, the economy constants and the
  *    odds above. Standing is modelled per town: every town starts the player in
- *    the dive, every finished table job lifts standing one, a bust takes one off, and
+ *    the dive, every finished table job lifts standing one (a bust costs none; the sim
+ *    takes no markers), and
  *    the player moves up to the best room their standing opens (their own preferred
  *    room or lower). Jobs follow lib/story/jobs.ts: each night a minigame job and a table
  *    job while the town has room (JOB_LIMIT, one per giver; a coin flip when one place is
@@ -15,8 +16,7 @@
  *    MINIGAME_JOB_PAY_M, short of it the job is lost. A player who bets takes every offer
  *    and finishes one table job a night; one who never bets leaves table offers alone, and
  *    they leave after JOB_OFFER_NIGHTS. Each night ends with a choice of bed: the car
- *    (8 bets tomorrow; free in the first town, 1m after) or a room (12 bets; 3m, then
- *    4m), which a player who spreads bets takes while holding ROOM_FROM_M; the bold and
+ *    (5 bets tomorrow; free) or a room (10 bets; 3m in the first town, then 4m), which a player who spreads bets takes while holding ROOM_FROM_M; the bold and
  *    the never-gambler sleep in the car. The never-gambler is shown but is not a target
  *    (owner decision 2026-11-04: never gambling is not a way to play the story).
  *    A night up at the tables earns the standing bonus. Prints nights per
@@ -29,7 +29,7 @@
 import { CITIES, type City } from '@/lib/story/cities'
 import { gamesFor } from '@/lib/story/rotation'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE,
   HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, SLEEP_BETS, START_BETS, STANDING_MAX, sleepCostM, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
   standingBonus,
 } from '@/lib/story/economy'
@@ -225,7 +225,8 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       n++
       totalNights++
       wait = Math.max(0, wait - 1)
-      if (before >= 1 && money < 1) { busts++; standing = Math.max(0, standing - BUST_STANDING); brokeSince = n }
+      // Going broke costs no standing (only the Notary's marker does, and the sim takes none).
+      if (before >= 1 && money < 1) { busts++; brokeSince = n }
       if (brokeSince != null && money >= 10) { recoveries.push(n - brokeSince); brokeSince = null }
       if (n > 1000) return { nights, busts, bosses, recoveries, stuck: true }
     }

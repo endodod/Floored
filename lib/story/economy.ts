@@ -10,19 +10,19 @@ export const START_MONEY = 200
 
 /**
  * Where you sleep (owner decision 2026-11-04): you choose every night, playing or
- * resting. The car is cheap and gives CAR_BETS the next night; a room costs more and
- * gives ROOM_BETS. In the first city (Dustwater) the car is free and the room 3m; from
- * the second city on the car is 1m and the room 4m. Paid down to $0, never into debt;
- * a room you can't afford can't be chosen. A new story starts with START_BETS.
+ * resting. The car is free (every city, for now) and gives CAR_BETS the next night; a
+ * room costs 3m in the first city (Dustwater) and 4m after, and gives ROOM_BETS. Paid
+ * down to $0, never into debt; a room you can't afford can't be chosen. A new story
+ * starts with START_BETS.
  */
 export type SleepPlace = 'car' | 'room'
-export const CAR_BETS = 8
-export const ROOM_BETS = 12
+export const CAR_BETS = 5
+export const ROOM_BETS = 10
 export const START_BETS = CAR_BETS
 /** The most bets a night can have (the room's). */
 export const NIGHT_BETS = ROOM_BETS
 /** Sleep costs in m: [first city, every city after]. */
-export const SLEEP_COST_M: Record<SleepPlace, readonly [number, number]> = { car: [0, 1], room: [3, 4] }
+export const SLEEP_COST_M: Record<SleepPlace, readonly [number, number]> = { car: [0, 0], room: [3, 4] }
 export const SLEEP_BETS: Record<SleepPlace, number> = { car: CAR_BETS, room: ROOM_BETS }
 /** What sleeping somewhere costs, in m, in a city (`first`: the first city of the circuit). */
 export const sleepCostM = (place: SleepPlace, first: boolean) => SLEEP_COST_M[place][first ? 0 : 1]
@@ -46,10 +46,11 @@ export const jobPayM = (kind: 'minigame' | 'table') => (kind === 'minigame' ? MI
 /**
  * Standing: how a town sees you, 0 to STANDING_MAX, kept per town (the map is in
  * store/story-store.ts). It rises by JOB_STANDING for every finished table job,
- * drops by BUST_STANDING when you go bust, and opens the better rooms.
+ * drops by MARKER_STANDING when you take a marker from the Notary (going broke on its
+ * own costs none; owner decision 2026-11-04), and opens the better rooms.
  */
 export const JOB_STANDING = 1
-export const BUST_STANDING = 1
+export const MARKER_STANDING = 1
 export const STANDING_MAX = 5
 
 /** The standing each room asks for: dive, main floor, high-roller room. */

@@ -4,8 +4,8 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { CITIES, type City } from '@/lib/story/cities'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BETS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
-  JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, MARKER_M, MARKER_REPAY, MINIGAME_JOB_PAY_M,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BETS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
+  JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, MARKER_M, MARKER_REPAY, MARKER_STANDING, MINIGAME_JOB_PAY_M,
   NIGHT_BETS, ROOM_BETS, SLEEP_COST_M, START_BETS, sleepCostM, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
@@ -72,7 +72,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
           Standing is how a town sees you. It starts at {0} in every town you reach, and a town you go back to remembers what you left. {STANDING_MAX} is the most one will give you.
         </p>
         <p>
-          It goes up {JOB_STANDING} for each table job you finish. Minigame jobs pay more but earn no standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
+          It goes up {JOB_STANDING} for each table job you finish. Minigame jobs pay more but earn no standing. A marker from the Notary takes {MARKER_STANDING} off, never below {0}; going broke on its own costs none. The boss pays the purse and clears the town; it does not raise standing.
         </p>
         <p>
           The dive is always open. The main floor wants standing {VENUE_REP[1]}; the high-roller room wants {VENUE_REP[2]}: no bet limit and the best comps, which is where you build the back-table money.
@@ -153,13 +153,13 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
 
       <Section title="Ending the night">
         <p>
-          You choose where to sleep every night, played or rested. The car costs {SLEEP_COST_M.car[0] ? `${SLEEP_COST_M.car[0]}×` : 'nothing'} in the first town and {SLEEP_COST_M.car[1]}× the minimum bet after, and gives you {CAR_BETS} bets the next night. A room costs {SLEEP_COST_M.room[0]}× in the first town and {SLEEP_COST_M.room[1]}× after ({money(sleepCostM('room', first) * m)} here), and gives {ROOM_BETS}. Save money in the car and stack it up with minigame jobs, or pay for the room and play more. You can&apos;t take a room you can&apos;t pay for.
+          You choose where to sleep every night, played or rested. The car is free and gives you {CAR_BETS} bets the next night. A room costs {SLEEP_COST_M.room[0]}× in the first town and {SLEEP_COST_M.room[1]}× after ({money(sleepCostM('room', first) * m)} here), and gives {ROOM_BETS}. Save money in the car and stack it up with minigame jobs, or pay for the room and play more. You can&apos;t take a room you can&apos;t pay for.
         </p>
       </Section>
 
       <Section title="Going bust & the Notary">
         <p>
-          Fall below the minimum bet ({money(m)}) and you are bust: you lose {BUST_STANDING} standing in this town. The Notary will lend you a marker of {money(MARKER_M * m)}, repaid at {MARKER_REPAY}×. Half the profit from each win goes to it until it is square.
+          Fall below the minimum bet ({money(m)}) and you are bust. The Notary will lend you a marker of {money(MARKER_M * m)}, repaid at {MARKER_REPAY}×, and taking it drops your standing in this town by {MARKER_STANDING}. Or sleep in the car and work minigame jobs, which need no bets. Half the profit from each win goes to it until it is square.
         </p>
       </Section>
 

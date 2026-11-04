@@ -208,8 +208,8 @@ export const DUSTWATER_SCENE: CitySceneConfig = {
     pike: { piece: 'cups', anchor: 'stand' },
     cutter: { piece: 'backroom', anchor: 'door' },
     boss: { piece: 'backroom', anchor: 'door' },
-    // The room's sign sits up the motel wall, so Jo can stand right of the car below it.
-    rest: { at: { wide: [705, 560], tall: [515, 800] } },
+    // The room's sign sits above the motel roof, clear of Jo, who stands right of the car.
+    rest: { at: { wide: [705, 412], tall: [372, 702] } },
     car: { piece: 'car', anchor: 'car' },
     jo: { at: { wide: [700, 712], tall: [545, 958] } },
     road: { piece: 'road', anchor: 'sign' },

@@ -21,7 +21,7 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_STANDING, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
@@ -481,6 +481,7 @@ export function StoryHub() {
         body: (
           <>
             <SheetNote tone="soft">A marker puts chips in your hand. Half of every win goes to the Notary until it is paid, and each one costs more.</SheetNote>
+            <SheetNote tone="loss">Taking a marker drops your standing in {city.name} by {MARKER_STANDING}.</SheetNote>
             <Actions>
               <Button size="sm" disabled={!broke} onClick={() => { if (s.takeMarker()) setSheet(null) }}>Take a marker</Button>
             </Actions>
