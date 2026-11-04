@@ -3,6 +3,7 @@ import { ModeSelect } from '@/components/mode-select'
 import { PageTitle, Suit } from '@/components/ui/terminal'
 import { DailyCountdown } from '@/components/daily/countdown'
 import { HouseQuote } from '@/components/house-quote'
+import { ZoomHint } from '@/components/zoom-hint'
 import { GAMES } from '@/lib/game-catalog'
 import { STORY_ENABLED, TABLES_ENABLED } from '@/lib/features'
 
@@ -80,6 +81,7 @@ export default function HomePage() {
       </ol>
 
       <ModeSelect />
+      <ZoomHint />
     </div>
   )
 }
