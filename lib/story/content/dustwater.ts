@@ -18,7 +18,7 @@ export const DUSTWATER_SCENES: Scene[] = [
       a2c: { kind: 'line', speaker: 'jo', text: "Then Vale sat down. Nobody knows where Vale's money comes from. Half the houses on the circuit pay Vale rent and pretend they don't.", next: 'a3' },
       a3: { kind: 'line', speaker: 'jo', expression: 'angry', text: 'One hand. Your grandfather put the deed in the pot. Vale turned over the only card that beat him.', next: 'a3b' },
       a3b: { kind: 'line', speaker: 'jo', text: "He didn't last the winter. He left you his car, his debts, and a note that says three words. Get it back.", next: 'a3c' },
-      a3c: { kind: 'line', speaker: 'jo', text: "Vale doesn't play strangers. Vale plays champions. Twelve towns on the circuit, each with a house champion. Beat all twelve and Vale owes you a seat at the Summit.", next: 'a4' },
+      a3c: { kind: 'line', speaker: 'jo', text: "Vale doesn't play strangers. Vale plays champions. Six towns on the circuit, each with a house champion. Beat all six and Vale owes you a seat at the Summit.", next: 'a4' },
       a4: { kind: 'line', speaker: 'jo', text: 'Win at that table and the Gilded Floor is yours again. This is town one. Cutter Hale runs the back table here.', next: 'a5' },
       a5: {
         kind: 'choice',
@@ -69,7 +69,7 @@ export const DUSTWATER_SCENES: Scene[] = [
       f9: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "Marta's game, Pike's, my chip drill: you only play them when you've taken the job. One go. Hit the mark and it pays better than the tables. Miss and the job's gone.", next: 'f10' },
       f10: { kind: 'line', speaker: 'jo', text: "Ending the night, you pick where to sleep. The car is free and smells like your grandfather. Room 5 costs three times the minimum and you wake up sharp: ten bets instead of five.", next: 'f11' },
       f11: { kind: 'line', speaker: 'jo', expression: 'angry', text: "Drop under the minimum bet and you're bust. Pike will lend you money, any night you ask, and the whole town hears about it: a point of standing, gone. He's charming about it. That's the problem.", next: 'f12' },
-      f12: { kind: 'line', speaker: 'jo', text: "Last: Cutter at the back table is the way out of town. Fifty times the house minimum to sit. Win and you take the purse. Lose, and he's back after two nights.", next: 'f13' },
+      f12: { kind: 'line', speaker: 'jo', text: "Last: Cutter at the back table is the way out of town. A hundred times the house minimum to sit. Win and you take the purse. Lose, and he's back after two nights.", next: 'f13' },
       f13: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "That's the lot. It's all in the menu, under How the nights work, if you forget. Now go find whoever's waving.", next: 'end' },
       end: { kind: 'end' },
     },
@@ -123,7 +123,7 @@ export const DUSTWATER_SCENES: Scene[] = [
     once: false,
     start: 'b1',
     nodes: {
-      b1: { kind: 'line', speaker: 'cutter', text: "Fifty times the house minimum to sit. Last cup standing takes the circuit seat. Lose and you're back on the bus.", next: 'b2', expression: 'neutral' },
+      b1: { kind: 'line', speaker: 'cutter', text: "A hundred times the house minimum to sit. Last cup standing takes the circuit seat. Lose and you're back on the bus.", next: 'b2', expression: 'neutral' },
       b2: { kind: 'line', speaker: 'cutter', expression: 'pleased', text: 'Vale sends me a postcard every year. I always win.', next: 'b3' },
       b3: {
         kind: 'choice',
@@ -144,7 +144,7 @@ export const DUSTWATER_SCENES: Scene[] = [
     nodes: {
       w1: { kind: 'line', speaker: 'cutter', expression: 'angry', text: 'Five dice on the table and you call it on the first bid. Who taught you that?', next: 'w2' },
       w2: { kind: 'line', speaker: 'jo', expression: 'pleased', text: 'Twenty years of dealing to people like you, Cutter.', next: 'w3' },
-      w3: { kind: 'line', speaker: 'sloane', text: "Not bad for a truck stop. Rattlesnake Junction is next. I'll save you a seat. Near the door.", next: 'end' },
+      w3: { kind: 'line', speaker: 'sloane', text: "Not bad for a truck stop. Silver Mesa is next. I'll save you a seat. Near the door.", next: 'end' },
       end: { kind: 'end', effects: [{ set: 'dustwater-cleared' }, { faction: 'syndicate', delta: -1 }] },
     },
   },

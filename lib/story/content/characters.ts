@@ -5,7 +5,7 @@ export const CHARACTERS: Character[] = [
   // Recurring
   { id: 'jo', name: 'Jo', note: "Dealt at your grandfather's club for twenty years. Travels with you, says what you're thinking. Runs a cashier's drill with you in every town.", city: null, chip: '#2f7a5a', minigame: 'chip-count' },
   { id: 'sloane', name: 'Sloane', note: "Vale's protégée. Fast, proud, keeps turning up one city ahead.", city: null, chip: '#b83a50' },
-  { id: 'vale', name: 'Vale', note: "Head of the Syndicate. Won your grandfather's Gilded Floor in one hand, and half the circuit's houses pay Vale rent. Only plays champions: beat all twelve and Vale owes you a seat at the Summit.", city: null, chip: '#1b1a1f' },
+  { id: 'vale', name: 'Vale', note: "Head of the Syndicate. Won your grandfather's Gilded Floor in one hand, and half the circuit's houses pay Vale rent. Only plays champions: beat all six and Vale owes you a seat at the Summit.", city: null, chip: '#1b1a1f' },
 
   // Dustwater
   { id: 'marta', name: 'Marta', note: 'Runs the Starlite Motel and its diner bar. Has seen every kind of broke.', city: 'dustwater', chip: '#d9a441', minigame: 'last-orders', sells: 'meal' },

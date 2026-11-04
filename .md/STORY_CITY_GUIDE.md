@@ -8,16 +8,16 @@ city's minimum bet `m` (`lib/story/economy.ts`); never write a dollar figure int
 **Premise** (for tone and consistency): six months ago your grandfather owned the Gilded Floor
 (forty tables, a brass bar, Jo dealing the late shift). Vale, head of the Syndicate, won the deed in
 one hand; half the circuit's houses pay Vale rent. He left you his car, his debts and a three-word
-note: get it back. Vale plays only champions: twelve towns, a house champion in each. Beat all twelve
+note: get it back. Vale plays only champions: six towns, a house champion in each. Beat all six
 and Vale owes you a seat at the Summit; win there and the Gilded Floor is yours again. Tone: warm
 noir, likeable people, dry humour, short lines.
 
 ## 1. The city entry: `lib/story/cities.ts`
 
-The twelve entries already exist (ids are saved, never rename `id`; `name` can change). A city is
+The seven entries already exist (ids are saved, never rename `id`; `name` can change). A city is
 playable once it has content. Fields: `id`, `name`, `act` (1-4), `feel`, `minBet` (dollars, the unit
 `m`, rising city to city), `games` (house games on its floors, or `'all-seen'` for the Summit),
-`tables` (Tables rooms: cash/tournament), `boss` (`challenge`, `table` with a Tables game, or
+`tables` (Tables rooms: cash/tournament), `boss` (`table` with a Tables game, or
 `final`), `minigameGivers` (characters with a minigame, used by the sim). Fare to the next city is
 `TRAVEL_FARE_M` (20) of the NEXT city's `m`. Order in the array is the circuit order.
 
@@ -157,7 +157,7 @@ them pure (`met(rounds)`) and seeded.
 
 One per giver, played **only as a job** (section 4): one attempt, the job's target decides the pay.
 Parts: pure engine in `lib/story/minigames/<id>.ts` (seeded `rng.ts`; returns a score 0-1), board in
-`components/story/minigames/<id>.tsx`, its `MinigameId` (already in the type union for all twelve),
+`components/story/minigames/<id>.tsx`, its `MinigameId` (already in the type union),
 and a registration in `app/story/minigame/[id]/page.tsx` (`INFO` entry with title, rule, intro, plus
 the `Board` choice at the bottom). Hub buttons come from the giver's `minigame` field. Built:
 `last-orders` (Marta), `shuffle-tracker` (Pike), `chip-count` (Jo, every town). Remaining ids are listed in `MinigameId`.
@@ -170,7 +170,7 @@ Profile and rules live in `lib/story/boss.ts` (Dustwater: `CUTTER_HALE` bot, `BO
 host (`components/tables/table-shell.tsx` lets a non-Tables mode supply the buy-in, bots and result),
 calls `enterBoss()` (buy-in `BOSS_BUYIN_M` 50m) and `bossResult(won)` (purse 150m, sets
 `<city>-cleared`, no standing; a loss, or leaving, sets a return `BOSS_REMATCH_NIGHTS` (2) nights
-later with the same terms). Cities whose `boss` is `challenge` need a seeded challenge page (not built). Per
+later with the same terms). Per
 city: a boss `Bot` (keep it out of the general bot pool), the boss game's table component, and the
 `boss-intro/win/loss` scenes.
 
@@ -185,8 +185,7 @@ Mines (`STORY_MINES_EDGE`), 1-Player Poker (`STORY_POKER_PAYS`). `STORY_TARGET_R
 the game component passes `mode === 'story' ? storyHiloMult : undefined`
 (`components/games/hilo/game.tsx`), Freeplay/Daily/Ladder/Challenges pass nothing and are unchanged,
 and the sim's `storyOdds` reads the same constants. Do the same for Chicken Road, Slots, Mines and
-Poker before their city ships (Rattlesnake Junction needs Chicken Road and Mines; Port Lacey Slots;
-Silver Mesa Poker). Tooltips and rules text must show the story numbers. Never change a game's base
+Poker before their city ships (Silver Mesa needs Mines, Slots and Poker; Bayou Crossing Chicken Road). Tooltips and rules text must show the story numbers. Never change a game's base
 numbers (owner has not decided the Freeplay outliers).
 
 ## 8. The drawn city scene

@@ -15,7 +15,7 @@
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, TRAVEL_FARE_M, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
   CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
@@ -578,9 +578,9 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   }
   // Never below 0: a bust at standing 0 leaves it at 0, and another town is untouched.
   const standingAfterBust = st().standing
-  useStoryStore.setState({ queue: [], money: 0, standing: { 'rattlesnake-junction': 2 } })
+  useStoryStore.setState({ queue: [], money: 0, standing: { 'silver-mesa': 2 } })
   st().takeMarker()
-  if (st().rep() !== 0 || st().standing['rattlesnake-junction'] !== 2) fail('a marker never takes standing below 0 and only touches this town')
+  if (st().rep() !== 0 || st().standing['silver-mesa'] !== 2) fail('a marker never takes standing below 0 and only touches this town')
   useStoryStore.setState({ owed: 0, markersHere: 0 })
   useStoryStore.setState({ queue: [], standing: standingAfterBust })
   // Pike lends any time, not only when broke (owner decision 2026-11-04).
@@ -615,8 +615,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   st().receive(10 * m, { profit: true })
   if (st().money !== 25 * m || st().owed !== 25 * m) fail('half of a win goes to the marker')
   // The boss: buy-in, loss and the 2-night wait, then a win and travel.
-  useStoryStore.setState({ money: 200 * m, owed: 0 })
-  if (!st().enterBoss() || st().money !== 150 * m || !st().bossTable) fail('the boss buy-in is 50m and seats you')
+  useStoryStore.setState({ money: 500 * m, owed: 0 })
+  if (!st().enterBoss() || st().money !== (500 - BOSS_BUYIN_M) * m || !st().bossTable) fail(`the boss buy-in is ${BOSS_BUYIN_M}m and seats you`)
   st().bossResult(false)
   if (st().bossAvailable()) fail('the rival leaves after a loss')
   st().endNight()
@@ -626,25 +626,25 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   const sitting = st().money
   const standingAtBoss = st().rep()
   st().bossResult(true)
-  if (!st().cleared.includes('dustwater') || st().money !== sitting + 150 * m) fail('a boss win pays 150m and clears the city')
+  if (!st().cleared.includes('dustwater') || st().money !== sitting + BOSS_PURSE_M * m) fail(`a boss win pays ${BOSS_PURSE_M}m and clears the city`)
   if (st().rep() !== standingAtBoss) fail('a boss win pays the purse and clears the town but gives no standing')
   const fare = st().fareToNext()!
   const holding = st().money
   useStoryStore.setState(jobsSaved)
-  if (!st().travelNext() || st().city !== 'rattlesnake-junction' || st().money !== holding - fare || fare !== 200) fail('travel to the next city costs 20 of its minimum bets')
+  if (!st().travelNext() || st().city !== 'silver-mesa' || st().money !== holding - fare || fare !== TRAVEL_FARE_M * CITIES[1]!.minBet) fail('travel to the next city costs 20 of its minimum bets')
   {
     // After the first town: the car is still free and a room is 4m.
     const m2 = st().minBet()
     if (st().sleepCost('car') !== 0 || st().sleepCost('room') !== SLEEP_COST_M.room[1] * m2) fail('after the first town the car is free and a room 4m')
   }
   if (st().jobs.filter((j) => j.city === 'dustwater').map((j) => j.id).sort().join() !== keptHere) fail('leaving a town keeps its jobs there for your return')
-  // Rattlesnake Junction has no people written yet: Jo, who travels, offers there (one job, one person).
-  const rj = st().jobs.filter((j) => j.city === 'rattlesnake-junction')
-  const rjGivers = jobGivers('rattlesnake-junction').length
+  // Silver Mesa has no people written yet: Jo, who travels, offers there (one job, one person).
+  const rj = st().jobs.filter((j) => j.city === 'silver-mesa')
+  const rjGivers = jobGivers('silver-mesa').length
   if (rj.length !== Math.min(2, rjGivers) || (rjGivers >= 2 && kinds(rj) !== 'minigame,table')) fail(`the first night in a new town brings its offers (got ${rj.map((j) => j.giver + ':' + j.key).join()})`)
   if (st().openJobs().some((j) => j.city !== st().city)) fail('only this town\'s jobs can be worked here')
   if (st().rep() !== 0 || !st().venueOpen(0) || st().venueOpen(1)) fail('a town you have not worked starts you at standing 0')
-  useStoryStore.setState({ standing: { dustwater: 1, 'rattlesnake-junction': 3 } })
+  useStoryStore.setState({ standing: { dustwater: 1, 'silver-mesa': 3 } })
   if (st().rep() !== 3 || !st().venueOpen(2)) fail('a town you go back to remembers its standing')
 }
 
@@ -668,6 +668,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (out.standing.dustwater !== 2) fail('a migrated save keeps its standing')
   const v6 = migrateStorySave({ started: true, jobs: [], jobsGiven: { dustwater: ['night-up:0'] }, jobOffered: { dustwater: 3 } }, 6) as unknown as Record<string, unknown>
   if ('jobOffered' in v6 || JSON.stringify(v6.jobNight) !== '{}' || JSON.stringify(v6.jobsGiven) !== '{"dustwater":["night-up:0"]}') fail('a version 6 save moves onto two offers a night, keeping what was given')
+  const v9 = migrateStorySave({ started: true, city: 'rattlesnake-junction', cityNight: 3, visited: ['dustwater', 'rattlesnake-junction'], cleared: ['dustwater'], standing: { dustwater: 4, 'rattlesnake-junction': 2 }, jobs: [{ id: 'x', city: 'rattlesnake-junction' }], queue: ['dustwater-bust'] }, 9) as unknown as Record<string, unknown> & { city: string; visited: string[]; standing: Record<string, number>; jobs: unknown[]; cityNight: number }
+  if (v9.city !== 'silver-mesa' || v9.cityNight !== 0 || v9.visited.join() !== 'dustwater,silver-mesa' || JSON.stringify(v9.standing) !== '{"dustwater":4}' || v9.jobs.length) fail(`a save in a cut city moves to the next city left, fresh (got ${v9.city}, ${v9.visited.join()})`)
 }
 
 // ── Chip Count (Jo) ──

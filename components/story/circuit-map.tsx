@@ -25,7 +25,7 @@ function smooth(pts: [number, number][]): string {
 }
 
 /**
- * The circuit as a road-trip map: twelve stops along one road, grouped by act,
+ * The circuit as a road-trip map: seven stops along one road, grouped by act,
  * with where you are, what you cleared and what is still ahead. An overlay over
  * the city; Escape or Close shuts it.
  */

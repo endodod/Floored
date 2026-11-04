@@ -61,7 +61,7 @@ Map ─► City hub ─┬─► Venue night (12 bets across the venue's games, 
 
 ---
 
-## 3. Cities (12, in four acts)
+## 3. Cities (7, in four acts; five cut on 2026-11-04)
 
 The stakes rise about ×2–2.5 per city. You start with **$200** (40× the first min bet).
 Each city has **2–3 venues**: a dive (always open, max bet 20× the min), the main floor
@@ -73,18 +73,19 @@ winnings, paid at the end of the night.
 
 | # | Act | City (fictional) | Feel | House games | Tables | Boss | Min bet |
 |---|---|---|---|---|---|---|---|
-| 1 | I Backroads | Dustwater | truck stop, back rooms | Coin Flip, Street Cups, HiLo, Run Dice, Over-Under | Liar's Dice cash | Liar's Dice table | 5 |
-| 2 | I | Rattlesnake Junction | rodeo saloon | Chicken Race, Chicken Road, Wheel, Mines, Andar Bahar | Blackjack Showdown cash | Challenge | 10 |
-| 3 | I | Port Lacey | boardwalk arcade | Plinko, Wheel, Slots, Keno, Crash, Case Battles | none | Challenge | 25 |
-| 4 | II The Strip | Silver Mesa | classic strip | Blackjack, Roulette, 1P Poker, Dragon Tower, Deck Countdown, Mines | Blackjack Showdown tournament | Blackjack Showdown | 50 |
-| 5 | II | Neon Flats | modern mega-resort | Crash, Slots, Plinko, Tower of Cards, Case Battles, Keno | Hold'em cash | Challenge | 100 |
-| 6 | II | Bayou Crossing | riverboat | Blackjack, 1P Poker, Run Dice, Over-Under, Street Cups, Chicken Race | Liar's Dice tournament | Liar's Dice (rematch, harder) | 250 |
-| 7 | III Abroad | Lantern Quay | harbour lights | Baccarat, Sic Bo, Dragon Tiger, Andar Bahar, Tower of Cards | Hold'em cash | Challenge | 500 |
-| 8 | III | Coral Reach | island resort | Wheel, Sic Bo, Chicken Road, Coin Flip, Keno, HiLo | Liar's Dice cash | Challenge | 1,000 |
-| 9 | III | Monte Lune | Riviera | Roulette, Baccarat, Blackjack, 1P Poker, Dragon Tiger | Hold'em tournament | Hold'em Sit & Go | 2,500 |
-| 10 | IV The Top | Kurstadt | old spa casino | Roulette, HiLo, Deck Countdown, Dragon Tower, Mines, Baccarat | Blackjack Showdown cash | Blackjack Showdown | 5,000 |
-| 11 | IV | The Aurora | ocean liner | Crash, Tower of Cards, Coin Flip, Case Battles, Sic Bo, Plinko | Hold'em cash + tournament | Hold'em vs the rival | 10,000 |
-| 12 | IV | The Summit | Vale's private club | your pick of every game seen | all three | Final: three rounds vs Vale | 25,000 |
+| 1 | I | Dustwater | truck stop, back rooms | Coin Flip, Street Cups, HiLo, Run Dice, Over-Under, Wheel, Chicken Race, Crash | Liar's Dice cash | Liar's Dice | 5 |
+| 2 | I | Silver Mesa | classic strip | Blackjack, Roulette, 1P Poker, Dragon Tower, Deck Countdown, Mines, Slots, Keno | Blackjack Showdown tournament | Blackjack Showdown | 20 |
+| 3 | II | Bayou Crossing | riverboat | Blackjack, 1P Poker, Run Dice, Over-Under, Street Cups, Chicken Race, Chicken Road, Dragon Tiger | Hold'em cash | Hold'em | 75 |
+| 4 | II | Monte Lune | Riviera | Roulette, Baccarat, Sic Bo, Andar Bahar, Tower of Cards, Plinko, Case Battles, Coin Flip | Liar's Dice tournament | Liar's Dice | 250 |
+| 5 | III | Kurstadt | old spa casino | HiLo, Deck Countdown, Dragon Tower, Mines, Baccarat, Sic Bo, Andar Bahar, Dragon Tiger | Blackjack Showdown cash | Blackjack Showdown | 1,000 |
+| 6 | III | The Aurora | ocean liner | Crash, Tower of Cards, Case Battles, Plinko, Slots, Keno, Chicken Road, Wheel | Hold'em cash + tournament | Hold'em | 5,000 |
+| 7 | IV | The Summit | Vale's private club | your pick of every game seen | all three | Final: vs Vale | 25,000 |
+
+**2026-11-04 (owner decision):** the five cities with a challenge boss (Rattlesnake Junction, Port
+Lacey, Neon Flats, Lantern Quay, Coral Reach) are cut. The six champions rotate Liar's Dice,
+Blackjack Showdown, Hold'em twice, then the final. Minimum bets step about ×4 a city. Each of the
+24 house games is dealt in exactly two cities (8 a city; three rooms of 4 a night draw from them).
+Boss buy-in 100m, win 300m (was 50m / 150m). Saves in a cut city move to the next city left.
 
 - **Every one of the 24 house games appears in at least 2 cities** (most in 3), so games
   repeat but always in a new setting with new stakes, events and characters.

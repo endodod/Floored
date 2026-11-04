@@ -130,7 +130,7 @@ export function ModeSelect() {
       {/* ── Story: the campaign (toggle in lib/features.ts) ── */}
       {STORY_ENABLED && (
         <section id="story" className="flex scroll-mt-24 flex-col gap-4" aria-labelledby="story-title">
-          <SectionTitle suit={3} note="A campaign across twelve cities">
+          <SectionTitle suit={3} note="A campaign across seven cities">
             <span id="story-title">Story</span>
           </SectionTitle>
           <ModeRowList>

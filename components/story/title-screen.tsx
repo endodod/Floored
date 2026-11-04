@@ -5,7 +5,7 @@ import { CityScene } from '@/components/story/city-scene'
 import type { SceneArtState } from '@/components/story/scene-art'
 import { DUSTWATER_SCENE } from '@/lib/story/scene-theme'
 
-const TITLE_ART: SceneArtState = { locked: [false, false, true], tonight: null, boss: 'waiting', roadOpen: false, nextCity: 'Rattlesnake Jct', car: false }
+const TITLE_ART: SceneArtState = { locked: [false, false, true], tonight: null, boss: 'waiting', roadOpen: false, nextCity: 'Silver Mesa', car: false }
 
 /** No story yet: Dustwater at night behind the title, and one button. */
 export function TitleScreen({ onStart }: { onStart: () => void }) {

@@ -18,7 +18,7 @@ mid-night; revisit when the Summit is built.) (2) Comps by room: `COMPS_RATE` `[
 `dustwater-how-nights-work` (trigger `tutorial`, queued after arrival on a new story, replayable) and the
 "How the nights work" card (`components/story/nights-guide.tsx`, hub menu, all numbers from the
 constants). The checker verifies the numbers Jo quotes. (4) The arrival scene now tells the premise (Gilded Floor,
-Vale, the twelve champions). Only Dustwater is playable (title screen and map say so). Guide for
+Vale, the six champions). Only Dustwater is playable (title screen and map say so). Guide for
 building cities 2-12: [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md).
 
 **2026-11-03, standing (branch `story/standing`):** reputation became **standing in the town
@@ -145,6 +145,17 @@ tonight), Loan (a hand with coins) and A tip (a light bulb). Each opens a paper 
 street in the receipt's style: a diner menu (`menu`), an I.O.U. slip with a red header (`iou`) or
 a page of Jo's notebook (`note`); opening one closes the person's card.
 
+**2026-11-04, seven cities (owner decision):** the five challenge-boss cities are cut; the circuit
+is Dustwater ($5, Liar's Dice), Silver Mesa ($20, Blackjack Showdown), Bayou Crossing ($75,
+Hold'em), Monte Lune ($250, Liar's Dice), Kurstadt ($1,000, Blackjack Showdown), The Aurora
+($5,000, Hold'em), The Summit ($25,000, the final). Each city deals 8 house games and every game
+is in exactly two cities. Boss buy-in `BOSS_BUYIN_M` 100m, win `BOSS_PURSE_M` 300m; Jo and Cutter
+say "a hundred times the house minimum" (checked). Save version 10 moves a save in a cut city to
+the next city left (`REMOVED_CITIES` in `lib/story/cities.ts`). **Open:** `pnpm sim:story` fails
+its 4-8 nights-a-city target (balanced 18 / 70, cautious 19 / 44; whole circuit ~191 nights, about
+the old 12-city length): the ×4 step in stakes between cities is the main driver. Waiting on the
+owner: accept a longer stay per city (and move the target), or retune.
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 
@@ -169,7 +180,7 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Rotation pin (2026-11-03) | while a taken job naming a game is open, the dive always deals that game (deterministic draw kept) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
-| Names | draft names kept (Jo, Sloane, Vale, the Notary, twelve cities) |
+| Names | draft names kept (Jo, Sloane, Vale; seven cities since 2026-11-04) |
 | Other modes' outlier payouts | **not decided**: Chicken Road (up to ~193%), HiLo (~142%), Slots (104.8%) are over 100% in Freeplay/Daily/Ladder/Challenges; owner was asked, no answer yet. Don't change them without a yes. |
 
 Portrait reference: [.md/story/portrait-styles.html](story/portrait-styles.html) (also
@@ -254,7 +265,7 @@ boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city 
    `mode === 'story'` and shows the next multiplier per direction (line ~231 uses
    `streakMultiplier`). Other modes unchanged.
    The other story settings (Chicken Road, Slots, Mines, Poker) are needed only from
-   Rattlesnake Junction on; wire them the same way when those cities are built, with the
+   Silver Mesa on; wire them the same way when those cities are built, with the
    numbers in `lib/story/odds.ts` (the simulator already uses them).
 7. `app/story/[game]/page.tsx`: like `app/daily/[game]/page.tsx`; only the current city's
    games and only during a night (`tonight`), else redirect to `/story`. The story HUD
@@ -281,7 +292,7 @@ boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city 
   as in the reference page; narrator lines without portrait; "you" lines right-aligned, no
   portrait. Plays `currentStep()`; click/Enter advances.
 - `app/story/page.tsx` (hub): no story → intro + "Start the story"; else: header strip
-  (city, night, money, owed, rep), circuit map strip (12 cities, act groups, current and
+  (city, night, money, owed, rep), circuit map strip (7 cities, act groups, current and
   cleared), Play a night (venue picker by rep), People (talk → `sceneFor({on:'talk'})`;
   minigame button, "paid tonight" state), Jobs (tonight's hustles + taken jobs + who has an offer), Boss
   (intro scene → `enterBoss`), Rest / End the night (night summary panel), Travel when

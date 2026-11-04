@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CITIES, CITY_BY_ID, type CityId } from '@/lib/story/cities'
+import { CITIES, CITY_BY_ID, REMOVED_CITIES, type CityId } from '@/lib/story/cities'
 import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
@@ -41,8 +41,11 @@ import type { GameName } from './types'
  * night's bets (8 after the car, 12 after a room) and `tonight.limit` tonight's.
  * Older saves get 12 for their next night (they slept under the old rules).
  * Version 9: 5 bets after the car, 10 after a room; a save's next night is capped at 10.
+ * Version 10: seven cities (five cut). A save in a cut city moves to the next city that's
+ * left (`REMOVED_CITIES`), starting there fresh; cut cities drop out of `visited`,
+ * `cleared`, standing and jobs. Nothing a save earned in Dustwater moves.
  */
-export const STORY_SAVE_VERSION = 9
+export const STORY_SAVE_VERSION = 10
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
@@ -328,6 +331,30 @@ export function migrateStorySave(persisted: unknown, version: number): StorySave
     // Nights are 5 or 10 bets now: nothing over the room's.
     base.nextBets = Math.min(base.nextBets ?? NIGHT_BETS, NIGHT_BETS)
     if (base.tonight) base.tonight = { ...base.tonight, limit: Math.min(base.tonight.limit ?? NIGHT_BETS, NIGHT_BETS) }
+  }
+  if (version < 10) {
+    // Five cities were cut: a save in one moves on to the next city left, as if it had just arrived.
+    const known = (id: string): id is CityId => CITY_BY_ID.has(id as CityId)
+    const keep = <T,>(rec: Partial<Record<string, T>> | undefined) =>
+      Object.fromEntries(Object.entries(rec ?? {}).filter(([id]) => known(id))) as Partial<Record<CityId, T>>
+    if (!known(base.city)) {
+      const to = REMOVED_CITIES[base.city as string] ?? CITIES[0]!.id
+      base.city = to
+      base.cityNight = 0
+      base.markersHere = 0
+      base.bossBackOn = null
+      base.bossTable = null
+      base.tonight = null
+      base.scene = null
+      base.queue = []
+      if (!base.visited.includes(to)) base.visited = [...base.visited, to]
+    }
+    base.visited = base.visited.filter(known)
+    base.cleared = base.cleared.filter(known)
+    base.standing = keep(base.standing)
+    base.jobs = (base.jobs ?? []).filter((j) => known(j.city))
+    base.jobsGiven = keep(base.jobsGiven)
+    base.jobNight = keep(base.jobNight)
   }
   return base
 }

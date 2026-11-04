@@ -1,6 +1,6 @@
 /**
  * Story mode ("The Circuit") money rules. Every amount is in multiples of the
- * current city's minimum bet (`m`), so one set of numbers covers all twelve
+ * current city's minimum bet (`m`), so one set of numbers covers all seven
  * cities. The reasoning and the simulated results are in .md/STORY_MODE_PLAN.md
  * section 5; `pnpm sim:story` checks these numbers against its targets.
  */
@@ -86,8 +86,8 @@ export const GAMES_PER_ROOM = 4
 export const VENUE_MAX_M: readonly [number, number, number | null] = [20, 100, null]
 
 /** Boss showdown: buy-in, purse on a win, and the nights before a rematch after a loss (no easier rematch). */
-export const BOSS_BUYIN_M = 50
-export const BOSS_PURSE_M = 150
+export const BOSS_BUYIN_M = 100
+export const BOSS_PURSE_M = 300
 export const BOSS_REMATCH_NIGHTS = 2
 
 /** Travel to the next city costs this many of the NEXT city's minimum bets. */

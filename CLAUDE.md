@@ -30,7 +30,7 @@ Read the one that matches the task before changing code:
 - [.md/STORY_CITY_GUIDE.md](.md/STORY_CITY_GUIDE.md): exactly how a story city is set up (entry,
   characters, scenes, errands, minigames, boss, game settings, scene art, checklist). **Read before building cities 2-12.**
 - [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): the plan
-  for the main mode (12 cities, characters with portraits and choices, minigames, economy,
+  for the main mode (7 cities, characters with portraits and choices, minigames, economy,
   losing, build order). Being built; every owner question is answered.
 
 - [.md/CHALLENGES.md](.md/CHALLENGES.md): Challenges (20 house challenges), Community challenges
