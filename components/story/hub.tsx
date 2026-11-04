@@ -277,7 +277,7 @@ export function StoryHub() {
                       href={`/story/${g}`}
                       className="tile st-game-tile flex min-h-[132px] w-full flex-col items-center justify-center gap-1 rounded-lg px-3 py-3 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold sm:min-h-[150px] sm:gap-1.5"
                     >
-                      <span aria-hidden className="tile-suit !right-[-6px] !top-[-14px] !text-[88px]">{SUITS[i % 4]}</span>
+                      <span aria-hidden className="tile-suit tile-suit-vivid !right-[-6px] !top-[-14px] !text-[88px]">{entry?.symbol ?? SUITS[i % 4]}</span>
                       <span aria-hidden className="flex h-12 items-center justify-center text-[44px] leading-none sm:h-14 sm:text-[52px]">{entry?.symbol}</span>
                       <span className="text-[15px] font-semibold leading-5 text-ink sm:text-[17px]">{entry?.label ?? g}</span>
                       <span className="text-[11.5px] leading-4 text-dim sm:text-[12.5px]">{entry?.sub}</span>

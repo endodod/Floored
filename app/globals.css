@@ -260,6 +260,14 @@ body > div.neon-auth-ui {
   opacity: 0.09;
   transform: rotate(-4deg) translateY(6px);
 }
+/* Freeplay and the story room: the game's own symbol reads as the tile's picture. */
+.tile .tile-suit-vivid {
+  opacity: 0.22;
+  filter: saturate(1.15);
+}
+.tile:not(:disabled):hover .tile-suit-vivid {
+  opacity: 0.38;
+}
 
 /* Primary button: a felt glow when it is about to be pressed. */
 .btn-glow:hover:not(:disabled) {

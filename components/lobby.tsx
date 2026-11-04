@@ -82,6 +82,7 @@ export function Lobby({ mode }: Props) {
               index={i}
               label={g.label}
               symbol={g.symbol}
+              vivid={mode === 'freeplay'}
               sub={g.sub}
               meta={<PayoutCaption game={g.name} />}
               action={available ? 'Play' : 'Coming soon'}

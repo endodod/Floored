@@ -27,6 +27,7 @@ export function GameTile({
   className,
   roomy = false,
   simpleRow = false,
+  vivid = false,
 }: {
   label: string
   /** A game-specific symbol shown by the title and used as the tile watermark. */
@@ -52,6 +53,8 @@ export function GameTile({
   roomy?: boolean
   /** Simple view: one compact row (symbol and name, button on the right) instead of a tall card. */
   simpleRow?: boolean
+  /** The game's symbol as a stronger watermark, and no symbol by the name (Freeplay). */
+  vivid?: boolean
 }) {
   const suitIndex = index % 4
   const red = suitIndex === 1 || suitIndex === 2
@@ -86,7 +89,7 @@ export function GameTile({
           faded && 'opacity-45',
         )}
       >
-        <span aria-hidden className={cn('tile-suit', !symbol && red ? 'text-loss' : 'text-ink')}>
+        <span aria-hidden className={cn('tile-suit', vivid && 'tile-suit-vivid', !symbol && red ? 'text-loss' : 'text-ink')}>
           {tileSymbol}
         </span>
         <span
@@ -98,7 +101,7 @@ export function GameTile({
             corner && 'pr-24 simple:pr-0',
           )}
         >
-          <span aria-hidden className={cn('shrink-0 text-[15px] text-gold simple:leading-none', simpleRow ? 'simple:text-[26px]' : 'simple:text-[34px]')}>{tileSymbol}</span>
+          <span aria-hidden className={cn('shrink-0 text-[15px] text-gold simple:leading-none', simpleRow ? 'simple:text-[26px]' : 'simple:text-[34px]', vivid && 'hidden simple:inline')}>{tileSymbol}</span>
           {label}
         </span>
         {sub && <span className="mt-1 block text-[13px] leading-5 text-dim simple:hidden">{sub}</span>}

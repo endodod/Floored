@@ -2,6 +2,7 @@
 
 import { use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { StoryHud } from '@/components/story/hud'
 import { GAME_REGISTRY } from '@/lib/game-registry'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { CITY_BY_ID } from '@/lib/story/cities'
@@ -13,11 +14,26 @@ import { useHydrated } from '@/hooks/use-hydrated'
 import { formatChips } from '@/utils/format'
 import type { GameName } from '@/store/types'
 
-const PILL =
-  'px-2.5 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-700/60 tabular-nums text-sm font-bold text-zinc-200'
+const PLAQUE =
+  'flex h-6 sm:h-8 items-center gap-1.5 rounded-[5px] bg-black/45 px-2.5 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.3)]'
 
+/** One of the table's limits on a dark brass-ruled plaque, like the HUD's. */
+function Limit({ label, value, className }: { label: string; value: string | number; className?: string }) {
+  return (
+    <div className={className ? `${PLAQUE} ${className}` : PLAQUE}>
+      <span className="felt-print !text-[9px] !tracking-[0.14em]">{label}</span>
+      <span className="num text-[13px] font-bold text-ink">{value}</span>
+    </div>
+  )
+}
+
+/**
+ * A house game played at the location: the story frame (wood HUD, back to the
+ * city) around a lamp-lit room, the same as the boss table and the minigames,
+ * so a night at the tables still feels like being in the city.
+ */
 function StoryGame({ game }: { game: GameName }) {
-  const { bankroll, wagerCap, betsLeft, handleBet, handleResolve } = useStoryGameBankroll(game)
+  const { wagerCap, betsLeft, handleBet, handleResolve } = useStoryGameBankroll(game)
   const minBet = useStoryStore((s) => s.minBet())
   const venue = useStoryStore((s) => s.tonight?.venue ?? 0)
   const GameComponent = GAME_REGISTRY[game]
@@ -25,30 +41,20 @@ function StoryGame({ game }: { game: GameName }) {
   const maxM = VENUE_MAX_M[venue]
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-3">
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-        <div className="flex flex-wrap items-center justify-end gap-2" title={`${entry?.label ?? game} · ${VENUE_NAMES[venue]}`}>
-          <div className={PILL}>
-            <span className="text-[9px] font-normal text-zinc-500 mr-1">Min bet</span>
-            {formatChips(minBet)}
-          </div>
-          <div className={PILL}>
-            <span className="text-[9px] font-normal text-zinc-500 mr-1">Table max</span>
-            {maxM == null ? 'None' : formatChips(maxM * minBet)}
-          </div>
-          <div className={PILL}>
-            <span className="text-[9px] font-normal text-zinc-500 mr-1">Bets left</span>
-            {betsLeft}
-          </div>
-          <div className={PILL}>
-            <span className="text-[9px] font-normal text-zinc-500 mr-1">Money</span>
-            {formatChips(bankroll)}
-          </div>
+    <div className="st-screen flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
+      <StoryHud back title={entry?.label ?? game} />
+      <div className="st-room flex min-h-0 flex-1 flex-col gap-1 pt-1 sm:gap-3 sm:p-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 px-2 sm:px-0" aria-label={`${VENUE_NAMES[venue]} limits`} role="group">
+          {/* The HUD names the room from lg up. */}
+          <span className="mr-auto hidden truncate text-[12px] font-semibold uppercase tracking-[0.12em] text-[#d9b779] sm:inline lg:hidden">{VENUE_NAMES[venue]}</span>
+          <Limit label="Min bet" value={formatChips(minBet)} />
+          <Limit label="Table max" value={maxM == null ? 'None' : formatChips(maxM * minBet)} />
+          {/* The HUD carries bets left from sm up. */}
+          <Limit label="Bets left" value={betsLeft} className="sm:hidden" />
         </div>
-      </div>
-
-      <div className="flex flex-col flex-1 min-h-0">
-        <GameComponent mode="story" bankroll={wagerCap} onBet={handleBet} onResolve={handleResolve} />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <GameComponent mode="story" bankroll={wagerCap} onBet={handleBet} onResolve={handleResolve} />
+        </div>
       </div>
     </div>
   )
