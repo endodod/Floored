@@ -208,8 +208,8 @@ export const DUSTWATER_SCENE: CitySceneConfig = {
     pike: { piece: 'cups', anchor: 'stand' },
     cutter: { piece: 'backroom', anchor: 'door' },
     boss: { piece: 'backroom', anchor: 'door' },
-    // The room's sign sits above the motel roof, clear of Jo, who stands right of the car.
-    rest: { at: { wide: [705, 412], tall: [372, 702] } },
+    // The motel's rooms (right of Marta's diner) are the hit area; the Room 5 label sits above them.
+    rest: { at: { wide: [660, 548], tall: [452, 922] } },
     car: { piece: 'car', anchor: 'car' },
     jo: { at: { wide: [700, 712], tall: [545, 958] } },
     road: { piece: 'road', anchor: 'sign' },

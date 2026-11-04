@@ -238,7 +238,8 @@ export function StoryHub() {
           sub={sleepNote('room')}
           icon={<Moon className="h-2.5 w-2.5" aria-hidden />}
           active={isOpen('rest')}
-          size={[40, 80]}
+          size={[210, 150]}
+          plateBelow={false}
           label={`${night ? 'End the night' : 'Rest'}: ${roomName}, ${sleepNote('room')} next night`}
           onOpen={open({ kind: 'rest' })}
         />
