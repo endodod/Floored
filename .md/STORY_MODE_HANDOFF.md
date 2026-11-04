@@ -24,16 +24,16 @@ building cities 2-12: [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md).
 **2026-11-03, standing (branch `story/standing`):** reputation became **standing in the town
 you are in**. The save keeps `standing: { [cityId]: 0–5 }` and `rep()` reads the current town
 (`store/story-store.ts`); every new town starts at 0 and going back restores what you left.
-Only jobs won at the tables raise it: `ERRAND_STANDING` (1) for a finished errand whose goal is
-`streak`, `night-up` or `big-win`. Minigame errands still pay `ERRAND_PAY_M` but give no
-standing, so the player is pushed to gamble (`errandStanding` in `lib/story/economy.ts`, an
-optional `rep` on the errand overrides it, `pnpm check:story` holds content to the rule). A bust
+Finished errands raise it: `ERRAND_STANDING` (1) for every errand, minigame jobs included
+(owner decision 2026-11-04; until then minigame errands gave none). `errandStanding` in
+`lib/story/economy.ts`; an optional `rep` on the errand overrides it, and `pnpm check:story`
+fails an errand that earns none. Save version 3 credits minigame errands a save already finished. A bust
 costs `BUST_STANDING` (1), never below 0, and a boss win no longer gives any. `VENUE_REP` is now
-`[0, 1, 2]` (dive always open, main floor standing 1, high-roller 2), so Dustwater's three table
-jobs reach the high-roller room before the boss. The dive also keeps dealing any game an open
+`[0, 1, 2]` (dive always open, main floor standing 1, high-roller 2), so Dustwater's four errands
+(any two of them) reach the high-roller room before the boss. The dive also keeps dealing any game an open
 errand names (`gamesFor(..., must)`; the card says so), and the jobs book marks each errand
-"+1 standing" or "Pays only". Save version 2 migrates a version-1 `rep` into the current town,
-capped by its finished table jobs. The sim starts every town in the dive and moves up as
+"+1 standing" (or "Pays only" for an errand with `rep: 0`). Save version 2 migrates a version-1 `rep` into the current town,
+capped by its finished errands. The sim starts every town in the dive and moves up as
 standing allows.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
@@ -53,7 +53,7 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Saves | one story save, "New story" behind a confirmation |
 | Harsher loss option | no |
 | Boss rematches | don't get easier (same buy-in, same rival, after 2 nights) |
-| Standing (2026-11-03) | per town, 0 in every new town, remembered when you go back, max 5. +1 for a job won at the tables (`streak`/`night-up`/`big-win`); minigame errands pay money only. A bust −1 (never below 0); a boss win gives none. `VENUE_REP` `[0, 1, 2]`: dive / main floor / high-roller |
+| Standing (2026-11-03) | per town, 0 in every new town, remembered when you go back, max 5. +1 for every finished errand (minigame jobs too, since 2026-11-04). A bust −1 (never below 0); a boss win gives none. `VENUE_REP` `[0, 1, 2]`: dive / main floor / high-roller |
 | Rotation pin (2026-11-03) | while an errand naming a game is open, the dive always deals that game (deterministic draw kept) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
@@ -98,7 +98,7 @@ Port that generator to TypeScript; don't redraw from scratch.
 - Errands: `openErrands()` (not done, and `opens` condition holds or started by a scene);
   goals `minigame` / `streak` / `night-up` / `big-win` are checked automatically and pay
   `ERRAND_PAY_M` (6m) with a `news` line. A `streak`/`night-up`/`big-win` job also adds
-  `errandStanding(e)` standing (1 by default) in its town; a minigame job adds none.
+  `errandStanding(e)` standing (1 by default) in its town, minigame jobs included.
 - `playMinigame(giver, minigame, score 0–1)`: first play per giver per night pays
   `score × 3m`; minigame errands check every play (practice included).
 - Scenes: `queue` (arrival on new story/travel, boss-win/loss, bust), `playQueued()`,

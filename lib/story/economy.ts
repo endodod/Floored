@@ -27,7 +27,7 @@ export const ERRAND_PAY_M = 6
 
 /**
  * Standing: how a town sees you, 0 to STANDING_MAX, kept per town (the map is in
- * store/story-store.ts). It rises by ERRAND_STANDING for a job won at the tables,
+ * store/story-store.ts). It rises by ERRAND_STANDING for every finished errand,
  * drops by BUST_STANDING when you go bust, and opens the better rooms.
  */
 export const ERRAND_STANDING = 1
@@ -72,11 +72,11 @@ export function dollars(m: number, minBet: number): number {
 }
 
 /**
- * Standing a finished errand earns in its town. Gambling goals (a streak, a night
- * up, a big win) earn it by default; a minigame job pays money, never standing.
- * Content may override it with `rep`, and `pnpm check:story` holds it to the rule.
+ * Standing a finished errand earns in its town: ERRAND_STANDING for every errand,
+ * minigame jobs included (owner decision 2026-11-04). Content may override it with
+ * `rep`, and `pnpm check:story` holds it to the rule.
  */
 export function errandStanding(e: { goal: ErrandGoal; rep?: number }): number {
-  const want = e.rep ?? (e.goal.kind === 'minigame' ? 0 : ERRAND_STANDING)
+  const want = e.rep ?? ERRAND_STANDING
   return Math.max(0, Math.min(STANDING_MAX, Math.round(want)))
 }

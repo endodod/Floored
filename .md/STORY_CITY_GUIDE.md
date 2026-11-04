@@ -97,11 +97,10 @@ with `{ errand, step: 'start' }`. The checker verifies the giver exists, a minig
 in that city, and a streak game is in the city.
 
 **Standing.** Every errand has an optional `rep` (0-5, `errandStanding` in `lib/story/economy.ts`).
-It defaults to `ERRAND_STANDING` (1) for a goal won at the tables (`streak`, `night-up`, `big-win`)
-and 0 for `minigame`: minigame jobs pay money, never standing, so the player is pushed to gamble.
-Write it out (`rep: 1` / `rep: 0`) so the intent is readable. **Every city needs at least 2 early
-table jobs plus a third** (3 errands that earn standing), so the high-roller room can open before
-the boss; `check:story` fails a city with fewer than 3. Since standing starts at 0 in each town,
+It defaults to `ERRAND_STANDING` (1) for every errand, minigame jobs included, and `check:story`
+fails an errand that earns none. Write it out (`rep: 1`) so the intent is readable. **Every city
+needs at least 3 errands** that earn standing (all 4 do by default), so the high-roller room can
+open before the boss; `check:story` fails a city with fewer than 3. Since standing starts at 0 in each town,
 those jobs are the only way up, so make two of them easy to start (a talk scene, not a deep flag
 chain).
 
@@ -165,7 +164,7 @@ sit on the street at both layouts (screenshots below).
 3. Characters (section 2), portrait looks, chip colours.
 4. Minigames for its givers (section 5), then their `MinigameId` goals in errands.
 5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; 4 errands
-   (3 of them table jobs worth standing, 2 of those easy to start; 1 minigame job that pays only).
+   (each worth 1 standing, 2 of them easy to start; one may be a minigame job).
    Register in `content/index.ts`. Quote numbers only as the checker allows.
 6. Boss (section 6) and the boss page/table for the city.
 7. Scene art (section 8) or accept the generic street.

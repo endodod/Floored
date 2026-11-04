@@ -83,20 +83,19 @@ for (const e of ERRANDS) {
     const city = CITIES.find((c) => c.id === e.city)
     if (city && city.games !== 'all-seen' && !city.games.includes(e.goal.game)) fail(`errand ${e.id}: ${e.goal.game} isn't played in ${e.city}`)
   }
-  // Standing comes from jobs won at the tables, never from a minigame (owner decision).
+  // Every errand earns standing, minigame jobs included (owner decision 2026-11-04).
   if (e.rep != null && (e.rep < 0 || e.rep > STANDING_MAX || !Number.isInteger(e.rep))) fail(`errand ${e.id}: rep ${e.rep} is not a standing step 0–${STANDING_MAX}`)
-  if (e.goal.kind === 'minigame' && errandStanding(e) !== 0) fail(`errand ${e.id}: a minigame job pays money, not standing`)
-  if (e.goal.kind !== 'minigame' && errandStanding(e) === 0) fail(`errand ${e.id}: a job won at the tables should earn standing`)
+  if (errandStanding(e) === 0) fail(`errand ${e.id}: every errand should earn standing`)
 }
 
-// The standing path: each city with content needs enough table jobs to open the
-// high-roller room before the boss (2 early jobs plus a third), and its dive must be
+// The standing path: each city with content needs enough errands that earn standing
+// to open the high-roller room before the boss (at least 3), and its dive must be
 // able to deal the game an open streak job names.
 for (const c of CITIES) {
   const theirs = ERRANDS.filter((e) => e.city === c.id)
   if (!theirs.length) continue
   const tableJobs = theirs.filter((e) => errandStanding(e) > 0).length
-  if (tableJobs < 3) fail(`city ${c.id}: ${tableJobs} table job${tableJobs === 1 ? '' : 's'} give standing (needs 3: 2 early and a third)`)
+  if (tableJobs < 3) fail(`city ${c.id}: ${tableJobs} errand${tableJobs === 1 ? '' : 's'} give standing (needs at least 3)`)
   if (tableJobs < VENUE_REP[2]) fail(`city ${c.id}: standing from its jobs (${tableJobs}) can't open the high-roller room (needs ${VENUE_REP[2]})`)
   if (VENUE_REP[1] > tableJobs) fail(`city ${c.id}: nothing opens the main floor (needs standing ${VENUE_REP[1]})`)
 }
@@ -193,7 +192,7 @@ const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number
   { re: /^The dive takes anyone.*up to (?:a )?(\w+) times/i, what: 'the dive limit', want: (m) => [[word(m[1]), VENUE_MAX_M[0]]] },
   { re: /^The main floor wants standing (\w+)\..*up to (?:a )?(\w+) times/i, what: 'the main floor', want: (m) => [[word(m[1]), VENUE_REP[1]], [word(m[2]), VENUE_MAX_M[1]]] },
   { re: /^The high-roller room wants standing (\w+)/i, what: 'the high-roller room', want: (m) => [[word(m[1]), VENUE_REP[2]]] },
-  { re: /it goes up (\w+)/i, what: 'the standing a table job earns', want: (m) => [[word(m[1]), ERRAND_STANDING]] },
+  { re: /it goes up (\w+)/i, what: 'the standing an errand earns', want: (m) => [[word(m[1]), ERRAND_STANDING]] },
   { re: /it drops (\w+)/i, what: 'the standing a bust costs', want: (m) => [[word(m[1]), BUST_STANDING]] },
   { re: /(\w+) is the most any town gives/i, what: 'the standing cap', want: (m) => [[word(m[1]), STANDING_MAX]] },
   { re: /(\w+) bets a night/i, what: 'bets a night', want: (m) => [[word(m[1]), NIGHT_BETS]] },
@@ -255,9 +254,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   const paid = st().playMinigame('marta', 'last-orders', 1)
   if (paid !== 3 * m || st().playMinigame('marta', 'last-orders', 1) !== 0) fail('minigame pays 3m at a perfect score, once a night')
   if (st().errands['dustwater-marta-shift'] !== 'done' || st().money !== m0 + 3 * m + 6 * m) fail('a perfect shift finishes the bar-shift errand (6m)')
-  if (st().rep() !== 0) fail('a minigame errand pays money, not standing')
+  if (st().rep() !== 1 || !st().venueOpen(1)) fail('a minigame errand earns standing 1 and opens the main floor')
   // A night at the dive: table limit, bets, a streak errand, comps and hustles at the end.
-  if (st().startNight(1)) fail('the main floor needs standing 1')
   if (st().startNight(2)) fail('the high-roller room needs standing 2')
   if (!st().startNight(0)) fail('a night at the dive starts')
   if (st().wagerCap() !== Math.min(st().money, 20 * m)) fail('the dive caps a bet at 20m')
@@ -266,17 +264,17 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     st().resolve('street-cups', 2.5 * m, true)
   }
   if (st().errands['dustwater-pike-marks'] !== 'done') fail('three Street Cups wins in a row finish Pike\'s errand')
-  if (st().rep() !== 1 || !st().venueOpen(1)) fail('a job won at the tables earns standing 1 and opens the main floor')
+  if (st().rep() !== 2 || !st().venueOpen(2)) fail('a second errand earns standing 2 and opens the high-roller room')
   if (st().errands['dustwater-marta-bet'] === 'done') fail('a 2.5× win must not finish the 3× errand')
   st().placeBet('hilo', m)
   st().resolve('hilo', 3 * m, true)
   if (st().errands['dustwater-marta-bet'] !== 'done') fail('a 3× win finishes the trucker\'s-bet errand')
-  if (st().rep() !== 2 || !st().venueOpen(2)) fail('a second table job earns standing 2 and opens the high-roller room')
+  if (st().rep() !== 3) fail('a third errand earns standing 3')
   if (st().betsLeft() !== 8) fail('four rounds leave 8 of 12 bets')
   const night = st().endNight()
   if (!night.played || night.comps !== Math.round(COMPS_RATE[0] * 4 * m) || night.lodging !== 3 * m || st().tonight) fail('the night ends with comps (the dive share of bets) and lodging')
   if (st().errands['dustwater-jo-stake'] !== 'done') fail('a night up finishes Jo\'s seed-money errand')
-  if (st().rep() !== 3) fail('Dustwater\'s three table jobs reach standing 3')
+  if (st().rep() !== 4) fail('Dustwater\'s four errands reach standing 4')
   if (night.hustles.length !== 2) fail('two hustles on the board each night')
   // Comps by room: a better room gives a bigger share, each with its own cap.
   const standingBefore = st().standing

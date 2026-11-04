@@ -125,8 +125,8 @@ export interface Errand {
   /** Pays this many of the city's minimum bets when done (ERRAND_PAY_M by default). */
   pay?: number
   /**
-   * Standing this job earns in its town. Defaults to 1 for a job won at the
-   * tables and 0 for a minigame job (which pays money only).
+   * Standing this job earns in its town. Defaults to ERRAND_STANDING (1) for
+   * every errand, minigame jobs included.
    */
   rep?: number
 }

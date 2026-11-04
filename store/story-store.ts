@@ -22,8 +22,10 @@ import type { GameName } from './types'
  *
  * Version 2: `rep` (one figure for the whole circuit) became `standing`, a map
  * of city id to standing, so every town judges you on its own jobs.
+ * Version 3: every errand earns standing (minigame jobs gave none before); a save
+ * that already finished a minigame errand gets that standing in its town.
  */
-export const STORY_SAVE_VERSION = 2
+export const STORY_SAVE_VERSION = 3
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
@@ -222,7 +224,7 @@ export const useStoryStore = create<StoryStore>()(
       const completeErrand = (e: Errand) => {
         if (get().errands[e.id] === 'done') return
         const pay = (e.pay ?? ERRAND_PAY_M) * m()
-        // A job won at the tables is the only thing that raises standing (owner decision).
+        // A finished errand is the only thing that raises standing (owner decision).
         const gain = errandStanding(e)
         set((s) => ({ errands: { ...s.errands, [e.id]: 'done' }, ...(gain ? { standing: shiftStanding(s.standing, e.city, gain) } : {}) }))
         get().receive(pay)
@@ -516,6 +518,14 @@ export const useStoryStore = create<StoryStore>()(
           const moved = Math.max(0, Math.min(old.rep ?? 0, earned, STANDING_MAX))
           base.standing = { ...(old.standing ?? {}), [cityId]: moved }
           delete base.rep
+        }
+        if (version < 3) {
+          // Minigame errands earned no standing before version 3; credit the ones already done.
+          let standing = base.standing
+          for (const e of ERRANDS) {
+            if (e.goal.kind === 'minigame' && base.errands[e.id] === 'done') standing = shiftStanding(standing, e.city, errandStanding(e))
+          }
+          base.standing = standing
         }
         return base
       },

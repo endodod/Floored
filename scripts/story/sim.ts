@@ -6,8 +6,8 @@
  * 2. Circuit simulation: thousands of whole circuits (12 cities) for five player
  *    types, using each city's real game list, the economy constants and the
  *    odds above. Standing is modelled per town: every town starts the player in
- *    the dive, TABLE_JOBS_PER_CITY table jobs lift standing one each (minigame
- *    jobs do not), a bust takes one off, and the player moves up to the best room
+ *    the dive, each of the city's ERRANDS_PER_CITY errands lifts standing one
+ *    (minigame jobs too), a bust takes one off, and the player moves up to the best room
  *    their standing opens (their own preferred room or lower). Prints nights per
  *    city and over the circuit, busts, boss tries, and recovery time after a bust,
  *    and checks the plan's targets.
@@ -70,12 +70,6 @@ interface PlayerType {
   venue: 0 | 1 | 2
 }
 
-/**
- * Jobs won at the tables per city, from .md/STORY_CITY_GUIDE.md: every city needs two
- * early table jobs plus a third, so standing reaches the high-roller room before the
- * boss. Minigame jobs pay money only, so they are not counted here.
- */
-const TABLE_JOBS_PER_CITY = 3
 /** The room a standing figure opens: the best one it reaches. */
 const roomFor = (standing: number): 0 | 1 | 2 => (standing >= VENUE_REP[2] ? 2 : standing >= VENUE_REP[1] ? 1 : 0)
 
@@ -130,7 +124,7 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
     let errands = ERRANDS_PER_CITY
-    let tableJobs = TABLE_JOBS_PER_CITY
+    let standingJobs = ERRANDS_PER_CITY
     let standing = 0
     let wait = 0
     let brokeSince: number | null = null
@@ -172,8 +166,8 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
         }
         money += Math.min(COMPS_RATE[venue] * turnover, COMPS_CAP_M[venue])
       }
-      // A table job finished tonight is what lifts standing (minigame jobs pay money only).
-      if (tableJobs > 0) { standing = Math.min(STANDING_MAX, standing + 1); tableJobs-- }
+      // An errand finished tonight lifts standing (every errand does, minigame jobs too).
+      if (standingJobs > 0) { standing = Math.min(STANDING_MAX, standing + 1); standingJobs-- }
       if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
       n++
       totalNights++

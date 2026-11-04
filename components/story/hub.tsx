@@ -259,7 +259,7 @@ export function StoryHub() {
             <div className="flex items-center gap-2">
               <StandingStars standing={s.rep()} city={city.name} />
               <SheetNote tone="soft">
-                Needs standing {VENUE_REP[v]}. Finish a job at the tables.
+                Needs standing {VENUE_REP[v]}. Finish an errand.
               </SheetNote>
             </div>
             <SheetNote>You have standing {s.rep()} in {city.name}. The door stays chained until your name is good enough here.</SheetNote>

@@ -70,7 +70,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
           Standing is how a town sees you. It starts at {0} in every town you reach, and a town you go back to remembers what you left. {STANDING_MAX} is the most one will give you.
         </p>
         <p>
-          It goes up {ERRAND_STANDING} for each job you finish at the tables (a streak, a night up, a big win). Minigames pay money, never standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
+          It goes up {ERRAND_STANDING} for each errand you finish, at the tables or in a minigame. Playing a minigame on its own pays money, not standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
         </p>
         <p>
           The dive is always open. The main floor wants standing {VENUE_REP[1]}; the high-roller room wants {VENUE_REP[2]}: no bet limit and the best comps, which is where you build the back-table money.

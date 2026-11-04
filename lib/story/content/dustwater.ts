@@ -54,7 +54,7 @@ export const DUSTWATER_SCENES: Scene[] = [
       s2: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "Comps, hustles and errands pay on the side. Go bust and the Notary will lend you a marker. The rest is in the menu, under How the nights work. Read it on a bad night.", next: 'end' },
       f1: { kind: 'line', speaker: 'jo', text: 'A night is one room. You pick it, you sit down, and you stay until you call it a night. No wandering.', next: 'f2' },
       f2: { kind: 'line', speaker: 'jo', text: 'Standing is how a town sees you. Every town starts you at nothing.', next: 'f2s' },
-      f2s: { kind: 'line', speaker: 'jo', text: 'Win a job at the tables and it goes up one. Go bust and it drops one. Five is the most any town gives.', next: 'f3' },
+      f2s: { kind: 'line', speaker: 'jo', text: 'Finish a job for someone and it goes up one. Go bust and it drops one. Five is the most any town gives.', next: 'f3' },
       f3: { kind: 'line', speaker: 'jo', text: 'The dive takes anyone, standing or not. Bets up to twenty times the house minimum.', next: 'f4' },
       f4: { kind: 'line', speaker: 'jo', text: 'The main floor wants standing one. Bets up to a hundred times the minimum.', next: 'f4b' },
       f4b: { kind: 'line', speaker: 'jo', text: 'The high-roller room wants standing two. No limit, the best comps, and where you build the money for the back table.', next: 'f4c' },
@@ -179,7 +179,7 @@ export const DUSTWATER_SCENES: Scene[] = [
 ]
 
 export const DUSTWATER_ERRANDS: Errand[] = [
-  { id: 'dustwater-marta-shift', city: 'dustwater', giver: 'marta', title: 'The bar shift', task: "Clear at least 5 of the 6 rounds on a shift at Marta's bar.", goal: { kind: 'minigame', minigame: 'last-orders', score: 0.8 }, opens: { flag: 'met-marta' }, rep: 0 },
+  { id: 'dustwater-marta-shift', city: 'dustwater', giver: 'marta', title: 'The bar shift', task: "Clear at least 5 of the 6 rounds on a shift at Marta's bar.", goal: { kind: 'minigame', minigame: 'last-orders', score: 0.8 }, opens: { flag: 'met-marta' }, rep: 1 },
   { id: 'dustwater-pike-marks', city: 'dustwater', giver: 'pike', title: "Pike's marks", task: 'Win 3 rounds of Street Cups in a row, to show the marks it can be done.', goal: { kind: 'streak', game: 'street-cups', wins: 3 }, opens: { flag: 'met-pike' }, rep: 1 },
   { id: 'dustwater-jo-stake', city: 'dustwater', giver: 'jo', title: 'Seed money', task: 'Finish a night at the casino up on the night.', goal: { kind: 'night-up' }, opens: { flag: 'arrived-dustwater' }, rep: 1 },
   { id: 'dustwater-marta-bet', city: 'dustwater', giver: 'marta', title: "A trucker's bet", task: 'A trucker bet Marta nobody wins three times their stake in one go. Prove him wrong.', goal: { kind: 'big-win', mult: 3 }, opens: { flag: 'met-marta' }, rep: 1 },
