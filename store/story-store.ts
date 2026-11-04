@@ -7,7 +7,7 @@ import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
-  MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, NIGHT_BETS, SLEEP_BETS, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
+  DEBT_WARN_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
   TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
@@ -94,7 +94,7 @@ export interface StorySave {
   night: number
   cityNight: number
   money: number
-  /** The Notary's marker: dollars still owed (repaid from half of every win's profit). */
+  /** Loans from the town's lender: dollars still owed (repaid from half of every win's profit). */
   owed: number
   /** Markers taken in this city (each costs more to repay). */
   markersHere: number
@@ -119,6 +119,10 @@ export interface StorySave {
   tonight: Tonight | null
   /** Bets the next night will have, set by where you slept (START_BETS on a new story). */
   nextBets: number
+  /** The night you last ate at the diner (MEAL_BETS more that night). */
+  mealNight: number | null
+  /** You've seen the deep-debt warning (shown again once you drop under it and go back over). */
+  debtWarned: boolean
   lastNight: NightSummary | null
   /** Scenes waiting to play when the hub is next shown. */
   queue: string[]
@@ -157,6 +161,8 @@ const fresh = (): StorySave => ({
   stats: { busts: 0, bossTries: 0, bossWins: 0, markers: 0, bestWin: 0 },
   tonight: null,
   nextBets: START_BETS,
+  mealNight: null,
+  debtWarned: false,
   lastNight: null,
   queue: [],
   news: [],
@@ -192,7 +198,16 @@ interface StoryActions {
   /** Winnings and payouts; with `profit`, half of it repays a marker first. */
   receive: (dollars: number, opts?: { profit?: boolean }) => void
   spend: (dollars: number) => boolean
+  /** Borrows from the town's lender (any time); false where nobody lends. */
   takeMarker: () => boolean
+  /** The town's lender, if it has one. */
+  lenderHere: () => string | null
+  /** Eats at the diner: MEAL_M for MEAL_BETS more bets tonight, once a night. */
+  buyMeal: () => boolean
+  ateTonight: () => boolean
+  /** Owing this much brings the warning (DEBT_WARN_M minimum bets). */
+  debtWarning: () => boolean
+  dismissDebtWarning: () => void
 
   // Jobs
   /** Jobs you took in this town and haven't finished. */
@@ -498,7 +513,8 @@ export const useStoryStore = create<StoryStore>()(
           const s = get()
           const amount = Math.max(0, Math.round(dollars))
           const toMarker = opts?.profit && s.owed > 0 ? Math.min(s.owed, Math.floor(amount * MARKER_GARNISH)) : 0
-          set({ money: s.money + amount - toMarker, owed: s.owed - toMarker })
+          const owed = s.owed - toMarker
+          set({ money: s.money + amount - toMarker, owed, ...(owed < DEBT_WARN_M * m() ? { debtWarned: false } : {}) })
         },
         spend: (dollars) => {
           const s = get()
@@ -507,9 +523,11 @@ export const useStoryStore = create<StoryStore>()(
           set({ money: s.money - amount })
           return true
         },
+        lenderHere: () => CHARACTERS.find((c) => c.city === get().city && c.lends)?.id ?? null,
         takeMarker: () => {
           const s = get()
-          if (s.money >= m()) return false
+          const lender = get().lenderHere()
+          if (!lender) return false
           const lent = MARKER_M * m()
           const repay = Math.round(lent * (MARKER_REPAY + MARKER_REPAY_STEP * s.markersHere))
           // The town hears about it: a marker costs standing here (going broke on its own doesn't).
@@ -521,9 +539,24 @@ export const useStoryStore = create<StoryStore>()(
             stats: { ...s.stats, markers: s.stats.markers + 1 },
             standing: shiftStanding(s.standing, s.city, -MARKER_STANDING),
           })
-          say(`The Notary lends $${lent.toLocaleString('en-US')} · you owe $${repay.toLocaleString('en-US')}${lost ? ` · standing -${lost}` : ''}`)
+          const name = CHARACTERS.find((c) => c.id === lender)?.name ?? 'The lender'
+          say(`${name} lends $${lent.toLocaleString('en-US')} · you owe $${repay.toLocaleString('en-US')}${lost ? ` · standing -${lost}` : ''}`)
           return true
         },
+        ateTonight: () => get().mealNight === get().night,
+        buyMeal: () => {
+          const s = get()
+          if (get().ateTonight() || !CHARACTERS.some((c) => c.city === s.city && c.sells === 'meal')) return false
+          if (!get().spend(MEAL_M * m())) return false
+          set((x) => ({ mealNight: x.night, ...(x.tonight ? { tonight: { ...x.tonight, limit: (x.tonight.limit ?? NIGHT_BETS) + MEAL_BETS } } : {}) }))
+          say(`A plate at the diner · +${MEAL_BETS} bets tonight`)
+          return true
+        },
+        debtWarning: () => {
+          const s = get()
+          return s.owed >= DEBT_WARN_M * m() && !s.debtWarned
+        },
+        dismissDebtWarning: () => set({ debtWarned: true }),
 
         openJobs: () => get().jobs.filter((j) => j.city === get().city && j.status === 'open'),
         jobAt: (character) => get().jobs.find((j) => j.city === get().city && j.giver === character) ?? null,
@@ -590,7 +623,8 @@ export const useStoryStore = create<StoryStore>()(
         startNight: (venue) => {
           const s = get()
           if (s.tonight || !get().venueOpen(venue) || s.money < m()) return false
-          set({ tonight: { venue, bets: 0, openRound: null, rounds: [], startMoney: s.money, limit: s.nextBets } })
+          // A meal eaten before sitting down adds its bets to the night.
+          set({ tonight: { venue, bets: 0, openRound: null, rounds: [], startMoney: s.money, limit: s.nextBets + (get().ateTonight() ? MEAL_BETS : 0) } })
           return true
         },
         wagerCap: () => {

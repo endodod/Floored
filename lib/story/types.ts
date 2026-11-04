@@ -31,12 +31,16 @@ export interface Character {
   name: string
   /** One line for the writers: who they are. Never shown. */
   note: string
-  /** Home city, or null for those who travel the circuit (Jo, Sloane, Vale, the Notary). */
+  /** Home city, or null for those who travel the circuit (Jo, Sloane, Vale). */
   city: CityId | null
   /** Their chip colour in the portrait frame (hex). */
   chip: string
-  /** The minigame they offer, once per night. */
+  /** Their minigame, played only as their minigame jobs. */
   minigame?: MinigameId
+  /** The town's lender (one per town): loans on the marker terms in lib/story/economy.ts. */
+  lends?: boolean
+  /** Sells a meal (+bets tonight, once a night). */
+  sells?: 'meal'
 }
 
 /** A test on the save. */
@@ -59,7 +63,7 @@ export type Effect =
   | { rep: number }
   /** Takes the job offered in an offer scene (built by the store, never written in content). */
   | { job: string; step: 'accept' }
-  /** Take a marker from the Notary (only when you're below the minimum bet). */
+  /** Borrow from the town's lender (a marker). */
   | { marker: true }
 
 export type Speaker = string | 'you' | 'narrator'

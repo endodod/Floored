@@ -21,10 +21,11 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_STANDING, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
+import { joTips } from '@/lib/story/tips'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { sceneConfigFor } from '@/lib/story/scene-theme'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -50,7 +51,6 @@ type Sheet =
   | { kind: 'boss' }
   | { kind: 'rest' }
   | { kind: 'road' }
-  | { kind: 'notary' }
   | { kind: 'guide' }
 
 function Face({ id }: { id: string }) {
@@ -105,8 +105,12 @@ export function StoryHub() {
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
   const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, s.openJobGames())
   const broke = s.money < m && !night
+  const lenderId = s.lenderHere()
+  const lender = lenderId ? CHARACTERS.find((c) => c.id === lenderId) ?? null : null
+  // Jo's read on the games in the room you're in tonight (the dive's before you sit down).
+  const tips = joTips(gamesIn(night ? night.venue : 0), s.city, s.night)
   // Tonight's bets come from where you slept (8 after the car, 12 after a room).
-  const nightBets = night ? (night.limit ?? NIGHT_BETS) : s.nextBets
+  const nightBets = night ? (night.limit ?? NIGHT_BETS) : s.nextBets + (s.ateTonight() ? MEAL_BETS : 0)
   const betsLeft = night ? Math.max(0, nightBets - night.bets) : 0
   // The car's light is off when you slept in it last night.
   const sleptInCar = !!s.lastNight?.car
@@ -220,15 +224,6 @@ export function StoryHub() {
           },
         ]
       : []),
-    ...(broke
-      ? [
-          {
-            spot: 'notary',
-            raise: true,
-            node: <PersonSpot id="notary" name="The Notary" sub="Lends" active={isOpen('notary')} label="The Notary, lends to anyone" onOpen={open({ kind: 'notary' })} />,
-          },
-        ]
-      : []),
     // Two places to sleep, both ending the night: the room (12 bets next night) and the car (8).
     {
       spot: 'rest',
@@ -336,9 +331,9 @@ export function StoryHub() {
       } else if (broke) {
         body = (
           <>
-            <SheetNote tone="loss">You can&apos;t cover the minimum bet ({money(m)}). Rest, or see the Notary.</SheetNote>
+            <SheetNote tone="loss">You can&apos;t cover the minimum bet ({money(m)}). Rest, work a minigame job{lender ? `, or borrow from ${lender.name}` : ''}.</SheetNote>
             <Actions>
-              <Button size="sm" variant="secondary" onClick={openAt({ kind: 'notary' }, 'notary')}>See the Notary</Button>
+              {lender && <Button size="sm" variant="secondary" onClick={openAt({ kind: 'person', id: lender.id }, lender.id)}>See {lender.name}</Button>}
             </Actions>
           </>
         )
@@ -398,9 +393,41 @@ export function StoryHub() {
                 <p className="text-[12px] leading-[17px] text-dim">{job.task}</p>
               </div>
             )}
-            {c.minigame && !playable && !job && <SheetNote tone="soft">Their minigame is only played as a job. Nothing going right now.</SheetNote>}
+            {(TRAVELLING_GIVERS as readonly string[]).includes(c.id) && tips.length > 0 && (
+              <div className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
+                <p className="felt-print !text-[9.5px]">{c.name}&apos;s read on tonight</p>
+                {tips.map((t) => (
+                  <p key={t} className="text-[12.5px] italic leading-[18px] text-soft">&ldquo;{t}&rdquo;</p>
+                ))}
+              </div>
+            )}
+            {c.sells === 'meal' && (
+              <div className="flex items-center justify-between gap-3 rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
+                <div className="min-w-0">
+                  <p className="felt-print !text-[9.5px]">The diner</p>
+                  <p className="text-[12.5px] leading-[17px] text-soft">A hot plate: +{MEAL_BETS} bets tonight. Once a night.</p>
+                </div>
+                <Button size="sm" variant="secondary" disabled={s.ateTonight() || s.money < MEAL_M * m} onClick={() => s.buyMeal()}>
+                  {s.ateTonight() ? 'Eaten' : `Eat · ${money(MEAL_M * m)}`}
+                </Button>
+              </div>
+            )}
+            {c.lends && (
+              <div className="flex flex-col gap-2 rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
+                <div>
+                  <p className="felt-print !text-[9.5px]">Street loan{s.owed > 0 ? ` · you owe ${money(s.owed)}` : ''}</p>
+                  <p className="text-[12.5px] leading-[17px] text-soft">
+                    {money(MARKER_M * m)} any night, repaid at {MARKER_REPAY + MARKER_REPAY_STEP * s.markersHere}×. Half of every win goes to {c.name} until you&apos;re square.
+                  </p>
+                  <p className="text-[12.5px] leading-[17px] text-loss">Borrowing drops your standing in {city.name} by {MARKER_STANDING}.</p>
+                </div>
+                <div>
+                  <Button size="sm" variant="secondary" onClick={() => s.takeMarker()}>Borrow {money(MARKER_M * m)}</Button>
+                </div>
+              </div>
+            )}
             <Actions>
-              <Button size="sm" variant={job?.status === 'offered' ? 'default' : 'outline'} disabled={!canTalk} onClick={() => talk(c.id)}>
+              <Button size="sm" variant={canTalk ? 'default' : 'outline'} disabled={!canTalk} onClick={() => talk(c.id)}>
                 {canTalk ? 'Talk' : 'Nothing new to say'}
               </Button>
               {playable && c.minigame && (
@@ -475,23 +502,6 @@ export function StoryHub() {
         ),
         close,
         size: 'lg' as const,
-      }
-    }
-    if (w.kind === 'notary') {
-      return {
-        title: 'The Notary',
-        kicker: 'Lends to anyone',
-        art: <Face id="notary" />,
-        body: (
-          <>
-            <SheetNote tone="soft">A marker puts chips in your hand. Half of every win goes to the Notary until it is paid, and each one costs more.</SheetNote>
-            <SheetNote tone="loss">Taking a marker drops your standing in {city.name} by {MARKER_STANDING}.</SheetNote>
-            <Actions>
-              <Button size="sm" disabled={!broke} onClick={() => { if (s.takeMarker()) setSheet(null) }}>Take a marker</Button>
-            </Actions>
-          </>
-        ),
-        close,
       }
     }
     if (w.kind === 'rest') {
@@ -596,7 +606,7 @@ export function StoryHub() {
         kicker: 'Broke',
         actions: (
           <>
-            <Button size="sm" variant="secondary" onClick={openAt({ kind: 'notary' }, 'notary')}>The Notary</Button>
+            {lender && <Button size="sm" variant="secondary" onClick={openAt({ kind: 'person', id: lender.id }, lender.id)}>{lender.name}</Button>}
             <Button size="sm" variant="outline" onClick={openAt({ kind: 'rest' }, restSpot)}>Rest</Button>
           </>
         ),
@@ -714,6 +724,20 @@ export function StoryHub() {
         </>
       )}
 
+      <Dialog open={s.debtWarning() && !s.scene} onOpenChange={(o) => { if (!o) s.dismissDebtWarning() }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>You owe {money(s.owed)}</DialogTitle>
+            <DialogDescription>
+              That&apos;s a lot of debt: half of every win goes to it, and climbing out can take a long time. You can keep playing, or start the story over if you&apos;d rather not grind it back.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" onClick={() => s.dismissDebtWarning()}>Keep playing</Button>
+            <Button variant="destructive" onClick={() => { s.dismissDebtWarning(); setConfirmNew(true) }}>Start over</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={confirmNew} onOpenChange={setConfirmNew}>
         <DialogContent>
           <DialogHeader>

@@ -47,6 +47,9 @@ minigame givers and a **boss** = the one local without a minigame (the hub finds
 way). **Job givers** (`jobGivers` in `lib/story/jobs.ts`) are the locals with a minigame plus Jo,
 who travels with you, stands right of the car (`jo` spot) and runs **Chip Count** in every town;
 `TRAVELLING_GIVERS` lists Jo. Every job giver needs a minigame (`check:story` fails one without).
+Give exactly one local `lends: true` (the town's lender: loans any night on the marker terms; Pike
+in Dustwater) and, if the town has a diner, one `sells: 'meal'` (+2 bets tonight for 2m; Marta).
+Jo's tips on tonight's games come for free from the city's game list (`lib/story/tips.ts`).
 
 **Portrait look:** add the id to `PortraitLook` and `PORTRAIT_LOOKS` in `lib/story/portraits.ts`,
 a face path in `FACE`, and a `CHARS` entry (skin, hair, cloth, shirt, accent, `chip`, plus

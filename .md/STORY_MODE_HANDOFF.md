@@ -126,6 +126,20 @@ worst 10%: never gambles 23 / 75 (reference), cautious 7 / 20, balanced 6 / 31, 
 leaving before the end (back button, reload, closing the page) is a miss, settled the next time
 the hub or that minigame page loads (`forfeitStartedMinigames`): the job is lost, no pay.
 
+**2026-11-04, what each person offers (owner decisions):** the **Notary is gone**; each town has
+one **lender** (`lends: true`; Pike in Dustwater) who lends on the same marker terms (20m, repaid
+at 1.5× plus 0.25× per earlier loan in the town, half of every win's profit, −1 standing) **any
+night**, not only when broke. Owing `DEBT_WARN_M` (100m) or more shows a popup that offers a
+fresh start ("Keep playing" / "Start over"); it comes back only after the debt drops under the
+line and climbs again (`debtWarned`). The story still can't be lost. **Marta's diner**
+(`sells: 'meal'`): a hot plate for `MEAL_M` (2m) adds `MEAL_BETS` (2) bets tonight, once a night
+(`buyMeal`, `mealNight`). **Jo's read on tonight** (`lib/story/tips.ts`): on Jo's card, one game
+that treats you fair (with a hint at how to play it) and one the house built for itself, from
+the room you're in tonight (the dive's lineup before you sit), no numbers, wording seeded by
+night. The person card's Talk button is filled whenever there is something to say, and the
+"only played as a job" note is gone. `check:story` requires exactly one lender per town with
+people and tests loans any time, the warning, the meal and its bets.
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 

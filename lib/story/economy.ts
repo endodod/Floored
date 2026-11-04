@@ -46,8 +46,8 @@ export const jobPayM = (kind: 'minigame' | 'table') => (kind === 'minigame' ? MI
 /**
  * Standing: how a town sees you, 0 to STANDING_MAX, kept per town (the map is in
  * store/story-store.ts). It rises by JOB_STANDING for every finished table job,
- * drops by MARKER_STANDING when you take a marker from the Notary (going broke on its
- * own costs none; owner decision 2026-11-04), and opens the better rooms.
+ * drops by MARKER_STANDING when you borrow from the town's lender (Pike in Dustwater;
+ * going broke on its own costs none; owner decision 2026-11-04), and opens the better rooms.
  */
 export const JOB_STANDING = 1
 export const MARKER_STANDING = 1
@@ -93,12 +93,21 @@ export const BOSS_REMATCH_NIGHTS = 2
 /** Travel to the next city costs this many of the NEXT city's minimum bets. */
 export const TRAVEL_FARE_M = 20
 
-/** The Notary's marker after a bust: size, what you repay, and the share of each win's profit that goes to it. */
+/**
+ * A loan (a "marker") from the town's lender, any time: its size, what you repay, and the
+ * share of each win's profit that goes to it. Owing DEBT_WARN_M or more brings a warning
+ * that offers a fresh start (the story itself can't be lost).
+ */
 export const MARKER_M = 20
 export const MARKER_REPAY = 1.5
 export const MARKER_GARNISH = 0.5
 /** Each further marker in the same city costs this much more to repay. */
 export const MARKER_REPAY_STEP = 0.25
+export const DEBT_WARN_M = 100
+
+/** Marta's diner: a plate costs MEAL_M and adds MEAL_BETS to tonight's bets, once a night. */
+export const MEAL_M = 2
+export const MEAL_BETS = 2
 
 /** In multiples of m: the dollars a multiple stands for in a city. */
 export function dollars(m: number, minBet: number): number {

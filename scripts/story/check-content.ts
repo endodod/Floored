@@ -16,7 +16,7 @@ import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
   BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
-  CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, ROOM_BETS, SLEEP_COST_M, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
+  CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { goalKey, jobGivers, kindOf, makeOffers, NIGHT_KINDS, type Job } from '@/lib/story/jobs'
@@ -78,6 +78,13 @@ const effects = (es: Effect[] | undefined, where: string) => {
 for (const c of CITIES) setFlags.add(`${c.id}-cleared`)
 
 for (const c of CHARACTERS) if (c.city && !cityIds.has(c.city)) fail(`character ${c.id}: unknown city "${c.city}"`)
+// One lender per town with people written (it needs a street spot, so a local), at most one diner.
+for (const c of CITIES) {
+  const locals = CHARACTERS.filter((x) => x.city === c.id)
+  if (!locals.length) continue
+  if (locals.filter((x) => x.lends).length !== 1) fail(`city ${c.id}: needs exactly one lender (a local with lends: true)`)
+  if (locals.filter((x) => x.sells === 'meal').length > 1) fail(`city ${c.id}: more than one diner`)
+}
 for (const e of WRITTEN_JOBS) {
   const where = `job ${e.id}`
   if (!cityIds.has(e.city)) fail(`${where}: unknown city`)
@@ -240,7 +247,7 @@ for (const t of allText) {
   const buyIn = t.match(/(\w+) times the house minimum to sit/i)
   if (buyIn && WORDS[buyIn[1]!.toLowerCase()] !== BOSS_BUYIN_M) fail(`a boss line quotes the buy-in as "${buyIn[1]}", the economy says ${BOSS_BUYIN_M}`)
   const marker = t.match(/(\w+) times the minimum, repaid at one and a half/i)
-  if (marker && (WORDS[marker[1]!.toLowerCase()] !== MARKER_M || MARKER_REPAY !== 1.5)) fail(`the Notary quotes the marker as "${marker[1]}", the economy says ${MARKER_M} at ${MARKER_REPAY}`)
+  if (marker && (WORDS[marker[1]!.toLowerCase()] !== MARKER_M || MARKER_REPAY !== 1.5)) fail(`the lender quotes the marker as "${marker[1]}", the economy says ${MARKER_M} at ${MARKER_REPAY}`)
 }
 
 // Shipped ids.
@@ -562,7 +569,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   const standingAtBust = st().rep()
   if (!st().endNight().bust || st().rep() !== standingAtBust || !st().queue.includes('dustwater-bust')) fail('going broke queues the bust scene and costs no standing by itself')
   {
-    // The Notary's marker is what costs standing (owner decision 2026-11-04).
+    // Borrowing from the town's lender is what costs standing (owner decision 2026-11-04).
     const atMarker = st().rep()
     const money0 = st().money
     useStoryStore.setState({ money: 0 })
@@ -576,6 +583,32 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (st().rep() !== 0 || st().standing['rattlesnake-junction'] !== 2) fail('a marker never takes standing below 0 and only touches this town')
   useStoryStore.setState({ owed: 0, markersHere: 0 })
   useStoryStore.setState({ queue: [], standing: standingAfterBust })
+  // Pike lends any time, not only when broke (owner decision 2026-11-04).
+  {
+    useStoryStore.setState({ money: 100 * m, owed: 0, markersHere: 0 })
+    if (st().lenderHere() !== 'pike' || !st().takeMarker() || st().money !== 120 * m) fail('Pike lends in Dustwater, even when you are not broke')
+    useStoryStore.setState({ owed: 99 * m, debtWarned: false })
+    if (st().debtWarning()) fail('no debt warning under 100m owed')
+    useStoryStore.setState({ owed: 100 * m })
+    if (!st().debtWarning()) fail('owing 100m brings the warning')
+    st().dismissDebtWarning()
+    if (st().debtWarning()) fail('the warning stays dismissed')
+    st().receive(1000 * m, { profit: true })
+    if (st().owed !== 0 || st().debtWarned) fail('paying the debt down re-arms the warning')
+    useStoryStore.setState({ owed: 0, markersHere: 0 })
+  }
+  // Marta's diner: a plate is 2m for +2 bets tonight, once a night.
+  {
+    useStoryStore.setState({ money: 100 * m, mealNight: null, tonight: null, nextBets: CAR_BETS })
+    if (!st().buyMeal() || st().money !== 98 * m || st().buyMeal()) fail('a plate costs 2m, once a night')
+    st().startNight(0)
+    if (st().betsLeft() !== CAR_BETS + MEAL_BETS) fail(`a meal before the night adds ${MEAL_BETS} bets`)
+    st().endNight('room')
+    st().startNight(0)
+    st().buyMeal()
+    if (st().betsLeft() !== ROOM_BETS + MEAL_BETS) fail('a meal during the night adds its bets right away')
+    st().endNight('car')
+  }
   // A marker: lent 20m, repaid 1.5×, half of each win's profit.
   useStoryStore.setState({ money: 0 })
   if (!st().takeMarker() || st().money !== 20 * m || st().owed !== 30 * m) fail('a marker lends 20m and is owed at 30m')

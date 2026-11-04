@@ -488,6 +488,10 @@ Answered (2026-11-03):
 23. **Car free everywhere, 5 / 10 bets, the marker costs standing** (2026-11-04): the car is free
     in every city for now; 5 bets after the car, 10 after a room; going broke costs no standing,
     taking the Notary's marker costs 1.
+24. **What each person offers** (2026-11-04): the Notary is removed; each town has one lender
+    (Pike in Dustwater) who lends any night on the marker terms; owing 100m brings an optional
+    fresh-start popup. Marta's diner sells a plate (+2 bets tonight, 2m). Jo gives a vague read
+    on tonight's games (one fair, one to avoid).
 17. **A bust costs 1 standing** (changed 2026-11-04: now the Notary's marker costs it, a bust none); a boss win no longer gives any (it pays the purse and clears
     the town). Version-1 saves migrate `rep` into the current town, capped by its finished
     errands.
