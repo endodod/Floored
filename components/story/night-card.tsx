@@ -54,7 +54,7 @@ export function NightCard({ summary, cityName, onNext }: { summary: NightSummary
         </div>
         {summary.bust && (
           <p className="st-stamp mt-3 rotate-[-4deg] text-center font-mono text-[13px] font-bold uppercase tracking-[0.14em] text-[#8f2633]">
-            Bust · lost a point of standing here
+            Bust · borrow, or work a job
           </p>
         )}
         <div className="mt-5 flex justify-center">

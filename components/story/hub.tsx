@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
-import { ArrowRight, Car, Ellipsis, Lock, Map as MapIcon, Moon, NotebookPen } from 'lucide-react'
+import { ArrowRight, Car, Ellipsis, HandCoins, Lightbulb, Lock, Map as MapIcon, Moon, NotebookPen, UtensilsCrossed } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { SUITS } from '@/components/ui/terminal'
@@ -26,6 +26,7 @@ import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
 import { joTips } from '@/lib/story/tips'
+import { PaperRow, ServiceButton, ServicePopup } from '@/components/story/service-card'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { sceneConfigFor } from '@/lib/story/scene-theme'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -80,6 +81,8 @@ export function StoryHub() {
   const [mapOpen, setMapOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [receipt, setReceipt] = useState<NightSummary | null>(null)
+  /** A person's service card (Marta's diner, Pike's loan, Jo's tip) open over the street. */
+  const [service, setService] = useState<{ kind: 'meal' | 'loan' | 'tips'; who: string } | null>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const city = CITY_BY_ID.get(s.city)!
   const m = city.minBet
@@ -109,6 +112,7 @@ export function StoryHub() {
   const lender = lenderId ? CHARACTERS.find((c) => c.id === lenderId) ?? null : null
   // Jo's read on the games in the room you're in tonight (the dive's before you sit down).
   const tips = joTips(gamesIn(night ? night.venue : 0), s.city, s.night)
+  const hasTips = (c: Character) => (TRAVELLING_GIVERS as readonly string[]).includes(c.id) && tips.length > 0
   // Tonight's bets come from where you slept (8 after the car, 12 after a room).
   const nightBets = night ? (night.limit ?? NIGHT_BETS) : s.nextBets + (s.ateTonight() ? MEAL_BETS : 0)
   const betsLeft = night ? Math.max(0, nightBets - night.bets) : 0
@@ -393,37 +397,12 @@ export function StoryHub() {
                 <p className="text-[12px] leading-[17px] text-dim">{job.task}</p>
               </div>
             )}
-            {(TRAVELLING_GIVERS as readonly string[]).includes(c.id) && tips.length > 0 && (
-              <div className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
-                <p className="felt-print !text-[9.5px]">{c.name}&apos;s read on tonight</p>
-                {tips.map((t) => (
-                  <p key={t} className="text-[12.5px] italic leading-[18px] text-soft">&ldquo;{t}&rdquo;</p>
-                ))}
-              </div>
-            )}
-            {c.sells === 'meal' && (
-              <div className="flex items-center justify-between gap-3 rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
-                <div className="min-w-0">
-                  <p className="felt-print !text-[9.5px]">The diner</p>
-                  <p className="text-[12.5px] leading-[17px] text-soft">A hot plate: +{MEAL_BETS} bets tonight. Once a night.</p>
-                </div>
-                <Button size="sm" variant="secondary" disabled={s.ateTonight() || s.money < MEAL_M * m} onClick={() => s.buyMeal()}>
-                  {s.ateTonight() ? 'Eaten' : `Eat · ${money(MEAL_M * m)}`}
-                </Button>
-              </div>
-            )}
-            {c.lends && (
-              <div className="flex flex-col gap-2 rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
-                <div>
-                  <p className="felt-print !text-[9.5px]">Street loan{s.owed > 0 ? ` · you owe ${money(s.owed)}` : ''}</p>
-                  <p className="text-[12.5px] leading-[17px] text-soft">
-                    {money(MARKER_M * m)} any night, repaid at {MARKER_REPAY + MARKER_REPAY_STEP * s.markersHere}×. Half of every win goes to {c.name} until you&apos;re square.
-                  </p>
-                  <p className="text-[12.5px] leading-[17px] text-loss">Borrowing drops your standing in {city.name} by {MARKER_STANDING}.</p>
-                </div>
-                <div>
-                  <Button size="sm" variant="secondary" onClick={() => s.takeMarker()}>Borrow {money(MARKER_M * m)}</Button>
-                </div>
+            {/* What they offer besides talk and jobs: a brass button each, opening a paper card. */}
+            {(hasTips(c) || c.sells === 'meal' || c.lends) && (
+              <div className="flex flex-wrap gap-2" role="group" aria-label={`What ${c.name} offers`}>
+                {hasTips(c) && <ServiceButton icon={<Lightbulb aria-hidden />} label="A tip" onClick={() => { setSheet(null); setService({ kind: 'tips', who: c.id }) }} />}
+                {c.sells === 'meal' && <ServiceButton icon={<UtensilsCrossed aria-hidden />} label="Diner" dot={!s.ateTonight()} onClick={() => { setSheet(null); setService({ kind: 'meal', who: c.id }) }} />}
+                {c.lends && <ServiceButton icon={<HandCoins aria-hidden />} label="Loan" onClick={() => { setSheet(null); setService({ kind: 'loan', who: c.id }) }} />}
               </div>
             )}
             <Actions>
@@ -691,6 +670,64 @@ export function StoryHub() {
         )}
 
         {receipt && !sceneOn && <NightCard summary={receipt} cityName={city.name} onNext={nextNight} />}
+        {service && !sceneOn && (() => {
+          const who = CHARACTERS.find((x) => x.id === service.who)
+          const close = () => setService(null)
+          if (!who) return null
+          if (service.kind === 'meal') {
+            const price = MEAL_M * m
+            const ate = s.ateTonight()
+            return (
+              <ServicePopup
+                kind="menu"
+                kicker={`${config.barName === 'DINER' ? `The ${config.motelName[0]}${config.motelName.slice(1).toLowerCase()} diner` : 'The diner'} · ${who.name}`}
+                title="Tonight's plate"
+                onClose={close}
+                footer={
+                  <Button size="lg" disabled={ate || s.money < price} onClick={() => { if (s.buyMeal()) close() }}>
+                    {ate ? 'Already ate tonight' : `Order · ${money(price)}`}
+                  </Button>
+                }
+              >
+                <PaperRow label="Hot plate & coffee" value={money(price)} />
+                <PaperRow label="Bets tonight" value={`+${MEAL_BETS}`} tone="good" />
+                <p className="mt-2 text-center font-mono text-[11px] text-[#6f6354]">One plate a night. Eat before or during the night.</p>
+              </ServicePopup>
+            )
+          }
+          if (service.kind === 'loan') {
+            const lent = MARKER_M * m
+            const rate = MARKER_REPAY + MARKER_REPAY_STEP * s.markersHere
+            return (
+              <ServicePopup
+                kind="iou"
+                kicker={`${who.name} · street rates`}
+                title="I.O.U."
+                onClose={close}
+                footer={<Button size="lg" onClick={() => { if (s.takeMarker()) close() }}>Sign · take {money(lent)}</Button>}
+              >
+                <PaperRow label="You get" value={money(lent)} tone="good" />
+                <PaperRow label="You pay back" value={`${money(Math.round(lent * rate))} (${rate}×)`} />
+                <PaperRow label="From every win" value="half the profit" />
+                <PaperRow label={`Standing in ${city.name}`} value={`−${MARKER_STANDING}`} tone="bad" />
+                {s.owed > 0 && (
+                  <>
+                    <div aria-hidden className="my-2 border-t border-dashed border-[#2a2420]/40" />
+                    <PaperRow label="You owe now" value={money(s.owed)} tone="bad" />
+                  </>
+                )}
+              </ServicePopup>
+            )
+          }
+          return (
+            <ServicePopup kind="note" kicker={`${who.name}'s notebook`} title="Tonight's read" onClose={close}>
+              {tips.map((t) => (
+                <p key={t} className="text-[14px] italic leading-6 text-[#2a2420]">&ldquo;{t}&rdquo;</p>
+              ))}
+              <p className="mt-1 text-right text-[12px] italic text-[#6f6354]">— {who.name}</p>
+            </ServicePopup>
+          )
+        })()}
       </div>
 
       {mapOpen && <CircuitMap current={s.city} cleared={s.cleared} visited={s.visited} onClose={() => setMapOpen(false)} />}

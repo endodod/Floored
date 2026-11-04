@@ -139,6 +139,11 @@ the room you're in tonight (the dive's lineup before you sit), no numbers, wordi
 night. The person card's Talk button is filled whenever there is something to say, and the
 "only played as a job" note is gone. `check:story` requires exactly one lender per town with
 people and tests loans any time, the warning, the meal and its bets.
+On a person's card these are round brass **service buttons** (`components/story/service-card.tsx`:
+`ServiceButton`, `ServicePopup`, `PaperRow`): Diner (a fork and knife; a dot while you haven't eaten
+tonight), Loan (a hand with coins) and A tip (a light bulb). Each opens a paper card over the
+street in the receipt's style: a diner menu (`menu`), an I.O.U. slip with a red header (`iou`) or
+a page of Jo's notebook (`note`); opening one closes the person's card.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
