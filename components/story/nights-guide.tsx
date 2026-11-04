@@ -4,8 +4,9 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import type { City } from '@/lib/story/cities'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRAND_STANDING, GAMES_PER_ROOM,
-  HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRAND_STANDING,
+  ERRANDS_EACH_NIGHT_AFTER, ERRANDS_FIRST_NIGHT, ERRANDS_PER_CITY, GAMES_PER_ROOM, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY,
+  MINIGAME_MAX_M, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -75,6 +76,35 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
         <p>
           The dive is always open. The main floor wants standing {VENUE_REP[1]}; the high-roller room wants {VENUE_REP[2]}: no bet limit and the best comps, which is where you build the back-table money.
         </p>
+        <p>
+          Standing keeps paying once the rooms are open. Finish a night up at the tables and the house adds a bonus: a share of that night&apos;s table winnings (what the games paid, less what you staked), on top of comps.
+        </p>
+        <table className="w-full border-collapse text-left text-[12px] sm:text-[12.5px]">
+          <thead>
+            <tr className="text-dim">
+              {Array.from({ length: STANDING_MAX + 1 }, (_, i) => (
+                <th key={i} className="num py-1 pr-1.5 font-semibold">{i === 0 ? 'Standing' : i}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-t border-white/10">
+              <td className="py-1 pr-1.5 text-dim">Gives</td>
+              {Array.from({ length: STANDING_MAX }, (_, k) => {
+                const i = k + 1
+                const room = VENUE_REP.indexOf(i)
+                return (
+                  <td key={i} className={`num py-1 pr-1.5 ${BONUS_STEPS.includes(i) ? 'text-gold' : 'text-ink'}`}>
+                    {room > 0 ? ROOM_SHORT[room] : `+${pct(STANDING_BONUS[i]!)}`}
+                  </td>
+                )
+              })}
+            </tr>
+          </tbody>
+        </table>
+        <p className="text-dim">
+          Standing {VENUE_REP[1]} and {VENUE_REP[2]} open rooms; {BONUS_STEPS.join(', ').replace(/, (\d+)$/, ' and $1')} raise the bonus. Example: a night up {money(40 * m)} at standing {STANDING_MAX} adds <span className="num text-gold">{money(Math.round(40 * m * STANDING_BONUS[STANDING_MAX]!))}</span>.
+        </p>
       </Section>
 
       <Section title="Tonight's games">
@@ -103,7 +133,10 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
 
       <Section title="Hustles & errands">
         <p>Hustles: {HUSTLES_PER_NIGHT} side goals on the board each night, {money(HUSTLE_PAY_M * m)} each. They pay when the night ends.</p>
-        <p>Errands: jobs people give you. Each pays {money(ERRAND_PAY_M * m)} the moment it is done.</p>
+        <p>Errands: jobs people give you. Each pays {money(ERRAND_PAY_M * m)} the moment it is done and earns {ERRAND_STANDING} standing.</p>
+        <p>
+          A town has {ERRANDS_PER_CITY} of them, and they come out over your first nights there: {ERRANDS_FIRST_NIGHT} people want a word on the first night, then {ERRANDS_EACH_NIGHT_AFTER} more each night after. Look for the mark over someone&apos;s head.
+        </p>
       </Section>
 
       <Section title="Minigames">

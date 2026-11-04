@@ -86,6 +86,11 @@ export type SceneTrigger =
   | { on: 'boss-loss' }
   /** After a bust in this city. */
   | { on: 'bust' }
+  /**
+   * The morning after a night in this city: plays once its errands are due. For
+   * jobs from Jo, who travels with you and has no spot on the street.
+   */
+  | { on: 'dawn' }
   /** The how-the-nights-work walkthrough: queued after the arrival scene on a new story; replayable from the hub menu. */
   | { on: 'tutorial' }
 
@@ -120,7 +125,13 @@ export interface Errand {
   /** What to do, in the player's words. */
   task: string
   goal: ErrandGoal
-  /** On the jobs board once this holds (or once a scene starts it). */
+  /**
+   * The night in this town it comes out (0 = the first night there). A scene that
+   * starts it waits for this night, so the giver only wants a word from then on.
+   * Two errands a city on night 0, then one a night (ERRANDS_FIRST_NIGHT).
+   */
+  night: number
+  /** On the jobs board once this holds (or once a scene starts it), from its night on. */
   opens?: Condition
   /** Pays this many of the city's minimum bets when done (ERRAND_PAY_M by default). */
   pay?: number

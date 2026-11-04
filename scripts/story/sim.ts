@@ -8,7 +8,9 @@
  *    odds above. Standing is modelled per town: every town starts the player in
  *    the dive, each of the city's ERRANDS_PER_CITY errands lifts standing one
  *    (minigame jobs too), a bust takes one off, and the player moves up to the best room
- *    their standing opens (their own preferred room or lower). Prints nights per
+ *    their standing opens (their own preferred room or lower). Errands come out on the
+ *    schedule (errandsOutBy: two the first night, then one a night) and the player
+ *    finishes at most one a night. A night up at the tables earns the standing bonus. Prints nights per
  *    city and over the circuit, busts, boss tries, and recovery time after a bust,
  *    and checks the plan's targets.
  *
@@ -20,6 +22,7 @@ import { gamesFor } from '@/lib/story/rotation'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRANDS_PER_CITY,
   HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
+  errandsOutBy, standingBonus,
 } from '@/lib/story/economy'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
 import type { GameName } from '@/store/types'
@@ -123,8 +126,7 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     all.forEach((g) => seen.add(g))
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
-    let errands = ERRANDS_PER_CITY
-    let standingJobs = ERRANDS_PER_CITY
+    let errandsDone = 0
     let standing = 0
     let wait = 0
     let brokeSince: number | null = null
@@ -146,28 +148,38 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       const cap = VENUE_MAX_M[venue] ?? Infinity
       const list = gamesFor(city, totalNights, venue, [...seen])
       for (let g = 0; g < city.minigameGivers; g++) money += MINIGAME_MAX_M * (0.45 + rng() * 0.5)
-      if (errands > 0) { money += ERRAND_PAY_M; errands-- }
+      // One errand a night, from those out by tonight (errandsOutBy never runs behind that).
+      const finishesOne = errandsDone < Math.min(ERRANDS_PER_CITY, errandsOutBy(n))
+      if (finishesOne) { money += ERRAND_PAY_M; errandsDone++ }
       if (t.gamble && money >= 1) {
         for (let h = 0; h < HUSTLES_PER_NIGHT; h++) if (rng() < 0.75) money += HUSTLE_PAY_M
         let turnover = 0
+        let tableNet = 0
         if (t.bold) {
           const need = target - money
           if (need > 0) {
             const stake = Math.min(money, need, cap)
             turnover += stake
-            money += stake * (draw(t.pick(list, rng), rng) - 1)
+            const won = stake * (draw(t.pick(list, rng), rng) - 1)
+            tableNet += won
+            money += won
           }
         } else {
           for (let k = 0; k < NIGHT_BETS && money >= 1; k++) {
             const stake = Math.max(1, Math.min(money, money * t.share, cap))
             turnover += stake
-            money += stake * (draw(t.pick(list, rng), rng) - 1)
+            const won = stake * (draw(t.pick(list, rng), rng) - 1)
+            tableNet += won
+            money += won
           }
         }
         money += Math.min(COMPS_RATE[venue] * turnover, COMPS_CAP_M[venue])
+        // The errand finished tonight counts toward tonight's bonus (as in the store). Money here is in m, and
+        // standingBonus rounds to whole units, so it works in hundredths of m.
+        money += standingBonus(Math.min(STANDING_MAX, standing + (finishesOne ? 1 : 0)), tableNet * 100) / 100
       }
       // An errand finished tonight lifts standing (every errand does, minigame jobs too).
-      if (standingJobs > 0) { standing = Math.min(STANDING_MAX, standing + 1); standingJobs-- }
+      if (finishesOne) standing = Math.min(STANDING_MAX, standing + 1)
       if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
       n++
       totalNights++

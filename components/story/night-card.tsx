@@ -8,8 +8,8 @@ import { formatChips } from '@/utils/format'
 const money = (n: number) => `$${formatChips(n)}`
 
 /**
- * The end-of-night slip: a till receipt on paper listing comps, hustles and
- * lodging, the net in bold, then "Next night". Shown over the dimmed street.
+ * The end-of-night slip: a till receipt on paper listing comps, the standing
+ * bonus (on a night up), hustles and lodging, the net in bold, then "Next night". Shown over the dimmed street.
  */
 export function NightCard({ summary, cityName, onNext }: { summary: NightSummary; cityName: string; onNext: () => void }) {
   const btn = useRef<HTMLButtonElement>(null)
@@ -18,6 +18,7 @@ export function NightCard({ summary, cityName, onNext }: { summary: NightSummary
   }, [])
   const rows: { label: string; value: string; tone?: 'win' | 'miss' | 'cost' }[] = []
   if (summary.played) rows.push({ label: 'Comps', value: `+${money(summary.comps)}`, tone: 'win' })
+  if (summary.bonus) rows.push({ label: `Standing bonus · ${Math.round((summary.bonusRate ?? 0) * 100)}% of the win`, value: `+${money(summary.bonus)}`, tone: 'win' })
   for (const h of summary.hustles) rows.push({ label: h.text, value: h.paid ? `+${money(h.paid)}` : 'missed', tone: h.paid ? 'win' : 'miss' })
   rows.push(
     summary.car

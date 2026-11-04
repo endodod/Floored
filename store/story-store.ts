@@ -8,10 +8,10 @@ import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryCont
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, HUSTLE_PAY_M,
   LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY,
-  TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, errandStanding,
+  TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, errandStanding, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
-import type { Effect, Errand, FactionId, MinigameId, SceneTrigger } from '@/lib/story/types'
+import type { Effect, Errand, FactionId, MinigameId, Scene, SceneTrigger } from '@/lib/story/types'
 import type { GameName } from './types'
 
 /**
@@ -24,12 +24,25 @@ import type { GameName } from './types'
  * of city id to standing, so every town judges you on its own jobs.
  * Version 3: every errand earns standing (minigame jobs gave none before); a save
  * that already finished a minigame errand gets that standing in its town.
+ * Version 4: errands come out night by night and most are handed over in a scene
+ * (they opened on a flag before); a job a save already had open stays open, and
+ * the scene that now hands it over counts as played.
  */
-export const STORY_SAVE_VERSION = 3
+export const STORY_SAVE_VERSION = 4
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
 export const VENUE_NAMES = ['The dive', 'The main floor', 'The high-roller room'] as const
+
+/** The errands a scene hands out (every `errand … start` effect in it). */
+function errandsStartedBy(scene: Scene): string[] {
+  const out: string[] = []
+  for (const node of Object.values(scene.nodes)) {
+    const effects = node.kind === 'end' ? (node.effects ?? []) : node.kind === 'choice' ? node.options.flatMap((o) => o.effects ?? []) : []
+    for (const e of effects) if ('errand' in e && e.step === 'start') out.push(e.errand)
+  }
+  return out
+}
 
 /** Standing after a change, clamped to 0..STANDING_MAX, in one town only. */
 function shiftStanding(all: StorySave['standing'], city: CityId, delta: number): StorySave['standing'] {
@@ -49,6 +62,9 @@ export interface NightSummary {
   night: number
   played: boolean
   comps: number
+  /** The standing bonus on a night up at the tables, and its rate (STANDING_BONUS). */
+  bonus: number
+  bonusRate: number
   hustles: { text: string; paid: number }[]
   lodging: number
   car: boolean
@@ -73,7 +89,7 @@ export interface StorySave {
   owed: number
   /** Markers taken in this city (each costs more to repay). */
   markersHere: number
-  /** Standing in each town (0–5): opens the main floor (1) and the high-roller room (2). */
+  /** Standing in each town (0–5): opens the main floor (1) and the high-roller room (3); 2, 4 and 5 raise the night bonus. */
   standing: Partial<Record<CityId, number>>
   factions: Record<FactionId, number>
   flags: Record<string, true>
@@ -271,7 +287,9 @@ export const useStoryStore = create<StoryStore>()(
               sc.trigger.on === trigger.on &&
               (trigger.on !== 'talk' || (sc.trigger.on === 'talk' && sc.trigger.character === trigger.character)) &&
               (sc.once === false || !s.seen.includes(sc.id)) &&
-              holds(sc.if, ctx),
+              holds(sc.if, ctx) &&
+              // A scene that hands out a job waits for the job's night in this town.
+              errandsStartedBy(sc).every((id) => (ERRAND_BY_ID.get(id)?.night ?? 0) <= s.cityNight),
           )
           return found?.id ?? null
         },
@@ -345,7 +363,9 @@ export const useStoryStore = create<StoryStore>()(
         openErrands: () => {
           const s = get()
           const ctx = get().context()
-          return ERRANDS.filter((e) => e.city === s.city && s.errands[e.id] !== 'done' && (s.errands[e.id] === 'started' || holds(e.opens, ctx)))
+          return ERRANDS.filter(
+            (e) => e.city === s.city && s.errands[e.id] !== 'done' && (s.errands[e.id] === 'started' || (e.night <= s.cityNight && !!e.opens && holds(e.opens, ctx))),
+          )
         },
 
         venueOpen: (venue) => get().rep() >= VENUE_REP[venue],
@@ -410,6 +430,8 @@ export const useStoryStore = create<StoryStore>()(
           const t = s.tonight
           const before = t ? t.startMoney : s.money
           let comps = 0
+          let bonus = 0
+          let bonusRate = 0
           const hustles: NightSummary['hustles'] = []
           if (t && t.rounds.length) {
             const turnover = t.rounds.reduce((sum, r) => sum + r.bet, 0)
@@ -420,16 +442,21 @@ export const useStoryStore = create<StoryStore>()(
               if (paid) get().receive(paid)
               hustles.push({ text: h.text, paid })
             }
-            if (t.rounds.reduce((sum, r) => sum + r.payout - r.bet, 0) > 0) {
+            const tableWinnings = t.rounds.reduce((sum, r) => sum + r.payout - r.bet, 0)
+            if (tableWinnings > 0) {
               for (const e of get().openErrands()) if (e.goal.kind === 'night-up') completeErrand(e)
             }
+            // Standing as the night closes (a job finished tonight counts) sets the bonus.
+            bonusRate = STANDING_BONUS[get().rep()] ?? 0
+            bonus = standingBonus(get().rep(), tableWinnings)
+            if (bonus) get().receive(bonus)
           }
           const after = get()
           const car = after.money < CAR_BELOW_M * m()
           const lodging = car ? 0 : Math.min(after.money, LODGING_M * m())
           const money = after.money - lodging
           const bust = money < m()
-          const summary: NightSummary = { night: after.night + 1, played: !!t, comps, hustles, lodging, car, net: money - before, bust }
+          const summary: NightSummary = { night: after.night + 1, played: !!t, comps, bonus, bonusRate, hustles, lodging, car, net: money - before, bust }
           set({
             money,
             night: after.night + 1,
@@ -440,6 +467,8 @@ export const useStoryStore = create<StoryStore>()(
             ...(bust ? { standing: shiftStanding(after.standing, after.city, -BUST_STANDING), stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
           })
           if (bust) queue(get().sceneFor({ on: 'bust' }))
+          // The morning after: a dawn scene whose job is now due (Jo's jobs).
+          queue(get().sceneFor({ on: 'dawn' }))
           return summary
         },
         playMinigame: (giver, minigame, score) => {
@@ -526,6 +555,24 @@ export const useStoryStore = create<StoryStore>()(
             if (e.goal.kind === 'minigame' && base.errands[e.id] === 'done') standing = shiftStanding(standing, e.city, errandStanding(e))
           }
           base.standing = standing
+        }
+        if (version < 4) {
+          // These Dustwater jobs opened on a flag before; now a scene hands each one over on
+          // its night. A job a save already had open stays open, and its scene counts as played.
+          const handedOver: [errand: string, flag: string, scene: string | null][] = [
+            ['dustwater-pike-marks', 'met-pike', null],
+            ['dustwater-jo-stake', 'arrived-dustwater', 'dustwater-jo-seed'],
+            ['dustwater-marta-bet', 'met-marta', 'dustwater-marta-trucker'],
+          ]
+          const errands = { ...base.errands }
+          const seen = [...base.seen]
+          for (const [id, flag, scene] of handedOver) {
+            if (!base.flags[flag]) continue
+            if (!errands[id]) errands[id] = 'started'
+            if (scene && !seen.includes(scene)) seen.push(scene)
+          }
+          base.errands = errands
+          base.seen = seen
         }
         return base
       },

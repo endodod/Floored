@@ -22,8 +22,21 @@ export const CAR_BELOW_M = 10
 export const MINIGAME_MAX_M = 3
 
 /** One-time story errands per city, and what each pays. */
-export const ERRANDS_PER_CITY = 4
+export const ERRANDS_PER_CITY = 5
 export const ERRAND_PAY_M = 6
+
+/**
+ * Errands come out over the first nights in a town, not all at once: two people
+ * want a word on your first night there, then one more each night after (owner
+ * decision 2026-11-04). Each errand names its `night` (0 = the first night in the
+ * town); `pnpm check:story` holds every city to this schedule.
+ */
+export const ERRANDS_FIRST_NIGHT = 2
+export const ERRANDS_EACH_NIGHT_AFTER = 1
+/** How many of a town's errands are out by this night in it (0 = the first night). */
+export function errandsOutBy(cityNight: number): number {
+  return Math.min(ERRANDS_PER_CITY, ERRANDS_FIRST_NIGHT + ERRANDS_EACH_NIGHT_AFTER * Math.max(0, cityNight))
+}
 
 /**
  * Standing: how a town sees you, 0 to STANDING_MAX, kept per town (the map is in
@@ -35,7 +48,22 @@ export const BUST_STANDING = 1
 export const STANDING_MAX = 5
 
 /** The standing each room asks for: dive, main floor, high-roller room. */
-export const VENUE_REP: readonly [number, number, number] = [0, 1, 2]
+export const VENUE_REP: readonly [number, number, number] = [0, 1, 3]
+
+/**
+ * The standing bonus, by standing 0–STANDING_MAX: end a night up at the tables and
+ * the house adds this share of the night's table winnings (payouts less stakes) on
+ * top. Standing 1 and 3 open rooms; 2, 4 and 5 raise the bonus to 5%, 10% and 20%,
+ * so standing keeps paying once every room is open (owner decision 2026-11-04).
+ */
+export const STANDING_BONUS: readonly number[] = [0, 0, 0.05, 0.05, 0.1, 0.2]
+/** The standings that raise the bonus (each one higher than the last). */
+export const BONUS_STEPS: readonly number[] = STANDING_BONUS.flatMap((r, i) => (i > 0 && r > STANDING_BONUS[i - 1]! ? [i] : []))
+/** The bonus a night's table result earns at a standing: nothing on a night down or even. */
+export function standingBonus(standing: number, tableWinnings: number): number {
+  const rate = STANDING_BONUS[Math.max(0, Math.min(STANDING_MAX, Math.floor(standing)))] ?? 0
+  return tableWinnings > 0 ? Math.round(rate * tableWinnings) : 0
+}
 
 /** Jobs board: hustles offered per night (met by playing), and their fixed pay. */
 export const HUSTLES_PER_NIGHT = 2

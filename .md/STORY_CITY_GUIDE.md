@@ -26,8 +26,9 @@ playable once it has content. Fields: `id`, `name`, `act` (1-4), `feel`, `minBet
 `lib/story/rotation.ts` (seeded by city+night+room; keeps at least one game from the room's previous
 night; offers all if the city has 4 or fewer). It uses the store's global `night`. Give a city at
 least 5-6 games so rotation means something. The rooms are gated by **standing in that town**
-(`VENUE_REP` `[0, 1, 2]` in `lib/story/economy.ts`): the dive always, the main floor at standing 1,
-the high-roller room at 2. The hub lists lineups; `app/story/[game]/page.tsx` redirects games not in
+(`VENUE_REP` `[0, 1, 3]` in `lib/story/economy.ts`): the dive always, the main floor at standing 1,
+the high-roller room at 3. Standing 2, 4 and 5 open nothing; they raise the **standing bonus**
+(section 4). The hub lists lineups; `app/story/[game]/page.tsx` redirects games not in
 tonight's lineup in the room you sat in. `check:story` tests every city's rotation and that every
 house game appears in at least two cities.
 
@@ -59,7 +60,8 @@ Export `<CITY>_SCENES` and `<CITY>_ERRANDS`; register them in `lib/story/content
 
 **Triggers** (`SceneTrigger`): `arrival` (first arrival in the city; queued on travel), `talk`
 (`character`: the first scene whose `if` holds and not yet seen), `boss-intro`, `boss-win`,
-`boss-loss`, `bust` (after a bust in this city), `tutorial` (Dustwater's walkthrough only: queued
+`boss-loss`, `bust` (after a bust in this city), `dawn` (queued the morning after a night here, the first
+one whose `if` holds and whose errand is due; for jobs from Jo, who has no street spot), `tutorial` (Dustwater's walkthrough only: queued
 after arrival on a new story, replayable from the hub menu; `once: false`). `once` defaults true;
 `once: false` scenes replay (boss-intro, boss-loss, bust).
 
@@ -81,28 +83,57 @@ save played through (arrival, walkthrough, a night, comps by room, bust, marker,
 **Numbers quoted in dialogue must match the economy.** Checked today: the boss buy-in ("fifty times
 the house minimum to sit"), the Notary's marker ("twenty times the minimum, repaid at one and a
 half"), and Jo's walkthrough (dive/main floor limits, the room standing thresholds, the standing a job
-aims and a bust costs, the standing cap, bets a night, games per room, side goals, rematch wait;
-the `QUOTES` list). Prefer "times the house minimum" phrasing; if you
+aims and a bust costs, the standing cap, the standing bonus steps and rates, the errand schedule,
+bets a night, games per room, side goals, rematch wait; the `QUOTES` list). Prefer "times the house minimum" phrasing; if you
 quote a new number, add its regex to `QUOTES` or `WORDS` there.
 
 ## 4. Errands and hustles
 
-**Errands** (`Errand`: `id`, `city`, `giver`, `title`, `task`, `goal`, `opens?`, `pay?`, `rep?`):
-4 per city (`ERRANDS_PER_CITY`), 6m each (`ERRAND_PAY_M`), paid when done. `goal`: `minigame`
+**Errands** (`Errand`: `id`, `city`, `giver`, `title`, `task`, `goal`, `night`, `opens?`, `pay?`, `rep?`):
+**5 per city** (`ERRANDS_PER_CITY`), 6m each (`ERRAND_PAY_M`), paid when done. `goal`: `minigame`
 `{ minigame, score 0-1 }` (checked on every play of that giver's minigame, practice included),
 `streak` `{ game, wins }` (the game must be in the city's list), `night-up` (end a night at the
-casino up), `big-win` `{ mult }` (one bet returning mult x the stake or more). `opens` is a
-`Condition` (usually `{ flag: 'met-<giver>' }` set by their talk scene); a scene can also start it
-with `{ errand, step: 'start' }`. The checker verifies the giver exists, a minigame goal has a giver
-in that city, and a streak game is in the city.
+casino up), `big-win` `{ mult }` (one bet returning mult x the stake or more). The checker verifies
+the giver exists, a minigame goal has a giver in that city, and a streak game is in the city.
+
+**Errands come out night by night** (owner decision 2026-11-04). Nobody hands a stranger every job
+at once: on the first night in a town **two people** want a word (one job each), then **one more job
+each night after** (`ERRANDS_FIRST_NIGHT` 2, `ERRANDS_EACH_NIGHT_AFTER` 1, `errandsOutBy(cityNight)`).
+So the five `night` values of a city are exactly `0, 0, 1, 2, 3` (night 0 = the first night there;
+`cityNight` in the save). How a job gets out:
+
+- **Hand it over in a scene** with `{ errand, step: 'start' }` (in an `end` node or a choice). The
+  store's `sceneFor` holds back any scene that starts an errand whose `night` hasn't come yet, so the
+  giver's "!" (the hub's talk badge) only shows from that night. Use a `talk` scene with the giver
+  (`if: { flag: 'met-<giver>' }` for a second job, so their first scene plays first), or a `dawn`
+  scene for Jo. Put the start on every path through the scene (Pike's "Walk on" still hears the job).
+- **Or open it on a condition** with `opens` (only for a first-night job whose first talk has a path
+  that skips the start, like Marta's). `openErrands` also waits for `night`.
+
+Dustwater as the model: night 0 Marta's bar shift (her first talk) and Pike's marks (his first
+talk); night 1 Jo's seed money (`dustwater-jo-seed`, a dawn scene); night 2 Marta's trucker's bet
+(`dustwater-marta-trucker`); night 3 Pike's lookout job, his minigame at 4 of 5
+(`dustwater-pike-lesson`). The checker fails a city off the schedule, a job nobody hands out, a talk
+scene that hands out someone else's job, a later job handed out by anything but a talk or dawn
+scene, and one person with two first-night jobs.
 
 **Standing.** Every errand has an optional `rep` (0-5, `errandStanding` in `lib/story/economy.ts`).
 It defaults to `ERRAND_STANDING` (1) for every errand, minigame jobs included, and `check:story`
-fails an errand that earns none. Write it out (`rep: 1`) so the intent is readable. **Every city
-needs at least 3 errands** that earn standing (all 4 do by default), so the high-roller room can
-open before the boss; `check:story` fails a city with fewer than 3. Since standing starts at 0 in each town,
-those jobs are the only way up, so make two of them easy to start (a talk scene, not a deep flag
-chain).
+fails an errand that earns none. Write it out (`rep: 1`) so the intent is readable. A city's five
+jobs must add up to `STANDING_MAX` (5) so the top bonus can be reached; `check:story` fails one that
+falls short. Standing starts at 0 in each town and the jobs are the only way up (a bust takes one
+off). What each step gives:
+
+| Standing | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| Gives | the dive | main floor | +5% bonus | high-roller room | +10% bonus | +20% bonus |
+
+**The standing bonus** (`STANDING_BONUS`, `standingBonus` in `lib/story/economy.ts`): end a night
+up at the tables (payouts less stakes over the night's rounds, above 0) and the house adds that share
+of it at the end of the night, after comps. Standing as the night closes counts, so a job finished
+that night already raises it. It shows on the night's receipt and beside the stars in the HUD. It is
+the reason to keep doing jobs once every room is open. Same numbers for every city; a city changes
+nothing here.
 
 **Hustles** (`lib/story/hustles.ts`): two a night, 4m each, paid at the end of a night you played.
 Drawn from a shared `POOL` by `hustlesFor(city, night)` (seeded `hustles:<city>:<night>`, so a reload
@@ -163,8 +194,9 @@ sit on the street at both layouts (screenshots below).
 2. Wire any story game settings the city's games need (section 7), with `pnpm sim:story`.
 3. Characters (section 2), portrait looks, chip colours.
 4. Minigames for its givers (section 5), then their `MinigameId` goals in errands.
-5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; 4 errands
-   (each worth 1 standing, 2 of them easy to start; one may be a minigame job).
+5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; 5 errands
+   (each worth 1 standing; `night` 0, 0, 1, 2, 3 with two different first-night givers; each later
+   one handed over by its giver's second `talk` scene or a Jo `dawn` scene; one may be a minigame job).
    Register in `content/index.ts`. Quote numbers only as the checker allows.
 6. Boss (section 6) and the boss page/table for the city.
 7. Scene art (section 8) or accept the generic street.
@@ -173,10 +205,10 @@ sit on the street at both layouts (screenshots below).
    Run the sim after any economy or game-list change; it models the room rotation, room comps and
    per-town standing. **Check the standing path in the sim**: is the city still clearable in about
    4-8 nights (median) per player type, with nobody stuck and no player type that can't reach the
-   high-roller room before the boss?
+   high-roller room before the boss? (The sim releases errands on the schedule and pays the bonus.)
 9. Playwright at 390x844 and 1440x900 (`deviceScaleFactor` 1, `pnpm dev`): new story or set
    `floored-story` in localStorage, play arrival, talk to everyone, check the rooms lock and unlock
-   as standing rises (0 / 1 / 2), play a night in each room (set `standing` for the town), end the
+   as standing rises (0 / 1 / 3), check who wants a word on nights 0-3, play a night in each room (set `standing` for the town), end the
    night (receipt), the map, the boss. Look at the screenshots.
 10. When the city ships to main, add its scene/errand/character ids to `SHIPPED` in
     `scripts/story/check-content.ts` (never remove ids). Update the handoff, plan section 11 and

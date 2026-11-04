@@ -6,6 +6,8 @@
  *  - every node reachable from the scene's start, every path ends (no dead ends),
  *    and a choice can never have all its options closed by its conditions;
  *  - every flag a condition reads is set somewhere;
+ *  - every city has ERRANDS_PER_CITY errands on the night schedule (two on the
+ *    first night, then one a night), each one handed out by a scene or a flag;
  *  - cities in rising stakes; every house game in at least two cities; every
  *    Tables game as both a cash room and a tournament;
  *  - shipped ids still exist (SHIPPED below: add to it, never remove from it).
@@ -13,8 +15,8 @@
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, ERRANDS, SCENES } from '@/lib/story/content'
 import {
-  BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, ERRAND_STANDING, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, MARKER_M, MARKER_REPAY, NIGHT_BETS,
-  STANDING_MAX, VENUE_MAX_M, VENUE_REP, errandStanding,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, ERRAND_STANDING, ERRANDS_PER_CITY, GAMES_PER_ROOM, HUSTLES_PER_NIGHT,
+  MARKER_M, MARKER_REPAY, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, errandStanding, errandsOutBy, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import type { Condition, Effect } from '@/lib/story/types'
@@ -88,17 +90,43 @@ for (const e of ERRANDS) {
   if (errandStanding(e) === 0) fail(`errand ${e.id}: every errand should earn standing`)
 }
 
-// The standing path: each city with content needs enough errands that earn standing
-// to open the high-roller room before the boss (at least 3), and its dive must be
-// able to deal the game an open streak job names.
+// The standing path: each city with content has ERRANDS_PER_CITY errands that earn
+// standing, enough to open both rooms and reach the top bonus (STANDING_MAX), and they
+// come out on the schedule: two on the first night in the town, then one a night.
+const startedBy = (id: string) =>
+  SCENES.filter((sc) =>
+    Object.values(sc.nodes).some((n) =>
+      (n.kind === 'end' ? (n.effects ?? []) : n.kind === 'choice' ? n.options.flatMap((o) => o.effects ?? []) : []).some((e) => 'errand' in e && e.errand === id && e.step === 'start'),
+    ),
+  )
 for (const c of CITIES) {
   const theirs = ERRANDS.filter((e) => e.city === c.id)
   if (!theirs.length) continue
-  const tableJobs = theirs.filter((e) => errandStanding(e) > 0).length
-  if (tableJobs < 3) fail(`city ${c.id}: ${tableJobs} errand${tableJobs === 1 ? '' : 's'} give standing (needs at least 3)`)
-  if (tableJobs < VENUE_REP[2]) fail(`city ${c.id}: standing from its jobs (${tableJobs}) can't open the high-roller room (needs ${VENUE_REP[2]})`)
-  if (VENUE_REP[1] > tableJobs) fail(`city ${c.id}: nothing opens the main floor (needs standing ${VENUE_REP[1]})`)
+  if (theirs.length !== ERRANDS_PER_CITY) fail(`city ${c.id}: ${theirs.length} errands (needs ${ERRANDS_PER_CITY})`)
+  const standingFromJobs = theirs.reduce((n, e) => n + errandStanding(e), 0)
+  if (standingFromJobs < STANDING_MAX) fail(`city ${c.id}: its jobs give standing ${standingFromJobs}, short of ${STANDING_MAX} (the top room and bonus)`)
+  for (let n = 0; n < ERRANDS_PER_CITY; n++) {
+    const out = theirs.filter((e) => e.night <= n).length
+    if (out !== errandsOutBy(n)) fail(`city ${c.id}: ${out} errands out by night ${n}, the schedule says ${errandsOutBy(n)}`)
+  }
+  for (const e of theirs) {
+    if (!Number.isInteger(e.night) || e.night < 0) fail(`errand ${e.id}: night ${e.night} is not a night in the town`)
+    const scenes = startedBy(e.id)
+    if (!scenes.length && !e.opens) fail(`errand ${e.id}: no scene hands it out and it has no opens condition`)
+    for (const sc of scenes) {
+      if (sc.city !== e.city) fail(`errand ${e.id}: handed out by ${sc.id} in another city`)
+      // The giver hands it over: by talking to them, or (for Jo and anyone without a street spot) at dawn or on arrival.
+      const by = sc.trigger.on === 'talk' ? sc.trigger.character : null
+      if (by && by !== e.giver) fail(`errand ${e.id}: given by ${e.giver} but handed out when talking to ${by}`)
+      if (e.night > 0 && sc.trigger.on !== 'talk' && sc.trigger.on !== 'dawn') fail(`errand ${e.id}: comes out on night ${e.night}, so a talk or dawn scene must hand it over (not ${sc.trigger.on})`)
+    }
+  }
+  // The givers who want a word on the first night: one job each.
+  const first = theirs.filter((e) => e.night === 0).map((e) => e.giver)
+  if (new Set(first).size !== first.length) fail(`city ${c.id}: one person hands out two first-night jobs`)
 }
+if (VENUE_REP[1] >= VENUE_REP[2] || VENUE_REP[2] > STANDING_MAX) fail('room standings must rise and fit under the standing cap')
+for (const step of BONUS_STEPS) if (VENUE_REP.includes(step)) fail(`standing ${step} both opens a room and raises the bonus`)
 
 for (const scene of SCENES) {
   const where = `scene ${scene.id}`
@@ -185,7 +213,7 @@ for (const c of CITIES) {
 
 // Numbers quoted in dialogue must match the economy.
 const allText = SCENES.flatMap((s) => Object.values(s.nodes).flatMap((n) => (n.kind === 'line' ? [n.text] : [])))
-const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, twelve: 12, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, hundred: 100 }
+const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, ten: 10, twelve: 12, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, hundred: 100 }
 const word = (w: string | undefined) => WORDS[(w ?? '').toLowerCase()]
 // Jo's walkthrough (and any line in the same shape) must quote the economy as it is.
 const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number | undefined, number | null][] }[] = [
@@ -199,6 +227,15 @@ const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number
   { re: /its own (\w+) games/i, what: 'games per room', want: (m) => [[word(m[1]), GAMES_PER_ROOM]] },
   { re: /(\w+) side goals/i, what: 'hustles a night', want: (m) => [[word(m[1]), HUSTLES_PER_NIGHT]] },
   { re: /back after (\w+) nights/i, what: 'the rematch wait', want: (m) => [[word(m[1]), BOSS_REMATCH_NIGHTS]] },
+  {
+    re: /At (\w+), (\w+) and (\w+) the house adds a bonus.*: (\w+), (\w+), then (\w+) percent/i,
+    what: 'the standing bonus',
+    want: (m) => [
+      ...BONUS_STEPS.map((step, i): [number | undefined, number] => [word(m[i + 1]), step]),
+      ...BONUS_STEPS.map((step, i): [number | undefined, number] => [word(m[i + 4]), Math.round(STANDING_BONUS[step]! * 100)]),
+    ],
+  },
+  { re: /Two people want a word on your first night, then (\w+) more each night after\. (\w+) jobs/i, what: 'the errand schedule', want: (m) => [[word(m[1]), 1], [word(m[2]), ERRANDS_PER_CITY]] },
 ]
 for (const t of allText) {
   for (const q of QUOTES) {
@@ -248,15 +285,31 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     }
     if (guard >= 50) fail(`Jo's walkthrough branch ${branch} doesn't end`)
   }
-  // Minigames pay once per giver per night; a good shift finishes Marta's errand (once she's met).
-  useStoryStore.setState({ flags: { ...st().flags, 'met-marta': true, 'met-pike': true } })
+  // Plays a scene to its end, taking the first open option at each choice.
+  const play = (id: string) => {
+    if (!st().startScene(id)) return fail(`scene ${id} can't start`)
+    let g = 0
+    while (st().scene && g++ < 50) {
+      const step = st().currentStep()!
+      if (step.kind === 'choice') st().pick(step.options[0]!.index)
+      else st().advance()
+    }
+  }
+  const out = () => st().openErrands().map((e) => e.id).sort().join()
+  // Night 0: two people want a word (Marta and Pike), each with one job; nobody else yet.
+  if (st().sceneFor({ on: 'talk', character: 'marta' }) !== 'dustwater-marta-first' || st().sceneFor({ on: 'talk', character: 'pike' }) !== 'dustwater-pike-first') fail('on the first night Marta and Pike want a word')
+  if (out() !== '') fail('no errand is out before anyone hands it over')
+  play('dustwater-marta-first')
+  play('dustwater-pike-first')
+  if (out() !== 'dustwater-marta-shift,dustwater-pike-marks') fail(`the first night gives two errands, got ${out()}`)
+  if (st().sceneFor({ on: 'talk', character: 'marta' }) || st().sceneFor({ on: 'talk', character: 'pike' })) fail('Marta and Pike have nothing more to say on the first night (their next jobs wait)')
+  // Minigames pay once per giver per night; a good shift finishes Marta's errand.
   const m0 = st().money
   const paid = st().playMinigame('marta', 'last-orders', 1)
   if (paid !== 3 * m || st().playMinigame('marta', 'last-orders', 1) !== 0) fail('minigame pays 3m at a perfect score, once a night')
   if (st().errands['dustwater-marta-shift'] !== 'done' || st().money !== m0 + 3 * m + 6 * m) fail('a perfect shift finishes the bar-shift errand (6m)')
-  if (st().rep() !== 1 || !st().venueOpen(1)) fail('a minigame errand earns standing 1 and opens the main floor')
-  // A night at the dive: table limit, bets, a streak errand, comps and hustles at the end.
-  if (st().startNight(2)) fail('the high-roller room needs standing 2')
+  if (st().rep() !== 1 || !st().venueOpen(1) || st().venueOpen(2)) fail('standing 1 opens the main floor, not the high-roller room')
+  // A night at the dive: table limit, bets, a streak errand, comps, the bonus and hustles at the end.
   if (!st().startNight(0)) fail('a night at the dive starts')
   if (st().wagerCap() !== Math.min(st().money, 20 * m)) fail('the dive caps a bet at 20m')
   for (let k = 0; k < 3; k++) {
@@ -264,18 +317,50 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     st().resolve('street-cups', 2.5 * m, true)
   }
   if (st().errands['dustwater-pike-marks'] !== 'done') fail('three Street Cups wins in a row finish Pike\'s errand')
-  if (st().rep() !== 2 || !st().venueOpen(2)) fail('a second errand earns standing 2 and opens the high-roller room')
-  if (st().errands['dustwater-marta-bet'] === 'done') fail('a 2.5× win must not finish the 3× errand')
+  if (st().rep() !== 2 || st().venueOpen(2)) fail('a second errand earns standing 2, which raises the bonus but opens no room')
   st().placeBet('hilo', m)
   st().resolve('hilo', 3 * m, true)
-  if (st().errands['dustwater-marta-bet'] !== 'done') fail('a 3× win finishes the trucker\'s-bet errand')
-  if (st().rep() !== 3) fail('a third errand earns standing 3')
+  if (st().errands['dustwater-marta-bet']) fail('a job that is not out yet can\'t be finished')
   if (st().betsLeft() !== 8) fail('four rounds leave 8 of 12 bets')
-  const night = st().endNight()
+  const tableWin = 3 * 1.5 * m + 2 * m
+  let night = st().endNight()
   if (!night.played || night.comps !== Math.round(COMPS_RATE[0] * 4 * m) || night.lodging !== 3 * m || st().tonight) fail('the night ends with comps (the dive share of bets) and lodging')
-  if (st().errands['dustwater-jo-stake'] !== 'done') fail('a night up finishes Jo\'s seed-money errand')
-  if (st().rep() !== 4) fail('Dustwater\'s four errands reach standing 4')
+  if (night.bonusRate !== STANDING_BONUS[2] || night.bonus !== standingBonus(2, tableWin) || night.bonus !== Math.round(0.05 * tableWin)) fail(`a night up at standing 2 adds 5% of the table win (got ${night.bonus})`)
   if (night.hustles.length !== 2) fail('two hustles on the board each night')
+  // Night 1: Jo, at dawn, with the seed-money job.
+  if (st().queue.join() !== 'dustwater-jo-seed') fail(`the morning after the first night queues Jo's job (got ${st().queue.join()})`)
+  play(st().queue[0]!)
+  useStoryStore.setState({ queue: [] })
+  if (out() !== 'dustwater-jo-stake') fail(`night 1 brings out one more errand, got ${out()}`)
+  if (st().sceneFor({ on: 'talk', character: 'marta' })) fail('Marta\'s second job waits for night 2')
+  st().startNight(1)
+  st().placeBet('hilo', m)
+  st().resolve('hilo', 0, true)
+  night = st().endNight()
+  if (night.bonus !== 0) fail('a night down earns no bonus')
+  if (st().errands['dustwater-jo-stake'] === 'done') fail('a night down does not finish the seed-money errand')
+  // Night 2: Marta's trucker; a 3× win finishes it.
+  if (st().queue.length) fail('no dawn scene once Jo\'s job is out')
+  play(st().sceneFor({ on: 'talk', character: 'marta' }) ?? 'missing')
+  if (out() !== 'dustwater-jo-stake,dustwater-marta-bet') fail(`night 2 brings out Marta's second job, got ${out()}`)
+  st().startNight(1)
+  st().placeBet('hilo', m)
+  st().resolve('hilo', 3 * m, true)
+  if (st().errands['dustwater-marta-bet'] !== 'done' || st().rep() !== 3 || !st().venueOpen(2)) fail('a 3× win finishes the trucker\'s bet; standing 3 opens the high-roller room')
+  night = st().endNight()
+  if (st().errands['dustwater-jo-stake'] !== 'done' || st().rep() !== 4) fail('a night up finishes Jo\'s seed money (standing 4)')
+  if (night.bonusRate !== STANDING_BONUS[4] || night.bonus !== standingBonus(4, 2 * m)) fail('the bonus uses standing as the night closes (a job finished tonight counts)')
+  // Night 3: Pike's lesson, his minigame at 4 of 5.
+  play(st().sceneFor({ on: 'talk', character: 'pike' }) ?? 'missing')
+  st().playMinigame('pike', 'shuffle-tracker', 0.6)
+  if (st().errands['dustwater-pike-lesson'] === 'done') fail('3 of 5 shuffles is not enough for Pike\'s lesson')
+  st().playMinigame('pike', 'shuffle-tracker', 0.8)
+  if (st().errands['dustwater-pike-lesson'] !== 'done' || st().rep() !== 5) fail('Dustwater\'s five errands reach standing 5')
+  if (st().sceneFor({ on: 'talk', character: 'marta' }) || st().sceneFor({ on: 'talk', character: 'pike' }) || out() !== '') fail('every job is out and done after night 3')
+  st().startNight(2)
+  st().placeBet('hilo', 10 * m)
+  st().resolve('hilo', 20 * m, true)
+  if (st().endNight().bonus !== Math.round(0.2 * 10 * m)) fail('standing 5 adds 20% of a night\'s table win')
   // Comps by room: a better room gives a bigger share, each with its own cap.
   const standingBefore = st().standing
   for (const v of [1, 2] as const) {
@@ -331,8 +416,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   const holding = st().money
   if (!st().travelNext() || st().city !== 'rattlesnake-junction' || st().money !== holding - fare || fare !== 200) fail('travel to the next city costs 20 of its minimum bets')
   if (st().rep() !== 0 || !st().venueOpen(0) || st().venueOpen(1)) fail('a town you have not worked starts you at standing 0')
-  useStoryStore.setState({ standing: { dustwater: 3, 'rattlesnake-junction': 2 } })
-  if (st().rep() !== 2 || !st().venueOpen(2)) fail('a town you go back to remembers its standing')
+  useStoryStore.setState({ standing: { dustwater: 1, 'rattlesnake-junction': 3 } })
+  if (st().rep() !== 3 || !st().venueOpen(2)) fail('a town you go back to remembers its standing')
 }
 
 console.log(`${SCENES.length} scenes, ${ERRANDS.length} errands, ${CHARACTERS.length} characters, ${CITIES.length} cities`)

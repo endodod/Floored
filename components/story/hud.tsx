@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { forwardRef, type ReactNode } from 'react'
 import { ChevronLeft, Star } from 'lucide-react'
 import { CITY_BY_ID } from '@/lib/story/cities'
-import { NIGHT_BETS, STANDING_MAX } from '@/lib/story/economy'
+import { NIGHT_BETS, STANDING_BONUS, STANDING_MAX } from '@/lib/story/economy'
 import { useStoryStore, VENUE_NAMES } from '@/store/story-store'
 import { cn } from '@/lib/utils'
 import { formatChips } from '@/utils/format'
@@ -98,6 +98,7 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
   const city = CITY_BY_ID.get(cityId)!
   const betsLeft = tonight ? Math.max(0, NIGHT_BETS - tonight.bets) : null
   const low = moneyNow < city.minBet
+  const bonus = STANDING_BONUS[rep] ?? 0
 
   return (
     <header className={cn('st-hud relative z-30 flex h-[52px] shrink-0 items-center gap-1.5 px-2 sm:gap-2.5 sm:px-3', className)}>
@@ -129,11 +130,22 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
         </span>
       </div>
 
-      <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 lg:flex')} role="group" aria-label={`Standing in ${city.name}`}>
+      <div
+        className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 lg:flex')}
+        role="group"
+        aria-label={`Standing in ${city.name}${bonus ? `, ${Math.round(bonus * 100)}% bonus on a night up` : ''}`}
+      >
         <span className="felt-print block max-w-[240px] truncate !text-[9px] !tracking-[0.1em]" title={`Standing in ${city.name}`}>
           Standing in {city.name}
         </span>
-        <StandingStars standing={rep} city={city.name} />
+        <span className="flex items-center gap-1.5">
+          <StandingStars standing={rep} city={city.name} />
+          {bonus > 0 && (
+            <span className="num text-[10.5px] font-bold leading-none text-gold" title={`A night up at the tables earns ${Math.round(bonus * 100)}% of the win on top`}>
+              +{Math.round(bonus * 100)}%
+            </span>
+          )}
+        </span>
       </div>
 
       {betsLeft != null && (
