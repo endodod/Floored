@@ -112,8 +112,8 @@ export type ErrandGoal =
   | { kind: 'minigame'; minigame: MinigameId; score: number }
   /** Win this many rounds in a row at one game. */
   | { kind: 'streak'; game: GameName; wins: number }
-  /** End a night at the casino up. */
-  | { kind: 'night-up' }
+  /** End a night at the casino up (by at least `atLeast` minimum bets, when given). */
+  | { kind: 'night-up'; atLeast?: number }
   /** Win this multiple or more of the stake on one bet. */
   | { kind: 'big-win'; mult: number }
 

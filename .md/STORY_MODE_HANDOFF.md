@@ -49,9 +49,12 @@ character only shows "!" from then; `openErrands` waits too. New `dawn` trigger,
 talk now hands it over on both paths), night 1 Jo's seed money (`dustwater-jo-seed`), night 2
 Marta's trucker's bet (`dustwater-marta-trucker`), night 3 the new **Lookout rates**
 (`dustwater-pike-lesson`, Pike's Shuffle Tracker at 4 of 5). Save version 4 keeps any of those jobs
-a save already had open, and marks the scene that now hands it over as played. Note: a bust still
-takes a point off, and the five jobs are the only way up, so a town where you went bust can't
-reach the 20% step any more (open question for the owner). How to set up a city:
+a save already had open, and marks the scene that now hands it over as played.
+**Spawned jobs** (same day, owner decision): once a town's errands are all out, one new job a
+night (at most) turns up for a giver with nothing open; undone jobs stay; one per person, so
+three at most in Dustwater. Varied templates in `lib/story/jobs.ts` (streak, big win, night up
+by a margin, minigame score; titles and wording vary), 3m-5m, +1 standing up to 5, so a bust
+can be worked back. Save version 5 adds `jobs`. `night-up` goals take an optional `atLeast`. How to set up a city:
 [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md) section 4.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
@@ -74,6 +77,7 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Standing (2026-11-03) | per town, 0 in every new town, remembered when you go back, max 5. +1 for every finished errand (minigame jobs too, since 2026-11-04). A bust −1 (never below 0); a boss win gives none. `VENUE_REP` `[0, 1, 3]`: dive / main floor / high-roller |
 | Standing bonus (2026-11-04) | standing 2 / 4 / 5: +5% / +10% / +20% of a winning night's table winnings, paid at the end of the night |
 | Errands (2026-11-04) | 5 a city, out over the nights: 2 people want a word the first night, then 1 job a night |
+| Spawned jobs (2026-11-04) | after the errands: at most 1 new job a night, varied; undone jobs stay; 1 per person at a time (max 3 in Dustwater); +1 standing, 3m-5m |
 | Rotation pin (2026-11-03) | while an errand naming a game is open, the dive always deals that game (deterministic draw kept) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
@@ -94,7 +98,7 @@ Port that generator to TypeScript; don't redraw from scratch.
 | 1 Economy | `lib/story/economy.ts`, `lib/story/cities.ts`, `lib/story/odds.ts`, `scripts/story/sim.ts` (`pnpm sim:story`) | Results in plan section 5. Tuning done: boss buy-in 50m (was 60), purse 150m, free lodging below 10m ("the car"). |
 | 1 Story game settings | `lib/story/odds.ts` (`STORY_SETTINGS`, `STORY_CHICKEN_ROAD_MULTS`, `storyHiloMult`, `STORY_SLOTS_PAYS`, `STORY_MINES_EDGE`, `STORY_POKER_PAYS`) | **Defined and simulated only; no engine reads them yet.** See 3b. |
 | 2 Content model | `lib/story/types.ts`, `lib/story/dialogue.ts` (pure scene runner), `lib/story/content/` (`characters.ts`, `dustwater.ts`, `index.ts`) | Dustwater has 11 scenes (arrival, walkthrough, Marta ×2, Pike ×2, Jo at dawn, boss intro/win/loss, bust) and 5 errands. |
-| 2 Save | `store/story-store.ts` (`floored-story`, version 4, synced as `story` via `lib/sync/keys.ts` + `components/account-sync.tsx`; v1 → v2 moves `rep` into `standing`) | |
+| 2 Save | `store/story-store.ts` (`floored-story`, version 5, synced as `story` via `lib/sync/keys.ts` + `components/account-sync.tsx`; v1 → v2 moves `rep` into `standing`) | |
 | 2 Checks | `scripts/story/check-content.ts` (`pnpm check:story`) | Content rules + the save's rules played through (scenes, minigame pay, a night with errands/hustles/comps, bust, marker, boss, travel). |
 | 3a Night rules | `store/story-store.ts`, `lib/story/hustles.ts` | Venues, table limits, bets/payouts, hustles, comps, errand goals, bust → standing −1 + bust scene, marker effect, scene queue, news. |
 | Engine export | `games/slots/engine.ts` exports `REEL` and `resolveReels` | no behaviour change |

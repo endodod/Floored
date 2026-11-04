@@ -9,6 +9,7 @@ import {
   MINIGAME_MAX_M, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
+import { JOB_PAY_M } from '@/lib/story/jobs'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { VENUE_NAMES } from '@/store/story-store'
 import { formatChips } from '@/utils/format'
@@ -136,6 +137,9 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
         <p>Errands: jobs people give you. Each pays {money(ERRAND_PAY_M * m)} the moment it is done and earns {ERRAND_STANDING} standing.</p>
         <p>
           A town has {ERRANDS_PER_CITY} of them, and they come out over your first nights there: {ERRANDS_FIRST_NIGHT} people want a word on the first night, then {ERRANDS_EACH_NIGHT_AFTER} more each night after. Look for the mark over someone&apos;s head.
+        </p>
+        <p>
+          Once they are all out, work keeps coming: one new job a night ({money(JOB_PAY_M.min * m)} to {money(JOB_PAY_M.max * m)}, {ERRAND_STANDING} standing up to {STANDING_MAX}), a different one each time. A job you leave stays on the board, but each person gives you one at a time, so you never hold more than one per person. It is how you win back standing lost to a bust.
         </p>
       </Section>
 

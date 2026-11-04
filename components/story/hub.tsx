@@ -164,7 +164,8 @@ export function StoryHub() {
       }
     }),
     ...people.map((c, i): SceneSpot => {
-      const canTalk = !!s.sceneFor({ on: 'talk', character: c.id })
+      // A scene to play, or a job that turned up this morning.
+      const canTalk = !!s.sceneFor({ on: 'talk', character: c.id }) || s.jobs.some((j) => j.giver === c.id && j.city === s.city && j.spawned === s.night)
       const paid = !!c.minigame && s.minigamePaidTonight(c.id)
       return {
         spot: config.spots[c.id] ? c.id : `p${i}`,
@@ -348,7 +349,10 @@ export function StoryHub() {
               </div>
             ))}
             <Actions>
-              <Button size="sm" variant="outline" disabled={!canTalk} onClick={() => talk(c.id)}>{canTalk ? 'Talk' : 'Nothing new to say'}</Button>
+              {(() => {
+                const hasScene = !!s.sceneFor({ on: 'talk', character: c.id })
+                return <Button size="sm" variant="outline" disabled={!hasScene} onClick={() => talk(c.id)}>{hasScene ? 'Talk' : 'Nothing new to say'}</Button>
+              })()}
               {c.minigame && (
                 <Button asChild size="sm" variant={paid ? 'secondary' : 'default'}>
                   <Link href={`/story/minigame/${c.minigame}`}>{paid ? 'Practice' : 'Play'}</Link>
@@ -580,6 +584,7 @@ export function StoryHub() {
 
         {jobsOpen && !overlayOn && (
           <Notebook
+            minBet={m}
             hustles={hustles.map((h) => ({ id: h.id, text: h.text, met: !!night && h.met(night.rounds) }))}
             errands={errands}
             hustlePay={HUSTLE_PAY_M * m}

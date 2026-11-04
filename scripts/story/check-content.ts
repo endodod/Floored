@@ -19,6 +19,8 @@ import {
   MARKER_M, MARKER_REPAY, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, errandStanding, errandsOutBy, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
+import { isJob, JOB_PAY_M, JOB_TEMPLATES, spawnJob } from '@/lib/story/jobs'
+import { CITY_BY_ID } from '@/lib/story/cities'
 import type { Condition, Effect } from '@/lib/story/types'
 import { GAMES } from '@/lib/game-catalog'
 import type { TableGameName } from '@/lib/tables/types'
@@ -361,6 +363,42 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   st().placeBet('hilo', 10 * m)
   st().resolve('hilo', 20 * m, true)
   if (st().endNight().bonus !== Math.round(0.2 * 10 * m)) fail('standing 5 adds 20% of a night\'s table win')
+  // Spawned jobs: from the night after the last errand comes out, one new job a night for someone
+  // with nothing open; undone jobs stay; one per person, so at most three in Dustwater.
+  {
+    const jobs = () => st().openErrands().filter((e) => isJob(e.id))
+    if (jobs().length !== 1) fail(`the night after every errand is out, one job turns up (got ${jobs().length})`)
+    for (let k = 0; k < 4; k++) st().endNight()
+    const held = jobs()
+    if (held.length !== 3 || new Set(held.map((j) => j.giver)).size !== 3) fail(`undone jobs stay, one per person, three at most (got ${held.map((j) => j.giver).join()})`)
+    if (held.filter((j) => j.goal.kind === 'streak').length > 1) fail('at most one open streak job')
+    if (held.some((j) => (j.pay ?? 0) < JOB_PAY_M.min || (j.pay ?? 0) > JOB_PAY_M.max)) fail('a job pays 3m to 5m')
+    // Finish one (a minigame job where there is one, else a table job) and the next night brings exactly one new one.
+    useStoryStore.setState({ standing: { dustwater: 2 }, money: 1000 * m })
+    const j = held.find((x) => x.goal.kind === 'minigame') ?? held[0]!
+    const goal = j.goal
+    if (goal.kind === 'minigame') st().playMinigame(j.giver, goal.minigame, 1)
+    else {
+      st().startNight(2)
+      if (goal.kind === 'streak') for (let k = 0; k < goal.wins; k++) { st().placeBet(goal.game, m); st().resolve(goal.game, 2 * m, true) }
+      else { st().placeBet('hilo', 30 * m); st().resolve('hilo', 30 * m * 6, true) }
+    }
+    st().endNight()
+    if (jobs().some((x) => x.id === j.id) || st().rep() < 3) fail(`a finished job (${j.goal.kind}) leaves the board and earns standing back`)
+    if (jobs().length !== 3) fail(`a finished job frees its giver for the next night's job (got ${jobs().length})`)
+    // Variety: across nights the jobs differ in kind, numbers and words.
+    const city = CITY_BY_ID.get('dustwater')!
+    const givers = CHARACTERS.filter((c) => ['marta', 'pike', 'jo'].includes(c.id))
+    const made = Array.from({ length: 60 }, (_, n) => spawnJob({ city, night: n, givers, open: [], games: city.games as never }))
+    if (made.some((x) => !x)) fail('a giver with nothing open always gets a job')
+    const kinds = new Set(made.map((x) => x!.goal.kind))
+    if (kinds.size !== JOB_TEMPLATES.length) fail(`jobs use every kind (got ${[...kinds].join()})`)
+    if (new Set(made.map((x) => x!.task)).size < 20) fail('jobs vary their wording and numbers')
+    if (made.some((x) => x!.goal.kind === 'minigame' && x!.giver === 'jo')) fail('a minigame job only goes to someone with a minigame')
+    const full = spawnJob({ city, night: 1, givers, open: held, games: city.games as never })
+    if (full) fail('no job when everyone already has one')
+    useStoryStore.setState({ jobs: [] })
+  }
   // Comps by room: a better room gives a bigger share, each with its own cap.
   const standingBefore = st().standing
   for (const v of [1, 2] as const) {

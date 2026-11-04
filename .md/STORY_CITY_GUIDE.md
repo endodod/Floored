@@ -128,6 +128,21 @@ off). What each step gives:
 |---|---|---|---|---|---|---|
 | Gives | the dive | main floor | +5% bonus | high-roller room | +10% bonus | +20% bonus |
 
+**Spawned jobs** (`lib/story/jobs.ts`, owner decision 2026-11-04). Once a town's five errands are
+all out (from the night after the last errand's `night`), work keeps coming: **one new job a
+night at most**, for a giver who has nothing open with you (story errand or job). A job you
+don't finish **stays**, and each person holds **one at a time**, so a town never has more open
+jobs than it has errand givers (Dustwater: Marta, Pike, Jo, so three). `spawnJob` draws it from
+`JOB_TEMPLATES`, seeded by city and night: a streak at one of the city's games (2 or 3 wins), a
+big win (2.5x to 5x), a night up (by any amount, or by 5/10/20 minimum bets), or a score at the
+giver's own minigame (60%, 80%, perfect; only for givers with one). Titles and wording vary too.
+At most one streak job is open at once, so the dive keeps room for its own games. A job pays 3m
+to 5m by difficulty (`JOB_PAY_M`) and earns 1 standing up to 5: it is how a town where you went
+bust gets worked back up. Jobs live in the save's `jobs` (ids `job:<city>:<night>`), show in the
+jobs book marked "Job", and give their giver a "!" on the morning they turn up. **Nothing to do
+per city**: givers come from the city's errands, games from its game list. If a city's people
+need their own job flavour, add templates there rather than writing jobs by hand.
+
 **The standing bonus** (`STANDING_BONUS`, `standingBonus` in `lib/story/economy.ts`): end a night
 up at the tables (payouts less stakes over the night's rounds, above 0) and the house adds that share
 of it at the end of the night, after comps. Standing as the night closes counts, so a job finished
@@ -197,6 +212,7 @@ sit on the street at both layouts (screenshots below).
 5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; 5 errands
    (each worth 1 standing; `night` 0, 0, 1, 2, 3 with two different first-night givers; each later
    one handed over by its giver's second `talk` scene or a Jo `dawn` scene; one may be a minigame job).
+   Spawned jobs follow on their own; check the givers are who you want handing out work.
    Register in `content/index.ts`. Quote numbers only as the checker allows.
 6. Boss (section 6) and the boss page/table for the city.
 7. Scene art (section 8) or accept the generic street.

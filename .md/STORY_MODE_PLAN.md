@@ -162,6 +162,7 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 | **Comps** | **a share of what you wagered that night, win or lose, by room: 4% dive / 5% main floor / 6% high-roller** | **capped per night at 10m / 15m / 20m** | none |
 | Venue night | 12 bets, max 20m / 100m / no max; each room deals its own 4 of the city's games each night (`lib/story/rotation.ts`), and the dive keeps any game an open errand names | one per night | game edge |
 | Standing | 0 in every town, 5 at most; +1 per errand, −1 per bust (never below 0); opens the main floor at 1 and the high-roller room at 3 | per town (`VENUE_REP` `[0, 1, 3]`) | — |
+| Spawned jobs | 3m–5m each by difficulty; **+1 standing** up to 5 | after the 5 errands: at most 1 new a night; undone jobs stay; 1 per person at a time | none |
 | **Standing bonus** | a night up at the tables earns **+5% / +10% / +20%** of the night's table winnings (payouts less stakes) at standing **2 / 4 / 5** (`STANDING_BONUS`) | every night you finish up | none |
 | Tables session | stake-based | one per night | skill + luck |
 | Lodging | **−3m** per night; **free below 10m** (you sleep in your car) | every night | — |
@@ -202,6 +203,10 @@ before = four errands a city, rooms at standing 1 / 2, no bonus; after = five er
 ~152 → ~130; high variance 7 / 74 → 6 / 66, ~277 → ~245, busts ~9.6 → ~8.3; bold 3 / 17 →
 3 / 15, ~77 → ~68, busts ~2.6 → ~2.1. The fifth errand's pay and the bonus speed every type up a
 little; balanced play now sits at the bottom of the 4–8 target. All checks pass.
+With **spawned jobs** on top (one a night after the errands, one per giver, three givers; a
+gambling player clears one a night, a never-gambler only minigame jobs): never gambles 10 / 81,
+~334 nights; cautious 5 / 14, ~75; balanced 4 / 24, ~103; high variance 6 / 50, ~194, busts
+~1.3; bold 3 / 12, ~60, busts ~0.8. Busts fall because jobs pay without risk; all checks pass.
 
 The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
 bet softens the losses. No other numbers were retuned.
@@ -443,6 +448,9 @@ Answered (2026-11-03):
 18. **Five errands a city, out night by night** (2026-11-04): two people want a word on the first
     night (one job each), then one more job each night after (`night` 0, 0, 1, 2, 3 on the
     errands). A scene that hands out a job waits for its night. Jo's jobs come in `dawn` scenes.
+19. **Spawned jobs after the errands** (2026-11-04): at most one new job a night, varied
+    (`lib/story/jobs.ts`); a job left undone stays; one per person at a time, so at most one
+    per giver open. They earn standing back after a bust.
 17. **A bust costs 1 standing**; a boss win no longer gives any (it pays the purse and clears
     the town). Version-1 saves migrate `rep` into the current town, capped by its finished
     errands.

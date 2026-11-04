@@ -10,7 +10,11 @@
  *    (minigame jobs too), a bust takes one off, and the player moves up to the best room
  *    their standing opens (their own preferred room or lower). Errands come out on the
  *    schedule (errandsOutBy: two the first night, then one a night) and the player
- *    finishes at most one a night. A night up at the tables earns the standing bonus. Prints nights per
+ *    finishes at most one a night. Once all are out, one spawned job a night turns up for
+ *    a giver with none open (JOB_GIVERS, so at most that many open); undone jobs stay. A
+ *    player who never bets can only clear minigame jobs, so the rest pile up and block
+ *    their givers. On a night with no errand to finish the player clears one job.
+ *    A night up at the tables earns the standing bonus. Prints nights per
  *    city and over the circuit, busts, boss tries, and recovery time after a bust,
  *    and checks the plan's targets.
  *
@@ -24,6 +28,7 @@ import {
   HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
   errandsOutBy, standingBonus,
 } from '@/lib/story/economy'
+import { JOB_PAY_M, noBetShare } from '@/lib/story/jobs'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
 import type { GameName } from '@/store/types'
 import { createRng } from '@/utils/rng'
@@ -74,6 +79,8 @@ interface PlayerType {
 }
 
 /** The room a standing figure opens: the best one it reaches. */
+/** Errand givers a city has (Dustwater: Marta, Pike, Jo); spawned jobs are one per giver. */
+const JOB_GIVERS = 3
 const roomFor = (standing: number): 0 | 1 | 2 => (standing >= VENUE_REP[2] ? 2 : standing >= VENUE_REP[1] ? 1 : 0)
 
 const all = (city: GameName[]) => city.flatMap((g) => storyOdds(g, poker))
@@ -127,6 +134,9 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
     let errandsDone = 0
+    // Open spawned jobs: true when a player who never bets can do it (a minigame job).
+    const jobs: boolean[] = []
+    const lastErrandNight = ERRANDS_PER_CITY - errandsOutBy(0)
     let standing = 0
     let wait = 0
     let brokeSince: number | null = null
@@ -151,6 +161,16 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       // One errand a night, from those out by tonight (errandsOutBy never runs behind that).
       const finishesOne = errandsDone < Math.min(ERRANDS_PER_CITY, errandsOutBy(n))
       if (finishesOne) { money += ERRAND_PAY_M; errandsDone++ }
+      // Spawned jobs from the night after the last errand comes out: one a night, one per giver.
+      if (n > lastErrandNight && jobs.length < JOB_GIVERS) {
+        const minigameShare = (Math.min(city.minigameGivers, JOB_GIVERS) / JOB_GIVERS) * noBetShare(true)
+        jobs.push(rng() < minigameShare)
+      }
+      let clearsJob = false
+      if (!finishesOne) {
+        const k = t.gamble ? (jobs.length ? 0 : -1) : jobs.indexOf(true)
+        if (k >= 0) { jobs.splice(k, 1); clearsJob = true; money += (JOB_PAY_M.min + JOB_PAY_M.max) / 2 }
+      }
       if (t.gamble && money >= 1) {
         for (let h = 0; h < HUSTLES_PER_NIGHT; h++) if (rng() < 0.75) money += HUSTLE_PAY_M
         let turnover = 0
@@ -176,10 +196,10 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
         money += Math.min(COMPS_RATE[venue] * turnover, COMPS_CAP_M[venue])
         // The errand finished tonight counts toward tonight's bonus (as in the store). Money here is in m, and
         // standingBonus rounds to whole units, so it works in hundredths of m.
-        money += standingBonus(Math.min(STANDING_MAX, standing + (finishesOne ? 1 : 0)), tableNet * 100) / 100
+        money += standingBonus(Math.min(STANDING_MAX, standing + (finishesOne || clearsJob ? 1 : 0)), tableNet * 100) / 100
       }
       // An errand finished tonight lifts standing (every errand does, minigame jobs too).
-      if (finishesOne) standing = Math.min(STANDING_MAX, standing + 1)
+      if (finishesOne || clearsJob) standing = Math.min(STANDING_MAX, standing + 1)
       if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
       n++
       totalNights++

@@ -7,6 +7,7 @@ import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import type { Errand } from '@/lib/story/types'
 import { CHARACTER_BY_ID } from '@/lib/story/content/characters'
 import { errandStanding } from '@/lib/story/economy'
+import { isJob } from '@/lib/story/jobs'
 import { formatChips } from '@/utils/format'
 
 const money = (n: number) => `$${formatChips(n)}`
@@ -21,6 +22,7 @@ export function Notebook({
   hustles,
   errands,
   hustlePay,
+  minBet,
   nightOn,
   lastNet,
   onLastNight,
@@ -29,6 +31,8 @@ export function Notebook({
   hustles: { id: string; text: string; met: boolean }[]
   errands: Errand[]
   hustlePay: number
+  /** The city's minimum bet: job pay is in multiples of it. */
+  minBet: number
   nightOn: boolean
   lastNet: number | null
   onLastNight?: () => void
@@ -103,6 +107,7 @@ export function Notebook({
                       <span className="block text-[13.5px] font-bold leading-5">{e.title}</span>
                       <span className="block text-[12.5px] leading-[17px] text-[#5a4f43]">{e.task}</span>
                       <span className={`mt-0.5 block font-mono text-[10px] font-bold uppercase tracking-[0.14em] ${errandStanding(e) ? 'text-[#1d5a3e]' : 'text-[#6f6354]'}`}>
+                        {isJob(e.id) ? `Job · ${money((e.pay ?? 0) * minBet)} · ` : ''}
                         {errandStanding(e) ? `+${errandStanding(e)} standing` : 'Pays only'}
                       </span>
                       <span className="sr-only">From {CHARACTER_BY_ID.get(e.giver)?.name ?? e.giver}</span>
