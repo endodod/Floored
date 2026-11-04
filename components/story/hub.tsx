@@ -278,8 +278,8 @@ export function StoryHub() {
                       href={`/story/${g}`}
                       className="tile st-game-tile flex min-h-[150px] w-full flex-col items-center gap-1 rounded-lg px-3 pb-3 pt-2 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold sm:min-h-[164px] sm:gap-1.5"
                     >
-                      {/* The game's picture sits in its own band above the name, a little right of centre. */}
-                      <span aria-hidden className="flex min-h-[84px] w-full flex-1 items-center justify-center pl-12 sm:min-h-[92px] sm:pl-28">
+                      {/* The game's picture sits in its own band above the name, just off centre. */}
+                      <span aria-hidden className="flex min-h-[84px] w-full flex-1 items-center justify-center pl-4 sm:min-h-[92px] sm:pl-0 sm:pr-4">
                         <span className="tile-suit tile-suit-vivid !relative !right-auto !top-auto !text-[72px] sm:!text-[84px]">{entry?.symbol ?? SUITS[i % 4]}</span>
                       </span>
                       <span className="text-[15px] font-semibold leading-5 text-ink sm:text-[17px]">{entry?.label ?? g}</span>
