@@ -95,6 +95,12 @@ badge for a minigame job you hold. The jobs book and person card name the kind a
 Save version 7 (`jobOffered` → `jobNight`, `minigameNight` dropped). **Open:** the sim's
 never-gambler is now stuck (table jobs they can't do fill all three givers, and nothing else
 pays), and balanced/high-variance players are slower with more busts; waiting on the owner.
+**Same day, owner's answer:** offers nobody takes leave after `JOB_OFFER_NIGHTS` (2) nights (an
+expired offer was never given, so it can come back); a taken job can be dropped from the
+person's card (`dropJob`: no pay, no standing, giver free); and the never-gambler is no longer a
+sim target (shown for reference; it still can't save the buy-in on minigame jobs alone). Sim
+(3000, seed 1) nights per city median / worst 10%: cautious 7 / 19, balanced 5 / 31, high
+variance 7 / 60 (busts ~5.8), bold 4 / 16 (busts ~2.9). All checks pass.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).

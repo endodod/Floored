@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import type { City } from '@/lib/story/cities'
 import {
   BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
-  JOB_LIMIT, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_JOB_PAY_M,
+  JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_JOB_PAY_M,
   NIGHT_BETS, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
@@ -137,7 +137,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
           Jobs: work people hand you, two kinds. A table job (a goal at the casino) pays {money(TABLE_JOB_PAY_M.min * m)} to {money(TABLE_JOB_PAY_M.max * m)} the moment it is done and earns {JOB_STANDING} standing, up to {STANDING_MAX}. A minigame job pays {money(MINIGAME_JOB_PAY_M.min * m)} to {money(MINIGAME_JOB_PAY_M.max * m)} and earns no standing.
         </p>
         <p>
-          Each night one of each turns up, at two people, starting with your first night. Look for the briefcase over someone&apos;s head and talk to them; say not now and the job waits with them until you come back for it.
+          Each night one of each turns up, at two people, starting with your first night. Look for the briefcase over someone&apos;s head and talk to them. Say not now and the job waits with them for {JOB_OFFER_NIGHTS} nights, then goes to someone else. A job you took can be dropped from that person&apos;s card: no pay, and they can offer another.
         </p>
         <p>
           Each person gives one job at a time and has nothing new until it is done, and a town gives you at most {JOB_LIMIT} at once, taken or waiting. With one place left, it is a coin flip which kind comes. A town never gives you the same table job twice. Table jobs are how you win back standing lost to a bust.

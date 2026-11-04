@@ -211,6 +211,11 @@ night; 3m–5m each): never gambles 23 / 104, ~494 nights; cautious 5 / 15, ~81;
 ~108; high variance 6 / 51, ~202, busts ~1.4; bold 4 / 13, ~66, busts ~1.1. Slower than before
 because the five 6m errands (two on night one) are gone; the never-gambler, who can only clear
 minigame jobs, slows most. All checks pass; no number was retuned.
+**Two job kinds** (same day: a minigame job and a table job a night; minigames only as one-attempt
+jobs at 6m–8m with no standing and no nightly pay; offers leave after 2 nights; jobs can be
+dropped): cautious 7 / 19, ~102; balanced 5 / 31, ~132; high variance 7 / 60, ~237, busts ~5.8;
+bold 4 / 16, ~79, busts ~2.9. The never-gambler can't save the buy-in on minigame jobs alone
+and is no longer a target (owner decision). All checks pass.
 
 The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
 bet softens the losses. No other numbers were retuned.
@@ -464,7 +469,8 @@ Answered (2026-11-03):
 21. **Two job kinds** (2026-11-04, amends 20): each night a minigame job and a table job at two
     givers (a coin flip for a last place). Minigames are only played as jobs: one attempt, 6m-8m,
     no standing, may repeat (not back to back). Table jobs 3m-5m, +1 standing, never repeat. Jo
-    runs Chip Count. Open: the never-gambler now gets stuck (see the handoff).
+    runs Chip Count. Offers nobody takes leave after 2 nights; a taken job can be dropped;
+    the never-gambler is not a sim target (never gambling is not a way to play the story).
 17. **A bust costs 1 standing**; a boss win no longer gives any (it pays the purse and clears
     the town). Version-1 saves migrate `rep` into the current town, capped by its finished
     errands.

@@ -6,7 +6,7 @@ import { CITIES, CITY_BY_ID, type CityId } from '@/lib/story/cities'
 import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_STANDING,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
   LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, NIGHT_BETS, STANDING_MAX, START_MONEY,
   TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
@@ -191,7 +191,12 @@ interface StoryActions {
   canTalk: (character: string) => boolean
   /** Talks to someone: their next scene, then their job offer (or the offer alone). */
   talkTo: (character: string) => boolean
-  /** Tonight's offers in this town (a minigame job and a table job) still due, where there is room (safe to call any time). */
+  /** Drops a job you took: no pay, no standing, and its giver is free again. */
+  dropJob: (id: string) => void
+  /**
+   * Tonight's offers in this town (a minigame job and a table job) still due, where
+   * there is room; first, offers left alone for JOB_OFFER_NIGHTS leave (safe to call any time).
+   */
   offerTonight: () => void
 
   // Nights
@@ -497,9 +502,28 @@ export const useStoryStore = create<StoryStore>()(
           }
           return offerId ? get().startScene(offerId) : false
         },
+        dropJob: (id) => {
+          const job = get().openJobs().find((j) => j.id === id)
+          if (!job) return
+          set((x) => ({ jobs: x.jobs.filter((j) => j.id !== id) }))
+          say(`Job dropped: ${job.title}`)
+          get().offerTonight()
+        },
         offerTonight: () => {
+          if (!get().started) return
+          // Offers nobody took for JOB_OFFER_NIGHTS nights leave; their givers can offer again.
+          const stale = get().jobs.filter((j) => j.city === get().city && j.status === 'offered' && get().night - j.night >= JOB_OFFER_NIGHTS)
+          if (stale.length) {
+            // Nobody took them, so they were never given: a giver may offer them again later.
+            const given = [...(get().jobsGiven[get().city] ?? [])]
+            for (const j of stale) {
+              const at = given.lastIndexOf(j.key)
+              if (at >= 0) given.splice(at, 1)
+            }
+            set((x) => ({ jobs: x.jobs.filter((j) => !stale.includes(j)), jobsGiven: { ...x.jobsGiven, [x.city]: given } }))
+            for (const j of stale) say(`${CHARACTERS.find((x) => x.id === j.giver)?.name ?? 'Someone'} gave the job to someone else: ${j.title}`)
+          }
           const s = get()
-          if (!s.started) return
           const c = city()
           const last = s.jobNight[s.city]
           const done = last?.night === s.night ? last.kinds : []

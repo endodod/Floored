@@ -12,8 +12,10 @@
  *    job while the town has room (JOB_LIMIT, one per giver; a coin flip when one place is
  *    left), from the first night. The player takes every offer. Each minigame job is one
  *    attempt that night (a score drawn per attempt): at the target it pays
- *    MINIGAME_JOB_PAY_M, short of it the job is lost. A player who bets finishes one table
- *    job a night; one who never bets can't, so table jobs pile up and block their givers.
+ *    MINIGAME_JOB_PAY_M, short of it the job is lost. A player who bets takes every offer
+ *    and finishes one table job a night; one who never bets leaves table offers alone, and
+ *    they leave after JOB_OFFER_NIGHTS. The never-gambler is shown but is not a target
+ *    (owner decision 2026-11-04: never gambling is not a way to play the story).
  *    A night up at the tables earns the standing bonus. Prints nights per
  *    city and over the circuit, busts, boss tries, and recovery time after a bust,
  *    and checks the plan's targets.
@@ -25,7 +27,7 @@ import { CITIES, type City } from '@/lib/story/cities'
 import { gamesFor } from '@/lib/story/rotation'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE,
-  HUSTLE_PAY_M, JOB_LIMIT, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
+  HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
   standingBonus,
 } from '@/lib/story/economy'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
@@ -96,6 +98,9 @@ const riskiest: Pick = (city) => maxBy(all(city).filter((b) => rtpOf(b) >= 0.9),
 // For an all-in: the best-returning bet that wins at least 40% of the time.
 const coinFlipLike: Pick = (city) => maxBy(all(city).filter((b) => 1 - lossChanceOf(b) >= 0.4).concat(minBy(all(city), lossChanceOf)), rtpOf)
 
+/** Shown in the table, but no target applies to it. */
+const NOT_A_TARGET = 'Never gambles'
+
 const TYPES: PlayerType[] = [
   { name: 'Never gambles', gamble: false, share: 0, pick: safest, reserve: 0, venue: 0 },
   { name: 'Cautious (5%)', gamble: true, share: 0.05, pick: safest, reserve: 20, venue: 1 },
@@ -132,8 +137,8 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     all.forEach((g) => seen.add(g))
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
-    // The town's jobs, by kind (one per giver).
-    const jobs: ('minigame' | 'table')[] = []
+    // The town's jobs (one per giver): kind, the night offered, and whether taken.
+    const jobs: { kind: 'minigame' | 'table'; at: number; taken: boolean }[] = []
     let standing = 0
     let wait = 0
     let brokeSince: number | null = null
@@ -156,13 +161,16 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       const list = gamesFor(city, totalNights, venue, [...seen])
       // Tonight's offers: a minigame job and a table job, while the town has room (a coin
       // flip with one place left).
+      // Offers nobody took leave after JOB_OFFER_NIGHTS.
+      for (let k = jobs.length - 1; k >= 0; k--) if (!jobs[k]!.taken && n - jobs[k]!.at >= JOB_OFFER_NIGHTS) jobs.splice(k, 1)
       const room = Math.min(JOB_LIMIT, JOB_GIVERS) - jobs.length
-      if (room >= 2) jobs.push('minigame', 'table')
-      else if (room === 1) jobs.push(rng() < 0.5 ? 'minigame' : 'table')
+      const offer = (kind: 'minigame' | 'table') => jobs.push({ kind, at: n, taken: t.gamble || kind === 'minigame' })
+      if (room >= 2) { offer('minigame'); offer('table') }
+      else if (room === 1) offer(rng() < 0.5 ? 'minigame' : 'table')
       // Every minigame job gets its one attempt tonight: a target of 60%, 80% or perfect,
       // paying 6m, 7m or 8m; short of it the job is lost.
       for (let k = jobs.length - 1; k >= 0; k--) {
-        if (jobs[k] !== 'minigame') continue
+        if (jobs[k]!.kind !== 'minigame') continue
         jobs.splice(k, 1)
         const tier = Math.floor(rng() * 3)
         const targetScore = [0.6, 0.8, 1][tier]!
@@ -170,7 +178,7 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       }
       // One table job finished a night, by a player who bets.
       let clearsJob = false
-      const k = t.gamble ? jobs.indexOf('table') : -1
+      const k = t.gamble ? jobs.findIndex((j) => j.kind === 'table' && j.taken) : -1
       if (k >= 0) { jobs.splice(k, 1); clearsJob = true; money += (TABLE_JOB_PAY_M.min + TABLE_JOB_PAY_M.max) / 2 }
       if (t.gamble && money >= 1) {
         for (let h = 0; h < HUSTLES_PER_NIGHT; h++) if (rng() < 0.75) money += HUSTLE_PAY_M
@@ -233,18 +241,18 @@ for (const [ti, t] of TYPES.entries()) {
   summary[t.name] = { perCity: median(per), circuit: median(tot), stuck: rs.length - ok.length }
   console.log(
     `  ${pad(t.name, 16)} ${pad(`${median(per)} / ${q(per, 0.9)}`, 38)} ${pad(`~${median(tot)} nights`, 18)} ${pad(busts.toFixed(1), 7)} ${pad(bosses.toFixed(1), 11)} ${rec.length ? `${median(rec)} / ${q(rec, 0.9)}` : '—'}` +
-      (rs.length - ok.length ? `  STUCK ${rs.length - ok.length}` : ''),
+      (rs.length - ok.length ? `  STUCK ${rs.length - ok.length}` : '') +
+      (t.name === NOT_A_TARGET ? '  (reference, not a target)' : ''),
   )
 }
 
-// Targets (plan section 5): nobody stuck; normal play 4–8 nights a city; gambling faster than never gambling.
-for (const [name, s] of Object.entries(summary)) if (s.stuck) fail(`${name}: ${s.stuck} circuits stuck`)
+// Targets (plan section 5): no player who bets gets stuck; normal play 4–8 nights a city.
+// The never-gambler is shown for reference only (owner decision 2026-11-04).
+for (const [name, s] of Object.entries(summary)) if (s.stuck && name !== NOT_A_TARGET) fail(`${name}: ${s.stuck} circuits stuck`)
 const balanced = summary['Balanced (15%)']!
 const cautious = summary['Cautious (5%)']!
-const never = summary['Never gambles']!
 if (balanced.perCity < 4 || balanced.perCity > 8) fail(`balanced play takes ${balanced.perCity} nights a city (target 4–8)`)
 if (cautious.perCity < 4 || cautious.perCity > 8) fail(`cautious play takes ${cautious.perCity} nights a city (target 4–8)`)
-if (never.circuit < 2 * balanced.circuit) fail(`never gambling (${never.circuit} nights) is not clearly slower than balanced play (${balanced.circuit})`)
 
 console.log(failed ? `\n${failed} checks failed` : '\nAll story economy checks passed')
 if (failed) process.exit(1)

@@ -21,7 +21,7 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, LODGING_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, LODGING_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
@@ -358,7 +358,12 @@ export function StoryHub() {
         art: <Face id={c.id} />,
         body: (
           <>
-            {job?.status === 'offered' && <SheetNote tone="gold">{c.name} has a {jobKindName(job)} for you. Talk to hear it.</SheetNote>}
+            {job?.status === 'offered' && (
+              <SheetNote tone="gold">
+                {c.name} has a {jobKindName(job)} for you. Talk to hear it.{' '}
+                {s.night - job.night >= JOB_OFFER_NIGHTS - 1 ? 'Last night to take it.' : `It goes to someone else after ${JOB_OFFER_NIGHTS} nights.`}
+              </SheetNote>
+            )}
             {job?.status === 'open' && (
               <div className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
                 <p className="felt-print !text-[9.5px]">Your {jobKindName(job)} · {jobReward(job, m)}</p>
@@ -376,7 +381,13 @@ export function StoryHub() {
                   <Link href={`/story/minigame/${c.minigame}`}>Play</Link>
                 </Button>
               )}
+              {job?.status === 'open' && (
+                <Button size="sm" variant="ghost" onClick={() => s.dropJob(job.id)}>
+                  Drop job
+                </Button>
+              )}
             </Actions>
+            {job?.status === 'open' && <p className="text-[11.5px] leading-4 text-dim">Dropping a job pays nothing and frees {c.name} to offer another.</p>}
           </>
         ),
         close,

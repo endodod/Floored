@@ -25,6 +25,8 @@ export const CAR_BELOW_M = 10
  * are only played as jobs: no practice and no other pay.
  */
 export const JOB_LIMIT = 3
+/** An offer nobody takes leaves after this many nights (its giver can then offer again). */
+export const JOB_OFFER_NIGHTS = 2
 export const TABLE_JOB_PAY_M = { min: 3, max: 5 } as const
 export const MINIGAME_JOB_PAY_M = { min: 6, max: 8 } as const
 /** The pay range for a kind of job. */

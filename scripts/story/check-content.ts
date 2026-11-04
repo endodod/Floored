@@ -15,7 +15,7 @@
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_STANDING, jobPayM,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
   MARKER_M, MARKER_REPAY, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
@@ -339,12 +339,23 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (!st().canTalk(a.giver) || st().sceneFor({ on: 'talk', character: a.giver })) fail('after any first-meeting scene, talking again goes straight to the offer')
   // Night 2 with both still waiting: one place left, so one more offer, of either kind, at the third person.
   st().endNight()
+  const night1 = heldHere()
+  if (night1.length !== JOB_LIMIT || new Set(night1.map((j) => j.giver)).size !== JOB_LIMIT) fail(`night 2 fills the last place at the third person (got ${night1.map((j) => j.giver).join()})`)
+  const third = night1.find((j) => !first.some((f) => f.id === j.id))!
+  if (!first.every((f) => offered().some((j) => j.id === f.id))) fail('an offer waits through the next night')
+  // Offers left alone for JOB_OFFER_NIGHTS nights leave: on night 3 the first two go, and the
+  // two freed people get tonight's offers (one of each kind). The third offer stays a night more.
+  st().endNight()
+  const night2 = heldHere()
+  if (first.some((f) => night2.some((j) => j.id === f.id))) fail(`offers left alone for ${JOB_OFFER_NIGHTS} nights leave`)
+  if (!night2.some((j) => j.id === third.id)) fail('a newer offer stays until its own nights are up')
+  const fresh2 = night2.filter((j) => j.night === st().night)
+  if (night2.length !== JOB_LIMIT || fresh2.length !== 2 || kinds(fresh2) !== 'minigame,table') fail(`freed people get tonight's two offers (got ${fresh2.map((j) => j.giver + ':' + j.key).join()})`)
+  // Never taken means never given: the expired written job can come back from its giver later.
+  for (const f of first) if ((st().jobsGiven.dustwater ?? []).filter((k) => k === f.key).length > (night2.some((j) => j.key === f.key) ? 1 : 0)) fail(`an offer nobody took is not counted as given (${f.key})`)
+  st().endNight()
   const three = heldHere()
-  if (three.length !== JOB_LIMIT || new Set(three.map((j) => j.giver)).size !== JOB_LIMIT) fail(`night 2 fills the last place at the third person (got ${three.map((j) => j.giver).join()})`)
-  // Full: nothing new however many nights pass; waiting offers stay.
-  st().endNight()
-  st().endNight()
-  if (heldHere().map((j) => j.id).sort().join() !== three.map((j) => j.id).sort().join()) fail('a full town offers nothing new, and waiting offers stay')
+  if (three.some((j) => j.id === third.id) || three.length !== JOB_LIMIT) fail('the third offer leaves on its own schedule and its place is filled')
   for (const j of three) {
     const range = jobPayM(kindOf(j.goal))
     if (j.pay < range.min || j.pay > range.max) fail(`a ${kindOf(j.goal)} job pays ${range.min}m to ${range.max}m (got ${j.pay}m)`)
@@ -362,12 +373,22 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     }
     if (flips.size !== 2) fail(`the last place is a coin flip between the kinds (only saw ${[...flips].join()})`)
   }
+  // Drop a taken job: no pay, no standing, the giver is free (tonight's offer may come now).
+  {
+    const d = three.find((j) => j.status === 'offered')!
+    answer(d.giver, true)
+    const before = { money: st().money, rep: st().rep() }
+    st().dropJob(d.id)
+    if (st().jobs.some((j) => j.id === d.id) || st().money !== before.money || st().rep() !== before.rep) fail('dropping a job removes it with no pay and no standing')
+    if (st().jobAt(d.giver)?.id === d.id) fail('a dropped job frees its giver')
+  }
   // Take one and finish it: it pays and earns standing; the giver is free, and tonight's
   // offers, which had no room at nightfall, come now (both kinds, one place each).
-  answer(three[0]!.giver, true)
+  const pickUp = offered()[0]!
+  answer(pickUp.giver, true)
   const taken = st().openJobs()
-  if (taken.length !== 1 || taken[0]!.id !== three[0]!.id) fail('"I\'ll do it" takes the offered job')
-  if (st().canTalk(three[0]!.giver) && !st().sceneFor({ on: 'talk', character: three[0]!.giver })) fail('a giver whose job you took has nothing new to offer')
+  if (taken.length !== 1 || taken[0]!.id !== pickUp.id) fail('"I\'ll do it" takes the offered job')
+  if (st().canTalk(pickUp.giver) && !st().sceneFor({ on: 'talk', character: pickUp.giver })) fail('a giver whose job you took has nothing new to offer')
   useStoryStore.setState({ standing: { dustwater: 0 }, money: 2000 * m })
   const moneyBefore = st().money
   const nightBefore = st().night
@@ -387,7 +408,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
       for (const j of st().jobs) {
         if (j.city !== 'dustwater' || seen.has(j.id)) continue
         seen.add(j.id)
-        ;(firstOf[`${j.giver}:${kindOf(j.goal)}`] ??= []).push(j.key)
+        const list = (firstOf[`${j.giver}:${kindOf(j.goal)}`] ??= [])
+        if (kindOf(j.goal) === 'table' || !list.includes(j.key)) list.push(j.key)
         if (kindOf(j.goal) === 'table') {
           if (tableKeys.has(j.key)) fail(`the town gave the table task ${j.key} twice`)
           tableKeys.add(j.key)
@@ -397,7 +419,14 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
         }
       }
     }
-    for (const j of [...first, ...three]) { seen.add(j.id); (firstOf[`${j.giver}:${kindOf(j.goal)}`] ??= []).push(j.key); if (kindOf(j.goal) === 'table') tableKeys.add(j.key); else lastMini[j.giver] = j.key }
+    // What was offered before, for the written order; table tasks given and no longer held
+    // (done or dropped) count against repeats from here on.
+    for (const j of [...first, ...night1, ...night2, ...three]) {
+      const list = (firstOf[`${j.giver}:${kindOf(j.goal)}`] ??= [])
+      if (!list.includes(j.key)) list.push(j.key)
+    }
+    const heldKeys = new Set(heldHere().map((j) => j.key))
+    for (const k of st().jobsGiven.dustwater ?? []) if (!k.startsWith('minigame:') && !heldKeys.has(k)) tableKeys.add(k)
     let both = 0
     for (let n = 0; n < 30; n++) {
       // Take and finish everything, including offers a finished job brings tonight.
