@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
-import { ArrowRight, Car, Ellipsis, HandCoins, Lightbulb, Lock, Map as MapIcon, MessageCircle, Moon, NotebookPen, UtensilsCrossed } from 'lucide-react'
+import { ArrowRight, Car, Ellipsis, HandCoins, Lightbulb, CircleX, Lock, Map as MapIcon, MessageCircle, Moon, Play, NotebookPen, UtensilsCrossed } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { SUITS } from '@/components/ui/terminal'
@@ -409,19 +409,12 @@ export function StoryHub() {
               {hasTips(c) && <ServiceButton icon={<Lightbulb aria-hidden />} label="A tip" onClick={() => { setSheet(null); setService({ kind: 'tips', who: c.id }) }} />}
               {c.sells === 'meal' && <ServiceButton icon={<UtensilsCrossed aria-hidden />} label="Diner" dot={!s.ateTonight()} onClick={() => { setSheet(null); setService({ kind: 'meal', who: c.id }) }} />}
               {c.lends && <ServiceButton icon={<HandCoins aria-hidden />} label="Loan" onClick={() => { setSheet(null); setService({ kind: 'loan', who: c.id }) }} />}
-            </div>
-            {(playable || job?.status === 'open') && <Actions>
               {playable && c.minigame && (
-                <Button asChild size="sm">
-                  <Link href={`/story/minigame/${c.minigame}`}>Play</Link>
-                </Button>
+                <ServiceButton icon={<Play aria-hidden className="translate-x-[1px] fill-current" />} label="Play" dot onClick={() => router.push(`/story/minigame/${c.minigame}`)} />
               )}
-              {job?.status === 'open' && (
-                <Button size="sm" variant="ghost" onClick={() => s.dropJob(job.id)}>
-                  Drop job
-                </Button>
-              )}
-            </Actions>}
+              {job?.status === 'open' && <ServiceButton icon={<CircleX aria-hidden />} label="Drop job" onClick={() => s.dropJob(job.id)} />}
+            </div>
+
             {job?.status === 'open' && <p className="text-[11.5px] leading-4 text-dim">Dropping a job pays nothing and frees {c.name} to offer another.</p>}
           </>
         ),
