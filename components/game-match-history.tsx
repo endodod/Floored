@@ -3,6 +3,7 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import { hasOutcomeEntry, GameOutcomeColumns, GameLastBetPanel } from '@/components/game-dock-parts'
 import { cn } from '@/lib/utils'
+import { useRouteMode } from '@/hooks/use-run-end'
 
 export type MatchHistoryTone = 'win' | 'push' | 'loss' | 'partial' | 'neutral'
 
@@ -99,13 +100,15 @@ export function GameFieldWithHistory({
   const hasPlays = entries.length > 0
   const latest = entries[0]
   const showOutcomeLastBet = showLastBet && latest && hasOutcomeEntry(latest)
+  // Story mode has no history corner for now (owner decision 2026-11-04).
+  const story = useRouteMode() === 'story'
 
   return (
     <div className={cn('relative min-h-0 w-full flex-1 overflow-hidden', className)}>
       <div className={cn('board-fit relative min-h-0 min-w-0 h-full w-full overflow-hidden', boardClassName)}>
         {children}
 
-        {showOutcomeLastBet ? (
+        {story ? null : showOutcomeLastBet ? (
           <GameLastBetPanel
             betSummary={latest.betSummary!}
             resultSummary={latest.resultSummary!}

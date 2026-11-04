@@ -314,9 +314,14 @@ export function StoryHub() {
             <SheetNote tone="gold">
               Once you sit down, this is your room for the night. No switching until you call it a night.
             </SheetNote>
-            <ul className="flex flex-wrap gap-1.5" aria-label="Tonight's games">
+            {/* One row whatever the names: the sheet is wide enough on desktop, and on
+                phones each game stacks its symbol over its name. */}
+            <ul className="grid grid-cols-4 gap-1.5" aria-label="Tonight's games">
               {gamesIn(v).map((g) => (
-                <li key={g} className="flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-[12px] text-soft shadow-[inset_0_0_0_1px_rgba(217,164,65,0.25)]">
+                <li
+                  key={g}
+                  className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg bg-black/30 px-1.5 py-1.5 text-center text-[11.5px] leading-[14px] text-soft shadow-[inset_0_0_0_1px_rgba(217,164,65,0.25)] lg:flex-row lg:gap-1.5 lg:rounded-full lg:px-2.5 lg:py-1 lg:text-[12px] lg:whitespace-nowrap"
+                >
                   <span aria-hidden className="text-[14px] leading-none">{GAME_BY_NAME.get(g)?.symbol}</span>
                   {GAME_BY_NAME.get(g)?.label ?? g}
                 </li>
@@ -328,7 +333,8 @@ export function StoryHub() {
           </>
         )
       }
-      return { title: VENUE_NAMES[v], kicker: unlocked ? (here ? 'Tonight' : stakeNote(v)) : 'Locked', art: undefined, body, close, size: here ? ('lg' as const) : undefined }
+      // Before the night: wide enough for tonight's four games in one row.
+      return { title: VENUE_NAMES[v], kicker: unlocked ? (here ? 'Tonight' : stakeNote(v)) : 'Locked', art: undefined, body, close, size: here ? ('lg' as const) : undefined, className: here ? undefined : 'lg:w-[620px]' }
     }
     if (w.kind === 'person') {
       const c = CHARACTERS.find((x) => x.id === w.id)
@@ -579,7 +585,7 @@ export function StoryHub() {
         </div>
 
         {sheet && sheetBody && !overlayOn && (
-          <ActionSheet anchor={sheet.anchor} title={sheetBody.title} kicker={sheetBody.kicker} art={sheetBody.art} size={'size' in sheetBody ? sheetBody.size : undefined} onClose={sheetBody.close}>
+          <ActionSheet anchor={sheet.anchor} title={sheetBody.title} kicker={sheetBody.kicker} art={sheetBody.art} size={'size' in sheetBody ? sheetBody.size : undefined} className={'className' in sheetBody ? sheetBody.className : undefined} onClose={sheetBody.close}>
             {sheetBody.body}
           </ActionSheet>
         )}

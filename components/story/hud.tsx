@@ -113,74 +113,95 @@ export function StoryHud({
   const low = moneyNow < city.minBet
   const bonus = STANDING_BONUS[rep] ?? 0
 
+  const backEl = back && (
+    <Link
+      href="/story"
+      className={cn(PLAQUE, 'flex h-10 shrink-0 items-center gap-0.5 pl-1 pr-2 text-[12px] font-semibold text-soft hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold')}
+      aria-label={`Back to ${city.name}`}
+    >
+      <ChevronLeft aria-hidden className="h-4 w-4" />
+      <span className="hidden sm:inline">{city.name}</span>
+      <span className="sm:hidden">Back</span>
+    </Link>
+  )
+  const plateEl = (
+    <div className="st-plate-wood flex h-10 min-w-0 shrink flex-col justify-center rounded-[5px] px-2.5 sm:px-3">
+      <p className="truncate text-[14px] font-bold leading-[17px] tracking-[0.02em] text-[#f7eed6] sm:text-[15px]">{title ?? city.name}</p>
+      <p className="flex items-center gap-1.5 whitespace-nowrap text-[10.5px] font-semibold uppercase leading-[13px] tracking-[0.12em] text-[#d9b779]">
+        <span className="num">Night {night + 1}</span>
+        {tonight && <span className="hidden lg:inline">· {VENUE_NAMES[tonight.venue]}</span>}
+        <StandingStars standing={rep} city={city.name} className="lg:hidden" />
+      </p>
+    </div>
+  )
+  const moneyEl = (
+    <div className={cn(PLAQUE, 'flex h-10 shrink-0 items-center gap-1.5 pl-1.5 pr-2.5')} aria-label={`Money ${money(moneyNow)}${owed > 0 ? `, owed ${money(owed)}` : ''}`} role="group">
+      <ChipStack />
+      <span className="flex flex-col justify-center leading-none">
+        <span className={cn('num text-[15px] font-bold sm:text-base', low ? 'text-loss' : 'text-gold glow-gold')}>{money(moneyNow)}</span>
+        {owed > 0 && <span className="num mt-0.5 text-[10px] font-semibold text-loss">owe {money(owed)}</span>}
+      </span>
+    </div>
+  )
+  const standingEl = (
+    <div
+      className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 lg:flex')}
+      role="group"
+      aria-label={`Standing in ${city.name}${bonus ? `, ${Math.round(bonus * 100)}% bonus on a night up` : ''}`}
+    >
+      <span className="felt-print block max-w-[240px] truncate !text-[9px] !tracking-[0.1em]" title={`Standing in ${city.name}`}>
+        Standing in {city.name}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <StandingStars standing={rep} city={city.name} />
+        {bonus > 0 && (
+          <span className="num text-[10.5px] font-bold leading-none text-gold" title={`A night up at the tables earns ${Math.round(bonus * 100)}% of the win on top`}>
+            +{Math.round(bonus * 100)}%
+          </span>
+        )}
+      </span>
+    </div>
+  )
+  const betsEl = betsLeft != null && (
+    <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')} aria-label={`${betsLeft} of ${NIGHT_BETS} bets left tonight`} role="group">
+      <span className={cn('num text-[15px] font-bold leading-none', betsLeft === 0 ? 'text-loss' : 'text-ink')}>{betsLeft}</span>
+      <span className="felt-print mt-0.5 !text-[9px] !tracking-[0.14em]">bets left</span>
+    </div>
+  )
+
+  // At a house game: the back link at the left, standing at the right, and the
+  // game, money, bets left and table limits centred between them.
+  if (table) {
+    return (
+      <header className={cn('st-hud relative z-30 flex h-[52px] shrink-0 items-center gap-1.5 px-2 sm:gap-2.5 sm:px-3', className)}>
+        {backEl}
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 sm:gap-2.5">
+          {plateEl}
+          {moneyEl}
+          {betsEl}
+          <div
+            className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')}
+            role="group"
+            aria-label={`Table min ${money(table.min)}, max ${table.max == null ? 'none' : money(table.max)}`}
+          >
+            <span className="num text-[15px] font-bold leading-none text-ink">
+              {formatChips(table.min)} / {table.max == null ? 'None' : formatChips(table.max)}
+            </span>
+            <span className="felt-print mt-0.5 !text-[9px] !tracking-[0.14em]">Table min / max</span>
+          </div>
+        </div>
+        {standingEl}
+      </header>
+    )
+  }
+
   return (
     <header className={cn('st-hud relative z-30 flex h-[52px] shrink-0 items-center gap-1.5 px-2 sm:gap-2.5 sm:px-3', className)}>
-      {back && (
-        <Link
-          href="/story"
-          className={cn(PLAQUE, 'flex h-10 shrink-0 items-center gap-0.5 pl-1 pr-2 text-[12px] font-semibold text-soft hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold')}
-          aria-label={`Back to ${city.name}`}
-        >
-          <ChevronLeft aria-hidden className="h-4 w-4" />
-          <span className="hidden sm:inline">{city.name}</span>
-          <span className="sm:hidden">Back</span>
-        </Link>
-      )}
-      <div className="st-plate-wood flex h-10 min-w-0 shrink flex-col justify-center rounded-[5px] px-2.5 sm:px-3">
-        <p className="truncate text-[14px] font-bold leading-[17px] tracking-[0.02em] text-[#f7eed6] sm:text-[15px]">{title ?? city.name}</p>
-        <p className="flex items-center gap-1.5 whitespace-nowrap text-[10.5px] font-semibold uppercase leading-[13px] tracking-[0.12em] text-[#d9b779]">
-          <span className="num">Night {night + 1}</span>
-          {tonight && <span className="hidden lg:inline">· {VENUE_NAMES[tonight.venue]}</span>}
-          <StandingStars standing={rep} city={city.name} className="lg:hidden" />
-        </p>
-      </div>
-
-      <div className={cn(PLAQUE, 'flex h-10 shrink-0 items-center gap-1.5 pl-1.5 pr-2.5')} aria-label={`Money ${money(moneyNow)}${owed > 0 ? `, owed ${money(owed)}` : ''}`} role="group">
-        <ChipStack />
-        <span className="flex flex-col justify-center leading-none">
-          <span className={cn('num text-[15px] font-bold sm:text-base', low ? 'text-loss' : 'text-gold glow-gold')}>{money(moneyNow)}</span>
-          {owed > 0 && <span className="num mt-0.5 text-[10px] font-semibold text-loss">owe {money(owed)}</span>}
-        </span>
-      </div>
-
-      <div
-        className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 lg:flex')}
-        role="group"
-        aria-label={`Standing in ${city.name}${bonus ? `, ${Math.round(bonus * 100)}% bonus on a night up` : ''}`}
-      >
-        <span className="felt-print block max-w-[240px] truncate !text-[9px] !tracking-[0.1em]" title={`Standing in ${city.name}`}>
-          Standing in {city.name}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <StandingStars standing={rep} city={city.name} />
-          {bonus > 0 && (
-            <span className="num text-[10.5px] font-bold leading-none text-gold" title={`A night up at the tables earns ${Math.round(bonus * 100)}% of the win on top`}>
-              +{Math.round(bonus * 100)}%
-            </span>
-          )}
-        </span>
-      </div>
-
-      {betsLeft != null && (
-        <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')} aria-label={`${betsLeft} of ${NIGHT_BETS} bets left tonight`} role="group">
-          <span className={cn('num text-[15px] font-bold leading-none', betsLeft === 0 ? 'text-loss' : 'text-ink')}>{betsLeft}</span>
-          <span className="felt-print mt-0.5 !text-[9px] !tracking-[0.14em]">bets left</span>
-        </div>
-      )}
-
-      {table && (
-        <div
-          className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')}
-          role="group"
-          aria-label={`Table min ${money(table.min)}, max ${table.max == null ? 'none' : money(table.max)}`}
-        >
-          <span className="num text-[15px] font-bold leading-none text-ink">
-            {formatChips(table.min)} / {table.max == null ? 'None' : formatChips(table.max)}
-          </span>
-          <span className="felt-print mt-0.5 !text-[9px] !tracking-[0.14em]">Table min / max</span>
-        </div>
-      )}
-
+      {backEl}
+      {plateEl}
+      {moneyEl}
+      {standingEl}
+      {betsEl}
       <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>
     </header>
   )
