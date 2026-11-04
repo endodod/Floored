@@ -21,7 +21,7 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, LODGING_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
@@ -102,10 +102,14 @@ export function StoryHub() {
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
   const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, s.openJobGames())
   const broke = s.money < m && !night
-  const betsLeft = night ? Math.max(0, NIGHT_BETS - night.bets) : 0
-  const inCar = s.money < CAR_BELOW_M * m
+  // Tonight's bets come from where you slept (8 after the car, 12 after a room).
+  const nightBets = night ? (night.limit ?? NIGHT_BETS) : s.nextBets
+  const betsLeft = night ? Math.max(0, nightBets - night.bets) : 0
+  // The car's light is off when you slept in it last night.
+  const sleptInCar = !!s.lastNight?.car
   const config = sceneConfigFor(s.city, city.name)
   const roomName = config.motelName === 'MOTEL' ? 'Your room' : `Room 5 at the ${config.motelName[0]}${config.motelName.slice(1).toLowerCase()}`
+  const roomShort = config.motelName === 'MOTEL' ? 'Your room' : 'Room 5'
 
   const talk = (character: string) => {
     if (s.canTalk(character)) {
@@ -114,8 +118,8 @@ export function StoryHub() {
     }
   }
   const bossIntro = s.sceneFor({ on: 'boss-intro' })
-  const endNight = () => {
-    const summary = s.endNight()
+  const endNight = (place: SleepPlace) => {
+    const summary = s.endNight(place)
     setSheet(null)
     setReceipt(summary)
   }
@@ -145,9 +149,13 @@ export function StoryHub() {
     boss: !boss ? 'none' : cleared ? 'beaten' : s.bossBackOn != null ? 'away' : 'waiting',
     roadOpen: cleared && !!nextCity,
     nextCity: nextCity?.name ?? null,
-    car: inCar,
+    car: sleptInCar,
   }
-  const restSpot = inCar ? 'car' : 'rest'
+  const restSpot = 'rest'
+  const sleepNote = (place: SleepPlace) => {
+    const cost = s.sleepCost(place)
+    return `${cost ? money(cost) : 'Free'} · ${SLEEP_BETS[place]} bets`
+  }
   const spots: SceneSpot[] = [
     ...([0, 1, 2] as VenueTier[]).map((v): SceneSpot => {
       const unlocked = s.venueOpen(v)
@@ -218,16 +226,31 @@ export function StoryHub() {
           },
         ]
       : []),
+    // Two places to sleep, both ending the night: the room (12 bets next night) and the car (8).
     {
-      spot: restSpot,
+      spot: 'rest',
       node: (
         <PlaceSpot
-          title={night ? 'End night' : 'Rest'}
-          sub={inCar ? 'The car' : 'Room 5'}
-          icon={inCar ? <Car className="h-2.5 w-2.5" aria-hidden /> : <Moon className="h-2.5 w-2.5" aria-hidden />}
+          title={roomShort}
+          sub={sleepNote('room')}
+          icon={<Moon className="h-2.5 w-2.5" aria-hidden />}
           active={isOpen('rest')}
-          size={inCar ? [170, 64] : [40, 80]}
-          label={night ? 'End the night' : inCar ? 'Rest in the car' : 'Rest in your room'}
+          size={[40, 80]}
+          label={`${night ? 'End the night' : 'Rest'}: ${roomName}, ${sleepNote('room')} next night`}
+          onOpen={open({ kind: 'rest' })}
+        />
+      ),
+    },
+    {
+      spot: 'car',
+      node: (
+        <PlaceSpot
+          title="The car"
+          sub={sleepNote('car')}
+          icon={<Car className="h-2.5 w-2.5" aria-hidden />}
+          active={isOpen('rest')}
+          size={[170, 64]}
+          label={`${night ? 'End the night' : 'Rest'}: the car, ${sleepNote('car')} next night`}
           onOpen={open({ kind: 'rest' })}
         />
       ),
@@ -300,7 +323,7 @@ export function StoryHub() {
               })}
             </ul>
             <SheetNote>
-              Money now <span className="num text-gold">{money(s.money)}</span>. {stakeNote(v)}. <span className="num text-ink">{betsLeft}</span> of {NIGHT_BETS} bets left.
+              Money now <span className="num text-gold">{money(s.money)}</span>. {stakeNote(v)}. <span className="num text-ink">{betsLeft}</span> of {nightBets} bets left.
             </SheetNote>
           </>
         )
@@ -319,7 +342,7 @@ export function StoryHub() {
         body = (
           <>
             <SheetNote tone="soft">
-              {NIGHT_BETS} bets across tonight&apos;s games. {stakeNote(v)}. Comps {Math.round(COMPS_RATE[v] * 1000) / 10}% back, up to {money(COMPS_CAP_M[v] * m)}.
+              {nightBets} bets across tonight&apos;s games. {stakeNote(v)}. Comps {Math.round(COMPS_RATE[v] * 1000) / 10}% back, up to {money(COMPS_CAP_M[v] * m)}.
             </SheetNote>
             <SheetNote tone="gold">
               Once you sit down, this is your room for the night. No switching until you call it a night.
@@ -468,18 +491,39 @@ export function StoryHub() {
     }
     if (w.kind === 'rest') {
       return {
-        title: inCar ? 'The car' : roomName,
+        title: 'Where to sleep',
         kicker: night ? 'End the night' : 'Rest',
         art: undefined,
         body: (
           <>
-            <SheetNote tone="soft">{night ? 'Settles comps, hustles and your room.' : 'Skip the night. Your room still costs, and the board changes.'}</SheetNote>
-            <SheetNote>
-              A room is {money(LODGING_M * m)} a night. Under {money(CAR_BELOW_M * m)} you sleep in the car for free.
+            <SheetNote tone="soft">
+              {night ? 'Settles comps and hustles, then you sleep.' : 'Skip the night. You still sleep somewhere, and the board changes.'} Where you sleep sets tomorrow&apos;s bets.
             </SheetNote>
-            <Actions>
-              <Button variant={night ? 'default' : 'secondary'} onClick={endNight}>{night ? 'End the night' : 'Rest until tomorrow'}</Button>
-            </Actions>
+            <div className="grid grid-cols-2 gap-2">
+              {(['car', 'room'] as const).map((place) => {
+                const cost = s.sleepCost(place)
+                const short = place === 'room' && s.money < cost
+                return (
+                  <button
+                    key={place}
+                    type="button"
+                    disabled={short}
+                    onClick={() => endNight(place)}
+                    data-sleep={place}
+                    className="flex flex-col items-start gap-0.5 rounded-md bg-black/25 px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_rgba(217,164,65,0.25)] transition-shadow hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold disabled:opacity-40"
+                  >
+                    <span className="flex items-center gap-1.5 text-[13.5px] font-semibold text-ink">
+                      {place === 'car' ? <Car className="h-3.5 w-3.5" aria-hidden /> : <Moon className="h-3.5 w-3.5" aria-hidden />}
+                      {place === 'car' ? 'The car' : roomName}
+                    </span>
+                    <span className="num text-[13px] text-gold">{cost ? money(cost) : 'Free'}</span>
+                    <span className="text-[12px] leading-4 text-dim">
+                      {SLEEP_BETS[place]} bets tomorrow{short ? ` · you need ${money(cost)}` : ''}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </>
         ),
         close,
@@ -529,7 +573,7 @@ export function StoryHub() {
       return {
         text: (
           <>
-            <span className="text-ink">{VENUE_NAMES[night.venue]}</span> · <span className="num text-ink">{betsLeft}</span> of {NIGHT_BETS} bets left
+            <span className="text-ink">{VENUE_NAMES[night.venue]}</span> · <span className="num text-ink">{betsLeft}</span> of {nightBets} bets left
             <span className="hidden sm:inline"> · {stakeNote(night.venue)}</span>
           </>
         ),
@@ -564,7 +608,7 @@ export function StoryHub() {
         ),
       }
     return {
-      text: <>Pick a door to start the night.<span className="hidden sm:inline"> {NIGHT_BETS} bets, min bet {money(m)}.</span></>,
+      text: <>Pick a door to start the night.<span className="hidden sm:inline"> {nightBets} bets, min bet {money(m)}.</span></>,
       kicker: `Night ${s.night + 1}`,
       actions: <Button size="sm" variant="outline" onClick={openAt({ kind: 'rest' }, restSpot)}>Rest</Button>,
     }

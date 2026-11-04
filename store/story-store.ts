@@ -6,8 +6,8 @@ import { CITIES, CITY_BY_ID, type CityId } from '@/lib/story/cities'
 import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
-  LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, NIGHT_BETS, STANDING_MAX, START_MONEY,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
+  MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, NIGHT_BETS, SLEEP_BETS, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
   TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
@@ -37,8 +37,11 @@ import type { GameName } from './types'
  * Version 7: two offers a night (a minigame job and a table job): `jobOffered`
  * became `jobNight`, the kinds each town has offered on its last offer night.
  * Minigames are only played as jobs, so `minigameNight` (their nightly pay) is gone.
+ * Version 8: you choose where to sleep (the car or a room); `nextBets` is the next
+ * night's bets (8 after the car, 12 after a room) and `tonight.limit` tonight's.
+ * Older saves get 12 for their next night (they slept under the old rules).
  */
-export const STORY_SAVE_VERSION = 7
+export const STORY_SAVE_VERSION = 8
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
@@ -56,6 +59,8 @@ export interface Tonight {
   openRound: { game: GameName; bet: number; credited: number } | null
   rounds: NightRound[]
   startMoney: number
+  /** Bets this night has (from where you slept); NIGHT_BETS in saves from before version 8. */
+  limit?: number
 }
 
 export interface NightSummary {
@@ -66,8 +71,11 @@ export interface NightSummary {
   bonus: number
   bonusRate: number
   hustles: { text: string; paid: number }[]
+  /** What sleeping cost, and where. */
   lodging: number
   car: boolean
+  /** Bets the next night has (8 after the car, 12 after a room). */
+  nextBets: number
   /** Money change over the night, all in. */
   net: number
   bust: boolean
@@ -108,6 +116,8 @@ export interface StorySave {
   seenGames: GameName[]
   stats: { busts: number; bossTries: number; bossWins: number; markers: number; bestWin: number }
   tonight: Tonight | null
+  /** Bets the next night will have, set by where you slept (START_BETS on a new story). */
+  nextBets: number
   lastNight: NightSummary | null
   /** Scenes waiting to play when the hub is next shown. */
   queue: string[]
@@ -145,6 +155,7 @@ const fresh = (): StorySave => ({
   seenGames: [],
   stats: { busts: 0, bossTries: 0, bossWins: 0, markers: 0, bestWin: 0 },
   tonight: null,
+  nextBets: START_BETS,
   lastNight: null,
   queue: [],
   news: [],
@@ -209,8 +220,13 @@ interface StoryActions {
   placeBet: (game: GameName, amount: number) => void
   /** A round's payout; `settle` false for partial payouts within one round (Plinko balls). */
   resolve: (game: GameName, payout: number, settle: boolean) => void
-  /** Ends the night: comps, hustles, lodging (or the car), and a bust check. */
-  endNight: () => NightSummary
+  /** What sleeping there costs tonight, in dollars. */
+  sleepCost: (place: SleepPlace) => number
+  /**
+   * Ends the night (played or rested): comps, hustles, where you sleep (the car, or a
+   * room you can afford; it sets the next night's bets), and a bust check.
+   */
+  endNight: (place?: SleepPlace) => NightSummary
   /** The minigame job you took from this person, if any: the only way to play their minigame. */
   minigameJobAt: (giver: string) => Job | null
   /**
@@ -283,6 +299,10 @@ export function migrateStorySave(persisted: unknown, version: number): StorySave
     delete base.jobOffered
     // Minigames are only played as jobs: their nightly pay record is gone.
     delete base.minigameNight
+  }
+  if (version < 8) {
+    // Where you sleep is a choice now; a save's next night keeps the 12 bets it had.
+    base.nextBets = NIGHT_BETS
   }
   return base
 }
@@ -552,7 +572,7 @@ export const useStoryStore = create<StoryStore>()(
         startNight: (venue) => {
           const s = get()
           if (s.tonight || !get().venueOpen(venue) || s.money < m()) return false
-          set({ tonight: { venue, bets: 0, openRound: null, rounds: [], startMoney: s.money } })
+          set({ tonight: { venue, bets: 0, openRound: null, rounds: [], startMoney: s.money, limit: s.nextBets } })
           return true
         },
         wagerCap: () => {
@@ -560,12 +580,12 @@ export const useStoryStore = create<StoryStore>()(
           if (!s.tonight) return 0
           const max = VENUE_MAX_M[s.tonight.venue]
           if (s.tonight.openRound) return s.money + s.tonight.openRound.bet
-          if (s.tonight.bets >= NIGHT_BETS) return 0
+          if (s.tonight.bets >= (s.tonight.limit ?? NIGHT_BETS)) return 0
           return max == null ? s.money : Math.min(s.money, max * m())
         },
         betsLeft: () => {
           const t = get().tonight
-          return t ? Math.max(0, NIGHT_BETS - t.bets) : 0
+          return t ? Math.max(0, (t.limit ?? NIGHT_BETS) - t.bets) : 0
         },
         placeBet: (game, amount) => {
           const s = get()
@@ -605,7 +625,8 @@ export const useStoryStore = create<StoryStore>()(
           }))
           checkRoundJobs(rounds)
         },
-        endNight: () => {
+        sleepCost: (place) => sleepCostM(place, get().city === CITIES[0]!.id) * m(),
+        endNight: (choice = 'car') => {
           const s = get()
           const t = s.tonight
           const before = t ? t.startMoney : s.money
@@ -632,13 +653,16 @@ export const useStoryStore = create<StoryStore>()(
             if (bonus) get().receive(bonus)
           }
           const after = get()
-          const car = after.money < CAR_BELOW_M * m()
-          const lodging = car ? 0 : Math.min(after.money, LODGING_M * m())
+          // A room you can't afford is the car; the car is paid down to $0, never into debt.
+          const place: SleepPlace = choice === 'room' && after.money >= get().sleepCost('room') ? 'room' : 'car'
+          const lodging = Math.min(after.money, get().sleepCost(place))
           const money = after.money - lodging
           const bust = money < m()
-          const summary: NightSummary = { night: after.night + 1, played: !!t, comps, bonus, bonusRate, hustles, lodging, car, net: money - before, bust }
+          const nextBets = SLEEP_BETS[place]
+          const summary: NightSummary = { night: after.night + 1, played: !!t, comps, bonus, bonusRate, hustles, lodging, car: place === 'car', nextBets, net: money - before, bust }
           set({
             money,
+            nextBets,
             night: after.night + 1,
             cityNight: after.cityNight + 1,
             bossBackOn: after.bossBackOn != null && after.night + 1 >= after.bossBackOn ? null : after.bossBackOn,

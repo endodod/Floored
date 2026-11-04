@@ -50,12 +50,13 @@ Map ─► City hub ─┬─► Venue night (12 bets across the venue's games, 
                  └─► Boss showdown (buy-in) ─► win: purse, story, next city
 ```
 
-- **A night** is one visit to a venue: up to **12 bets** across its games, or **one
-  Tables session** (a tournament, or a cash table until you stand up). After that the
-  casino closes. You pay **lodging**, the night counter goes up by one, minigames and the
-  jobs board refresh, and a new **night event** may roll.
-- **Resting** also ends the night without playing (you still pay lodging, down to $0,
-  never into debt). Resting is how a broke player gets back to the minigames.
+- **A night** is one visit to a venue: up to **8 or 12 bets** across its games (8 after a
+  night in the car, 12 after a room), or **one Tables session** (a tournament, or a cash
+  table until you stand up). After that the casino closes. You choose **where to sleep**
+  (the car or a room, paid down to $0), the night counter goes up by one, the jobs board
+  refreshes, and a new **night event** may roll.
+- **Resting** also ends the night without playing (you still choose a bed). Resting is how
+  a broke player gets back to minigame jobs.
 - **Nights total** is shown as a stat: a light score for replays, never a fail condition.
 
 ---
@@ -160,11 +161,11 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 | Jobs (rebuilt 2026-11-04) | table jobs 3m–5m and **+1 standing**; minigame jobs 6m–8m, one attempt, no standing | a minigame job and a table job each night (first night too), max 3 a town, taken only by talking; table jobs never repeat; written jobs first | none |
 | Hustles (jobs board) | 4m each | 2 per night, only by playing | none (fixed pay; you meet a game condition) |
 | **Comps** | **a share of what you wagered that night, win or lose, by room: 4% dive / 5% main floor / 6% high-roller** | **capped per night at 10m / 15m / 20m** | none |
-| Venue night | 12 bets, max 20m / 100m / no max; each room deals its own 4 of the city's games each night (`lib/story/rotation.ts`), and the dive keeps any game an open errand names | one per night | game edge |
+| Venue night | 8 or 12 bets (from where you slept), max 20m / 100m / no max; each room deals its own 4 of the city's games each night (`lib/story/rotation.ts`), and the dive keeps any game an open errand names | one per night | game edge |
 | Standing | 0 in every town, 5 at most; +1 per job, −1 per bust (never below 0); opens the main floor at 1 and the high-roller room at 3 | per town (`VENUE_REP` `[0, 1, 3]`) | — |
 | **Standing bonus** | a night up at the tables earns **+5% / +10% / +20%** of the night's table winnings (payouts less stakes) at standing **2 / 4 / 5** (`STANDING_BONUS`) | every night you finish up | none |
 | Tables session | stake-based | one per night | skill + luck |
-| Lodging | **−3m** per night; **free below 10m** (you sleep in your car) | every night | — |
+| Sleeping (2026-11-04) | your choice every night: **the car** (free in the first city, 1m after; **8 bets** the next night) or **a room** (3m in the first city, 4m after; **12 bets**); a room you can't pay for can't be chosen; paid down to $0, never into debt; a new story starts with 8 bets | every night | — |
 | Boss | **buy-in 50m, purse 150m** | rematch after 2 nights, same difficulty | about 50/50 |
 | Travel fare | 20m of the next city | once | — |
 
@@ -216,6 +217,11 @@ jobs at 6m–8m with no standing and no nightly pay; offers leave after 2 nights
 dropped): cautious 7 / 19, ~102; balanced 5 / 31, ~132; high variance 7 / 60, ~237, busts ~5.8;
 bold 4 / 16, ~79, busts ~2.9. The never-gambler can't save the buy-in on minigame jobs alone
 and is no longer a target (owner decision). All checks pass.
+**Sleeping choice** (same day: the car 8 bets, free then 1m; a room 12 bets, 3m then 4m; the old
+free car below 10m gone; players who spread bets take the room from 20m, the bold and the
+never-gambler the car): never gambles 37 / 130, ~653 (it can now finish: the free car lets it
+save); cautious 7 / 20, ~111; balanced 6 / 33, ~138; high variance 7 / 63, ~245, busts ~1.6
+(from ~5.8); bold 4 / 14, ~70, busts ~3.5. All checks pass.
 
 The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
 bet softens the losses. No other numbers were retuned.
@@ -471,6 +477,11 @@ Answered (2026-11-03):
     no standing, may repeat (not back to back). Table jobs 3m-5m, +1 standing, never repeat. Jo
     runs Chip Count. Offers nobody takes leave after 2 nights; a taken job can be dropped;
     the never-gambler is not a sim target (never gambling is not a way to play the story).
+22. **Where you sleep** (2026-11-04): you choose every night between the car (free in the first
+    city, 1m after; 8 bets the next night) and a room (3m, then 4m; 12 bets). The old "free car
+    below 10m" rule is gone. A new story starts with 8 bets. There is still no way to lose the
+    story: going broke is a bust (standing −1, a marker from the Notary), and minigame jobs need
+    no bets, so you can always earn back.
 17. **A bust costs 1 standing**; a boss win no longer gives any (it pays the purse and clears
     the town). Version-1 saves migrate `rep` into the current town, capped by its finished
     errands.

@@ -8,13 +8,24 @@
 /** Money you start the circuit with, in dollars (40 × Dustwater's $5 minimum bet). */
 export const START_MONEY = 200
 
-/** A night at a venue: up to this many bets across its games (or one Tables session). */
-export const NIGHT_BETS = 12
-
-/** Lodging, paid every night (playing or resting); taken down to $0, never into debt. */
-export const LODGING_M = 3
-/** Below this you sleep in your car: no lodging, so a broke player climbs back in a few nights. */
-export const CAR_BELOW_M = 10
+/**
+ * Where you sleep (owner decision 2026-11-04): you choose every night, playing or
+ * resting. The car is cheap and gives CAR_BETS the next night; a room costs more and
+ * gives ROOM_BETS. In the first city (Dustwater) the car is free and the room 3m; from
+ * the second city on the car is 1m and the room 4m. Paid down to $0, never into debt;
+ * a room you can't afford can't be chosen. A new story starts with START_BETS.
+ */
+export type SleepPlace = 'car' | 'room'
+export const CAR_BETS = 8
+export const ROOM_BETS = 12
+export const START_BETS = CAR_BETS
+/** The most bets a night can have (the room's). */
+export const NIGHT_BETS = ROOM_BETS
+/** Sleep costs in m: [first city, every city after]. */
+export const SLEEP_COST_M: Record<SleepPlace, readonly [number, number]> = { car: [0, 1], room: [3, 4] }
+export const SLEEP_BETS: Record<SleepPlace, number> = { car: CAR_BETS, room: ROOM_BETS }
+/** What sleeping somewhere costs, in m, in a city (`first`: the first city of the circuit). */
+export const sleepCostM = (place: SleepPlace, first: boolean) => SLEEP_COST_M[place][first ? 0 : 1]
 
 /**
  * Jobs (owner decisions 2026-11-04, lib/story/jobs.ts): each night in a town a

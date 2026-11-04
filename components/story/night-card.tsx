@@ -20,11 +20,13 @@ export function NightCard({ summary, cityName, onNext }: { summary: NightSummary
   if (summary.played) rows.push({ label: 'Comps', value: `+${money(summary.comps)}`, tone: 'win' })
   if (summary.bonus) rows.push({ label: `Standing bonus · ${Math.round((summary.bonusRate ?? 0) * 100)}% of the win`, value: `+${money(summary.bonus)}`, tone: 'win' })
   for (const h of summary.hustles) rows.push({ label: h.text, value: h.paid ? `+${money(h.paid)}` : 'missed', tone: h.paid ? 'win' : 'miss' })
-  rows.push(
-    summary.car
-      ? { label: 'Slept in the car', value: '$0' }
-      : { label: 'Lodging', value: `-${money(summary.lodging)}`, tone: 'cost' },
-  )
+  rows.push({
+    label: summary.car ? 'Slept in the car' : 'A room for the night',
+    value: summary.lodging ? `-${money(summary.lodging)}` : '$0',
+    ...(summary.lodging ? { tone: 'cost' as const } : {}),
+  })
+  // Saves from before version 8 have no nextBets on their last receipt.
+  if (summary.nextBets) rows.push({ label: 'Bets tomorrow', value: String(summary.nextBets) })
 
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="night-card-h">

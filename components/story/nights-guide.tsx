@@ -2,11 +2,11 @@
 
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import type { City } from '@/lib/story/cities'
+import { CITIES, type City } from '@/lib/story/cities'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
-  JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_JOB_PAY_M,
-  NIGHT_BETS, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BETS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
+  JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, MARKER_M, MARKER_REPAY, MINIGAME_JOB_PAY_M,
+  NIGHT_BETS, ROOM_BETS, SLEEP_COST_M, START_BETS, sleepCostM, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -33,6 +33,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
  */
 export function NightsGuide({ city, night, seen, must, onReplay }: { city: City; night: number; seen: GameName[]; must: GameName[]; onReplay: (() => void) | null }) {
   const m = city.minBet
+  const first = city.id === CITIES[0]!.id
   const pct = (r: number) => `${Math.round(r * 1000) / 10}%`
   const exBet = 2
   const exTurnover = NIGHT_BETS * exBet * m
@@ -119,8 +120,10 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
         </ul>
       </Section>
 
-      <Section title={`${NIGHT_BETS} bets`}>
-        <p>You get {NIGHT_BETS} bets a night, across the games in your room. A double on the same round is not a new bet. Then the house closes your tab.</p>
+      <Section title="Bets a night">
+        <p>
+          You get {CAR_BETS} bets after a night in the car, {ROOM_BETS} after a night in a room, across the games in your room. A new story starts with {START_BETS}. A double on the same round is not a new bet. Then the house closes your tab.
+        </p>
       </Section>
 
       <Section title="Comps">
@@ -150,7 +153,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
 
       <Section title="Ending the night">
         <p>
-          A room is {money(LODGING_M * m)} a night. Under {money(CAR_BELOW_M * m)} you sleep in the car and it is free. You can rest without playing: the room still costs.
+          You choose where to sleep every night, played or rested. The car costs {SLEEP_COST_M.car[0] ? `${SLEEP_COST_M.car[0]}×` : 'nothing'} in the first town and {SLEEP_COST_M.car[1]}× the minimum bet after, and gives you {CAR_BETS} bets the next night. A room costs {SLEEP_COST_M.room[0]}× in the first town and {SLEEP_COST_M.room[1]}× after ({money(sleepCostM('room', first) * m)} here), and gives {ROOM_BETS}. Save money in the car and stack it up with minigame jobs, or pay for the room and play more. You can&apos;t take a room you can&apos;t pay for.
         </p>
       </Section>
 

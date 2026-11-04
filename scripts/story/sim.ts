@@ -14,7 +14,10 @@
  *    attempt that night (a score drawn per attempt): at the target it pays
  *    MINIGAME_JOB_PAY_M, short of it the job is lost. A player who bets takes every offer
  *    and finishes one table job a night; one who never bets leaves table offers alone, and
- *    they leave after JOB_OFFER_NIGHTS. The never-gambler is shown but is not a target
+ *    they leave after JOB_OFFER_NIGHTS. Each night ends with a choice of bed: the car
+ *    (8 bets tomorrow; free in the first town, 1m after) or a room (12 bets; 3m, then
+ *    4m), which a player who spreads bets takes while holding ROOM_FROM_M; the bold and
+ *    the never-gambler sleep in the car. The never-gambler is shown but is not a target
  *    (owner decision 2026-11-04: never gambling is not a way to play the story).
  *    A night up at the tables earns the standing bonus. Prints nights per
  *    city and over the circuit, busts, boss tries, and recovery time after a bust,
@@ -26,8 +29,8 @@
 import { CITIES, type City } from '@/lib/story/cities'
 import { gamesFor } from '@/lib/story/rotation'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE,
-  HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE,
+  HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, SLEEP_BETS, START_BETS, STANDING_MAX, sleepCostM, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
   standingBonus,
 } from '@/lib/story/economy'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
@@ -101,6 +104,9 @@ const coinFlipLike: Pick = (city) => maxBy(all(city).filter((b) => 1 - lossChanc
 /** Shown in the table, but no target applies to it. */
 const NOT_A_TARGET = 'Never gambles'
 
+/** A player who spreads bets pays for the room while holding at least this (in m). */
+const ROOM_FROM_M = 20
+
 const TYPES: PlayerType[] = [
   { name: 'Never gambles', gamble: false, share: 0, pick: safest, reserve: 0, venue: 0 },
   { name: 'Cautious (5%)', gamble: true, share: 0.05, pick: safest, reserve: 20, venue: 1 },
@@ -127,6 +133,8 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
   let busts = 0
   let bosses = 0
   let totalNights = 0
+  // Bets tonight, from where they slept (a new story starts with the car's).
+  let bets = START_BETS
   const seen = new Set<GameName>()
   for (let c = 0; c < CITIES.length; c++) {
     const city: City = CITIES[c]!
@@ -194,7 +202,7 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
             money += won
           }
         } else {
-          for (let k = 0; k < NIGHT_BETS && money >= 1; k++) {
+          for (let k = 0; k < bets && money >= 1; k++) {
             const stake = Math.max(1, Math.min(money, money * t.share, cap))
             turnover += stake
             const won = stake * (draw(t.pick(list, rng), rng) - 1)
@@ -209,7 +217,11 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       }
       // A table job finished tonight lifts standing (minigame jobs don't).
       if (clearsJob) standing = Math.min(STANDING_MAX, standing + 1)
-      if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
+      // Where to sleep: a player who spreads bets takes the room (12 bets tomorrow) while
+      // they hold at least ROOM_FROM_M; the bold and the never-gambler take the car (8).
+      const place = t.gamble && !t.bold && money >= ROOM_FROM_M + sleepCostM('room', c === 0) ? 'room' : 'car'
+      money = Math.max(0, money - sleepCostM(place, c === 0))
+      bets = SLEEP_BETS[place]
       n++
       totalNights++
       wait = Math.max(0, wait - 1)

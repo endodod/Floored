@@ -102,6 +102,18 @@ sim target (shown for reference; it still can't save the buy-in on minigame jobs
 (3000, seed 1) nights per city median / worst 10%: cautious 7 / 19, balanced 5 / 31, high
 variance 7 / 60 (busts ~5.8), bold 4 / 16 (busts ~2.9). All checks pass.
 
+**2026-11-04, where you sleep (owner decision):** every night ends with a choice: **the car**
+(free in Dustwater, 1m after; **8 bets** the next night) or **a room** (Room 5 at the Starlite: 3m
+in Dustwater, 4m after; **12 bets**). The "free car below 10m" rule is gone; a room you can't pay
+for can't be chosen; the car is paid down to $0. A new story starts with 8 bets (`START_BETS`).
+`CAR_BETS`, `ROOM_BETS`, `SLEEP_COST_M`, `sleepCostM` in `lib/story/economy.ts`; the save's
+`nextBets` and `tonight.limit` (save version 8; older saves get 12 for their next night). The
+street shows both beds (Room 5 up the motel wall, the car with its cost and bets); either opens
+"Where to sleep". The receipt shows the bed's cost and "Bets tomorrow". Jo's walkthrough quotes
+eight / twelve and the room's 3× (checked). The story still can't be lost: broke is a bust and
+the Notary's marker, and minigame jobs need no bets. Sim: see plan section 5 (the never-gambler
+can finish again; high-variance busts ~1.6).
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 
@@ -158,9 +170,9 @@ Port that generator to TypeScript; don't redraw from scratch.
   the same open round, e.g. a double, adds to it without counting a new bet);
   `resolve(game, payout, settle)` credits payout (`settle: false` = partial, Plinko balls).
   Half of each win's **profit** repays a marker. `wagerCap()` = money capped by the venue
-  (and 0 once 12 bets are used), `betsLeft()`.
+  (and 0 once the night's bets are used: `tonight.limit`, 8 or 12), `betsLeft()`.
 - `endNight()` (after playing or resting): comps (by room: 4% / 5% / 6% of bets, cap 10m / 15m / 20m), hustles (2 a night,
-  `hustlesFor(city, night)`, 4m each), night-up jobs, lodging (3m) or the car (<10m),
+  `hustlesFor(city, night)`, 4m each), night-up jobs, where you sleep (`endNight(place)`: the car or a room, `sleepCost`),
   bust check (money < min bet → standing −1 in this town, never below 0, `stats.busts`,
   queues the city's `bust` scene).
   Returns a `NightSummary`, also kept in `lastNight` for the hub.
@@ -266,7 +278,7 @@ The hub is one screen that fits the viewport (no page scroll at 360×740, 390×8
   from `lg`): venue doors (start the night / tonight's game tiles / chained with the rep
   needed), people (Talk, Play/Practice, their job), the boss (Talk, Sit down, buy-in and
   purse), the Notary (only when broke), Rest/End night at the motel room or the car (under
-  `CAR_BELOW_M`), the road sign (Travel, lit once cleared). The bottom bar repeats the main
+  where you slept last night), the road sign (Travel, lit once cleared). The bottom bar repeats the main
   action (Tables / End the night / The Notary / Hit the road / Rest).
 - HUD buttons: Jobs (`notebook.tsx`, a matchbook with hustles and jobs, and last night's
   tab), Map (`circuit-map.tsx`, road atlas overlay), Menu (New story, behind the confirm).

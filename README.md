@@ -74,7 +74,7 @@ Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HA
 
 **The Circuit**: a story mode with nights, characters and a boss per city. Only the first town, Dustwater, is playable so far.
 
-- A night is one room (dive, main floor, high-roller room) and 12 bets; each room draws its own 3 of the city's games every night and swaps a couple the next night
+- A night is one room (dive, main floor, high-roller room) and 8 or 12 bets, set by where you slept: the car (free in Dustwater, 1× the minimum bet after; 8 bets) or a room (3×, then 4×; 12 bets). A new story starts with 8; each room draws its own 3 of the city's games every night and swaps a couple the next night
 - **Standing** is per town: 0 in every new town, remembered when you go back, max 5. Every finished table job is +1; a bust is −1. The dive is always open, the main floor wants standing 1 and the high-roller room 3; standing 2, 4 and 5 add a bonus of 5%, 10% and 20% of a winning night's table winnings
 - Jobs: each night two people have work going, a minigame job and a table job (the first night too). Talk to them to take it or say not now (it waits). One job per person, three at most in a town. Table jobs pay 3–5× the minimum bet and +1 standing and never repeat; minigame jobs are one attempt, pay 6–8× and give no standing. Minigames are only played as jobs; Jo runs Chip Count
 - Comps give back a share of what you bet, bigger in better rooms (4% / 5% / 6%, capped); hustles, jobs and minigames pay on the side

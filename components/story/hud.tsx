@@ -109,7 +109,7 @@ export function StoryHud({
   const rep = useStoryStore((s) => s.rep())
   const tonight = useStoryStore((s) => s.tonight)
   const city = CITY_BY_ID.get(cityId)!
-  const betsLeft = tonight ? Math.max(0, NIGHT_BETS - tonight.bets) : null
+  const betsLeft = tonight ? Math.max(0, (tonight.limit ?? NIGHT_BETS) - tonight.bets) : null
   const low = moneyNow < city.minBet
   const bonus = STANDING_BONUS[rep] ?? 0
 
@@ -163,7 +163,7 @@ export function StoryHud({
     </div>
   )
   const betsEl = betsLeft != null && (
-    <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')} aria-label={`${betsLeft} of ${NIGHT_BETS} bets left tonight`} role="group">
+    <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')} aria-label={`${betsLeft} of ${tonight?.limit ?? NIGHT_BETS} bets left tonight`} role="group">
       <span className={cn('num text-[15px] font-bold leading-none', betsLeft === 0 ? 'text-loss' : 'text-ink')}>{betsLeft}</span>
       <span className="felt-print mt-0.5 !text-[9px] !tracking-[0.14em]">bets left</span>
     </div>
