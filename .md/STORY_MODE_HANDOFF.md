@@ -169,8 +169,15 @@ boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city 
    Rattlesnake Junction on; wire them the same way when those cities are built, with the
    numbers in `lib/story/odds.ts` (the simulator already uses them).
 7. `app/story/[game]/page.tsx`: like `app/daily/[game]/page.tsx`; only the current city's
-   games and only during a night (`tonight`), else redirect to `/story`. Header pills: min
-   bet, table max, bets left, money.
+   games and only during a night (`tonight`), else redirect to `/story`. The story HUD
+   carries the game, money, standing, bets left and one "Table min / max" plaque (all 40px
+   tall; on phones the limits and bets left sit in a row under the HUD). The board's status
+   bar drops the game name and centres the message, and the board has no "← Story" button
+   (the HUD's back link leaves). Bets: `useStoryTableChips` in `game-dock-parts.tsx` gives
+   four chips at the table min, ¼, ½ and all of the table max, then a "Max" pill; a room
+   with no max spreads them as if the max were 100 min bets and the pill is "All in". No
+   ¼ / ½ wallet-share pills in story. Every game with the shared chip row or chip picker
+   gets this.
 
 ### 3c. Screens (DONE 2026-11-03; files: `lib/story/portraits.ts`, `components/story/{portrait,dialogue-box,hub}.tsx`, `app/story/page.tsx`, `app/story/layout.tsx`; expressions neutral/pleased/angry)
 - `lib/story/portraits.ts` (port of the mix-1 generator: SVG string per character look and

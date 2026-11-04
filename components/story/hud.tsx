@@ -66,7 +66,7 @@ export const HudButton = forwardRef<HTMLButtonElement, { icon: ReactNode; label:
         aria-expanded={active}
         className={cn(
           PLAQUE,
-          'relative flex h-9 min-w-9 items-center justify-center gap-1.5 px-2 text-[12px] font-semibold text-soft transition-colors hover:text-ink hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gold disabled:opacity-40 sm:px-2.5',
+          'relative flex h-10 min-w-10 items-center justify-center gap-1.5 px-2 text-[12px] font-semibold text-soft transition-colors hover:text-ink hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gold disabled:opacity-40 sm:px-2.5',
           active && 'text-ink shadow-[inset_0_0_0_1px_rgba(217,164,65,0.8)]',
         )}
       >
@@ -85,10 +85,23 @@ export const HudButton = forwardRef<HTMLButtonElement, { icon: ReactNode; label:
 /**
  * The story HUD: the city and night on a wood title plate, money as a chip
  * stack, the marker in red when one is owed, standing in this town as stars and,
- * while a night is on, the bets left. `back` adds a link back to the city scene;
+ * while a night is on, the bets left; at a game, the table min / max. `back` adds a link back to the city scene;
  * `actions` sits at the right (the hub's Jobs, Map and menu buttons).
  */
-export function StoryHud({ back, title, actions, className }: { back?: boolean; title?: string; actions?: ReactNode; className?: string }) {
+export function StoryHud({
+  back,
+  title,
+  table,
+  actions,
+  className,
+}: {
+  back?: boolean
+  title?: string
+  /** A house game's table limits, shown beside standing and bets left (from sm up). `max` null: no limit. */
+  table?: { min: number; max: number | null }
+  actions?: ReactNode
+  className?: string
+}) {
   const cityId = useStoryStore((s) => s.city)
   const night = useStoryStore((s) => s.night)
   const moneyNow = useStoryStore((s) => s.money)
@@ -105,7 +118,7 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
       {back && (
         <Link
           href="/story"
-          className={cn(PLAQUE, 'flex h-9 shrink-0 items-center gap-0.5 pl-1 pr-2 text-[12px] font-semibold text-soft hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold')}
+          className={cn(PLAQUE, 'flex h-10 shrink-0 items-center gap-0.5 pl-1 pr-2 text-[12px] font-semibold text-soft hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold')}
           aria-label={`Back to ${city.name}`}
         >
           <ChevronLeft aria-hidden className="h-4 w-4" />
@@ -152,6 +165,19 @@ export function StoryHud({ back, title, actions, className }: { back?: boolean; 
         <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')} aria-label={`${betsLeft} of ${NIGHT_BETS} bets left tonight`} role="group">
           <span className={cn('num text-[15px] font-bold leading-none', betsLeft === 0 ? 'text-loss' : 'text-ink')}>{betsLeft}</span>
           <span className="felt-print mt-0.5 !text-[9px] !tracking-[0.14em]">bets left</span>
+        </div>
+      )}
+
+      {table && (
+        <div
+          className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')}
+          role="group"
+          aria-label={`Table min ${money(table.min)}, max ${table.max == null ? 'none' : money(table.max)}`}
+        >
+          <span className="num text-[15px] font-bold leading-none text-ink">
+            {formatChips(table.min)} / {table.max == null ? 'None' : formatChips(table.max)}
+          </span>
+          <span className="felt-print mt-0.5 !text-[9px] !tracking-[0.14em]">Table min / max</span>
         </div>
       )}
 

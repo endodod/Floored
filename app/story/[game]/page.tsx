@@ -27,6 +27,9 @@ function Limit({ label, value, className }: { label: string; value: string | num
   )
 }
 
+/** "5 / 100", or "5 / None" in a room without a table max. */
+const tableLimits = (minBet: number, maxM: number | null) => `${formatChips(minBet)} / ${maxM == null ? 'None' : formatChips(maxM * minBet)}`
+
 /**
  * A house game played at the location: the story frame (wood HUD, back to the
  * city) around a lamp-lit room, the same as the boss table and the minigames,
@@ -41,16 +44,13 @@ function StoryGame({ game }: { game: GameName }) {
   const maxM = VENUE_MAX_M[venue]
 
   return (
-    <div className="st-screen flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
-      <StoryHud back title={entry?.label ?? game} />
+    <div className="st-screen st-game flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
+      <StoryHud back title={entry?.label ?? game} table={{ min: minBet, max: maxM == null ? null : maxM * minBet }} />
       <div className="st-room flex min-h-0 flex-1 flex-col gap-1 pt-1 sm:gap-3 sm:p-3">
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 px-2 sm:px-0" aria-label={`${VENUE_NAMES[venue]} limits`} role="group">
-          {/* The HUD names the room from lg up. */}
-          <span className="mr-auto hidden truncate text-[12px] font-semibold uppercase tracking-[0.12em] text-[#d9b779] sm:inline lg:hidden">{VENUE_NAMES[venue]}</span>
-          <Limit label="Min bet" value={formatChips(minBet)} />
-          <Limit label="Table max" value={maxM == null ? 'None' : formatChips(maxM * minBet)} />
-          {/* The HUD carries bets left from sm up. */}
-          <Limit label="Bets left" value={betsLeft} className="sm:hidden" />
+        {/* Phones: the HUD has no room for the limits and bets left, so they sit under it. */}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 px-2 sm:hidden" aria-label={`${VENUE_NAMES[venue]} limits`} role="group">
+          <Limit label="Table min / max" value={tableLimits(minBet, maxM)} />
+          <Limit label="Bets left" value={betsLeft} />
         </div>
         <div className="flex min-h-0 flex-1 flex-col">
           <GameComponent mode="story" bankroll={wagerCap} onBet={handleBet} onResolve={handleResolve} />

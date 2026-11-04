@@ -19,7 +19,7 @@ import { buildPendingResult, type GamePendingResult } from '@/lib/game-result-la
 import { pickQuote } from '@/lib/gambling-quotes'
 import { formatMultiplier } from '@/utils/format'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
-import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_RACK_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
+import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_RACK_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, useStoryTableChips, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { PlayingCard } from '@/components/games/playing-card'
 import { PerkHint } from '@/components/survival/perk-hint'
@@ -56,8 +56,9 @@ export function AndarBaharGame({ mode, bankroll, onBet, onResolve }: { mode: Gam
   const [revealed, setRevealed] = useState(0)
   const [jokerRevealed, setJokerRevealed] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const storyTable = useStoryTableChips()
   const ticketChip = useOpeningTicketChip(minBet)
-  const chips = useMemo(() => ticketChip ? [ticketChip] : dockChips(minBet), [ticketChip, minBet])
+  const chips = useMemo(() => ticketChip ? [ticketChip] : dockChips(minBet, storyTable?.chips), [ticketChip, minBet, storyTable])
   const selectedChip = chips.find((chip) => chip.value === chipValue)?.value ?? chips[0]!.value
   const totalBet = Object.values(bets).reduce((sum, amount) => sum + (amount ?? 0), 0)
   const betting = round.stage === 'betting'

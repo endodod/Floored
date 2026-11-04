@@ -20,7 +20,7 @@ import {
   GameDockChipRow,
   GAME_DOCK_RACK_BTN,
   dockChips,
-  useOpeningTicketChip,
+  useOpeningTicketChip, useStoryTableChips,
   stakeForFraction,
   type StakeFraction,
   GameDockGameOverButton,
@@ -243,8 +243,9 @@ export function RouletteGame({ mode, bankroll, onBet, onResolve }: RouletteGameP
   const [placed, setPlaced] = useState<{ target: string; amount: number }[]>([])
   const [lastBets, setLastBets] = useState<BetMap>({})
   const ladder = mode === 'ladder'
+  const storyTable = useStoryTableChips()
   const ticketChip = useOpeningTicketChip(minBet)
-  const chips = useMemo(() => (ticketChip ? [ticketChip] : dockChips(minBet)), [ticketChip, minBet])
+  const chips = useMemo(() => (ticketChip ? [ticketChip] : dockChips(minBet, storyTable?.chips)), [ticketChip, minBet, storyTable])
   const [chipValue, setChipValue] = useState(0)
   const selectedChip = chips.some((c) => c.value === chipValue) ? chipValue : chips[0]!.value
   // ¼ / ½ / All in: a share of the bankroll per tap instead of one chip. Not offered on the opening ticket.

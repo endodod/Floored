@@ -1,7 +1,7 @@
 'use client'
 import type { GameMode } from '@/store/types'
 
-import { useEffect, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { GameDockRandomQuote } from '@/components/game-dock-random-quote'
@@ -11,6 +11,8 @@ import { useLadderHub } from '@/lib/ladder/active'
 import { useRouteMode, useRunEndStatus, type RunEndStatus } from '@/hooks/use-run-end'
 import { getOpeningTicketCapMultiplier } from '@/lib/survival/survival-perks'
 import { useSurvivalStore } from '@/store/survival-store'
+import { useStoryStore } from '@/store/story-store'
+import { VENUE_MAX_M } from '@/lib/story/economy'
 import { formatCurrentBetLine, formatOutcomeDisplayText } from '@/lib/game-result-labels'
 import { formatChips } from '@/utils/format'
 
@@ -24,6 +26,30 @@ export const GAME_CHIPS = [
 
 /** Survival's chips scale with the floor's min bet; they wear the floor's colours in the same order. */
 const SURVIVAL_CHIP_COLOURS = GAME_CHIPS.map(({ chip, ink }) => ({ chip, ink }))
+
+/** A room with no table max spreads its chips as if the max were this many min bets. */
+const STORY_NO_LIMIT_SPREAD = 100
+
+/**
+ * Story tables: four chips from the table min up to the table max (min, ¼, ½ and all
+ * of the max), and the last pill bets the most allowed: "Max" at a table with a
+ * limit, "All in" in a room without one. Null outside story mode.
+ */
+export function useStoryTableChips(): { chips: DockChip[]; lastLabel: string } | null {
+  const story = useRouteMode() === 'story'
+  const minBet = useStoryStore((s) => s.minBet())
+  const venue = useStoryStore((s) => s.tonight?.venue ?? 0)
+  return useMemo(() => {
+    if (!story) return null
+    const maxM = VENUE_MAX_M[venue]
+    const spread = maxM ?? STORY_NO_LIMIT_SPREAD
+    const values = [...new Set([1, spread / 4, spread / 2, spread].map((f) => Math.max(minBet, Math.round(f * minBet))))]
+    return {
+      chips: values.map((value, i) => ({ value, label: formatChips(value), ...SURVIVAL_CHIP_COLOURS[i % 4]! })),
+      lastLabel: maxM == null ? 'All in' : 'Max',
+    }
+  }, [story, minBet, venue])
+}
 
 function chipStyle(chip: string, ink: string): CSSProperties {
   return { '--chip': chip, '--chip-ink': ink } as CSSProperties
@@ -87,9 +113,10 @@ export function GameDockBackButton({
   if (!visible) return null
   return (
     <div className="absolute left-3 top-3 z-10 flex gap-2">
-      <button type="button" onClick={() => router.push(mode === 'ladder' ? ladderHub : `/${mode}`)} className={BOARD_CORNER_BTN}>
-        {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily challenge' : mode === 'challenge' ? '← Challenge' : mode === 'ladder' ? '← Ladder' : mode === 'story' ? '← Story' : '← All games'}
-      </button>
+      {/* Story leaves through the HUD's back link, so the board has no back button there. */}
+      {mode !== 'story' && <button type="button" onClick={() => router.push(mode === 'ladder' ? ladderHub : `/${mode}`)} className={BOARD_CORNER_BTN}>
+        {mode === 'survival' ? '← Lobby' : mode === 'daily' ? '← Daily challenge' : mode === 'challenge' ? '← Challenge' : mode === 'ladder' ? '← Ladder' : '← All games'}
+      </button>}
       {game && (
         <Link href={`/how-to-play/${game}`} className={`${BOARD_CORNER_BTN} inline-flex items-center gap-1.5`}>
           <span
@@ -435,8 +462,11 @@ export function GameDockChipRow({
   const ladder = useIsLadderRoute()
   const purchasedUpgrades = useSurvivalStore((s) => s.purchasedUpgrades)
   const openingTicketCap = minBet ? minBet * getOpeningTicketCapMultiplier(purchasedUpgrades) : 0
+  const storyTable = useStoryTableChips()
   const useSurvivalChips = (minBet ?? 1) > 1
-  const survivalChips = useSurvivalChips
+  const survivalChips = storyTable
+    ? storyTable.chips
+    : useSurvivalChips
     ? [
         { value: minBet!, label: formatChips(minBet!) },
         { value: Math.round(minBet! * 2.5), label: formatChips(Math.round(minBet! * 2.5)) },
@@ -493,6 +523,7 @@ export function GameDockChipRow({
                       <span>{chip.label}</span>
                     </button>
                   ))}
+              {!storyTable && <>
               <button
                 type="button"
                 onClick={() => onAddChip(Math.max(Math.floor(bankroll / 4), minBet ?? 1))}
@@ -509,13 +540,14 @@ export function GameDockChipRow({
               >
                 ½
               </button>
+              </>}
               <button
                 type="button"
                 onClick={() => onAddChip(bankroll)}
                 disabled={currentBet >= bankroll || bankroll <= 0}
                 className={`${FRAC_BTN} border-gold text-gold hover:border-gold hover:bg-gold-tint hover:shadow-[0_0_18px_-6px_rgba(217,164,65,0.8)]`}
               >
-                {allInLabel}
+                {storyTable?.lastLabel ?? allInLabel}
               </button>
             </>
           )}
@@ -527,8 +559,9 @@ export function GameDockChipRow({
 
 export type DockChip = { value: number; label: string; chip: string; ink: string }
 
-/** The chips a game offers: the standard four, or four scaled to the survival floor's minimum bet. */
-export function dockChips(minBet?: number): DockChip[] {
+/** The chips a game offers: the standard four, four scaled to the survival floor's minimum bet, or a story table's (`useStoryTableChips`). */
+export function dockChips(minBet?: number, story?: DockChip[] | null): DockChip[] {
+  if (story) return story
   if ((minBet ?? 1) <= 1) return GAME_CHIPS.map((c) => ({ ...c }))
   return [1, 2.5, 10, 50].map((m, i) => {
     const value = Math.round(minBet! * m)
@@ -589,6 +622,8 @@ export function GameDockChipPicker({
   onSelectFraction?: (fraction: StakeFraction) => void
   children?: ReactNode
 }) {
+  const storyTable = useStoryTableChips()
+  const fractions = storyTable ? STAKE_FRACTIONS.filter((f) => f.value === 'all').map((f) => ({ ...f, label: storyTable.lastLabel })) : STAKE_FRACTIONS
   return (
     <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-center gap-1.5 sm:gap-2" role="radiogroup" aria-label="Chip value">
       {chips.map((chip) => {
@@ -612,7 +647,7 @@ export function GameDockChipPicker({
         )
       })}
       {onSelectFraction &&
-        STAKE_FRACTIONS.map((f) => {
+        fractions.map((f) => {
           const on = fraction === f.value
           return (
             <button

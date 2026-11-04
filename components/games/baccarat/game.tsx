@@ -16,7 +16,7 @@ import { resolveGame } from '@/lib/survival/game-resolve'
 import { buildPendingResult, formatBetSummary, type GamePendingResult } from '@/lib/game-result-labels'
 import { pickQuote } from '@/lib/gambling-quotes'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
-import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_RACK_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
+import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_RACK_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, useStoryTableChips, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { PlayingCard } from '@/components/games/playing-card'
 import { PerkHint } from '@/components/survival/perk-hint'
@@ -42,8 +42,9 @@ export function BaccaratGame({ mode, bankroll, onBet, onResolve }: { mode: GameM
   const [placed, setPlaced] = useState<{ target: BaccaratSpot; amount: number }[]>([])
   const [chipValue, setChipValue] = useState(0)
   const [fraction, setFraction] = useState<StakeFraction | null>(null)
+  const storyTable = useStoryTableChips()
   const ticketChip = useOpeningTicketChip(minBet)
-  const chips = useMemo(() => ticketChip ? [ticketChip] : dockChips(minBet), [ticketChip, minBet])
+  const chips = useMemo(() => ticketChip ? [ticketChip] : dockChips(minBet, storyTable?.chips), [ticketChip, minBet, storyTable])
   const selectedChip = chips.find(c => c.value === chipValue)?.value ?? chips[0]!.value
   const [peekCard, setPeekCard] = useState<ReturnType<typeof peekPlayerCard> | null>(null)
   const [dealing, setDealing] = useState(false)

@@ -2919,6 +2919,17 @@ body > div.neon-auth-ui {
   background: linear-gradient(180deg, rgba(24, 20, 16, 0.92), rgba(12, 11, 10, 0.95));
   box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.4);
 }
+/* A house game in story mode: the HUD names the game, so the board's status bar
+   drops the name and centres the message. */
+.st-game .game-status-bar {
+  justify-content: center;
+}
+.st-game .game-status-bar > :first-child {
+  display: none;
+}
+.st-game .game-status-bar > :last-child {
+  text-align: center;
+}
 .st-game-tile {
   background: radial-gradient(ellipse 120% 90% at 30% 20%, #1d3b2b, #12221a 70%);
   box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.3);

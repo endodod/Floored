@@ -19,7 +19,7 @@ import { buildPendingResult, type GamePendingResult } from '@/lib/game-result-la
 import { pickQuote } from '@/lib/gambling-quotes'
 import { formatMultiplier } from '@/utils/format'
 import { GAME_CARD_SHELL, GAME_BOARD_ARENA, GAME_CONTROL_DOCK_M, GAME_STATUS_BAR } from '@/components/game-layout'
-import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_RACK_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
+import { GAME_DOCK_INNER, GAME_DOCK_SETTLED_SLOT, GAME_DOCK_ACTIONS, GAME_DOCK_PRIMARY_BTN, GAME_DOCK_RACK_BTN, GameDockBackButton, GameActiveBetBadge, GameDockChipRow, GameDockChipPicker, GameDockBetRow, GameDockSettledRow, GameDockSettledActions, GameDockGameOverButton, dockChips, useOpeningTicketChip, useStoryTableChips, stakeForFraction, type StakeFraction } from '@/components/game-dock-parts'
 import { GameFieldWithHistory, type MatchHistoryEntry } from '@/components/game-match-history'
 import { PlayingCard } from '@/components/games/playing-card'
 import { PerkHint } from '@/components/survival/perk-hint'
@@ -47,8 +47,9 @@ export function DragonTigerGame({ mode, bankroll, onBet, onResolve }: { mode: Ga
   const [draw, setDraw] = useState<{ result: DragonTigerState; order: DragonTigerHand[]; shown: number } | null>(null)
   const drawTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const betting = round.stage === 'betting'; const settled = round.stage === 'settled'; const { showGameOver, handleGameOver } = useRunEnd(mode, { idle: betting || (settled && pending != null) })
+  const storyTable = useStoryTableChips()
   const ticketChip = useOpeningTicketChip(minBet)
-  const chips = useMemo(() => ticketChip ? [ticketChip] : dockChips(minBet), [ticketChip, minBet])
+  const chips = useMemo(() => ticketChip ? [ticketChip] : dockChips(minBet, storyTable?.chips), [ticketChip, minBet, storyTable])
   const selectedChip = chips.find((chip) => chip.value === chipValue)?.value ?? chips[0]!.value
   const totalBet = Object.values(bets).reduce((sum, amount) => sum + (amount ?? 0), 0)
   useLadderAllIn(mode, bankroll, totalBet, (value) => setBets(value > 0 ? { dragon: value } : {}))
