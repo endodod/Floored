@@ -21,7 +21,7 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
@@ -438,10 +438,6 @@ export function StoryHub() {
                 <div className="plaque rounded-md px-3 py-1.5">
                   <dt className="felt-print !text-[9.5px]">Buy-in</dt>
                   <dd className="num text-[15px] font-semibold text-ink">{money(buyIn)}</dd>
-                </div>
-                <div className="plaque rounded-md px-3 py-1.5">
-                  <dt className="felt-print !text-[9.5px]">Purse</dt>
-                  <dd className="num text-[15px] font-semibold text-gold">{money(BOSS_PURSE_M * m)}</dd>
                 </div>
               </dl>
             )}
