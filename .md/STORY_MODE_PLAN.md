@@ -168,7 +168,7 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 | Tables session | stake-based | one per night | skill + luck |
 | Sleeping (2026-11-04) | your choice every night: **the car** (free in every city; **5 bets** the next night) or **a room** (3m in the first city, 4m after; **10 bets**); a room you can't pay for can't be chosen; paid down to $0, never into debt; a new story starts with 5 bets | every night | — |
 | Boss | **buy-in 50m, purse 150m** | rematch after 2 nights, same difficulty | about 50/50 |
-| Travel fare | 20m of the next city | once | — |
+| Travel | free: beating the boss opens the road (the fare was cut 2026-11-04) | once | — |
 
 ### What the simulation showed (`pnpm sim:story`, 1,000 circuits per player type, seed 1, 2026-11-03)
 

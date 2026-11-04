@@ -8,7 +8,7 @@ import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryCont
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
   DEBT_WARN_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
-  TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
+  VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
 import { goalKey, kindOf, makeOffers, NIGHT_KINDS, type Job, type JobKind } from '@/lib/story/jobs'
@@ -265,8 +265,6 @@ interface StoryActions {
   /** Pays the buy-in and seats you; false if you can't. */
   enterBoss: () => boolean
   bossResult: (won: boolean) => void
-  /** The fare to the next city, in dollars (null at the Summit). */
-  fareToNext: () => number | null
   travelNext: () => boolean
 }
 
@@ -803,17 +801,12 @@ export const useStoryStore = create<StoryStore>()(
             queue(get().sceneFor({ on: 'boss-loss' }))
           }
         },
-        fareToNext: () => {
-          const i = CITIES.findIndex((c) => c.id === get().city)
-          const next = CITIES[i + 1]
-          return next ? TRAVEL_FARE_M * next.minBet : null
-        },
         travelNext: () => {
           const s = get()
           const i = CITIES.findIndex((c) => c.id === s.city)
           const next = CITIES[i + 1]
-          const fare = get().fareToNext()
-          if (!next || fare == null || s.tonight || !s.cleared.includes(s.city) || !get().spend(fare)) return false
+          // Beating the boss is the ticket out: the road costs nothing (owner decision 2026-11-04).
+          if (!next || s.tonight || !s.cleared.includes(s.city)) return false
           set({ city: next.id, visited: s.visited.includes(next.id) ? s.visited : [...s.visited, next.id], cityNight: 0, markersHere: 0, bossBackOn: null, lastNight: null })
           queue(get().sceneFor({ on: 'arrival' }))
           // The first night in a new town starts with its offers too.

@@ -30,7 +30,7 @@ import { CITIES, type City } from '@/lib/story/cities'
 import { gamesFor } from '@/lib/story/rotation'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE,
-  HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, SLEEP_BETS, START_BETS, STANDING_MAX, sleepCostM, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
+  HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, SLEEP_BETS, START_BETS, STANDING_MAX, sleepCostM, START_MONEY, VENUE_MAX_M, VENUE_REP,
   standingBonus,
 } from '@/lib/story/economy'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
@@ -140,10 +140,9 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     const city: City = CITIES[c]!
     const next = CITIES[c + 1]
     const ratio = next ? next.minBet / city.minBet : 1
-    const fare = next ? TRAVEL_FARE_M * ratio : 0
     const all: GameName[] = city.games === 'all-seen' ? [...seen] : city.games
     all.forEach((g) => seen.add(g))
-    const target = BOSS_BUYIN_M + t.reserve + fare
+    const target = BOSS_BUYIN_M + t.reserve
     let n = 0
     // The town's jobs (one per giver): kind, the night offered, and whether taken.
     const jobs: { kind: 'minigame' | 'table'; at: number; taken: boolean }[] = []
@@ -231,7 +230,7 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       if (n > 1000) return { nights, busts, bosses, recoveries, stuck: true }
     }
     nights.push(n)
-    money = next ? (money - fare) / ratio : money
+    money = next ? money / ratio : money
   }
   return { nights, busts, bosses, recoveries, stuck: false }
 }

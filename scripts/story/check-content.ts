@@ -15,7 +15,7 @@
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, TRAVEL_FARE_M, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
   CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
@@ -628,10 +628,9 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   st().bossResult(true)
   if (!st().cleared.includes('dustwater') || st().money !== sitting + BOSS_PURSE_M * m) fail(`a boss win pays ${BOSS_PURSE_M}m and clears the city`)
   if (st().rep() !== standingAtBoss) fail('a boss win pays the purse and clears the town but gives no standing')
-  const fare = st().fareToNext()!
   const holding = st().money
   useStoryStore.setState(jobsSaved)
-  if (!st().travelNext() || st().city !== 'silver-mesa' || st().money !== holding - fare || fare !== TRAVEL_FARE_M * CITIES[1]!.minBet) fail('travel to the next city costs 20 of its minimum bets')
+  if (!st().travelNext() || st().city !== 'silver-mesa' || st().money !== holding) fail('beating the boss opens the road, and travel is free')
   {
     // After the first town: the car is still free and a room is 4m.
     const m2 = st().minBet()

@@ -104,7 +104,6 @@ export function StoryHub() {
   // The town's people, then those who travel with you and give jobs everywhere (Jo).
   const people = [...CHARACTERS.filter((c) => c.city === s.city && c !== boss), ...CHARACTERS.filter((c) => (TRAVELLING_GIVERS as readonly string[]).includes(c.id))]
   const cleared = s.cleared.includes(s.city)
-  const fare = s.fareToNext()
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
   const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, s.openJobGames())
   const broke = s.money < m && !night
@@ -521,16 +520,15 @@ export function StoryHub() {
         art: undefined,
         body: (
           <>
-            {cleared && nextCity && fare != null ? (
+            {cleared && nextCity ? (
               <>
                 <SheetNote tone="soft">
                   {nextCity.feel[0]!.toUpperCase() + nextCity.feel.slice(1)}. Minimum bet there {money(nextCity.minBet)}.
                 </SheetNote>
                 {night && <SheetNote tone="loss">Finish the night first.</SheetNote>}
-                {!night && s.money < fare && <SheetNote tone="loss">The fare is {money(fare)}.</SheetNote>}
                 <Actions>
-                  <Button disabled={!!night || s.money < fare} onClick={() => { if (s.travelNext()) { setSheet(null); s.playQueued() } }}>
-                    Travel to {nextCity.name} · {money(fare)}
+                  <Button disabled={!!night} onClick={() => { if (s.travelNext()) { setSheet(null); s.playQueued() } }}>
+                    Travel to {nextCity.name}
                   </Button>
                 </Actions>
               </>

@@ -151,10 +151,12 @@ Hold'em), Monte Lune ($250, Liar's Dice), Kurstadt ($1,000, Blackjack Showdown),
 ($5,000, Hold'em), The Summit ($25,000, the final). Each city deals 8 house games and every game
 is in exactly two cities. Boss buy-in `BOSS_BUYIN_M` 100m, win `BOSS_PURSE_M` 300m; Jo and Cutter
 say "a hundred times the house minimum" (checked). Save version 10 moves a save in a cut city to
-the next city left (`REMOVED_CITIES` in `lib/story/cities.ts`). **Open:** `pnpm sim:story` fails
-its 4-8 nights-a-city target (balanced 18 / 70, cautious 19 / 44; whole circuit ~191 nights, about
-the old 12-city length): the ×4 step in stakes between cities is the main driver. Waiting on the
-owner: accept a longer stay per city (and move the target), or retune.
+the next city left (`REMOVED_CITIES` in `lib/story/cities.ts`). The **travel fare is gone**
+(beating the boss is the ticket out). **Open:** `pnpm sim:story` fails its 4-8 nights-a-city
+target: balanced 12 / 47, cautious 11 / 37 nights a city, but the whole circuit (~123 nights
+balanced) is shorter than the old 12-city one (~134). Waiting on the owner: move the target to
+the circuit length, or retune. The map spreads the stops over the whole width and its act bands
+tile edge to edge.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
@@ -230,7 +232,7 @@ Port that generator to TypeScript; don't redraw from scratch.
 - Boss: `enterBoss()` pays 50m and sets `bossTable { seed }`; `bossResult(won)` pays 150m +
   the `<city>-cleared` flag (no standing), or sets `bossBackOn = night + 2`. Leaving the
   boss table must count as a loss (see 3e).
-- `travelNext()` needs the city cleared and the fare (20 × next city's min bet).
+- `travelNext()` needs the city cleared (and no night on); the road is free since 2026-11-04.
 - Known gap: `stats.busts` only counts busts found at `endNight()`; a bust mid-night is
   caught when the night ends.
 

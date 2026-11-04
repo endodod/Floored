@@ -18,8 +18,8 @@ The seven entries already exist (ids are saved, never rename `id`; `name` can ch
 playable once it has content. Fields: `id`, `name`, `act` (1-4), `feel`, `minBet` (dollars, the unit
 `m`, rising city to city), `games` (house games on its floors, or `'all-seen'` for the Summit),
 `tables` (Tables rooms: cash/tournament), `boss` (`table` with a Tables game, or
-`final`), `minigameGivers` (characters with a minigame, used by the sim). Fare to the next city is
-`TRAVEL_FARE_M` (20) of the NEXT city's `m`. Order in the array is the circuit order.
+`final`), `minigameGivers` (characters with a minigame, used by the sim). Travel to the next city is free
+once its boss is beaten. Order in the array is the circuit order.
 
 **Rooms and games.** Each night every room (0 dive, 1 main floor, 2 high-roller) draws
 `GAMES_PER_ROOM` (4) of `games` via `gamesFor(city, night, venue, seen, must)` in

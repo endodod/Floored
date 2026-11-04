@@ -90,9 +90,6 @@ export const BOSS_BUYIN_M = 100
 export const BOSS_PURSE_M = 300
 export const BOSS_REMATCH_NIGHTS = 2
 
-/** Travel to the next city costs this many of the NEXT city's minimum bets. */
-export const TRAVEL_FARE_M = 20
-
 /**
  * A loan (a "marker") from the town's lender, any time: its size, what you repay, and the
  * share of each win's profit that goes to it. Owing DEBT_WARN_M or more brings a warning
