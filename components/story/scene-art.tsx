@@ -121,10 +121,12 @@ function Casino({ c }: { c: Ctx }) {
       {Array.from({ length: 8 }, (_, i) => (
         <path key={i} d={`M${589 + i * 5.6} ${266 + i * 20}h${14}`} stroke={P.trim} strokeWidth={3} />
       ))}
-      <rect x={468} y={160} width={64} height={80} fill={state.locked[2] ? '#0b0a0c' : '#d9a441'} />
-      <rect x={474} y={166} width={52} height={74} fill={state.locked[2] ? '#100e10' : '#6e1f29'} opacity={doorLit(2)} />
-      {!state.locked[2] && <path d="M474 166 Q500 196 526 166" fill="#a92b42" opacity={0.8} />}
-      {state.locked[2] && <Chain x={474} y={166} w={52} h={74} />}
+      {/* The top floor: a wide gold-framed double door, grander than the floors below */}
+      <rect x={444} y={154} width={112} height={86} fill={state.locked[2] ? '#0b0a0c' : '#d9a441'} />
+      <rect x={451} y={161} width={98} height={79} fill={state.locked[2] ? '#100e10' : '#6e1f29'} opacity={doorLit(2)} />
+      {!state.locked[2] && <path d="M451 161 Q500 204 549 161" fill="#a92b42" opacity={0.8} />}
+      <path d="M500 161 V240" stroke={state.locked[2] ? '#1c1a1c' : '#d9a441'} strokeWidth={3} />
+      {state.locked[2] && <Chain x={451} y={161} w={98} h={79} />}
     </g>
   )
 }

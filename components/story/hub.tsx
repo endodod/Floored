@@ -43,7 +43,7 @@ const isLook = (id: string): id is PortraitLook => (PORTRAIT_LOOKS as string[]).
 const VENUE_SPOTS = ['dive', 'main', 'high'] as const
 const VENUE_SHORT = ['The dive', 'Main floor', 'High rollers'] as const
 /** Door hit areas in the casino's own units (see scene-art). */
-const DOOR_SIZE: [number, number][] = [[70, 106], [170, 124], [68, 84]]
+const DOOR_SIZE: [number, number][] = [[70, 106], [170, 124], [112, 88]]
 const MINIGAME_TITLES: Record<string, string> = { 'last-orders': 'Last Orders', 'shuffle-tracker': 'Shuffle Tracker', 'chip-count': 'Chip Count' }
 
 type Sheet =

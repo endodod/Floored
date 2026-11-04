@@ -137,7 +137,7 @@ export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
 
 export const PIECE_ANCHORS: Partial<Record<PieceKind, Record<string, [number, number]>>> = {
   casino: { dive: [100, 368], main: [300, 362], high: [500, 202], sign: [310, 72] },
-  backroom: { door: [85, 168] },
+  backroom: { door: [85, 188] },
   motel: { diner: [70, 200], room: [375, 222] },
   motelSign: { sign: [70, 96] },
   cups: { stand: [45, -6] },
@@ -191,7 +191,7 @@ export const DUSTWATER_SCENE: CitySceneConfig = {
     { id: 'truck', kind: 'truck', wide: { x: -50, y: 560, s: 0.9 }, tall: { x: -330, y: 700, s: 0.7 } },
     { id: 'motelSign', kind: 'motelSign', wide: { x: 285, y: 278, s: 0.9 }, tall: { x: 232, y: 652, s: 0.45 } },
     { id: 'casino', kind: 'casino', wide: { x: 1030, y: 300, s: 0.8 }, tall: { x: 38, y: 190, s: 0.8 } },
-    { id: 'backroom', kind: 'backroom', wide: { x: 1468, y: 494, s: 0.74 }, tall: { x: 448, y: 576, s: 0.7 } },
+    { id: 'backroom', kind: 'backroom', wide: { x: 1468, y: 494, s: 0.74 }, tall: { x: 448, y: 552, s: 0.7 } },
     { id: 'road', kind: 'roadSign', wide: { x: 6, y: 606, s: 0.78 }, tall: { x: 30, y: 592, s: 0.55 } },
     { id: 'lamp1', kind: 'lamp', wide: { x: 735, y: 476, s: 1 }, tall: { x: 180, y: 648, s: 0.95 } },
     { id: 'lamp2', kind: 'lamp', wide: { x: 1150, y: 476, s: 1 }, tall: { x: -60, y: 640, s: 0.95 } },
