@@ -236,6 +236,10 @@ interface StoryActions {
    * nothing changes without such a job.
    */
   playMinigame: (giver: string, minigame: MinigameId, score: number) => number
+  /** Pressing Start: the taken minigame job's one attempt is used from here on. */
+  beginMinigame: (giver: string) => void
+  /** Any started attempt that never finished (you left mid-game) is a miss: the job is lost. */
+  forfeitStartedMinigames: () => void
   dismissNews: (id: number) => void
 
   // Boss and travel
@@ -690,6 +694,15 @@ export const useStoryStore = create<StoryStore>()(
           get().offerTonight()
           return summary
         },
+        beginMinigame: (giver) => {
+          const job = get().minigameJobAt(giver)
+          if (job) set((x) => ({ jobs: x.jobs.map((j) => (j.id === job.id ? { ...j, started: true } : j)) }))
+        },
+        forfeitStartedMinigames: () => {
+          for (const j of get().openJobs()) {
+            if (j.started && j.goal.kind === 'minigame') get().playMinigame(j.giver, j.goal.minigame, 0)
+          }
+        },
         minigameJobAt: (giver) => get().openJobs().find((j) => j.giver === giver && j.goal.kind === 'minigame') ?? null,
         playMinigame: (giver, minigame, score) => {
           const job = get().minigameJobAt(giver)
@@ -699,7 +712,7 @@ export const useStoryStore = create<StoryStore>()(
             completeJob(job)
             return get().money - before
           }
-          // One attempt: a miss loses the job, and its giver is free.
+          // One attempt: a miss (or leaving mid-game) loses the job, and its giver is free.
           set((x) => ({ jobs: x.jobs.filter((j) => j.id !== job.id) }))
           say(`Job lost: ${job.title} · you needed ${Math.round(job.goal.score * 100)}%`)
           get().offerTonight()

@@ -68,7 +68,10 @@ export function StoryHub() {
   // before version 6 gets its first one here). Safe to call on every visit.
   const started = s.started
   useEffect(() => {
-    if (started) useStoryStore.getState().offerTonight()
+    if (!started) return
+    // A minigame left mid-game is a miss (its one attempt was used), then tonight's offers.
+    useStoryStore.getState().forfeitStartedMinigames()
+    useStoryStore.getState().offerTonight()
   }, [started])
   const router = useRouter()
   const [confirmNew, setConfirmNew] = useState(false)

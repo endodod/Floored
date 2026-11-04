@@ -55,6 +55,8 @@ export interface Job {
   status: 'offered' | 'open'
   /** The global night it was offered. */
   night: number
+  /** A minigame job whose one attempt has started: leaving before the end loses it. */
+  started?: boolean
 }
 
 /** People who give jobs in every town (they travel with you). */

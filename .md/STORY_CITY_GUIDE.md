@@ -115,7 +115,7 @@ and spawned jobs). The rules, all in code and all tested by `check:story`:
 - **Pay and standing:** a table job pays 3m-5m (`TABLE_JOB_PAY_M`) and earns `JOB_STANDING` (1)
   up to `STANDING_MAX`. A minigame job is **one attempt**: at the target it pays 6m-8m
   (`MINIGAME_JOB_PAY_M`: 60% / 80% / perfect) and **no standing**; a miss pays nothing and the
-  job is gone. Minigames are **only played as jobs** (no practice, no other pay).
+  job is gone. Pressing Start uses the attempt: leaving mid-game counts as a miss. Minigames are **only played as jobs** (no practice, no other pay).
 - **Jobs belong to their town**: leave and they wait there for your return.
 
 The save keeps `jobs` (every offered and taken job, each with `status`), `jobsGiven` (task keys

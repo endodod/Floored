@@ -475,7 +475,15 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     useStoryStore.setState({ jobs: [mini('jo', 'chip-count', 0.8)] })
     if (!st().minigameJobAt('jo')) fail("a taken minigame job lets you play Jo's Chip Count")
     if (st().playMinigame('jo', 'chip-count', 0.6) !== 0 || st().jobs.some((j) => j.id.startsWith('test:')) || st().money !== 100 * m) fail('a miss loses the minigame job and pays nothing')
+    // Start uses the one go: leaving before the end is a miss.
+    useStoryStore.setState({ jobs: [mini('pike', 'shuffle-tracker', 0.6)] })
+    st().beginMinigame('pike')
+    if (!st().jobs[0]?.started) fail('pressing Start marks the attempt as used')
+    st().forfeitStartedMinigames()
+    if (st().jobs.length || st().money !== 100 * m) fail('a started attempt left before the end loses the job and pays nothing')
     useStoryStore.setState({ jobs: [mini('marta', 'last-orders', 0.8)] })
+    st().forfeitStartedMinigames()
+    if (st().jobs.length !== 1) fail('a minigame job not yet started is not forfeited')
     if (st().playMinigame('marta', 'last-orders', 0.8) !== 7 * m || st().rep() !== 1 || st().jobs.some((j) => j.id.startsWith('test:'))) fail('a hit pays the minigame job and earns no standing')
     useStoryStore.setState(saved)
   }

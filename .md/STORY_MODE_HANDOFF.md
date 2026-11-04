@@ -122,6 +122,9 @@ Notary line, Jo's walkthrough and How the nights work say so). Room 5's label si
 roof. Save version 9 caps a save's next night at 10. Sim (3000, seed 1) nights per city median /
 worst 10%: never gambles 23 / 75 (reference), cautious 7 / 20, balanced 6 / 31, high variance
 7 / 50 (busts ~0), bold 3 / 14 (busts ~2.2). All checks pass.
+**Start uses the one go:** pressing Start on a minigame job marks it `started` (`beginMinigame`);
+leaving before the end (back button, reload, closing the page) is a miss, settled the next time
+the hub or that minigame page loads (`forfeitStartedMinigames`): the job is lost, no pay.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).

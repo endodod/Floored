@@ -56,6 +56,7 @@ function Minigame({ id, job }: { id: MinigameId; job: Job }) {
   const city = useStoryStore((s) => CITY_BY_ID.get(s.city)!)
   const giver = giverOf(id, city.id)!
   const playMinigame = useStoryStore((s) => s.playMinigame)
+  const beginMinigame = useStoryStore((s) => s.beginMinigame)
   const [stage, setStage] = useState<Stage>('intro')
   const [result, setResult] = useState<{ score: number; paid: number; hit: boolean } | null>(null)
   const settled = useRef(false)
@@ -100,9 +101,9 @@ function Minigame({ id, job }: { id: MinigameId; job: Job }) {
           {stage === 'intro' && (
             <div className="flex flex-col items-start gap-3 st-card rounded-md p-4">
               <p className="text-[13px] text-soft">{info.intro}</p>
-              <p className="text-[13px] text-dim">Miss the mark and the job is gone. Minigame jobs earn no standing.</p>
+              <p className="text-[13px] text-dim">Start uses your one go: miss the mark, or leave before the end, and the job is gone. Minigame jobs earn no standing.</p>
               <div className="flex gap-2">
-                <Button size="lg" onClick={() => setStage('playing')}>Start</Button>
+                <Button size="lg" onClick={() => { beginMinigame(giver.id); setStage('playing') }}>Start</Button>
                 <Button asChild size="lg" variant="ghost"><Link href="/story">Not yet</Link></Button>
               </div>
             </div>
@@ -141,7 +142,13 @@ export default function MinigamePage({ params }: { params: Promise<{ id: string 
   // and the result must stay on screen.
   const [job, setJob] = useState<Job | null>(null)
   useEffect(() => {
-    if (hydrated && !job && live) setJob(live)
+    if (!hydrated || job || !live) return
+    // An attempt already started and left (a reload, the back button) was the one go.
+    if (live.started) {
+      useStoryStore.getState().forfeitStartedMinigames()
+      return
+    }
+    setJob(live)
   }, [hydrated, job, live])
   const ok = started && id in INFO && !!giver && (!!job || !!live)
 
