@@ -6,13 +6,14 @@
  * 2. Circuit simulation: thousands of whole circuits (12 cities) for five player
  *    types, using each city's real game list, the economy constants and the
  *    odds above. Standing is modelled per town: every town starts the player in
- *    the dive, every finished job lifts standing one (minigame jobs too), a bust takes
- *    one off, and the player moves up to the best room their standing opens (their own
- *    preferred room or lower). Jobs follow lib/story/jobs.ts: one new offer a night while
- *    the town holds fewer than JOB_LIMIT (one per giver, JOB_GIVERS of them), starting on
- *    the first night; the player takes every offer and finishes at most one job a night.
- *    A player who never bets can only clear minigame jobs, so the rest pile up and block
- *    their givers.
+ *    the dive, every finished table job lifts standing one, a bust takes one off, and
+ *    the player moves up to the best room their standing opens (their own preferred
+ *    room or lower). Jobs follow lib/story/jobs.ts: each night a minigame job and a table
+ *    job while the town has room (JOB_LIMIT, one per giver; a coin flip when one place is
+ *    left), from the first night. The player takes every offer. Each minigame job is one
+ *    attempt that night (a score drawn per attempt): at the target it pays
+ *    MINIGAME_JOB_PAY_M, short of it the job is lost. A player who bets finishes one table
+ *    job a night; one who never bets can't, so table jobs pile up and block their givers.
  *    A night up at the tables earns the standing bonus. Prints nights per
  *    city and over the circuit, busts, boss tries, and recovery time after a bust,
  *    and checks the plan's targets.
@@ -24,10 +25,9 @@ import { CITIES, type City } from '@/lib/story/cities'
 import { gamesFor } from '@/lib/story/rotation'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE,
-  HUSTLE_PAY_M, JOB_LIMIT, JOB_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
+  HUSTLE_PAY_M, JOB_LIMIT, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, NIGHT_BETS, STANDING_MAX, START_MONEY, TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP,
   standingBonus,
 } from '@/lib/story/economy'
-import { noBetShare } from '@/lib/story/jobs'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
 import type { GameName } from '@/store/types'
 import { createRng } from '@/utils/rng'
@@ -132,8 +132,8 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
     all.forEach((g) => seen.add(g))
     const target = BOSS_BUYIN_M + t.reserve + fare
     let n = 0
-    // The town's jobs: true when a player who never bets can do it (a minigame job).
-    const jobs: boolean[] = []
+    // The town's jobs, by kind (one per giver).
+    const jobs: ('minigame' | 'table')[] = []
     let standing = 0
     let wait = 0
     let brokeSince: number | null = null
@@ -154,16 +154,24 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       const venue = Math.min(t.venue, roomFor(standing)) as 0 | 1 | 2
       const cap = VENUE_MAX_M[venue] ?? Infinity
       const list = gamesFor(city, totalNights, venue, [...seen])
-      for (let g = 0; g < city.minigameGivers; g++) money += MINIGAME_MAX_M * (0.45 + rng() * 0.5)
-      // Tonight's offer, while the town has room (one per giver, JOB_LIMIT at most).
-      if (jobs.length < Math.min(JOB_LIMIT, JOB_GIVERS)) {
-        const minigameShare = (Math.min(city.minigameGivers, JOB_GIVERS) / JOB_GIVERS) * noBetShare(true)
-        jobs.push(rng() < minigameShare)
+      // Tonight's offers: a minigame job and a table job, while the town has room (a coin
+      // flip with one place left).
+      const room = Math.min(JOB_LIMIT, JOB_GIVERS) - jobs.length
+      if (room >= 2) jobs.push('minigame', 'table')
+      else if (room === 1) jobs.push(rng() < 0.5 ? 'minigame' : 'table')
+      // Every minigame job gets its one attempt tonight: a target of 60%, 80% or perfect,
+      // paying 6m, 7m or 8m; short of it the job is lost.
+      for (let k = jobs.length - 1; k >= 0; k--) {
+        if (jobs[k] !== 'minigame') continue
+        jobs.splice(k, 1)
+        const tier = Math.floor(rng() * 3)
+        const targetScore = [0.6, 0.8, 1][tier]!
+        if (0.4 + rng() * 0.62 >= targetScore) money += MINIGAME_JOB_PAY_M.min + tier
       }
-      // One job finished a night: any for a player who bets, a minigame job otherwise.
+      // One table job finished a night, by a player who bets.
       let clearsJob = false
-      const k = t.gamble ? (jobs.length ? 0 : -1) : jobs.indexOf(true)
-      if (k >= 0) { jobs.splice(k, 1); clearsJob = true; money += (JOB_PAY_M.min + JOB_PAY_M.max) / 2 }
+      const k = t.gamble ? jobs.indexOf('table') : -1
+      if (k >= 0) { jobs.splice(k, 1); clearsJob = true; money += (TABLE_JOB_PAY_M.min + TABLE_JOB_PAY_M.max) / 2 }
       if (t.gamble && money >= 1) {
         for (let h = 0; h < HUSTLES_PER_NIGHT; h++) if (rng() < 0.75) money += HUSTLE_PAY_M
         let turnover = 0
@@ -191,7 +199,7 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
         // standingBonus rounds to whole units, so it works in hundredths of m.
         money += standingBonus(Math.min(STANDING_MAX, standing + (clearsJob ? 1 : 0)), tableNet * 100) / 100
       }
-      // A job finished tonight lifts standing (every job does, minigame jobs too).
+      // A table job finished tonight lifts standing (minigame jobs don't).
       if (clearsJob) standing = Math.min(STANDING_MAX, standing + 1)
       if (money >= CAR_BELOW_M) money = Math.max(0, money - LODGING_M)
       n++

@@ -7,11 +7,11 @@ import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_STANDING,
-  LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY,
+  LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, NIGHT_BETS, STANDING_MAX, START_MONEY,
   TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
-import { goalKey, makeOffer, type Job } from '@/lib/story/jobs'
+import { goalKey, kindOf, makeOffers, NIGHT_KINDS, type Job, type JobKind } from '@/lib/story/jobs'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import type { Effect, FactionId, MinigameId, Scene, SceneTrigger } from '@/lib/story/types'
 import type { GameName } from './types'
@@ -32,10 +32,13 @@ import type { GameName } from './types'
  * Version 5: `jobs`, the spawned jobs (lib/story/jobs.ts); older saves start with none.
  * Version 6: one job system (lib/story/jobs.ts): `errands` is gone, `jobs` holds every
  * offered and taken job, `jobsGiven` the tasks each town has handed out and
- * `jobOffered` the night of each town's last offer. Open errands and old jobs are
+ * `jobOffered` the night of each town's last offer (version 7 replaces it). Open errands and old jobs are
  * dropped; finished written jobs count as given, so they never come back.
+ * Version 7: two offers a night (a minigame job and a table job): `jobOffered`
+ * became `jobNight`, the kinds each town has offered on its last offer night.
+ * Minigames are only played as jobs, so `minigameNight` (their nightly pay) is gone.
  */
-export const STORY_SAVE_VERSION = 6
+export const STORY_SAVE_VERSION = 7
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
@@ -96,10 +99,8 @@ export interface StorySave {
   jobs: Job[]
   /** The task keys (`goalKey`) each town has handed out: it never gives one twice. */
   jobsGiven: Partial<Record<CityId, string[]>>
-  /** The global night of each town's last offer (one a night). */
-  jobOffered: Partial<Record<CityId, number>>
-  /** Minigame giver → the night their minigame last paid. */
-  minigameNight: Record<string, number>
+  /** Each town's last offer night and the kinds offered on it (one minigame and one table job a night). */
+  jobNight: Partial<Record<CityId, { night: number; kinds: JobKind[] }>>
   /** The night the rival is back after a boss loss (null: they're here). */
   bossBackOn: number | null
   /** A boss table you sat down at (the buy-in is paid); leaving it loses. */
@@ -138,8 +139,7 @@ const fresh = (): StorySave => ({
   seen: [],
   jobs: [],
   jobsGiven: {},
-  jobOffered: {},
-  minigameNight: {},
+  jobNight: {},
   bossBackOn: null,
   bossTable: null,
   seenGames: [],
@@ -191,7 +191,7 @@ interface StoryActions {
   canTalk: (character: string) => boolean
   /** Talks to someone: their next scene, then their job offer (or the offer alone). */
   talkTo: (character: string) => boolean
-  /** Tonight's offer in this town, if none was made yet and there is room (safe to call any time). */
+  /** Tonight's offers in this town (a minigame job and a table job) still due, where there is room (safe to call any time). */
   offerTonight: () => void
 
   // Nights
@@ -206,9 +206,14 @@ interface StoryActions {
   resolve: (game: GameName, payout: number, settle: boolean) => void
   /** Ends the night: comps, hustles, lodging (or the car), and a bust check. */
   endNight: () => NightSummary
-  /** Pays a minigame by score (0–1); the first play each night pays. Returns the dollars paid. */
+  /** The minigame job you took from this person, if any: the only way to play their minigame. */
+  minigameJobAt: (giver: string) => Job | null
+  /**
+   * The one attempt at a taken minigame job, with its score (0–1). At the target it pays
+   * the job (no standing); short of it the job is lost. Returns the dollars paid; 0 and
+   * nothing changes without such a job.
+   */
   playMinigame: (giver: string, minigame: MinigameId, score: number) => number
-  minigamePaidTonight: (giver: string) => boolean
   dismissNews: (id: number) => void
 
   // Boss and travel
@@ -230,7 +235,7 @@ export function migrateStorySave(persisted: unknown, version: number): StorySave
   // Later versions extend this, filling new fields from fresh().
   if (!persisted || typeof persisted !== 'object' || version > STORY_SAVE_VERSION) return fresh()
   // Fields older versions had and this one drops.
-  type Legacy = { rep?: number; errands?: Record<string, 'started' | 'done'> }
+  type Legacy = { rep?: number; errands?: Record<string, 'started' | 'done'>; jobOffered?: unknown; minigameNight?: unknown }
   const old = persisted as Partial<StorySave> & Legacy
   const base = { ...fresh(), ...old } as StorySave & Legacy
   const errands = { ...(base.errands ?? {}) }
@@ -262,11 +267,17 @@ export function migrateStorySave(persisted: unknown, version: number): StorySave
     }
     base.jobs = []
     base.jobsGiven = given
-    base.jobOffered = {}
     delete base.errands
     // Scenes that only handed out errands are gone: never resume or queue one.
     if (base.scene && !SCENE_BY_ID.has(base.scene.id)) base.scene = null
     base.queue = (base.queue ?? []).filter((id) => SCENE_BY_ID.has(id))
+  }
+  if (version < 7) {
+    // Two offers a night now: the night's record starts afresh (tonight may bring both).
+    base.jobNight = {}
+    delete base.jobOffered
+    // Minigames are only played as jobs: their nightly pay record is gone.
+    delete base.minigameNight
   }
   return base
 }
@@ -306,16 +317,16 @@ export const useStoryStore = create<StoryStore>()(
         }
       }
 
-      /** A taken job is done: it pays, earns standing (capped) and frees its giver. */
+      /** A taken job is done: it pays, a table job earns standing (capped), and its giver is free. */
       const completeJob = (job: Job) => {
         const s = get()
         if (!s.jobs.some((j) => j.id === job.id && j.status === 'open')) return
         const pay = job.pay * CITY_BY_ID.get(job.city)!.minBet
-        const gain = (s.standing[job.city] ?? 0) < STANDING_MAX ? JOB_STANDING : 0
+        const gain = kindOf(job.goal) === 'table' && (s.standing[job.city] ?? 0) < STANDING_MAX ? JOB_STANDING : 0
         set({ jobs: s.jobs.filter((j) => j.id !== job.id), ...(gain ? { standing: shiftStanding(s.standing, job.city, gain) } : {}) })
         get().receive(pay)
         say(`Job done: ${job.title} · +$${pay.toLocaleString('en-US')}${gain ? ` · standing +${gain}` : ''}`)
-        // A night whose offer had no room (the town was full) makes it now.
+        // Tonight's offers that had no room (the town was full) come now.
         get().offerTonight()
       }
 
@@ -335,7 +346,10 @@ export const useStoryStore = create<StoryStore>()(
         })
         nodes.ask = {
           kind: 'choice',
-          prompt: `${job.title} · pays $${pay.toLocaleString('en-US')} · +${JOB_STANDING} standing`,
+          prompt:
+            kindOf(job.goal) === 'minigame'
+              ? `${job.title} · one go · pays $${pay.toLocaleString('en-US')} · no standing`
+              : `${job.title} · pays $${pay.toLocaleString('en-US')} · +${JOB_STANDING} standing`,
           options: [
             { text: '"I\'ll do it."', to: 'yes', effects: [{ job: job.id, step: 'accept' }] },
             { text: '"Not now."', to: 'no' },
@@ -370,7 +384,7 @@ export const useStoryStore = create<StoryStore>()(
           set({ ...fresh(), started: true, startedAt: new Date().toISOString(), visited: [STARTING_CITY] })
           queue(get().sceneFor({ on: 'arrival' }))
           queue(get().sceneFor({ on: 'tutorial' }))
-          // The story starts with exactly one job offered.
+          // The story starts with tonight's offers: a minigame job and a table job.
           get().offerTonight()
         },
         minBet: m,
@@ -485,24 +499,29 @@ export const useStoryStore = create<StoryStore>()(
         },
         offerTonight: () => {
           const s = get()
-          if (!s.started || s.jobOffered[s.city] === s.night) return
+          if (!s.started) return
           const c = city()
+          const last = s.jobNight[s.city]
+          const done = last?.night === s.night ? last.kinds : []
+          const kinds = NIGHT_KINDS.filter((k) => !done.includes(k))
+          if (!kinds.length) return
           const given = s.jobsGiven[s.city] ?? []
-          const job = makeOffer({
+          const jobs = makeOffers({
             city: c,
             night: s.night,
+            kinds,
             held: s.jobs.filter((j) => j.city === s.city),
             given,
             games: c.games === 'all-seen' ? s.seenGames : c.games,
           })
-          // No room (or nothing new to give): try again later tonight, e.g. once a job is done.
-          if (!job) return
+          // No room (or nothing to give): what is still due comes later tonight, once a job is done.
+          if (!jobs.length) return
           set({
-            jobs: [...s.jobs, job],
-            jobsGiven: { ...s.jobsGiven, [s.city]: [...given, job.key] },
-            jobOffered: { ...s.jobOffered, [s.city]: s.night },
+            jobs: [...s.jobs, ...jobs],
+            jobsGiven: { ...s.jobsGiven, [s.city]: [...given, ...jobs.map((j) => j.key)] },
+            jobNight: { ...s.jobNight, [s.city]: { night: s.night, kinds: [...done, ...jobs.map((j) => kindOf(j.goal))] } },
           })
-          say(`${CHARACTERS.find((x) => x.id === job.giver)?.name ?? 'Someone'} has a job going. Go and talk to them.`)
+          for (const job of jobs) say(`${CHARACTERS.find((x) => x.id === job.giver)?.name ?? 'Someone'} has a job going. Go and talk to them.`)
         },
 
         venueOpen: (venue) => get().rep() >= VENUE_REP[venue],
@@ -605,22 +624,25 @@ export const useStoryStore = create<StoryStore>()(
           })
           if (bust) queue(get().sceneFor({ on: 'bust' }))
           queue(get().sceneFor({ on: 'dawn' }))
-          // A new night: one new job offer in this town, if there is room.
+          // A new night: a minigame job and a table job offered in this town, where there is room.
           get().offerTonight()
           return summary
         },
+        minigameJobAt: (giver) => get().openJobs().find((j) => j.giver === giver && j.goal.kind === 'minigame') ?? null,
         playMinigame: (giver, minigame, score) => {
-          const s = get()
-          let pay = 0
-          if (s.minigameNight[giver] !== s.night) {
-            pay = Math.round(Math.max(0, Math.min(1, score)) * MINIGAME_MAX_M * m())
-            set({ minigameNight: { ...s.minigameNight, [giver]: s.night } })
-            get().receive(pay)
+          const job = get().minigameJobAt(giver)
+          if (!job || job.goal.kind !== 'minigame' || job.goal.minigame !== minigame) return 0
+          if (score >= job.goal.score) {
+            const before = get().money
+            completeJob(job)
+            return get().money - before
           }
-          for (const j of get().openJobs()) if (j.goal.kind === 'minigame' && j.goal.minigame === minigame && score >= j.goal.score) completeJob(j)
-          return pay
+          // One attempt: a miss loses the job, and its giver is free.
+          set((x) => ({ jobs: x.jobs.filter((j) => j.id !== job.id) }))
+          say(`Job lost: ${job.title} · you needed ${Math.round(job.goal.score * 100)}%`)
+          get().offerTonight()
+          return 0
         },
-        minigamePaidTonight: (giver) => get().minigameNight[giver] === get().night,
         dismissNews: (id) => set((s) => ({ news: s.news.filter((n) => n.id !== id) })),
 
         bossAvailable: () => {
@@ -658,7 +680,7 @@ export const useStoryStore = create<StoryStore>()(
           if (!next || fare == null || s.tonight || !s.cleared.includes(s.city) || !get().spend(fare)) return false
           set({ city: next.id, visited: s.visited.includes(next.id) ? s.visited : [...s.visited, next.id], cityNight: 0, markersHere: 0, bossBackOn: null, lastNight: null })
           queue(get().sceneFor({ on: 'arrival' }))
-          // The first night in a new town starts with one job offered.
+          // The first night in a new town starts with its offers too.
           get().offerTonight()
           return true
         },
@@ -679,4 +701,4 @@ export const useStoryStore = create<StoryStore>()(
   ),
 )
 
-export { MINIGAME_MAX_M, NIGHT_BETS, BOSS_BUYIN_M }
+export { NIGHT_BETS, BOSS_BUYIN_M }

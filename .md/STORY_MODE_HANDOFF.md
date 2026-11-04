@@ -78,6 +78,24 @@ models one offer a night up to three. Sim (3000 circuits, seed 1), nights per ci
 after: never gambles 10 → 23, cautious 5 → 5, balanced 4 → 5, high variance 6 → 6, bold 3 → 4
 (the old five errands paid 6m each, two on the first night).
 
+**2026-11-04, two job kinds, minigames only as jobs, Jo's Chip Count (owner decisions):**
+each night a town offers a **minigame job** and a **table job** at two different givers with
+none (first night too), while it holds fewer than 3; with one place left a coin flip picks the
+kind, and a place freed later that night brings the kind still missing (`makeOffers`,
+`NIGHT_KINDS`, save `jobNight`). Minigames are **only played as jobs**: the Play button shows only
+on someone whose minigame job you took; one attempt; at the target it pays 6m/7m/8m (60%/80%/
+perfect, `MINIGAME_JOB_PAY_M`) and **no standing**; a miss pays nothing and the job is gone. No
+practice, no nightly minigame pay (`MINIGAME_MAX_M` and `minigameNight` removed). Only **table
+jobs** (3m-5m, `TABLE_JOB_PAY_M`) earn standing and never repeat in a town; minigame jobs may
+repeat, never the same one twice in a row from a giver. **Jo** now runs **Chip Count**
+(`lib/story/minigames/chip-count.ts`, `components/story/minigames/chip-count.tsx`: five stacks of
+4-8 chips worth 1/5/25/100, 9 s down to 5 s, pick the total of four; score = stacks right ÷ 5) in
+every town. Street markers: a gold **briefcase** for a job offer, "!" for new dialogue, a play
+badge for a minigame job you hold. The jobs book and person card name the kind and its reward.
+Save version 7 (`jobOffered` → `jobNight`, `minigameNight` dropped). **Open:** the sim's
+never-gambler is now stuck (table jobs they can't do fill all three givers, and nothing else
+pays), and balanced/high-variance players are slower with more busts; waiting on the owner.
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 
@@ -87,7 +105,7 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 
 | Question | Answer |
 |---|---|
-| Minigame limit | once per character per **in-game night** (no real-clock limit) |
+| Minigame limit | only as a job, one attempt per job (since 2026-11-04; was once per character per night) |
 | Portraits | drawn in code; style **mix 1, "warm noir"**: D's round faces, big eyes and chip frame + C's single lamp, gold rim light, halftone shadow, full colour |
 | Tone | warm noir: likeable characters, real stakes, dry humour |
 | Story-only game settings | allowed ("story mode can configure games such as Slots") |
@@ -97,7 +115,8 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Boss rematches | don't get easier (same buy-in, same rival, after 2 nights) |
 | Standing (2026-11-03) | per town, 0 in every new town, remembered when you go back, max 5. +1 for every finished job (minigame jobs too, since 2026-11-04). A bust −1 (never below 0); a boss win gives none. `VENUE_REP` `[0, 1, 3]`: dive / main floor / high-roller |
 | Standing bonus (2026-11-04) | standing 2 / 4 / 5: +5% / +10% / +20% of a winning night's table winnings, paid at the end of the night |
-| Jobs (2026-11-04, rebuilt) | 1 new offer a night at a giver with none (first night too); taken only by talking ("Not now" keeps it waiting); 1 per person; max 3 per town; never the same task twice in a town; written jobs first; 3m-5m and +1 standing; kept in their town when you leave |
+| Jobs (2026-11-04, rebuilt) | a minigame job and a table job each night at two givers with none (first night too; a coin flip for a last place); taken only by talking ("Not now" keeps it waiting); 1 per person; max 3 per town; written jobs first; table jobs 3m-5m, +1 standing, never repeat; minigame jobs one attempt, 6m-8m, no standing, may repeat (not back to back); kept in their town |
+| Minigames (2026-11-04) | only played as jobs (no practice, no nightly pay); Jo runs Chip Count in every town |
 | Rotation pin (2026-11-03) | while a taken job naming a game is open, the dive always deals that game (deterministic draw kept) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
@@ -140,11 +159,11 @@ Port that generator to TypeScript; don't redraw from scratch.
   queues the city's `bust` scene).
   Returns a `NightSummary`, also kept in `lastNight` for the hub.
 - Jobs: `jobs` (offered and taken, every town), `openJobs()` (taken, this town), `jobAt`,
-  `canTalk`, `talkTo`, `offerTonight()` (idempotent; called on a new story, each night, travel,
-  a finished job and the hub's mount). Goals `minigame` / `streak` / `night-up` / `big-win`
-  are checked automatically; a finished job pays `pay × m` and +1 standing with a `news` line.
-- `playMinigame(giver, minigame, score 0–1)`: first play per giver per night pays
-  `score × 3m`; minigame jobs check every play (practice included).
+  `canTalk`, `talkTo`, `minigameJobAt`, `offerTonight()` (idempotent; called on a new story,
+  each night, travel, a finished or lost job and the hub's mount). Goals `streak` / `night-up` /
+  `big-win` are checked automatically; a finished table job pays `pay × m` and +1 standing.
+- `playMinigame(giver, minigame, score)`: the one attempt at a taken minigame job: at the
+  target it pays the job (no standing), short of it the job is lost; without a job it does nothing.
 - Scenes: `queue` (arrival on new story/travel, boss-win/loss, bust), `playQueued()`,
   `startScene(id)`, `currentStep()`, `advance()`, `pick(index)`; `sceneFor(trigger)` finds
   the first matching scene in the city (talk scenes by character).

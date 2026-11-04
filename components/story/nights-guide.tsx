@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import type { City } from '@/lib/story/cities'
 import {
   BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
-  JOB_LIMIT, JOB_PAY_M, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY,
-  MINIGAME_MAX_M, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
+  JOB_LIMIT, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY, MINIGAME_JOB_PAY_M,
+  NIGHT_BETS, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -71,7 +71,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
           Standing is how a town sees you. It starts at {0} in every town you reach, and a town you go back to remembers what you left. {STANDING_MAX} is the most one will give you.
         </p>
         <p>
-          It goes up {JOB_STANDING} for each job you finish, at the tables or in a minigame. Playing a minigame on its own pays money, not standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
+          It goes up {JOB_STANDING} for each table job you finish. Minigame jobs pay more but earn no standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
         </p>
         <p>
           The dive is always open. The main floor wants standing {VENUE_REP[1]}; the high-roller room wants {VENUE_REP[2]}: no bet limit and the best comps, which is where you build the back-table money.
@@ -134,18 +134,18 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
       <Section title="Hustles & jobs">
         <p>Hustles: {HUSTLES_PER_NIGHT} side goals on the board each night, {money(HUSTLE_PAY_M * m)} each. They pay when the night ends.</p>
         <p>
-          Jobs: work people hand you. Each pays {money(JOB_PAY_M.min * m)} to {money(JOB_PAY_M.max * m)} the moment it is done and earns {JOB_STANDING} standing, up to {STANDING_MAX}.
+          Jobs: work people hand you, two kinds. A table job (a goal at the casino) pays {money(TABLE_JOB_PAY_M.min * m)} to {money(TABLE_JOB_PAY_M.max * m)} the moment it is done and earns {JOB_STANDING} standing, up to {STANDING_MAX}. A minigame job pays {money(MINIGAME_JOB_PAY_M.min * m)} to {money(MINIGAME_JOB_PAY_M.max * m)} and earns no standing.
         </p>
         <p>
-          Each night somebody new in town has a job going, starting with your first night. Look for the mark over someone&apos;s head and talk to them; say not now and the job waits with them until you come back for it.
+          Each night one of each turns up, at two people, starting with your first night. Look for the briefcase over someone&apos;s head and talk to them; say not now and the job waits with them until you come back for it.
         </p>
         <p>
-          Each person gives one job at a time and has nothing new until it is done, and a town gives you at most {JOB_LIMIT} at once, taken or waiting. A town never gives you the same job twice. It is how you win back standing lost to a bust.
+          Each person gives one job at a time and has nothing new until it is done, and a town gives you at most {JOB_LIMIT} at once, taken or waiting. With one place left, it is a coin flip which kind comes. A town never gives you the same table job twice. Table jobs are how you win back standing lost to a bust.
         </p>
       </Section>
 
       <Section title="Minigames">
-        <p>Each character with a minigame pays once a night, up to {money(MINIGAME_MAX_M * m)} at a perfect score. After that it is practice. They pay whether or not you played the casino.</p>
+        <p>Minigames are only played as jobs. Take someone&apos;s minigame job and a Play button appears on them. You get one go: hit the score the job asks for and it pays; miss and the job is gone, with no pay. There is no practice.</p>
       </Section>
 
       <Section title="Ending the night">

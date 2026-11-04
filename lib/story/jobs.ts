@@ -1,30 +1,41 @@
 import type { City, CityId } from './cities'
 import type { Character, JobGoal } from './types'
 import { CHARACTERS, WRITTEN_JOBS } from './content'
-import { JOB_LIMIT } from './economy'
+import { JOB_LIMIT, JOB_STANDING } from './economy'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import type { GameName } from '@/store/types'
 import { createRng, seedFromString } from '@/utils/rng'
 
 /**
- * Jobs (owner decision 2026-11-04). The rules, all enforced here and in the store:
+ * Jobs (owner decisions 2026-11-04). The rules, all enforced here and in the store:
  *
- *  - Each night in a town, one new offer turns up at a random person there who
- *    holds no job, while the town has fewer than JOB_LIMIT jobs (offered or taken).
- *    The first night in every town starts with one, so a story starts with exactly
- *    one offer.
+ *  - Two kinds: a **minigame job** (a score at the giver's own minigame) and a
+ *    **table job** (a goal at the casino).
+ *  - Each night in a town, one of each kind turns up, at two different random
+ *    people who hold no job, while the town has room: it holds at most JOB_LIMIT
+ *    jobs, offered or taken. With only one place free, a coin flip picks the kind
+ *    (and a place freed later that night brings the kind still missing). The first
+ *    night in every town works the same way, so a story starts with two offers.
  *  - An offer is only taken by talking to its giver ("I'll do it"); "Not now", or
  *    never talking to them, leaves it waiting with them for as long as it takes.
  *  - A person holds one job at a time, offered or taken, until it is finished.
- *  - A town never hands out the same task twice (`goalKey`): its written jobs come
- *    first, giver by giver in content order, then generated ones from the
- *    templates below with a goal the town has not given yet.
- *  - Every job pays its `pay` in minimum bets and earns JOB_STANDING (capped).
+ *  - Each giver's written jobs come first, in content order. A town never hands out
+ *    the same **table** task twice (`goalKey`); **minigame** jobs may repeat, but a
+ *    giver never offers the same one twice in a row.
+ *  - A table job pays 3m-5m and earns JOB_STANDING (capped). A minigame job is one
+ *    attempt: hit the target and it pays 6m-8m (no standing); miss and it is gone.
+ *    Minigames are only played as jobs.
  *  - Jobs belong to their town: leave and they wait there for your return.
  *
  * Givers are the town's people with a minigame (the one without is the boss) and
- * Jo, who travels with you. A new city gets jobs for free.
+ * Jo, who travels with you and runs Chip Count. A new city gets jobs for free.
  */
+
+/** A minigame job or a table job (`kindOf`). */
+export type JobKind = 'minigame' | 'table'
+export const kindOf = (goal: JobGoal): JobKind => (goal.kind === 'minigame' ? 'minigame' : 'table')
+/** The kinds a night brings, in the order they are placed. */
+export const NIGHT_KINDS: readonly JobKind[] = ['minigame', 'table']
 
 export interface Job {
   /** `city:night:giver`; unique, as a town gets at most one offer a night. */
@@ -90,8 +101,6 @@ interface Made {
 
 interface Template {
   kind: JobGoal['kind']
-  /** Whether a player who never bets can do it (the sim uses this). */
-  noBet: boolean
   make: (ctx: { rng: Rng; giver: Character; games: GameName[] }) => Made | null
 }
 
@@ -100,7 +109,6 @@ const label = (g: GameName) => GAME_BY_NAME.get(g)?.label ?? g
 export const JOB_TEMPLATES: Template[] = [
   {
     kind: 'streak',
-    noBet: false,
     make: ({ rng, games }) => {
       if (!games.length) return null
       const game = pick(rng, games)
@@ -116,7 +124,6 @@ export const JOB_TEMPLATES: Template[] = [
   },
   {
     kind: 'big-win',
-    noBet: false,
     make: ({ rng }) => {
       const mult = pick(rng, [2, 2.5, 3, 4, 5] as const)
       const title = pick(rng, ['One big hit', 'The long shot', 'Make them look', 'A story for the bar'])
@@ -130,7 +137,6 @@ export const JOB_TEMPLATES: Template[] = [
   },
   {
     kind: 'night-up',
-    noBet: false,
     make: ({ rng }) => {
       const atLeast = pick(rng, [0, 5, 10, 15, 20] as const)
       const title = pick(rng, ['A good night', 'Walk out ahead', 'Bring something home', 'Count it at dawn'])
@@ -142,14 +148,13 @@ export const JOB_TEMPLATES: Template[] = [
   },
   {
     kind: 'minigame',
-    noBet: true,
     make: ({ rng, giver }) => {
       if (!giver.minigame) return null
       const score = pick(rng, [0.6, 0.8, 1] as const)
       const title = pick(rng, ['A favour', 'Another shift', 'Show me again', 'Busy night'])
       const pctText = score === 1 ? 'a perfect score' : `at least ${Math.round(score * 100)}%`
-      const task = pick(rng, [`Play ${giver.name}'s game and score ${pctText}.`, `${giver.name} is short-handed tonight. Score ${pctText} at their game.`])
-      return { goal: { kind: 'minigame', minigame: giver.minigame, score }, title, task, pay: score === 1 ? 5 : score >= 0.8 ? 4 : 3 }
+      const task = pick(rng, [`Play ${giver.name}'s game once and score ${pctText}.`, `${giver.name} is short-handed tonight. One go at their game: score ${pctText}.`])
+      return { goal: { kind: 'minigame', minigame: giver.minigame, score }, title, task, pay: score === 1 ? 8 : score >= 0.8 ? 7 : 6 }
     },
   },
 ]
@@ -161,46 +166,68 @@ const OPENERS = ['Got a minute? I have work.', 'You looking for work? I could us
 const DRAWS_PER_TEMPLATE = 24
 
 /**
- * The job a giver would offer next in a town: their first written job the town has
- * not given yet, else a generated one whose goal the town has not given (`taken`).
- * Null when nothing new is left for them.
+ * The job of a kind a giver would offer next in a town: their first written job of
+ * that kind the town has not given yet, else a generated one. A table job's goal must
+ * be new to the town (`given`); a minigame job only differs from the giver's last one.
+ * Null when they have nothing of that kind (no minigame, or no new table task left).
  */
-function nextFor(args: { rng: Rng; city: City; giver: Character; games: GameName[]; taken: Set<string> }): Made & { pitch: string[] } | null {
-  const { rng, city, giver, games, taken } = args
-  const written = WRITTEN_JOBS.find((w) => w.city === city.id && w.giver === giver.id && !taken.has(goalKey(w.goal)))
+function nextFor(args: { rng: Rng; city: City; giver: Character; kind: JobKind; games: GameName[]; given: readonly string[]; held: Job[] }): Made & { pitch: string[] } | null {
+  const { rng, city, giver, kind, games, given, held } = args
+  const givenSet = new Set([...given, ...held.map((j) => j.key)])
+  const written = WRITTEN_JOBS.find((w) => w.city === city.id && w.giver === giver.id && kindOf(w.goal) === kind && !givenSet.has(goalKey(w.goal)))
   if (written) return { goal: written.goal, title: written.title, task: written.task, pay: written.pay, pitch: written.pitch }
-  for (const t of shuffled(rng, JOB_TEMPLATES)) {
+  // A minigame job may repeat, just not the one this giver gave last.
+  const last = kind === 'minigame' && giver.minigame ? [...given].reverse().find((k) => k.startsWith(`minigame:${giver.minigame}:`)) : undefined
+  const fresh = (key: string) => (kind === 'minigame' ? key !== last : !givenSet.has(key))
+  for (const t of shuffled(rng, JOB_TEMPLATES.filter((x) => (x.kind === 'minigame') === (kind === 'minigame')))) {
     for (let d = 0; d < DRAWS_PER_TEMPLATE; d++) {
       const made = t.make({ rng, giver, games })
       if (!made) break
-      if (!taken.has(goalKey(made.goal))) return { ...made, pitch: [pick(rng, OPENERS), made.task] }
+      if (fresh(goalKey(made.goal))) return { ...made, pitch: [pick(rng, OPENERS), made.task] }
     }
   }
   return null
 }
 
 /**
- * Tonight's new offer in a town, or null: the town already holds JOB_LIMIT jobs,
- * everyone who gives jobs holds one, or nothing new is left to give. `held` is the
- * town's jobs now (offered and taken); `given` every task key the town has handed
- * out before. Seeded by town and night, so a reload makes the same offer.
+ * Offers to make in a town now, or none. `kinds` are the kinds still due tonight
+ * (both at nightfall; the missing one after a coin-flip night). Each goes to a
+ * different random giver who holds nothing, while the town holds fewer than
+ * JOB_LIMIT; with fewer places than kinds due, a coin flip picks which comes.
+ * `held` is the town's jobs now (offered and taken); `given` every task key the town
+ * has handed out, in order. Seeded by town, night and what is due, so a reload
+ * makes the same offers.
  */
-export function makeOffer(args: { city: City; night: number; held: Job[]; given: readonly string[]; games: GameName[] }): Job | null {
-  const { city, night, held, given, games } = args
-  if (held.length >= JOB_LIMIT) return null
-  const busy = new Set(held.map((j) => j.giver))
-  const rng = createRng(seedFromString(`offer:${city.id}:${night}`))
-  const taken = new Set([...given, ...held.map((j) => j.key)])
-  for (const giver of shuffled(rng, jobGivers(city.id).filter((g) => !busy.has(g.id)))) {
-    const made = nextFor({ rng, city, giver, games, taken })
-    if (!made) continue
-    return { id: `${city.id}:${night}:${giver.id}`, key: goalKey(made.goal), city: city.id, giver: giver.id, ...made, status: 'offered', night }
+export function makeOffers(args: { city: City; night: number; kinds: readonly JobKind[]; held: Job[]; given: readonly string[]; games: GameName[] }): Job[] {
+  const { city, night, held, games } = args
+  const rng = createRng(seedFromString(`offer:${city.id}:${night}:${args.kinds.join('+')}:${held.length}`))
+  const room = JOB_LIMIT - held.length
+  if (room <= 0 || !args.kinds.length) return []
+  // Fewer places than kinds due: a coin flip picks the kind.
+  const kinds = room >= args.kinds.length ? [...args.kinds] : shuffled(rng, args.kinds).slice(0, room)
+  const out: Job[] = []
+  const given = [...args.given]
+  for (const kind of kinds) {
+    const busy = new Set([...held, ...out].map((j) => j.giver))
+    for (const giver of shuffled(rng, jobGivers(city.id).filter((g) => !busy.has(g.id)))) {
+      const made = nextFor({ rng, city, giver, kind, games, given, held: [...held, ...out] })
+      if (!made) continue
+      const key = goalKey(made.goal)
+      out.push({ id: `${city.id}:${night}:${giver.id}`, key, city: city.id, giver: giver.id, ...made, status: 'offered', night })
+      given.push(key)
+      break
+    }
   }
-  return null
+  return out
 }
 
-/** Share of a giver's possible job kinds a player who never bets can do (for the sim). */
-export function noBetShare(hasMinigame: boolean): number {
-  const fit = JOB_TEMPLATES.filter((t) => hasMinigame || t.kind !== 'minigame')
-  return fit.filter((t) => t.noBet).length / fit.length
+/** "minigame job" or "table job", for labels. */
+export const jobKindName = (job: Pick<Job, 'goal'> | null | undefined) => (job && kindOf(job.goal) === 'minigame' ? 'minigame job' : 'table job')
+
+/** What a job gives, for labels: "$35 · one go · no standing" or "$20 · +1 standing". */
+export function jobReward(job: Pick<Job, 'goal' | 'pay'>, minBet: number): string {
+  const pay = `$${Math.round(job.pay * minBet).toLocaleString('en-US')}`
+  return kindOf(job.goal) === 'minigame' ? `${pay} · one go · no standing` : `${pay} · +${JOB_STANDING} standing`
 }
+
+

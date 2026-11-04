@@ -21,10 +21,10 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_STANDING, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, LODGING_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
-import { TRAVELLING_GIVERS } from '@/lib/story/jobs'
+import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { sceneConfigFor } from '@/lib/story/scene-theme'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -42,7 +42,7 @@ const VENUE_SPOTS = ['dive', 'main', 'high'] as const
 const VENUE_SHORT = ['The dive', 'Main floor', 'High rollers'] as const
 /** Door hit areas in the casino's own units (see scene-art). */
 const DOOR_SIZE: [number, number][] = [[70, 106], [170, 124], [68, 84]]
-const MINIGAME_TITLES: Record<string, string> = { 'last-orders': 'Last Orders', 'shuffle-tracker': 'Shuffle Tracker' }
+const MINIGAME_TITLES: Record<string, string> = { 'last-orders': 'Last Orders', 'shuffle-tracker': 'Shuffle Tracker', 'chip-count': 'Chip Count' }
 
 type Sheet =
   | { kind: 'venue'; v: VenueTier }
@@ -172,18 +172,20 @@ export function StoryHub() {
       }
     }),
     ...people.map((c, i): SceneSpot => {
-      // Something new to say, or a job to offer.
+      // A job offer (its own marker), something new to say, or their minigame job to play.
+      const job = s.jobAt(c.id)
+      const offer = job?.status === 'offered'
       const canTalk = s.canTalk(c.id)
-      const paid = !!c.minigame && s.minigamePaidTonight(c.id)
+      const playable = !!s.minigameJobAt(c.id)
       return {
         spot: config.spots[c.id] ? c.id : `p${i}`,
         node: (
           <PersonSpot
             id={c.id}
             name={c.name}
-            badge={canTalk ? 'talk' : paid ? 'done' : null}
+            badge={offer ? 'job' : canTalk ? 'talk' : playable ? 'play' : null}
             active={isOpen('person', c.id)}
-            label={`${c.name}${s.jobAt(c.id)?.status === 'offered' ? ', has a job for you' : canTalk ? ', has something to say' : ''}${paid ? ', paid tonight' : ''}`}
+            label={`${c.name}${offer ? `, has a ${jobKindName(job)} for you` : canTalk ? ', has something to say' : ''}${playable ? ', their minigame job is yours to play' : ''}`}
             onOpen={open({ kind: 'person', id: c.id })}
           />
         ),
@@ -348,30 +350,30 @@ export function StoryHub() {
       const c = CHARACTERS.find((x) => x.id === w.id)
       if (!c) return null
       const canTalk = s.canTalk(c.id)
-      const paid = !!c.minigame && s.minigamePaidTonight(c.id)
       const job = s.jobAt(c.id)
+      const playable = !!s.minigameJobAt(c.id)
       return {
         title: c.name,
-        kicker: c.minigame ? `${MINIGAME_TITLES[c.minigame] ?? 'Minigame'} · ${paid ? 'paid tonight' : `pays up to ${money(MINIGAME_MAX_M * m)}`}` : undefined,
+        kicker: c.minigame ? `${MINIGAME_TITLES[c.minigame] ?? 'Minigame'} · played as a job` : undefined,
         art: <Face id={c.id} />,
         body: (
           <>
-            {c.minigame && <SheetNote>{paid ? 'Already paid tonight. Play again for practice; jobs still count.' : 'Pays once a night, by how well you do.'}</SheetNote>}
-            {job?.status === 'offered' && <SheetNote tone="gold">{c.name} has a job for you. Talk to hear it.</SheetNote>}
+            {job?.status === 'offered' && <SheetNote tone="gold">{c.name} has a {jobKindName(job)} for you. Talk to hear it.</SheetNote>}
             {job?.status === 'open' && (
               <div className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
-                <p className="felt-print !text-[9.5px]">Your job · {money(job.pay * m)} · +{JOB_STANDING} standing</p>
+                <p className="felt-print !text-[9.5px]">Your {jobKindName(job)} · {jobReward(job, m)}</p>
                 <p className="text-[13px] font-semibold text-ink">{job.title}</p>
                 <p className="text-[12px] leading-[17px] text-dim">{job.task}</p>
               </div>
             )}
+            {c.minigame && !playable && !job && <SheetNote tone="soft">Their minigame is only played as a job. Nothing going right now.</SheetNote>}
             <Actions>
               <Button size="sm" variant={job?.status === 'offered' ? 'default' : 'outline'} disabled={!canTalk} onClick={() => talk(c.id)}>
                 {canTalk ? 'Talk' : 'Nothing new to say'}
               </Button>
-              {c.minigame && (
-                <Button asChild size="sm" variant={paid ? 'secondary' : 'default'}>
-                  <Link href={`/story/minigame/${c.minigame}`}>{paid ? 'Practice' : 'Play'}</Link>
+              {playable && c.minigame && (
+                <Button asChild size="sm">
+                  <Link href={`/story/minigame/${c.minigame}`}>Play</Link>
                 </Button>
               )}
             </Actions>

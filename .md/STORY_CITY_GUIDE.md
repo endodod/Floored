@@ -45,7 +45,8 @@ it). `note` is for writers, never shown. `city` is a `CityId`, or `null` for rec
 `MinigameId` (`lib/story/types.ts`): that character offers it once per night. A city has 2-3 locals:
 minigame givers and a **boss** = the one local without a minigame (the hub finds the boss that
 way). **Job givers** (`jobGivers` in `lib/story/jobs.ts`) are the locals with a minigame plus Jo,
-who travels with you and stands right of the car (`jo` spot); `TRAVELLING_GIVERS` lists Jo.
+who travels with you, stands right of the car (`jo` spot) and runs **Chip Count** in every town;
+`TRAVELLING_GIVERS` lists Jo. Every job giver needs a minigame (`check:story` fails one without).
 
 **Portrait look:** add the id to `PortraitLook` and `PORTRAIT_LOOKS` in `lib/story/portraits.ts`,
 a face path in `FACE`, and a `CHARS` entry (skin, hair, cloth, shirt, accent, `chip`, plus
@@ -94,22 +95,25 @@ quote a new number, add its regex to `QUOTES` or `WORDS` there.
 **Jobs** (`lib/story/jobs.ts`, owner decision 2026-11-04; one system, replacing the old errands
 and spawned jobs). The rules, all in code and all tested by `check:story`:
 
-- **One new offer a night** in a town, at a random giver who holds no job, while the town holds
-  fewer than `JOB_LIMIT` (3) jobs, offered or taken. The first night in every town starts with
-  one, so a new story starts with exactly one offer. If the town is full when the night starts,
-  that night's offer comes as soon as a job is finished (still one a night).
+- **Two kinds, two offers a night:** a **minigame job** and a **table job**, at two different
+  random givers who hold none, while the town holds fewer than `JOB_LIMIT` (3), offered or
+  taken. With one place left a coin flip picks the kind; a place freed later that night brings
+  the kind still missing. The first night in every town works the same way.
 - **Only talking takes a job.** The giver gets a "!" and "has a job for you"; Talk plays any new
   scene of theirs first, then their pitch with "I'll do it" / "Not now". Not now, or never
   talking to them, leaves the offer waiting with them for as long as it takes.
 - **One job per person** until it is finished: they offer nothing new before that.
-- **Never the same task twice in a town** (`goalKey`: kind + game/minigame + numbers). Each
-  giver's **written jobs come first**, in content order, then generated ones from
+- **Table jobs never repeat in a town** (`goalKey`: kind + game + numbers); **minigame jobs may
+  repeat**, but never the same one twice in a row from a giver. Each giver's **written jobs of a
+  kind come first**, in content order, then generated ones from
   `JOB_TEMPLATES` (seeded by town and night): a streak at one of the town's games (2 or 3 wins),
   a big win (2x to 5x), a night up (by any amount, or 5/10/15/20 minimum bets), or a score at the
-  giver's own minigame (60%, 80%, perfect). Dustwater has 26 different tasks in all; when a
-  town has nothing new left, no more offers come.
-- **Pay and standing:** every job pays its `pay` (3m to 5m by difficulty, `JOB_PAY_M`) and earns
-  `JOB_STANDING` (1) up to `STANDING_MAX`, minigame jobs included.
+  giver's own minigame (60%, 80%, perfect). Dustwater has about 20 table tasks; when a town has
+  no new table task left, only minigame jobs come.
+- **Pay and standing:** a table job pays 3m-5m (`TABLE_JOB_PAY_M`) and earns `JOB_STANDING` (1)
+  up to `STANDING_MAX`. A minigame job is **one attempt**: at the target it pays 6m-8m
+  (`MINIGAME_JOB_PAY_M`: 60% / 80% / perfect) and **no standing**; a miss pays nothing and the
+  job is gone. Minigames are **only played as jobs** (no practice, no other pay).
 - **Jobs belong to their town**: leave and they wait there for your return.
 
 The save keeps `jobs` (every offered and taken job, each with `status`), `jobsGiven` (task keys
@@ -146,12 +150,12 @@ them pure (`met(rounds)`) and seeded.
 
 ## 5. Minigames
 
-One per giver, once a night, pays `score x 3m` (`MINIGAME_MAX_M`) on the first play each night.
+One per giver, played **only as a job** (section 4): one attempt, the job's target decides the pay.
 Parts: pure engine in `lib/story/minigames/<id>.ts` (seeded `rng.ts`; returns a score 0-1), board in
 `components/story/minigames/<id>.tsx`, its `MinigameId` (already in the type union for all twelve),
 and a registration in `app/story/minigame/[id]/page.tsx` (`INFO` entry with title, rule, intro, plus
 the `Board` choice at the bottom). Hub buttons come from the giver's `minigame` field. Built:
-`last-orders`, `shuffle-tracker`. Remaining ids are listed in `MinigameId`.
+`last-orders` (Marta), `shuffle-tracker` (Pike), `chip-count` (Jo, every town). Remaining ids are listed in `MinigameId`.
 
 ## 6. The boss
 

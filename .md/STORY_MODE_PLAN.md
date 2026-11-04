@@ -157,7 +157,7 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 | Source / cost | Amount | Limit | Risk |
 |---|---|---|---|
 | Minigames | up to **3m** per play at a perfect score (about 2m on average) | each character **once per night**, 2–3 per city | none |
-| Jobs (rebuilt 2026-11-04) | 3m–5m each by difficulty; **+1 standing** in that town up to 5, minigame jobs included | 1 new offer a night at a giver with none (first night too), max 3 a town, taken only by talking, never the same task twice; written jobs first, then generated | none |
+| Jobs (rebuilt 2026-11-04) | table jobs 3m–5m and **+1 standing**; minigame jobs 6m–8m, one attempt, no standing | a minigame job and a table job each night (first night too), max 3 a town, taken only by talking; table jobs never repeat; written jobs first | none |
 | Hustles (jobs board) | 4m each | 2 per night, only by playing | none (fixed pay; you meet a game condition) |
 | **Comps** | **a share of what you wagered that night, win or lose, by room: 4% dive / 5% main floor / 6% high-roller** | **capped per night at 10m / 15m / 20m** | none |
 | Venue night | 12 bets, max 20m / 100m / no max; each room deals its own 4 of the city's games each night (`lib/story/rotation.ts`), and the dive keeps any game an open errand names | one per night | game edge |
@@ -461,6 +461,10 @@ Answered (2026-11-03):
     now" leaves it waiting). One per person until finished; never the same task twice in a
     town; each giver's written jobs first. Every job pays 3m–5m and +1 standing. Jo gives jobs
     too and stands on the street in every town. Jobs wait in their town when you leave.
+21. **Two job kinds** (2026-11-04, amends 20): each night a minigame job and a table job at two
+    givers (a coin flip for a last place). Minigames are only played as jobs: one attempt, 6m-8m,
+    no standing, may repeat (not back to back). Table jobs 3m-5m, +1 standing, never repeat. Jo
+    runs Chip Count. Open: the never-gambler now gets stuck (see the handoff).
 17. **A bust costs 1 standing**; a boss win no longer gives any (it pays the purse and clears
     the town). Version-1 saves migrate `rep` into the current town, capped by its finished
     errands.

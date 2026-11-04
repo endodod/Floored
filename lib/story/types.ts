@@ -118,7 +118,7 @@ export type JobGoal =
 /**
  * A hand-written job in a city's content. A giver offers their written jobs first,
  * in content order, then generated ones (lib/story/jobs.ts). Every job pays `pay`
- * minimum bets and earns JOB_STANDING when finished.
+ * minimum bets when finished; a table job also earns JOB_STANDING.
  */
 export interface WrittenJob {
   id: string
@@ -128,7 +128,7 @@ export interface WrittenJob {
   /** What to do, in the player's words (the jobs book and the person's card). */
   task: string
   goal: JobGoal
-  /** Pays this many of the city's minimum bets when done (JOB_PAY_M.min to JOB_PAY_M.max). */
+  /** Pays this many of the city's minimum bets when done (`jobPayM(kind)` in lib/story/economy.ts). */
   pay: number
   /** What the giver says when they offer it, one line each. */
   pitch: string[]

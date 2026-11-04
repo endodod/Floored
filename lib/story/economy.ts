@@ -16,21 +16,23 @@ export const LODGING_M = 3
 /** Below this you sleep in your car: no lodging, so a broke player climbs back in a few nights. */
 export const CAR_BELOW_M = 10
 
-/** A minigame pays up to this at a perfect score; each character's minigame once per night. */
-export const MINIGAME_MAX_M = 3
-
 /**
- * Jobs (owner decision 2026-11-04, lib/story/jobs.ts): people in a town hand them
- * out one at a time. Each night in a town one new offer turns up at someone who
- * holds none, while the town has fewer than JOB_LIMIT (offered or taken). Every
- * job pays JOB_PAY_M.min to JOB_PAY_M.max minimum bets and earns JOB_STANDING.
+ * Jobs (owner decisions 2026-11-04, lib/story/jobs.ts): each night in a town a
+ * minigame job and a table job turn up at people who hold none, while the town
+ * holds fewer than JOB_LIMIT (offered or taken). A table job pays TABLE_JOB_PAY_M
+ * minimum bets and earns JOB_STANDING. A minigame job (one attempt: hit the target
+ * or lose the job) pays more, MINIGAME_JOB_PAY_M, and earns no standing. Minigames
+ * are only played as jobs: no practice and no other pay.
  */
 export const JOB_LIMIT = 3
-export const JOB_PAY_M = { min: 3, max: 5 } as const
+export const TABLE_JOB_PAY_M = { min: 3, max: 5 } as const
+export const MINIGAME_JOB_PAY_M = { min: 6, max: 8 } as const
+/** The pay range for a kind of job. */
+export const jobPayM = (kind: 'minigame' | 'table') => (kind === 'minigame' ? MINIGAME_JOB_PAY_M : TABLE_JOB_PAY_M)
 
 /**
  * Standing: how a town sees you, 0 to STANDING_MAX, kept per town (the map is in
- * store/story-store.ts). It rises by JOB_STANDING for every finished job,
+ * store/story-store.ts). It rises by JOB_STANDING for every finished table job,
  * drops by BUST_STANDING when you go bust, and opens the better rooms.
  */
 export const JOB_STANDING = 1

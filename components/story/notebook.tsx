@@ -5,8 +5,8 @@ import { X } from 'lucide-react'
 import { Portrait } from '@/components/story/portrait'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { CHARACTER_BY_ID } from '@/lib/story/content/characters'
-import { JOB_LIMIT, JOB_STANDING } from '@/lib/story/economy'
-import type { Job } from '@/lib/story/jobs'
+import { JOB_LIMIT } from '@/lib/story/economy'
+import { jobKindName, jobReward, type Job } from '@/lib/story/jobs'
 import { formatChips } from '@/utils/format'
 
 const money = (n: number) => `$${formatChips(n)}`
@@ -112,7 +112,7 @@ export function Notebook({
                       <span className="block text-[13.5px] font-bold leading-5">{j.title}</span>
                       <span className="block text-[12.5px] leading-[17px] text-[#5a4f43]">{j.task}</span>
                       <span className="mt-0.5 block font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#1d5a3e]">
-                        {money(j.pay * minBet)} · +{JOB_STANDING} standing
+                        {jobKindName(j)} · {jobReward(j, minBet)}
                       </span>
                       <span className="sr-only">From {CHARACTER_BY_ID.get(j.giver)?.name ?? j.giver}</span>
                     </span>
@@ -122,7 +122,7 @@ export function Notebook({
                   <li key={j.id} className="flex items-center gap-2.5">
                     <span className="w-7 shrink-0">{isLook(j.giver) && <Portrait look={j.giver} className="block w-full [&_svg]:h-auto [&_svg]:w-full" />}</span>
                     <span className="min-w-0 flex-1 text-[12.5px] italic leading-[17px] text-[#5a4f43]">
-                      {CHARACTER_BY_ID.get(j.giver)?.name ?? j.giver} has a job for you. Go and talk to them.
+                      {CHARACTER_BY_ID.get(j.giver)?.name ?? j.giver} has a {jobKindName(j)} for you. Go and talk to them.
                     </span>
                   </li>
                 ))}
