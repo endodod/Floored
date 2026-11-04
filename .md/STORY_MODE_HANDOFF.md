@@ -152,10 +152,9 @@ Hold'em), Monte Lune ($250, Liar's Dice), Kurstadt ($1,000, Blackjack Showdown),
 is in exactly two cities. Boss buy-in `BOSS_BUYIN_M` 100m, win `BOSS_PURSE_M` 300m; Jo and Cutter
 say "a hundred times the house minimum" (checked). Save version 10 moves a save in a cut city to
 the next city left (`REMOVED_CITIES` in `lib/story/cities.ts`). The **travel fare is gone**
-(beating the boss is the ticket out). **Open:** `pnpm sim:story` fails its 4-8 nights-a-city
-target: balanced 12 / 47, cautious 11 / 37 nights a city, but the whole circuit (~123 nights
-balanced) is shorter than the old 12-city one (~134). Waiting on the owner: move the target to
-the circuit length, or retune. The map spreads the stops over the whole width and its act bands
+(beating the boss is the ticket out). `pnpm sim:story`'s target is now the **circuit length**
+(owner decision): balanced and cautious play finish the whole circuit in 100-160 nights (median;
+now ~123 and ~112). Nights a city: balanced 12 / 47, cautious 11 / 37. The map spreads the stops over the whole width and its act bands
 tile edge to edge.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,

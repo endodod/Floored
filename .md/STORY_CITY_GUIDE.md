@@ -215,8 +215,8 @@ sit on the street at both layouts (screenshots below).
 8. Checks: `npx tsc --noEmit`, `pnpm lint` (3 known errors: `lib/game-registry.tsx` x2,
    `lib/survival/migrate.ts`), `pnpm check:story`, `pnpm sim:story` (add `500` for a quick run).
    Run the sim after any economy or game-list change; it models the room rotation, room comps and
-   per-town standing. **Check the standing path in the sim**: is the city still clearable in about
-   4-8 nights (median) per player type, with nobody stuck and no player type that can't reach the
+   per-town standing. **Check the standing path in the sim**: does the whole circuit still finish in
+   100-160 nights (median, balanced and cautious; about 11-12 nights a city), with nobody stuck and no player type that can't reach the
    high-roller room before the boss? (The sim offers one job a night up to three and pays the bonus.)
 9. Playwright at 390x844 and 1440x900 (`deviceScaleFactor` 1, `pnpm dev`): new story or set
    `floored-story` in localStorage, play arrival, talk to everyone, check the rooms lock and unlock

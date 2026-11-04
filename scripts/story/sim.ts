@@ -258,13 +258,16 @@ for (const [ti, t] of TYPES.entries()) {
   )
 }
 
-// Targets (plan section 5): no player who bets gets stuck; normal play 4–8 nights a city.
-// The never-gambler is shown for reference only (owner decision 2026-11-04).
+// Targets (plan section 5): no player who bets gets stuck; normal play finishes the whole circuit
+// in CIRCUIT_NIGHTS (median). Owner decision 2026-11-04: with seven cities the target is the
+// circuit's length, not nights a city (it was 4-8 a city with twelve). The never-gambler is shown
+// for reference only.
+const CIRCUIT_NIGHTS = { min: 100, max: 160 }
 for (const [name, s] of Object.entries(summary)) if (s.stuck && name !== NOT_A_TARGET) fail(`${name}: ${s.stuck} circuits stuck`)
-const balanced = summary['Balanced (15%)']!
-const cautious = summary['Cautious (5%)']!
-if (balanced.perCity < 4 || balanced.perCity > 8) fail(`balanced play takes ${balanced.perCity} nights a city (target 4–8)`)
-if (cautious.perCity < 4 || cautious.perCity > 8) fail(`cautious play takes ${cautious.perCity} nights a city (target 4–8)`)
+for (const name of ['Balanced (15%)', 'Cautious (5%)']) {
+  const c = summary[name]!.circuit
+  if (c < CIRCUIT_NIGHTS.min || c > CIRCUIT_NIGHTS.max) fail(`${name} finishes the circuit in ${c} nights (target ${CIRCUIT_NIGHTS.min}–${CIRCUIT_NIGHTS.max})`)
+}
 
 console.log(failed ? `\n${failed} checks failed` : '\nAll story economy checks passed')
 if (failed) process.exit(1)

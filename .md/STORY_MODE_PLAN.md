@@ -226,6 +226,10 @@ save); cautious 7 / 20, ~111; balanced 6 / 33, ~138; high variance 7 / 63, ~245,
 **Car free everywhere, 5 / 10 bets, the marker (not the bust) costs standing** (same day; the sim
 takes no markers): never gambles 23 / 75, ~384; cautious 7 / 20, ~112; balanced 6 / 31, ~134; high
 variance 7 / 50, ~204, busts ~0; bold 3 / 14, ~65, busts ~2.2. All checks pass.
+**Seven cities, boss 100m / 300m, no travel fare** (2026-11-04): nights a city / circuit, balanced
+12 / ~123, cautious 11 / ~112, high variance 15 / ~166, bold 5 / ~61 (busts ~5). The target is now
+the circuit's length (owner decision): balanced and cautious finish in 100–160 nights (median).
+All checks pass.
 
 The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
 bet softens the losses. No other numbers were retuned.
