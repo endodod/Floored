@@ -4,12 +4,11 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import type { City } from '@/lib/story/cities'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, ERRAND_STANDING,
-  ERRANDS_EACH_NIGHT_AFTER, ERRANDS_FIRST_NIGHT, ERRANDS_PER_CITY, GAMES_PER_ROOM, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
+  JOB_LIMIT, JOB_PAY_M, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, LODGING_M, MARKER_M, MARKER_REPAY,
   MINIGAME_MAX_M, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
-import { JOB_PAY_M } from '@/lib/story/jobs'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { VENUE_NAMES } from '@/store/story-store'
 import { formatChips } from '@/utils/format'
@@ -72,7 +71,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
           Standing is how a town sees you. It starts at {0} in every town you reach, and a town you go back to remembers what you left. {STANDING_MAX} is the most one will give you.
         </p>
         <p>
-          It goes up {ERRAND_STANDING} for each errand you finish, at the tables or in a minigame. Playing a minigame on its own pays money, not standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
+          It goes up {JOB_STANDING} for each job you finish, at the tables or in a minigame. Playing a minigame on its own pays money, not standing. A bust takes {BUST_STANDING} off, never below {0}. The boss pays the purse and clears the town; it does not raise standing.
         </p>
         <p>
           The dive is always open. The main floor wants standing {VENUE_REP[1]}; the high-roller room wants {VENUE_REP[2]}: no bet limit and the best comps, which is where you build the back-table money.
@@ -132,14 +131,16 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
         </p>
       </Section>
 
-      <Section title="Hustles & errands">
+      <Section title="Hustles & jobs">
         <p>Hustles: {HUSTLES_PER_NIGHT} side goals on the board each night, {money(HUSTLE_PAY_M * m)} each. They pay when the night ends.</p>
-        <p>Errands: jobs people give you. Each pays {money(ERRAND_PAY_M * m)} the moment it is done and earns {ERRAND_STANDING} standing.</p>
         <p>
-          A town has {ERRANDS_PER_CITY} of them, and they come out over your first nights there: {ERRANDS_FIRST_NIGHT} people want a word on the first night, then {ERRANDS_EACH_NIGHT_AFTER} more each night after. Look for the mark over someone&apos;s head.
+          Jobs: work people hand you. Each pays {money(JOB_PAY_M.min * m)} to {money(JOB_PAY_M.max * m)} the moment it is done and earns {JOB_STANDING} standing, up to {STANDING_MAX}.
         </p>
         <p>
-          Once they are all out, work keeps coming: one new job a night ({money(JOB_PAY_M.min * m)} to {money(JOB_PAY_M.max * m)}, {ERRAND_STANDING} standing up to {STANDING_MAX}), a different one each time. A job you leave stays on the board, but each person gives you one at a time, so you never hold more than one per person. It is how you win back standing lost to a bust.
+          Each night somebody new in town has a job going, starting with your first night. Look for the mark over someone&apos;s head and talk to them; say not now and the job waits with them until you come back for it.
+        </p>
+        <p>
+          Each person gives one job at a time and has nothing new until it is done, and a town gives you at most {JOB_LIMIT} at once, taken or waiting. A town never gives you the same job twice. It is how you win back standing lost to a bust.
         </p>
       </Section>
 

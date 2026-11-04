@@ -2,34 +2,34 @@
  * Story content checks (.md/STORY_MODE_PLAN.md section 10). Run with
  * `pnpm check:story`. Fails on anything that would break a save or strand a
  * player:
- *  - ids unique; every character, city, errand and node a scene names exists;
+ *  - ids unique; every character, city, job and node a scene names exists;
  *  - every node reachable from the scene's start, every path ends (no dead ends),
  *    and a choice can never have all its options closed by its conditions;
  *  - every flag a condition reads is set somewhere;
- *  - every city has ERRANDS_PER_CITY errands on the night schedule (two on the
- *    first night, then one a night), each one handed out by a scene or a flag;
+ *  - written jobs fit their town and giver, and a town can always offer enough
+ *    jobs to reach STANDING_MAX; the job rules (lib/story/jobs.ts) played through;
  *  - cities in rising stakes; every house game in at least two cities; every
  *    Tables game as both a cash room and a tournament;
  *  - shipped ids still exist (SHIPPED below: add to it, never remove from it).
  */
 import { CITIES } from '@/lib/story/cities'
-import { CHARACTERS, ERRANDS, SCENES } from '@/lib/story/content'
+import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, ERRAND_STANDING, ERRANDS_PER_CITY, GAMES_PER_ROOM, HUSTLES_PER_NIGHT,
-  MARKER_M, MARKER_REPAY, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, errandStanding, errandsOutBy, standingBonus,
+  BONUS_STEPS, BOSS_BUYIN_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_PAY_M, JOB_STANDING,
+  MARKER_M, MARKER_REPAY, NIGHT_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
-import { isJob, JOB_PAY_M, JOB_TEMPLATES, spawnJob } from '@/lib/story/jobs'
+import { goalKey, jobGivers, makeOffer, type Job } from '@/lib/story/jobs'
 import { CITY_BY_ID } from '@/lib/story/cities'
 import type { Condition, Effect } from '@/lib/story/types'
 import { GAMES } from '@/lib/game-catalog'
 import type { TableGameName } from '@/lib/tables/types'
-import { useStoryStore } from '@/store/story-store'
+import { migrateStorySave, useStoryStore } from '@/store/story-store'
 
 /** Ids that saves may already hold. Grow this list as content ships; never remove from it. */
 const SHIPPED = {
   scenes: [] as string[],
-  errands: [] as string[],
+  jobs: [] as string[],
   characters: [] as string[],
 }
 
@@ -49,11 +49,11 @@ const unique = (what: string, ids: string[]) => {
 unique('city', CITIES.map((c) => c.id))
 unique('character', CHARACTERS.map((c) => c.id))
 unique('scene', SCENES.map((s) => s.id))
-unique('errand', ERRANDS.map((e) => e.id))
+unique('written job', WRITTEN_JOBS.map((e) => e.id))
 
 const cityIds = new Set(CITIES.map((c) => c.id))
 const characterIds = new Set(CHARACTERS.map((c) => c.id))
-const errandIds = new Set(ERRANDS.map((e) => e.id))
+const jobIds = new Set(WRITTEN_JOBS.map((e) => e.id))
 
 // Flags: what sets them, what reads them.
 const setFlags = new Set<string>()
@@ -68,64 +68,48 @@ const readCond = (c: Condition | undefined, where: string) => {
 const effects = (es: Effect[] | undefined, where: string) => {
   for (const e of es ?? []) {
     if ('set' in e) setFlags.add(e.set)
-    if ('errand' in e && !errandIds.has(e.errand)) fail(`${where}: unknown errand "${e.errand}"`)
+    // Jobs are taken only in the store's offer scenes, never by written content.
+    if ('job' in e) fail(`${where}: content can't hand out a job (only talking to the giver does)`)
   }
 }
 // Flags the game itself sets (outside content): boss results and travel.
 for (const c of CITIES) setFlags.add(`${c.id}-cleared`)
 
 for (const c of CHARACTERS) if (c.city && !cityIds.has(c.city)) fail(`character ${c.id}: unknown city "${c.city}"`)
-for (const e of ERRANDS) {
-  if (!cityIds.has(e.city)) fail(`errand ${e.id}: unknown city`)
-  if (!characterIds.has(e.giver)) fail(`errand ${e.id}: unknown giver "${e.giver}"`)
-  readCond(e.opens, `errand ${e.id}`)
+for (const e of WRITTEN_JOBS) {
+  const where = `job ${e.id}`
+  if (!cityIds.has(e.city)) fail(`${where}: unknown city`)
+  if (!jobGivers(e.city).some((g) => g.id === e.giver)) fail(`${where}: "${e.giver}" doesn't give jobs in ${e.city}`)
   if (e.goal.kind === 'minigame') {
-    const g = e.goal.minigame
-    if (!CHARACTERS.some((c) => c.minigame === g && c.city === e.city)) fail(`errand ${e.id}: no one in ${e.city} offers the ${g} minigame`)
+    const own = CHARACTERS.find((c) => c.id === e.giver)?.minigame
+    if (own !== e.goal.minigame) fail(`${where}: a minigame job is the giver's own minigame (${e.giver} has ${own ?? 'none'})`)
   }
   if (e.goal.kind === 'streak') {
     const city = CITIES.find((c) => c.id === e.city)
-    if (city && city.games !== 'all-seen' && !city.games.includes(e.goal.game)) fail(`errand ${e.id}: ${e.goal.game} isn't played in ${e.city}`)
+    if (city && city.games !== 'all-seen' && !city.games.includes(e.goal.game)) fail(`${where}: ${e.goal.game} isn't played in ${e.city}`)
   }
-  // Every errand earns standing, minigame jobs included (owner decision 2026-11-04).
-  if (e.rep != null && (e.rep < 0 || e.rep > STANDING_MAX || !Number.isInteger(e.rep))) fail(`errand ${e.id}: rep ${e.rep} is not a standing step 0–${STANDING_MAX}`)
-  if (errandStanding(e) === 0) fail(`errand ${e.id}: every errand should earn standing`)
+  if (!Number.isInteger(e.pay) || e.pay < JOB_PAY_M.min || e.pay > JOB_PAY_M.max) fail(`${where}: pays ${e.pay}m, outside ${JOB_PAY_M.min}m to ${JOB_PAY_M.max}m`)
+  if (!e.pitch.length || e.pitch.some((l) => !l.trim())) fail(`${where}: needs a pitch, one line each`)
 }
-
-// The standing path: each city with content has ERRANDS_PER_CITY errands that earn
-// standing, enough to open both rooms and reach the top bonus (STANDING_MAX), and they
-// come out on the schedule: two on the first night in the town, then one a night.
-const startedBy = (id: string) =>
-  SCENES.filter((sc) =>
-    Object.values(sc.nodes).some((n) =>
-      (n.kind === 'end' ? (n.effects ?? []) : n.kind === 'choice' ? n.options.flatMap((o) => o.effects ?? []) : []).some((e) => 'errand' in e && e.errand === id && e.step === 'start'),
-    ),
-  )
+// A town never gives the same task twice, written ones included.
 for (const c of CITIES) {
-  const theirs = ERRANDS.filter((e) => e.city === c.id)
-  if (!theirs.length) continue
-  if (theirs.length !== ERRANDS_PER_CITY) fail(`city ${c.id}: ${theirs.length} errands (needs ${ERRANDS_PER_CITY})`)
-  const standingFromJobs = theirs.reduce((n, e) => n + errandStanding(e), 0)
-  if (standingFromJobs < STANDING_MAX) fail(`city ${c.id}: its jobs give standing ${standingFromJobs}, short of ${STANDING_MAX} (the top room and bonus)`)
-  for (let n = 0; n < ERRANDS_PER_CITY; n++) {
-    const out = theirs.filter((e) => e.night <= n).length
-    if (out !== errandsOutBy(n)) fail(`city ${c.id}: ${out} errands out by night ${n}, the schedule says ${errandsOutBy(n)}`)
+  const keys = WRITTEN_JOBS.filter((e) => e.city === c.id).map((e) => goalKey(e.goal))
+  if (new Set(keys).size !== keys.length) fail(`city ${c.id}: two written jobs share a task`)
+}
+// The standing path: every town can keep offering new jobs, at least enough to reach
+// STANDING_MAX (the top room and bonus), taking and finishing each one.
+for (const c of CITIES) {
+  if (!jobGivers(c.id).length) continue
+  const games = c.games === 'all-seen' ? GAMES.map((g) => g.name).slice(0, 6) : c.games
+  const given: string[] = []
+  let made = 0
+  for (let n = 0; n < 40; n++) {
+    const job = makeOffer({ city: c, night: n, held: [], given, games: games as never })
+    if (!job) break
+    given.push(job.key)
+    made++
   }
-  for (const e of theirs) {
-    if (!Number.isInteger(e.night) || e.night < 0) fail(`errand ${e.id}: night ${e.night} is not a night in the town`)
-    const scenes = startedBy(e.id)
-    if (!scenes.length && !e.opens) fail(`errand ${e.id}: no scene hands it out and it has no opens condition`)
-    for (const sc of scenes) {
-      if (sc.city !== e.city) fail(`errand ${e.id}: handed out by ${sc.id} in another city`)
-      // The giver hands it over: by talking to them, or (for Jo and anyone without a street spot) at dawn or on arrival.
-      const by = sc.trigger.on === 'talk' ? sc.trigger.character : null
-      if (by && by !== e.giver) fail(`errand ${e.id}: given by ${e.giver} but handed out when talking to ${by}`)
-      if (e.night > 0 && sc.trigger.on !== 'talk' && sc.trigger.on !== 'dawn') fail(`errand ${e.id}: comes out on night ${e.night}, so a talk or dawn scene must hand it over (not ${sc.trigger.on})`)
-    }
-  }
-  // The givers who want a word on the first night: one job each.
-  const first = theirs.filter((e) => e.night === 0).map((e) => e.giver)
-  if (new Set(first).size !== first.length) fail(`city ${c.id}: one person hands out two first-night jobs`)
+  if (made < STANDING_MAX) fail(`city ${c.id}: only ${made} different jobs to give, short of standing ${STANDING_MAX}`)
 }
 if (VENUE_REP[1] >= VENUE_REP[2] || VENUE_REP[2] > STANDING_MAX) fail('room standings must rise and fit under the standing cap')
 for (const step of BONUS_STEPS) if (VENUE_REP.includes(step)) fail(`standing ${step} both opens a room and raises the bonus`)
@@ -222,7 +206,7 @@ const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number
   { re: /^The dive takes anyone.*up to (?:a )?(\w+) times/i, what: 'the dive limit', want: (m) => [[word(m[1]), VENUE_MAX_M[0]]] },
   { re: /^The main floor wants standing (\w+)\..*up to (?:a )?(\w+) times/i, what: 'the main floor', want: (m) => [[word(m[1]), VENUE_REP[1]], [word(m[2]), VENUE_MAX_M[1]]] },
   { re: /^The high-roller room wants standing (\w+)/i, what: 'the high-roller room', want: (m) => [[word(m[1]), VENUE_REP[2]]] },
-  { re: /it goes up (\w+)/i, what: 'the standing an errand earns', want: (m) => [[word(m[1]), ERRAND_STANDING]] },
+  { re: /it goes up (\w+)/i, what: 'the standing a job earns', want: (m) => [[word(m[1]), JOB_STANDING]] },
   { re: /it drops (\w+)/i, what: 'the standing a bust costs', want: (m) => [[word(m[1]), BUST_STANDING]] },
   { re: /(\w+) is the most any town gives/i, what: 'the standing cap', want: (m) => [[word(m[1]), STANDING_MAX]] },
   { re: /(\w+) bets a night/i, what: 'bets a night', want: (m) => [[word(m[1]), NIGHT_BETS]] },
@@ -237,7 +221,7 @@ const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number
       ...BONUS_STEPS.map((step, i): [number | undefined, number] => [word(m[i + 4]), Math.round(STANDING_BONUS[step]! * 100)]),
     ],
   },
-  { re: /Two people want a word on your first night, then (\w+) more each night after\. (\w+) jobs/i, what: 'the errand schedule', want: (m) => [[word(m[1]), 1], [word(m[2]), ERRANDS_PER_CITY]] },
+  { re: /(\w+) on the go at most/i, what: 'the jobs a town gives at once', want: (m) => [[word(m[1]), JOB_LIMIT]] },
 ]
 for (const t of allText) {
   for (const q of QUOTES) {
@@ -255,7 +239,7 @@ for (const t of allText) {
 
 // Shipped ids.
 for (const id of SHIPPED.scenes) if (!SCENES.some((s) => s.id === id)) fail(`shipped scene "${id}" is gone (saves may refer to it)`)
-for (const id of SHIPPED.errands) if (!errandIds.has(id)) fail(`shipped errand "${id}" is gone`)
+for (const id of SHIPPED.jobs) if (!jobIds.has(id)) fail(`shipped job "${id}" is gone`)
 for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped character "${id}" is gone`)
 
 // ── The save's rules, played through once ──
@@ -297,108 +281,146 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
       else st().advance()
     }
   }
-  const out = () => st().openErrands().map((e) => e.id).sort().join()
-  // Night 0: two people want a word (Marta and Pike), each with one job; nobody else yet.
-  if (st().sceneFor({ on: 'talk', character: 'marta' }) !== 'dustwater-marta-first' || st().sceneFor({ on: 'talk', character: 'pike' }) !== 'dustwater-pike-first') fail('on the first night Marta and Pike want a word')
-  if (out() !== '') fail('no errand is out before anyone hands it over')
-  play('dustwater-marta-first')
-  play('dustwater-pike-first')
-  if (out() !== 'dustwater-marta-shift,dustwater-pike-marks') fail(`the first night gives two errands, got ${out()}`)
-  if (st().sceneFor({ on: 'talk', character: 'marta' }) || st().sceneFor({ on: 'talk', character: 'pike' })) fail('Marta and Pike have nothing more to say on the first night (their next jobs wait)')
-  // Minigames pay once per giver per night; a good shift finishes Marta's errand.
-  const m0 = st().money
-  const paid = st().playMinigame('marta', 'last-orders', 1)
-  if (paid !== 3 * m || st().playMinigame('marta', 'last-orders', 1) !== 0) fail('minigame pays 3m at a perfect score, once a night')
-  if (st().errands['dustwater-marta-shift'] !== 'done' || st().money !== m0 + 3 * m + 6 * m) fail('a perfect shift finishes the bar-shift errand (6m)')
-  if (st().rep() !== 1 || !st().venueOpen(1) || st().venueOpen(2)) fail('standing 1 opens the main floor, not the high-roller room')
-  // A night at the dive: table limit, bets, a streak errand, comps, the bonus and hustles at the end.
+  // ── Jobs (owner decision 2026-11-04) ──
+  const offered = () => st().jobs.filter((j) => j.city === st().city && j.status === 'offered')
+  const heldHere = () => st().jobs.filter((j) => j.city === st().city)
+  const givers = jobGivers('dustwater').map((g) => g.id)
+  /** Plays whatever scene is on, choosing the option whose text has `want` (else the first). */
+  const playOn = (want?: string) => {
+    let g = 0
+    while (st().scene && g++ < 80) {
+      const step = st().currentStep()
+      if (!step) { fail(`scene ${st().scene!.id} is stuck at node ${st().scene!.node}`); break }
+      if (step.kind === 'choice') st().pick((step.options.find((o) => want && o.text.includes(want)) ?? step.options[0]!).index)
+      else st().advance()
+    }
+    if (st().scene) fail(`a scene (${st().scene!.id}) doesn't end`)
+  }
+  /** Talks to a giver and answers their offer. */
+  const answer = (giver: string, take: boolean) => {
+    if (!st().talkTo(giver)) return fail(`talking to ${giver} does nothing`)
+    playOn(take ? 'do it' : 'Not now')
+  }
+  /** Meets a taken job's goal through the store's own actions. */
+  const finish = (j: Job) => {
+    const g = j.goal
+    useStoryStore.setState({ money: Math.max(st().money, 2000 * m) })
+    if (g.kind === 'minigame') return void st().playMinigame(j.giver, g.minigame, 1)
+    if (!st().tonight) st().startNight(0)
+    if (g.kind === 'streak') for (let k = 0; k < g.wins; k++) { st().placeBet(g.game, m); st().resolve(g.game, 2 * m, true) }
+    else if (g.kind === 'big-win') { st().placeBet('hilo', m); st().resolve('hilo', g.mult * m, true) }
+    else { st().placeBet('hilo', 10 * m); st().resolve('hilo', (20 + (g.atLeast ?? 0)) * m, true); st().endNight() }
+  }
+
+  // The story starts with exactly one job, offered by one of the town's givers, and nothing taken.
+  if (offered().length !== 1 || st().openJobs().length !== 0) fail(`a new story starts with exactly one offer (got ${offered().length})`)
+  const first = offered()[0]!
+  if (!givers.includes(first.giver)) fail(`the first offer comes from someone who gives jobs here (got ${first.giver})`)
+  st().offerTonight()
+  if (offered().length !== 1) fail('one offer a night: asking again the same night adds none')
+  // Only talking takes it. "Not now" leaves it waiting with the giver, any number of nights.
+  if (!st().canTalk(first.giver)) fail('the giver with an offer has something to say')
+  answer(first.giver, false)
+  if (offered()[0]?.id !== first.id || st().openJobs().length) fail('"Not now" leaves the offer waiting, not taken')
+  if (!st().canTalk(first.giver) || st().sceneFor({ on: 'talk', character: first.giver })) fail('after any first-meeting scene, talking again goes straight to the offer')
+  // Their written jobs come first: the first offer is the giver's first written job.
+  const firstWritten = WRITTEN_JOBS.find((w) => w.city === 'dustwater' && w.giver === first.giver)
+  if (firstWritten && first.key !== goalKey(firstWritten.goal)) fail(`a giver offers their written jobs first (${first.giver} offered ${first.key})`)
+  // Night 1 and 2: one new offer a night, each at someone who holds nothing.
+  st().endNight()
+  if (heldHere().length !== 2 || offered().length !== 2) fail(`night 2 brings exactly one more offer (got ${heldHere().length})`)
+  st().endNight()
+  const three = heldHere()
+  if (three.length !== JOB_LIMIT || new Set(three.map((j) => j.giver)).size !== JOB_LIMIT) fail(`three nights, three offers at three different people (got ${three.map((j) => j.giver).join()})`)
+  // Full: no fourth job however many nights pass; waiting offers stay.
+  st().endNight()
+  st().endNight()
+  if (heldHere().length !== JOB_LIMIT || heldHere().some((j) => !three.some((t) => t.id === j.id))) fail('a full town offers nothing new, and waiting offers stay')
+  if (three.some((j) => j.pay < JOB_PAY_M.min || j.pay > JOB_PAY_M.max)) fail(`a job pays ${JOB_PAY_M.min}m to ${JOB_PAY_M.max}m`)
+  // Take one and finish it: it pays and earns standing; the giver is free, and the
+  // town, which had no room tonight, makes tonight's offer now.
+  answer(three[0]!.giver, true)
+  const taken = st().openJobs()
+  if (taken.length !== 1 || taken[0]!.id !== three[0]!.id) fail('"I\'ll do it" takes the offered job')
+  if (st().canTalk(three[0]!.giver) && !st().sceneFor({ on: 'talk', character: three[0]!.giver })) fail('a giver whose job you took has nothing new to offer')
+  useStoryStore.setState({ standing: { dustwater: 0 }, money: 2000 * m })
+  const moneyBefore = st().money
+  finish(taken[0]!)
+  if (st().jobs.some((j) => j.id === taken[0]!.id)) fail(`a finished job (${taken[0]!.goal.kind}) leaves the book`)
+  if (st().rep() !== JOB_STANDING) fail(`a finished job earns ${JOB_STANDING} standing (got ${st().rep()})`)
+  if (taken[0]!.goal.kind === 'minigame' && st().money !== moneyBefore + 3 * m + taken[0]!.pay * m) fail('a finished job pays its pay in minimum bets')
+  if (heldHere().length !== JOB_LIMIT) fail(`a finished job frees a place for the next offer (got ${heldHere().length})`)
+  // Many nights of taking and finishing everything: never two jobs at one person, never
+  // more than JOB_LIMIT, never the same task twice, and every giver's written jobs first.
+  {
+    // Who offered each task (the save keeps only the keys, in the order given).
+    const giverOf = new Map<string, string>([first, ...three].map((j) => [j.key, j.giver]))
+    const note = () => st().jobs.forEach((j) => giverOf.set(j.key, j.giver))
+    for (let n = 0; n < 30; n++) {
+      note()
+      for (const j of offered()) answer(j.giver, true)
+      for (const j of st().openJobs()) {
+        finish(j)
+        note()
+      }
+      const here = heldHere()
+      if (here.length > JOB_LIMIT) fail(`more than ${JOB_LIMIT} jobs at once (${here.length})`)
+      if (new Set(here.map((j) => j.giver)).size !== here.length) fail('one person holds two jobs')
+      st().endNight()
+    }
+    note()
+    const given = st().jobsGiven.dustwater ?? []
+    if (new Set(given).size !== given.length) fail('the town gave the same task twice')
+    if (given.length < 10) fail(`a month of nights brings a steady run of jobs (got ${given.length})`)
+    for (const g of givers) {
+      const written = WRITTEN_JOBS.filter((w) => w.city === 'dustwater' && w.giver === g).map((w) => goalKey(w.goal))
+      const theirs = given.filter((k) => giverOf.get(k) === g)
+      if (written.some((k, i) => theirs[i] !== k)) fail(`${g} offers their written jobs first, in order (got ${theirs.slice(0, written.length).join()})`)
+    }
+    if (st().rep() !== STANDING_MAX) fail('finishing jobs takes standing to the cap')
+  }
+  // Leaving town keeps its jobs for your return; the new town starts with one offer.
+  const keptHere = heldHere().map((j) => j.id).sort().join()
+  const jobsSaved = { jobs: st().jobs, jobsGiven: st().jobsGiven, jobOffered: st().jobOffered }
+  // The night rules below run with no jobs on, so no job pays or moves standing mid-check.
+  useStoryStore.setState({ jobs: [], jobOffered: { dustwater: Number.MAX_SAFE_INTEGER } })
+
+  // Minigames pay once per giver per night.
+  {
+    const night0 = st().night
+    useStoryStore.setState({ minigameNight: {} })
+    if (st().playMinigame('marta', 'last-orders', 1) !== 3 * m || st().playMinigame('marta', 'last-orders', 1) !== 0) fail('a minigame pays 3m at a perfect score, once a night')
+    if (st().night !== night0) fail('a minigame does not end the night')
+  }
+  // A night at the dive: table limit, bets, comps, the bonus and hustles at the end.
+  useStoryStore.setState({ money: 200 * m, standing: { dustwater: 2 }, tonight: null })
+  if (!st().venueOpen(1) || st().venueOpen(2)) fail('standing 2 opens the main floor, not the high-roller room')
   if (!st().startNight(0)) fail('a night at the dive starts')
   if (st().wagerCap() !== Math.min(st().money, 20 * m)) fail('the dive caps a bet at 20m')
   for (let k = 0; k < 3; k++) {
     st().placeBet('street-cups', m)
     st().resolve('street-cups', 2.5 * m, true)
   }
-  if (st().errands['dustwater-pike-marks'] !== 'done') fail('three Street Cups wins in a row finish Pike\'s errand')
-  if (st().rep() !== 2 || st().venueOpen(2)) fail('a second errand earns standing 2, which raises the bonus but opens no room')
   st().placeBet('hilo', m)
   st().resolve('hilo', 3 * m, true)
-  if (st().errands['dustwater-marta-bet']) fail('a job that is not out yet can\'t be finished')
   if (st().betsLeft() !== 8) fail('four rounds leave 8 of 12 bets')
   const tableWin = 3 * 1.5 * m + 2 * m
   let night = st().endNight()
   if (!night.played || night.comps !== Math.round(COMPS_RATE[0] * 4 * m) || night.lodging !== 3 * m || st().tonight) fail('the night ends with comps (the dive share of bets) and lodging')
   if (night.bonusRate !== STANDING_BONUS[2] || night.bonus !== standingBonus(2, tableWin) || night.bonus !== Math.round(0.05 * tableWin)) fail(`a night up at standing 2 adds 5% of the table win (got ${night.bonus})`)
   if (night.hustles.length !== 2) fail('two hustles on the board each night')
-  // Night 1: Jo, at dawn, with the seed-money job.
-  if (st().queue.join() !== 'dustwater-jo-seed') fail(`the morning after the first night queues Jo's job (got ${st().queue.join()})`)
-  play(st().queue[0]!)
-  useStoryStore.setState({ queue: [] })
-  if (out() !== 'dustwater-jo-stake') fail(`night 1 brings out one more errand, got ${out()}`)
-  if (st().sceneFor({ on: 'talk', character: 'marta' })) fail('Marta\'s second job waits for night 2')
   st().startNight(1)
   st().placeBet('hilo', m)
   st().resolve('hilo', 0, true)
   night = st().endNight()
   if (night.bonus !== 0) fail('a night down earns no bonus')
-  if (st().errands['dustwater-jo-stake'] === 'done') fail('a night down does not finish the seed-money errand')
-  // Night 2: Marta's trucker; a 3× win finishes it.
-  if (st().queue.length) fail('no dawn scene once Jo\'s job is out')
-  play(st().sceneFor({ on: 'talk', character: 'marta' }) ?? 'missing')
-  if (out() !== 'dustwater-jo-stake,dustwater-marta-bet') fail(`night 2 brings out Marta's second job, got ${out()}`)
-  st().startNight(1)
-  st().placeBet('hilo', m)
-  st().resolve('hilo', 3 * m, true)
-  if (st().errands['dustwater-marta-bet'] !== 'done' || st().rep() !== 3 || !st().venueOpen(2)) fail('a 3× win finishes the trucker\'s bet; standing 3 opens the high-roller room')
-  night = st().endNight()
-  if (st().errands['dustwater-jo-stake'] !== 'done' || st().rep() !== 4) fail('a night up finishes Jo\'s seed money (standing 4)')
-  if (night.bonusRate !== STANDING_BONUS[4] || night.bonus !== standingBonus(4, 2 * m)) fail('the bonus uses standing as the night closes (a job finished tonight counts)')
-  // Night 3: Pike's lesson, his minigame at 4 of 5.
-  play(st().sceneFor({ on: 'talk', character: 'pike' }) ?? 'missing')
-  st().playMinigame('pike', 'shuffle-tracker', 0.6)
-  if (st().errands['dustwater-pike-lesson'] === 'done') fail('3 of 5 shuffles is not enough for Pike\'s lesson')
-  st().playMinigame('pike', 'shuffle-tracker', 0.8)
-  if (st().errands['dustwater-pike-lesson'] !== 'done' || st().rep() !== 5) fail('Dustwater\'s five errands reach standing 5')
-  if (st().sceneFor({ on: 'talk', character: 'marta' }) || st().sceneFor({ on: 'talk', character: 'pike' }) || out() !== '') fail('every job is out and done after night 3')
+  useStoryStore.setState({ standing: { dustwater: STANDING_MAX } })
   st().startNight(2)
   st().placeBet('hilo', 10 * m)
   st().resolve('hilo', 20 * m, true)
   if (st().endNight().bonus !== Math.round(0.2 * 10 * m)) fail('standing 5 adds 20% of a night\'s table win')
-  // Spawned jobs: from the night after the last errand comes out, one new job a night for someone
-  // with nothing open; undone jobs stay; one per person, so at most three in Dustwater.
-  {
-    const jobs = () => st().openErrands().filter((e) => isJob(e.id))
-    if (jobs().length !== 1) fail(`the night after every errand is out, one job turns up (got ${jobs().length})`)
-    for (let k = 0; k < 4; k++) st().endNight()
-    const held = jobs()
-    if (held.length !== 3 || new Set(held.map((j) => j.giver)).size !== 3) fail(`undone jobs stay, one per person, three at most (got ${held.map((j) => j.giver).join()})`)
-    if (held.filter((j) => j.goal.kind === 'streak').length > 1) fail('at most one open streak job')
-    if (held.some((j) => (j.pay ?? 0) < JOB_PAY_M.min || (j.pay ?? 0) > JOB_PAY_M.max)) fail('a job pays 3m to 5m')
-    // Finish one (a minigame job where there is one, else a table job) and the next night brings exactly one new one.
-    useStoryStore.setState({ standing: { dustwater: 2 }, money: 1000 * m })
-    const j = held.find((x) => x.goal.kind === 'minigame') ?? held[0]!
-    const goal = j.goal
-    if (goal.kind === 'minigame') st().playMinigame(j.giver, goal.minigame, 1)
-    else {
-      st().startNight(2)
-      if (goal.kind === 'streak') for (let k = 0; k < goal.wins; k++) { st().placeBet(goal.game, m); st().resolve(goal.game, 2 * m, true) }
-      else { st().placeBet('hilo', 30 * m); st().resolve('hilo', 30 * m * 6, true) }
-    }
-    st().endNight()
-    if (jobs().some((x) => x.id === j.id) || st().rep() < 3) fail(`a finished job (${j.goal.kind}) leaves the board and earns standing back`)
-    if (jobs().length !== 3) fail(`a finished job frees its giver for the next night's job (got ${jobs().length})`)
-    // Variety: across nights the jobs differ in kind, numbers and words.
-    const city = CITY_BY_ID.get('dustwater')!
-    const givers = CHARACTERS.filter((c) => ['marta', 'pike', 'jo'].includes(c.id))
-    const made = Array.from({ length: 60 }, (_, n) => spawnJob({ city, night: n, givers, open: [], games: city.games as never }))
-    if (made.some((x) => !x)) fail('a giver with nothing open always gets a job')
-    const kinds = new Set(made.map((x) => x!.goal.kind))
-    if (kinds.size !== JOB_TEMPLATES.length) fail(`jobs use every kind (got ${[...kinds].join()})`)
-    if (new Set(made.map((x) => x!.task)).size < 20) fail('jobs vary their wording and numbers')
-    if (made.some((x) => x!.goal.kind === 'minigame' && x!.giver === 'jo')) fail('a minigame job only goes to someone with a minigame')
-    const full = spawnJob({ city, night: 1, givers, open: held, games: city.games as never })
-    if (full) fail('no job when everyone already has one')
-    useStoryStore.setState({ jobs: [] })
-  }
+  if (st().queue.length) fail('an ordinary night queues no scene')
+
   // Comps by room: a better room gives a bigger share, each with its own cap.
   const standingBefore = st().standing
   for (const v of [1, 2] as const) {
@@ -452,12 +474,36 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (st().rep() !== standingAtBoss) fail('a boss win pays the purse and clears the town but gives no standing')
   const fare = st().fareToNext()!
   const holding = st().money
+  useStoryStore.setState(jobsSaved)
   if (!st().travelNext() || st().city !== 'rattlesnake-junction' || st().money !== holding - fare || fare !== 200) fail('travel to the next city costs 20 of its minimum bets')
+  if (st().jobs.filter((j) => j.city === 'dustwater').map((j) => j.id).sort().join() !== keptHere) fail('leaving a town keeps its jobs there for your return')
+  if (st().jobs.filter((j) => j.city === 'rattlesnake-junction').length !== (jobGivers('rattlesnake-junction').length ? 1 : 0)) fail('the first night in a new town starts with one offer (where it has people)')
+  if (st().openJobs().some((j) => j.city !== st().city)) fail('only this town\'s jobs can be worked here')
   if (st().rep() !== 0 || !st().venueOpen(0) || st().venueOpen(1)) fail('a town you have not worked starts you at standing 0')
   useStoryStore.setState({ standing: { dustwater: 1, 'rattlesnake-junction': 3 } })
   if (st().rep() !== 3 || !st().venueOpen(2)) fail('a town you go back to remembers its standing')
 }
 
-console.log(`${SCENES.length} scenes, ${ERRANDS.length} errands, ${CHARACTERS.length} characters, ${CITIES.length} cities`)
+// ── A version 5 save moves onto the job system ──
+{
+  const v5 = {
+    started: true,
+    city: 'dustwater',
+    night: 4,
+    errands: { 'dustwater-marta-shift': 'done', 'dustwater-pike-marks': 'started' },
+    jobs: [{ id: 'job:dustwater:4', city: 'dustwater', giver: 'jo', spawned: 4 }],
+    queue: ['dustwater-jo-seed', 'dustwater-bust'],
+    scene: { id: 'dustwater-pike-lesson', node: 'l1' },
+    standing: { dustwater: 2 },
+  }
+  const out = migrateStorySave(v5, 5) as unknown as Record<string, unknown> & { jobs: unknown[]; jobsGiven: Record<string, string[]>; queue: string[]; scene: unknown; standing: Record<string, number> }
+  if (out.jobs.length) fail('a migrated save drops open errands and old jobs (the town offers afresh)')
+  if (out.jobsGiven.dustwater?.join() !== 'minigame:last-orders:0.8') fail(`a finished written job counts as given (got ${out.jobsGiven.dustwater?.join()})`)
+  if ('errands' in out) fail('a migrated save has no errands left')
+  if (out.queue.join() !== 'dustwater-bust' || out.scene) fail('scenes that are gone are never resumed or queued')
+  if (out.standing.dustwater !== 2) fail('a migrated save keeps its standing')
+}
+
+console.log(`${SCENES.length} scenes, ${WRITTEN_JOBS.length} written jobs, ${CHARACTERS.length} characters, ${CITIES.length} cities`)
 console.log(failed ? `${failed} checks failed` : 'All story content checks passed')
 if (failed) process.exit(1)

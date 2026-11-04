@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ArrowRight, Car, Ellipsis, Lock, Map as MapIcon, Moon, NotebookPen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -21,9 +21,10 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, BOSS_PURSE_M, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_STANDING, LODGING_M, MINIGAME_MAX_M, NIGHT_BETS, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
+import { TRAVELLING_GIVERS } from '@/lib/story/jobs'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
 import { sceneConfigFor } from '@/lib/story/scene-theme'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -63,6 +64,12 @@ function Actions({ children }: { children: ReactNode }) {
 
 export function StoryHub() {
   const s = useStoryStore()
+  // Tonight's job offer, if the town has room and none was made yet (a save from
+  // before version 6 gets its first one here). Safe to call on every visit.
+  const started = s.started
+  useEffect(() => {
+    if (started) useStoryStore.getState().offerTonight()
+  }, [started])
   const router = useRouter()
   const [confirmNew, setConfirmNew] = useState(false)
   const [sheet, setSheet] = useState<{ which: Sheet; anchor: { x: number; y: number } } | null>(null)
@@ -84,14 +91,16 @@ export function StoryHub() {
     const max = VENUE_MAX_M[v]
     return max == null ? 'No table limit' : `Bets up to ${money(max * m)}`
   }
-  const errands = s.openErrands()
+  const taken = s.openJobs()
+  const offers = s.jobs.filter((j) => j.city === s.city && j.status === 'offered')
   const hustles = hustlesFor(s.city, s.night)
   const boss = bossOf(city)
-  const people = CHARACTERS.filter((c) => c.city === s.city && c !== boss)
+  // The town's people, then those who travel with you and give jobs everywhere (Jo).
+  const people = [...CHARACTERS.filter((c) => c.city === s.city && c !== boss), ...CHARACTERS.filter((c) => (TRAVELLING_GIVERS as readonly string[]).includes(c.id))]
   const cleared = s.cleared.includes(s.city)
   const fare = s.fareToNext()
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
-  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, s.openErrandGames())
+  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, s.openJobGames())
   const broke = s.money < m && !night
   const betsLeft = night ? Math.max(0, NIGHT_BETS - night.bets) : 0
   const inCar = s.money < CAR_BELOW_M * m
@@ -99,10 +108,9 @@ export function StoryHub() {
   const roomName = config.motelName === 'MOTEL' ? 'Your room' : `Room 5 at the ${config.motelName[0]}${config.motelName.slice(1).toLowerCase()}`
 
   const talk = (character: string) => {
-    const id = s.sceneFor({ on: 'talk', character })
-    if (id) {
+    if (s.canTalk(character)) {
       setSheet(null)
-      s.startScene(id)
+      s.talkTo(character)
     }
   }
   const bossIntro = s.sceneFor({ on: 'boss-intro' })
@@ -164,8 +172,8 @@ export function StoryHub() {
       }
     }),
     ...people.map((c, i): SceneSpot => {
-      // A scene to play, or a job that turned up this morning.
-      const canTalk = !!s.sceneFor({ on: 'talk', character: c.id }) || s.jobs.some((j) => j.giver === c.id && j.city === s.city && j.spawned === s.night)
+      // Something new to say, or a job to offer.
+      const canTalk = s.canTalk(c.id)
       const paid = !!c.minigame && s.minigamePaidTonight(c.id)
       return {
         spot: config.spots[c.id] ? c.id : `p${i}`,
@@ -175,7 +183,7 @@ export function StoryHub() {
             name={c.name}
             badge={canTalk ? 'talk' : paid ? 'done' : null}
             active={isOpen('person', c.id)}
-            label={`${c.name}${canTalk ? ', has something to say' : ''}${paid ? ', paid tonight' : ''}`}
+            label={`${c.name}${s.jobAt(c.id)?.status === 'offered' ? ', has a job for you' : canTalk ? ', has something to say' : ''}${paid ? ', paid tonight' : ''}`}
             onOpen={open({ kind: 'person', id: c.id })}
           />
         ),
@@ -260,7 +268,7 @@ export function StoryHub() {
             <div className="flex items-center gap-2">
               <StandingStars standing={s.rep()} city={city.name} />
               <SheetNote tone="soft">
-                Needs standing {VENUE_REP[v]}. Finish an errand.
+                Needs standing {VENUE_REP[v]}. Finish a job.
               </SheetNote>
             </div>
             <SheetNote>You have standing {s.rep()} in {city.name}. The door stays chained until your name is good enough here.</SheetNote>
@@ -339,28 +347,28 @@ export function StoryHub() {
     if (w.kind === 'person') {
       const c = CHARACTERS.find((x) => x.id === w.id)
       if (!c) return null
-      const canTalk = !!s.sceneFor({ on: 'talk', character: c.id })
+      const canTalk = s.canTalk(c.id)
       const paid = !!c.minigame && s.minigamePaidTonight(c.id)
-      const theirs = errands.filter((e) => e.giver === c.id)
+      const job = s.jobAt(c.id)
       return {
         title: c.name,
         kicker: c.minigame ? `${MINIGAME_TITLES[c.minigame] ?? 'Minigame'} · ${paid ? 'paid tonight' : `pays up to ${money(MINIGAME_MAX_M * m)}`}` : undefined,
         art: <Face id={c.id} />,
         body: (
           <>
-            {c.minigame && <SheetNote>{paid ? 'Already paid tonight. Play again for practice; errands still count.' : 'Pays once a night, by how well you do.'}</SheetNote>}
-            {theirs.map((e) => (
-              <div key={e.id} className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
-                <p className="felt-print !text-[9.5px]">Errand</p>
-                <p className="text-[13px] font-semibold text-ink">{e.title}</p>
-                <p className="text-[12px] leading-[17px] text-dim">{e.task}</p>
+            {c.minigame && <SheetNote>{paid ? 'Already paid tonight. Play again for practice; jobs still count.' : 'Pays once a night, by how well you do.'}</SheetNote>}
+            {job?.status === 'offered' && <SheetNote tone="gold">{c.name} has a job for you. Talk to hear it.</SheetNote>}
+            {job?.status === 'open' && (
+              <div className="rounded-md bg-black/25 px-3 py-2 shadow-[inset_0_0_0_1px_rgba(217,164,65,0.2)]">
+                <p className="felt-print !text-[9.5px]">Your job · {money(job.pay * m)} · +{JOB_STANDING} standing</p>
+                <p className="text-[13px] font-semibold text-ink">{job.title}</p>
+                <p className="text-[12px] leading-[17px] text-dim">{job.task}</p>
               </div>
-            ))}
+            )}
             <Actions>
-              {(() => {
-                const hasScene = !!s.sceneFor({ on: 'talk', character: c.id })
-                return <Button size="sm" variant="outline" disabled={!hasScene} onClick={() => talk(c.id)}>{hasScene ? 'Talk' : 'Nothing new to say'}</Button>
-              })()}
+              <Button size="sm" variant={job?.status === 'offered' ? 'default' : 'outline'} disabled={!canTalk} onClick={() => talk(c.id)}>
+                {canTalk ? 'Talk' : 'Nothing new to say'}
+              </Button>
               {c.minigame && (
                 <Button asChild size="sm" variant={paid ? 'secondary' : 'default'}>
                   <Link href={`/story/minigame/${c.minigame}`}>{paid ? 'Practice' : 'Play'}</Link>
@@ -421,7 +429,7 @@ export function StoryHub() {
             city={city}
             night={s.night}
             seen={s.seenGames}
-            must={s.openErrandGames()}
+            must={s.openJobGames()}
             onReplay={tutorial ? () => { setSheet(null); s.startScene(tutorial.id) } : null}
           />
         ),
@@ -550,7 +558,7 @@ export function StoryHub() {
   })()
 
   const overlayOn = sceneOn || !!receipt || mapOpen
-  const jobsBadge = errands.length
+  const jobsBadge = taken.length + offers.length
 
   return (
     <div className="st-screen relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg [@media(max-height:500px)]:min-h-[30rem] [@media(max-height:500px)]:shrink-0">
@@ -594,7 +602,8 @@ export function StoryHub() {
           <Notebook
             minBet={m}
             hustles={hustles.map((h) => ({ id: h.id, text: h.text, met: !!night && h.met(night.rounds) }))}
-            errands={errands}
+            jobs={taken}
+            offers={offers}
             hustlePay={HUSTLE_PAY_M * m}
             nightOn={!!night}
             lastNet={!night && s.lastNight ? s.lastNight.net : null}

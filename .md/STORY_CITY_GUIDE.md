@@ -32,19 +32,20 @@ the high-roller room at 3. Standing 2, 4 and 5 open nothing; they raise the **st
 tonight's lineup in the room you sat in. `check:story` tests every city's rotation and that every
 house game appears in at least two cities.
 
-**Errands pin games into the dive.** While an errand that names a game is open (a `streak` goal such
-as Pike's marks needing Street Cups), `openErrandGames()` feeds `must` into `gamesFor`, and the dive
-always deals that game. The draw stays deterministic; the pin only replaces slots. The errand card
-says so ("Street Cups is on at the dive while this job is open").
+**Jobs pin games into the dive.** While a job you took names a game (a `streak` goal such as
+Pike's marks needing Street Cups), `openJobGames()` feeds `must` into `gamesFor`, and the dive
+always deals that game. The draw stays deterministic; the pin only replaces slots. A town holds at
+most `JOB_LIMIT` (3) jobs, so at most three pins in the dive's four slots.
 
 ## 2. Characters: `lib/story/content/characters.ts`
 
-`{ id, name, note, city, chip, minigame? }`. `id` is stable (scenes, errands, portraits and saves use
+`{ id, name, note, city, chip, minigame? }`. `id` is stable (scenes, jobs, portraits and saves use
 it). `note` is for writers, never shown. `city` is a `CityId`, or `null` for recurring characters
 (Jo, Sloane, Vale, the Notary). `chip` is the hex colour of the portrait's chip frame. `minigame` is a
 `MinigameId` (`lib/story/types.ts`): that character offers it once per night. A city has 2-3 locals:
-minigame givers, an errand giver, and a **boss** = the one local without a minigame (the hub finds
-the boss that way).
+minigame givers and a **boss** = the one local without a minigame (the hub finds the boss that
+way). **Job givers** (`jobGivers` in `lib/story/jobs.ts`) are the locals with a minigame plus Jo,
+who travels with you and stands right of the car (`jo` spot); `TRAVELLING_GIVERS` lists Jo.
 
 **Portrait look:** add the id to `PortraitLook` and `PORTRAIT_LOOKS` in `lib/story/portraits.ts`,
 a face path in `FACE`, and a `CHARS` entry (skin, hair, cloth, shirt, accent, `chip`, plus
@@ -54,14 +55,14 @@ expressions (`neutral`, `pleased`, `angry`) come from the shared generator. Comp
 
 ## 3. Scenes: `lib/story/content/<city>.ts` and `index.ts`
 
-Export `<CITY>_SCENES` and `<CITY>_ERRANDS`; register them in `lib/story/content/index.ts`
-(`SCENES`, `ERRANDS`). A `Scene`: `{ id, city, trigger, if?, once?, start, nodes }`. Ids are
+Export `<CITY>_SCENES` and `<CITY>_JOBS`; register them in `lib/story/content/index.ts`
+(`SCENES`, `WRITTEN_JOBS`). A `Scene`: `{ id, city, trigger, if?, once?, start, nodes }`. Ids are
 `<city>-<name>` and **stable forever**: rename text, never ids; adding nodes is fine.
 
 **Triggers** (`SceneTrigger`): `arrival` (first arrival in the city; queued on travel), `talk`
 (`character`: the first scene whose `if` holds and not yet seen), `boss-intro`, `boss-win`,
-`boss-loss`, `bust` (after a bust in this city), `dawn` (queued the morning after a night here, the first
-one whose `if` holds and whose errand is due; for jobs from Jo, who has no street spot), `tutorial` (Dustwater's walkthrough only: queued
+`boss-loss`, `bust` (after a bust in this city), `dawn` (queued the morning after a night here, the
+first one whose `if` holds; Dustwater has none now), `tutorial` (Dustwater's walkthrough only: queued
 after arrival on a new story, replayable from the hub menu; `once: false`). `once` defaults true;
 `once: false` scenes replay (boss-intro, boss-loss, bust).
 
@@ -71,77 +72,65 @@ option `{ text, to, if?, effects? }`; `end` `{ effects? }`. Speakers: a characte
 
 **Conditions** (`if`): `{ flag }`, `{ not }`, `{ all }`, `{ any }`, `{ faction, atLeast }`,
 `{ moneyAtLeast }` (in `m`). **Effects:** `{ set: flag }`, `{ clear }`, `{ faction, delta }` (factions
-`syndicate`, `old-guard`, `underground`), `{ money }` (in `m`), `{ rep }`, `{ errand, step:
-'start' | 'done' }`, `{ marker: true }`. A boss-win scene must set `<city>-cleared` (it opens the road;
+`syndicate`, `old-guard`, `underground`), `{ money }` (in `m`), `{ rep }`, `{ marker: true }`.
+(`{ job, step: 'accept' }` exists only in the store's offer scenes; content never hands out a job,
+and the checker fails one that tries.) A boss-win scene must set `<city>-cleared` (it opens the road;
 the checker allows this flag everywhere).
 
 **Checker rules** (`scripts/story/check-content.ts`, `pnpm check:story`): ids unique; every
-character/errand/speaker/node named exists; every node reachable and every path ends; **a choice
+character/job/speaker/node named exists; every node reachable and every path ends; **a choice
 node keeps at least one option with no `if`**; every flag read is set somewhere; cities rise in
 stakes; every house game in 2+ cities; shipped ids (`SHIPPED`) still exist; the rotation rules; the
 save played through (arrival, walkthrough, a night, comps by room, bust, marker, boss, travel).
 **Numbers quoted in dialogue must match the economy.** Checked today: the boss buy-in ("fifty times
 the house minimum to sit"), the Notary's marker ("twenty times the minimum, repaid at one and a
 half"), and Jo's walkthrough (dive/main floor limits, the room standing thresholds, the standing a job
-aims and a bust costs, the standing cap, the standing bonus steps and rates, the errand schedule,
+aims and a bust costs, the standing cap, the standing bonus steps and rates, the jobs a town gives at once,
 bets a night, games per room, side goals, rematch wait; the `QUOTES` list). Prefer "times the house minimum" phrasing; if you
 quote a new number, add its regex to `QUOTES` or `WORDS` there.
 
-## 4. Errands and hustles
+## 4. Jobs and hustles
 
-**Errands** (`Errand`: `id`, `city`, `giver`, `title`, `task`, `goal`, `night`, `opens?`, `pay?`, `rep?`):
-**5 per city** (`ERRANDS_PER_CITY`), 6m each (`ERRAND_PAY_M`), paid when done. `goal`: `minigame`
-`{ minigame, score 0-1 }` (checked on every play of that giver's minigame, practice included),
-`streak` `{ game, wins }` (the game must be in the city's list), `night-up` (end a night at the
-casino up), `big-win` `{ mult }` (one bet returning mult x the stake or more). The checker verifies
-the giver exists, a minigame goal has a giver in that city, and a streak game is in the city.
+**Jobs** (`lib/story/jobs.ts`, owner decision 2026-11-04; one system, replacing the old errands
+and spawned jobs). The rules, all in code and all tested by `check:story`:
 
-**Errands come out night by night** (owner decision 2026-11-04). Nobody hands a stranger every job
-at once: on the first night in a town **two people** want a word (one job each), then **one more job
-each night after** (`ERRANDS_FIRST_NIGHT` 2, `ERRANDS_EACH_NIGHT_AFTER` 1, `errandsOutBy(cityNight)`).
-So the five `night` values of a city are exactly `0, 0, 1, 2, 3` (night 0 = the first night there;
-`cityNight` in the save). How a job gets out:
+- **One new offer a night** in a town, at a random giver who holds no job, while the town holds
+  fewer than `JOB_LIMIT` (3) jobs, offered or taken. The first night in every town starts with
+  one, so a new story starts with exactly one offer. If the town is full when the night starts,
+  that night's offer comes as soon as a job is finished (still one a night).
+- **Only talking takes a job.** The giver gets a "!" and "has a job for you"; Talk plays any new
+  scene of theirs first, then their pitch with "I'll do it" / "Not now". Not now, or never
+  talking to them, leaves the offer waiting with them for as long as it takes.
+- **One job per person** until it is finished: they offer nothing new before that.
+- **Never the same task twice in a town** (`goalKey`: kind + game/minigame + numbers). Each
+  giver's **written jobs come first**, in content order, then generated ones from
+  `JOB_TEMPLATES` (seeded by town and night): a streak at one of the town's games (2 or 3 wins),
+  a big win (2x to 5x), a night up (by any amount, or 5/10/15/20 minimum bets), or a score at the
+  giver's own minigame (60%, 80%, perfect). Dustwater has 26 different tasks in all; when a
+  town has nothing new left, no more offers come.
+- **Pay and standing:** every job pays its `pay` (3m to 5m by difficulty, `JOB_PAY_M`) and earns
+  `JOB_STANDING` (1) up to `STANDING_MAX`, minigame jobs included.
+- **Jobs belong to their town**: leave and they wait there for your return.
 
-- **Hand it over in a scene** with `{ errand, step: 'start' }` (in an `end` node or a choice). The
-  store's `sceneFor` holds back any scene that starts an errand whose `night` hasn't come yet, so the
-  giver's "!" (the hub's talk badge) only shows from that night. Use a `talk` scene with the giver
-  (`if: { flag: 'met-<giver>' }` for a second job, so their first scene plays first), or a `dawn`
-  scene for Jo. Put the start on every path through the scene (Pike's "Walk on" still hears the job).
-- **Or open it on a condition** with `opens` (only for a first-night job whose first talk has a path
-  that skips the start, like Marta's). `openErrands` also waits for `night`.
+The save keeps `jobs` (every offered and taken job, each with `status`), `jobsGiven` (task keys
+per town) and `jobOffered` (each town's last offer night). Offer scenes are built from the save
+(`offer:<job id>`), never written in content and never added to `seen`.
 
-Dustwater as the model: night 0 Marta's bar shift (her first talk) and Pike's marks (his first
-talk); night 1 Jo's seed money (`dustwater-jo-seed`, a dawn scene); night 2 Marta's trucker's bet
-(`dustwater-marta-trucker`); night 3 Pike's lookout job, his minigame at 4 of 5
-(`dustwater-pike-lesson`). The checker fails a city off the schedule, a job nobody hands out, a talk
-scene that hands out someone else's job, a later job handed out by anything but a talk or dawn
-scene, and one person with two first-night jobs.
+**Written jobs** (`WrittenJob`: `id`, `city`, `giver`, `title`, `task`, `goal`, `pay`, `pitch`):
+`goal` is `minigame` `{ minigame, score 0-1 }` (the giver's own minigame; checked on every play,
+practice included), `streak` `{ game, wins }` (a game in the city's list), `night-up` (end a night
+at the casino up, by `atLeast` minimum bets when given) or `big-win` `{ mult }`. `pitch` is what
+the giver says when offering it, one line each. The checker verifies the giver gives jobs in that
+city, the minigame is theirs, the streak game is in the city, the pay is in range, no two written
+jobs in a city share a task, and every town can offer at least `STANDING_MAX` different jobs.
+Dustwater: Marta (bar shift, trucker's bet), Pike (marks, lookout rates), Jo (seed money).
 
-**Standing.** Every errand has an optional `rep` (0-5, `errandStanding` in `lib/story/economy.ts`).
-It defaults to `ERRAND_STANDING` (1) for every errand, minigame jobs included, and `check:story`
-fails an errand that earns none. Write it out (`rep: 1`) so the intent is readable. A city's five
-jobs must add up to `STANDING_MAX` (5) so the top bonus can be reached; `check:story` fails one that
-falls short. Standing starts at 0 in each town and the jobs are the only way up (a bust takes one
-off). What each step gives:
+Standing starts at 0 in each town and jobs are the only way up (a bust takes one off). What each
+step gives:
 
 | Standing | 0 | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|---|
 | Gives | the dive | main floor | +5% bonus | high-roller room | +10% bonus | +20% bonus |
-
-**Spawned jobs** (`lib/story/jobs.ts`, owner decision 2026-11-04). Once a town's five errands are
-all out (from the night after the last errand's `night`), work keeps coming: **one new job a
-night at most**, for a giver who has nothing open with you (story errand or job). A job you
-don't finish **stays**, and each person holds **one at a time**, so a town never has more open
-jobs than it has errand givers (Dustwater: Marta, Pike, Jo, so three). `spawnJob` draws it from
-`JOB_TEMPLATES`, seeded by city and night: a streak at one of the city's games (2 or 3 wins), a
-big win (2.5x to 5x), a night up (by any amount, or by 5/10/20 minimum bets), or a score at the
-giver's own minigame (60%, 80%, perfect; only for givers with one). Titles and wording vary too.
-At most one streak job is open at once, so the dive keeps room for its own games. A job pays 3m
-to 5m by difficulty (`JOB_PAY_M`) and earns 1 standing up to 5: it is how a town where you went
-bust gets worked back up. Jobs live in the save's `jobs` (ids `job:<city>:<night>`), show in the
-jobs book marked "Job", and give their giver a "!" on the morning they turn up. **Nothing to do
-per city**: givers come from the city's errands, games from its game list. If a city's people
-need their own job flavour, add templates there rather than writing jobs by hand.
 
 **The standing bonus** (`STANDING_BONUS`, `standingBonus` in `lib/story/economy.ts`): end a night
 up at the tables (payouts less stakes over the night's rounds, above 0) and the house adds that share
@@ -197,7 +186,7 @@ numbers (owner has not decided the Freeplay outliers).
 `view` (shared `VIEW`: `wide` 1600x790 and `tall` 600x1060 layouts), `sign` (`text`, `dead` letter
 indexes, `flicker`), `motelName`, `barName`, `pieces` (`{ id, kind, wide: ..., tall: ... }` places),
 and `spots`: hotspots by id (`dive`, `main`, `high`, `rest`, `car`, `road`, `notary`, `boss`,
-character ids, `p0`-`p3` for people without a named spot), each either `{ piece }` or `{ at: { wide,
+character ids, `jo` (Jo, right of the car), `p0`-`p3` for people without a named spot), each either `{ piece }` or `{ at: { wide,
 tall } }`. `components/story/scene-art.tsx` draws the pieces (`PieceKind`); add a new kind there only
 for a new building. `sceneConfigFor(id, name)` falls back to a **generic night street** with the city
 name on the casino sign, so a city is playable before it has art. Check hotspots do not overlap and
@@ -208,12 +197,11 @@ sit on the street at both layouts (screenshots below).
 1. Check `cities.ts` (games, tables, boss kind, `minigameGivers`) still suits the story you want.
 2. Wire any story game settings the city's games need (section 7), with `pnpm sim:story`.
 3. Characters (section 2), portrait looks, chip colours.
-4. Minigames for its givers (section 5), then their `MinigameId` goals in errands.
-5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; 5 errands
-   (each worth 1 standing; `night` 0, 0, 1, 2, 3 with two different first-night givers; each later
-   one handed over by its giver's second `talk` scene or a Jo `dawn` scene; one may be a minigame job).
-   Spawned jobs follow on their own; check the givers are who you want handing out work.
-   Register in `content/index.ts`. Quote numbers only as the checker allows.
+4. Minigames for its givers (section 5), then their `MinigameId` goals in written jobs.
+5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; a few
+   written jobs per giver, Jo included (section 4: pitch lines, pay 3m-5m, no repeated task).
+   Generated jobs follow on their own. Register in `content/index.ts`. Quote numbers only as the
+   checker allows.
 6. Boss (section 6) and the boss page/table for the city.
 7. Scene art (section 8) or accept the generic street.
 8. Checks: `npx tsc --noEmit`, `pnpm lint` (3 known errors: `lib/game-registry.tsx` x2,
@@ -221,12 +209,12 @@ sit on the street at both layouts (screenshots below).
    Run the sim after any economy or game-list change; it models the room rotation, room comps and
    per-town standing. **Check the standing path in the sim**: is the city still clearable in about
    4-8 nights (median) per player type, with nobody stuck and no player type that can't reach the
-   high-roller room before the boss? (The sim releases errands on the schedule and pays the bonus.)
+   high-roller room before the boss? (The sim offers one job a night up to three and pays the bonus.)
 9. Playwright at 390x844 and 1440x900 (`deviceScaleFactor` 1, `pnpm dev`): new story or set
    `floored-story` in localStorage, play arrival, talk to everyone, check the rooms lock and unlock
-   as standing rises (0 / 1 / 3), check who wants a word on nights 0-3, play a night in each room (set `standing` for the town), end the
+   as standing rises (0 / 1 / 3), check one new job offer a night (and Jo's spot), play a night in each room (set `standing` for the town), end the
    night (receipt), the map, the boss. Look at the screenshots.
-10. When the city ships to main, add its scene/errand/character ids to `SHIPPED` in
+10. When the city ships to main, add its scene/job/character ids to `SHIPPED` in
     `scripts/story/check-content.ts` (never remove ids). Update the handoff, plan section 11 and
     README.
 

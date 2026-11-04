@@ -4,10 +4,9 @@ import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { Portrait } from '@/components/story/portrait'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
-import type { Errand } from '@/lib/story/types'
 import { CHARACTER_BY_ID } from '@/lib/story/content/characters'
-import { errandStanding } from '@/lib/story/economy'
-import { isJob } from '@/lib/story/jobs'
+import { JOB_LIMIT, JOB_STANDING } from '@/lib/story/economy'
+import type { Job } from '@/lib/story/jobs'
 import { formatChips } from '@/utils/format'
 
 const money = (n: number) => `$${formatChips(n)}`
@@ -15,12 +14,13 @@ const isLook = (id: string): id is PortraitLook => (PORTRAIT_LOOKS as string[]).
 
 /**
  * The jobs notebook: a matchbook that opens from the HUD with tonight's two
- * hustles (ticked once met tonight) and the open errands, each marked with the
- * standing it earns (or "Pays only"), plus last night's net.
+ * hustles (ticked once met tonight), the jobs you took (pay and standing), who
+ * has a job waiting for you, and last night's net.
  */
 export function Notebook({
   hustles,
-  errands,
+  jobs,
+  offers,
   hustlePay,
   minBet,
   nightOn,
@@ -29,7 +29,10 @@ export function Notebook({
   onClose,
 }: {
   hustles: { id: string; text: string; met: boolean }[]
-  errands: Errand[]
+  /** Jobs you took in this town. */
+  jobs: Job[]
+  /** Jobs waiting at their giver until you talk to them. */
+  offers: Job[]
   hustlePay: number
   /** The city's minimum bet: job pay is in multiples of it. */
   minBet: number
@@ -96,21 +99,30 @@ export function Notebook({
               ))}
             </ul>
           </section>
-          {errands.length > 0 && (
-            <section aria-label="Errands" className="border-t border-dashed border-[#2a2420]/30 pt-2.5">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#6f6354]">Errands</p>
+          {(jobs.length > 0 || offers.length > 0) && (
+            <section aria-label="Jobs" className="border-t border-dashed border-[#2a2420]/30 pt-2.5">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#6f6354]">
+                Jobs · {jobs.length + offers.length} of {JOB_LIMIT}
+              </p>
               <ul className="mt-1.5 flex flex-col gap-2">
-                {errands.map((e) => (
-                  <li key={e.id} className="flex items-start gap-2.5">
-                    <span className="w-7 shrink-0">{isLook(e.giver) && <Portrait look={e.giver} className="block w-full [&_svg]:h-auto [&_svg]:w-full" />}</span>
+                {jobs.map((j) => (
+                  <li key={j.id} className="flex items-start gap-2.5">
+                    <span className="w-7 shrink-0">{isLook(j.giver) && <Portrait look={j.giver} className="block w-full [&_svg]:h-auto [&_svg]:w-full" />}</span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13.5px] font-bold leading-5">{e.title}</span>
-                      <span className="block text-[12.5px] leading-[17px] text-[#5a4f43]">{e.task}</span>
-                      <span className={`mt-0.5 block font-mono text-[10px] font-bold uppercase tracking-[0.14em] ${errandStanding(e) ? 'text-[#1d5a3e]' : 'text-[#6f6354]'}`}>
-                        {isJob(e.id) ? `Job · ${money((e.pay ?? 0) * minBet)} · ` : ''}
-                        {errandStanding(e) ? `+${errandStanding(e)} standing` : 'Pays only'}
+                      <span className="block text-[13.5px] font-bold leading-5">{j.title}</span>
+                      <span className="block text-[12.5px] leading-[17px] text-[#5a4f43]">{j.task}</span>
+                      <span className="mt-0.5 block font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#1d5a3e]">
+                        {money(j.pay * minBet)} · +{JOB_STANDING} standing
                       </span>
-                      <span className="sr-only">From {CHARACTER_BY_ID.get(e.giver)?.name ?? e.giver}</span>
+                      <span className="sr-only">From {CHARACTER_BY_ID.get(j.giver)?.name ?? j.giver}</span>
+                    </span>
+                  </li>
+                ))}
+                {offers.map((j) => (
+                  <li key={j.id} className="flex items-center gap-2.5">
+                    <span className="w-7 shrink-0">{isLook(j.giver) && <Portrait look={j.giver} className="block w-full [&_svg]:h-auto [&_svg]:w-full" />}</span>
+                    <span className="min-w-0 flex-1 text-[12.5px] italic leading-[17px] text-[#5a4f43]">
+                      {CHARACTER_BY_ID.get(j.giver)?.name ?? j.giver} has a job for you. Go and talk to them.
                     </span>
                   </li>
                 ))}

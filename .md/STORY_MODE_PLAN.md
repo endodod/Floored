@@ -157,12 +157,11 @@ The numbers live in `lib/story/economy.ts`; `pnpm sim:story` checks them (below)
 | Source / cost | Amount | Limit | Risk |
 |---|---|---|---|
 | Minigames | up to **3m** per play at a perfect score (about 2m on average) | each character **once per night**, 2–3 per city | none |
-| Errands (story jobs) | 6m each, one time; **+1 standing** in that town for every errand, minigame jobs included | 5 per city, out over the first nights: 2 on night one, then 1 a night | none |
+| Jobs (rebuilt 2026-11-04) | 3m–5m each by difficulty; **+1 standing** in that town up to 5, minigame jobs included | 1 new offer a night at a giver with none (first night too), max 3 a town, taken only by talking, never the same task twice; written jobs first, then generated | none |
 | Hustles (jobs board) | 4m each | 2 per night, only by playing | none (fixed pay; you meet a game condition) |
 | **Comps** | **a share of what you wagered that night, win or lose, by room: 4% dive / 5% main floor / 6% high-roller** | **capped per night at 10m / 15m / 20m** | none |
 | Venue night | 12 bets, max 20m / 100m / no max; each room deals its own 4 of the city's games each night (`lib/story/rotation.ts`), and the dive keeps any game an open errand names | one per night | game edge |
-| Standing | 0 in every town, 5 at most; +1 per errand, −1 per bust (never below 0); opens the main floor at 1 and the high-roller room at 3 | per town (`VENUE_REP` `[0, 1, 3]`) | — |
-| Spawned jobs | 3m–5m each by difficulty; **+1 standing** up to 5 | after the 5 errands: at most 1 new a night; undone jobs stay; 1 per person at a time | none |
+| Standing | 0 in every town, 5 at most; +1 per job, −1 per bust (never below 0); opens the main floor at 1 and the high-roller room at 3 | per town (`VENUE_REP` `[0, 1, 3]`) | — |
 | **Standing bonus** | a night up at the tables earns **+5% / +10% / +20%** of the night's table winnings (payouts less stakes) at standing **2 / 4 / 5** (`STANDING_BONUS`) | every night you finish up | none |
 | Tables session | stake-based | one per night | skill + luck |
 | Lodging | **−3m** per night; **free below 10m** (you sleep in your car) | every night | — |
@@ -207,6 +206,11 @@ With **spawned jobs** on top (one a night after the errands, one per giver, thre
 gambling player clears one a night, a never-gambler only minigame jobs): never gambles 10 / 81,
 ~334 nights; cautious 5 / 14, ~75; balanced 4 / 24, ~103; high variance 6 / 50, ~194, busts
 ~1.3; bold 3 / 12, ~60, busts ~0.8. Busts fall because jobs pay without risk; all checks pass.
+**Jobs rebuilt** (later the same day: no errands; one offer a night up to three, from the first
+night; 3m–5m each): never gambles 23 / 104, ~494 nights; cautious 5 / 15, ~81; balanced 5 / 25,
+~108; high variance 6 / 51, ~202, busts ~1.4; bold 4 / 13, ~66, busts ~1.1. Slower than before
+because the five 6m errands (two on night one) are gone; the never-gambler, who can only clear
+minigame jobs, slows most. All checks pass; no number was retuned.
 
 The main-floor players gain from the 5% comps; high-variance busts drop because 5% on every
 bet softens the losses. No other numbers were retuned.
@@ -451,6 +455,12 @@ Answered (2026-11-03):
 19. **Spawned jobs after the errands** (2026-11-04): at most one new job a night, varied
     (`lib/story/jobs.ts`); a job left undone stays; one per person at a time, so at most one
     per giver open. They earn standing back after a bust.
+20. **Jobs rebuilt** (2026-11-04, replaces 18 and 19): one system. One new offer a night in a
+    town at a giver holding none, while the town holds fewer than 3 (offered or taken); the
+    first night in every town starts with one. Only talking to the giver takes a job ("Not
+    now" leaves it waiting). One per person until finished; never the same task twice in a
+    town; each giver's written jobs first. Every job pays 3m–5m and +1 standing. Jo gives jobs
+    too and stands on the street in every town. Jobs wait in their town when you leave.
 17. **A bust costs 1 standing**; a boss win no longer gives any (it pays the purse and clears
     the town). Version-1 saves migrate `rep` into the current town, capped by its finished
     errands.

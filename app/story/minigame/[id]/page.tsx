@@ -109,7 +109,7 @@ function Minigame({ id }: { id: MinigameId }) {
             <div className="flex flex-col gap-3 st-card rounded-md p-4" data-testid="result">
               <p className="num text-2xl font-semibold text-ink">{Math.round(result.score * 100)}%</p>
               <p className="text-[13px] text-soft" data-testid="result-pay">
-                {result.payable ? `You earned ${money(result.paid)}.` : `Practice round: no pay. ${giver.name} already paid you tonight, so come back tomorrow night for another paid shift. Errands still count.`}
+                {result.payable ? `You earned ${money(result.paid)}.` : `Practice round: no pay. ${giver.name} already paid you tonight, so come back tomorrow night for another paid shift. Jobs still count.`}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={begin}>Play again</Button>

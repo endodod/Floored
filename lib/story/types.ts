@@ -57,7 +57,8 @@ export type Effect =
   /** Pay (positive) or charge (negative), in multiples of the current city's minimum bet. */
   | { money: number }
   | { rep: number }
-  | { errand: string; step: 'start' | 'done' }
+  /** Takes the job offered in an offer scene (built by the store, never written in content). */
+  | { job: string; step: 'accept' }
   /** Take a marker from the Notary (only when you're below the minimum bet). */
   | { marker: true }
 
@@ -86,10 +87,7 @@ export type SceneTrigger =
   | { on: 'boss-loss' }
   /** After a bust in this city. */
   | { on: 'bust' }
-  /**
-   * The morning after a night in this city: plays once its errands are due. For
-   * jobs from Jo, who travels with you and has no spot on the street.
-   */
+  /** The morning after a night in this city. */
   | { on: 'dawn' }
   /** The how-the-nights-work walkthrough: queued after the arrival scene on a new story; replayable from the hub menu. */
   | { on: 'tutorial' }
@@ -106,8 +104,8 @@ export interface Scene {
   nodes: Record<string, SceneNode>
 }
 
-/** What finishes an errand. Checked after every round at the casino and every minigame. */
-export type ErrandGoal =
+/** What finishes a job. Checked after every round at the casino and every minigame. */
+export type JobGoal =
   /** Score at least this (0–1) in a character's minigame. */
   | { kind: 'minigame'; minigame: MinigameId; score: number }
   /** Win this many rounds in a row at one game. */
@@ -117,27 +115,21 @@ export type ErrandGoal =
   /** Win this multiple or more of the stake on one bet. */
   | { kind: 'big-win'; mult: number }
 
-export interface Errand {
+/**
+ * A hand-written job in a city's content. A giver offers their written jobs first,
+ * in content order, then generated ones (lib/story/jobs.ts). Every job pays `pay`
+ * minimum bets and earns JOB_STANDING when finished.
+ */
+export interface WrittenJob {
   id: string
   city: CityId
   giver: string
   title: string
-  /** What to do, in the player's words. */
+  /** What to do, in the player's words (the jobs book and the person's card). */
   task: string
-  goal: ErrandGoal
-  /**
-   * The night in this town it comes out (0 = the first night there). A scene that
-   * starts it waits for this night, so the giver only wants a word from then on.
-   * Two errands a city on night 0, then one a night (ERRANDS_FIRST_NIGHT).
-   */
-  night: number
-  /** On the jobs board once this holds (or once a scene starts it), from its night on. */
-  opens?: Condition
-  /** Pays this many of the city's minimum bets when done (ERRAND_PAY_M by default). */
-  pay?: number
-  /**
-   * Standing this job earns in its town. Defaults to ERRAND_STANDING (1) for
-   * every errand, minigame jobs included.
-   */
-  rep?: number
+  goal: JobGoal
+  /** Pays this many of the city's minimum bets when done (JOB_PAY_M.min to JOB_PAY_M.max). */
+  pay: number
+  /** What the giver says when they offer it, one line each. */
+  pitch: string[]
 }

@@ -56,6 +56,27 @@ three at most in Dustwater. Varied templates in `lib/story/jobs.ts` (streak, big
 by a margin, minigame score; titles and wording vary), 3m-5m, +1 standing up to 5, so a bust
 can be worked back. Save version 5 adds `jobs`. `night-up` goals take an optional `atLeast`. How to set up a city:
 [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md) section 4.
+*(The errands and spawned jobs above are replaced by the job system below.)*
+
+**2026-11-04, jobs rebuilt (owner decision; replaces errands and spawned jobs):** one system,
+`lib/story/jobs.ts` + the store. Each night in a town one new offer turns up at a random giver
+holding no job, while the town holds fewer than `JOB_LIMIT` (3), offered or taken; the first
+night in every town starts with one, so a story starts with exactly one offer (if a town is full
+at nightfall, that night's offer comes once a job is finished). A job is only taken by talking to
+its giver: Talk plays any new scene first, then an offer scene built from the save
+(`offer:<job id>`: the pitch, then "I'll do it" / "Not now"). Not now leaves it waiting. One job
+per person until finished; a town never gives the same task twice (`goalKey`, kept in
+`jobsGiven`); each giver's written jobs come first (`WRITTEN_JOBS`, with `pitch` lines), then
+generated ones. Every job pays 3m-5m (`JOB_PAY_M`) and +1 standing (`JOB_STANDING`). Jobs stay in
+their town when you leave. Givers: locals with a minigame plus **Jo**, who is now on the street
+in every town (right of the car; Room 5 moved up the motel wall). The scenes that only handed
+out jobs (`dustwater-jo-seed`, `-marta-trucker`, `-pike-lesson`) are now those jobs' pitches; the
+first-meeting scenes no longer hand out jobs. Save version 6 drops `errands` and open jobs,
+counts finished written jobs as given, and drops gone scenes from `scene`/`queue`
+(`migrateStorySave`, tested in `check:story`). `check:story` plays every rule through; the sim
+models one offer a night up to three. Sim (3000 circuits, seed 1), nights per city median before →
+after: never gambles 10 → 23, cautious 5 → 5, balanced 4 → 5, high variance 6 → 6, bold 3 → 4
+(the old five errands paid 6m each, two on the first night).
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
@@ -74,11 +95,10 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Saves | one story save, "New story" behind a confirmation |
 | Harsher loss option | no |
 | Boss rematches | don't get easier (same buy-in, same rival, after 2 nights) |
-| Standing (2026-11-03) | per town, 0 in every new town, remembered when you go back, max 5. +1 for every finished errand (minigame jobs too, since 2026-11-04). A bust −1 (never below 0); a boss win gives none. `VENUE_REP` `[0, 1, 3]`: dive / main floor / high-roller |
+| Standing (2026-11-03) | per town, 0 in every new town, remembered when you go back, max 5. +1 for every finished job (minigame jobs too, since 2026-11-04). A bust −1 (never below 0); a boss win gives none. `VENUE_REP` `[0, 1, 3]`: dive / main floor / high-roller |
 | Standing bonus (2026-11-04) | standing 2 / 4 / 5: +5% / +10% / +20% of a winning night's table winnings, paid at the end of the night |
-| Errands (2026-11-04) | 5 a city, out over the nights: 2 people want a word the first night, then 1 job a night |
-| Spawned jobs (2026-11-04) | after the errands: at most 1 new job a night, varied; undone jobs stay; 1 per person at a time (max 3 in Dustwater); +1 standing, 3m-5m |
-| Rotation pin (2026-11-03) | while an errand naming a game is open, the dive always deals that game (deterministic draw kept) |
+| Jobs (2026-11-04, rebuilt) | 1 new offer a night at a giver with none (first night too); taken only by talking ("Not now" keeps it waiting); 1 per person; max 3 per town; never the same task twice in a town; written jobs first; 3m-5m and +1 standing; kept in their town when you leave |
+| Rotation pin (2026-11-03) | while a taken job naming a game is open, the dive always deals that game (deterministic draw kept) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
 | Names | draft names kept (Jo, Sloane, Vale, the Notary, twelve cities) |
@@ -115,16 +135,16 @@ Port that generator to TypeScript; don't redraw from scratch.
   Half of each win's **profit** repays a marker. `wagerCap()` = money capped by the venue
   (and 0 once 12 bets are used), `betsLeft()`.
 - `endNight()` (after playing or resting): comps (by room: 4% / 5% / 6% of bets, cap 10m / 15m / 20m), hustles (2 a night,
-  `hustlesFor(city, night)`, 4m each), night-up errands, lodging (3m) or the car (<10m),
+  `hustlesFor(city, night)`, 4m each), night-up jobs, lodging (3m) or the car (<10m),
   bust check (money < min bet → standing −1 in this town, never below 0, `stats.busts`,
   queues the city's `bust` scene).
   Returns a `NightSummary`, also kept in `lastNight` for the hub.
-- Errands: `openErrands()` (not done, and `opens` condition holds or started by a scene);
-  goals `minigame` / `streak` / `night-up` / `big-win` are checked automatically and pay
-  `ERRAND_PAY_M` (6m) with a `news` line. A `streak`/`night-up`/`big-win` job also adds
-  `errandStanding(e)` standing (1 by default) in its town, minigame jobs included.
+- Jobs: `jobs` (offered and taken, every town), `openJobs()` (taken, this town), `jobAt`,
+  `canTalk`, `talkTo`, `offerTonight()` (idempotent; called on a new story, each night, travel,
+  a finished job and the hub's mount). Goals `minigame` / `streak` / `night-up` / `big-win`
+  are checked automatically; a finished job pays `pay × m` and +1 standing with a `news` line.
 - `playMinigame(giver, minigame, score 0–1)`: first play per giver per night pays
-  `score × 3m`; minigame errands check every play (practice included).
+  `score × 3m`; minigame jobs check every play (practice included).
 - Scenes: `queue` (arrival on new story/travel, boss-win/loss, bust), `playQueued()`,
   `startScene(id)`, `currentStep()`, `advance()`, `pick(index)`; `sceneFor(trigger)` finds
   the first matching scene in the city (talk scenes by character).
@@ -170,10 +190,13 @@ boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city 
    numbers in `lib/story/odds.ts` (the simulator already uses them).
 7. `app/story/[game]/page.tsx`: like `app/daily/[game]/page.tsx`; only the current city's
    games and only during a night (`tonight`), else redirect to `/story`. The story HUD
-   carries the game, money, standing, bets left and one "Table min / max" plaque (all 40px
-   tall; on phones the limits and bets left sit in a row under the HUD). The board's status
-   bar drops the game name and centres the message, and the board has no "← Story" button
-   (the HUD's back link leaves). Bets: `useStoryTableChips` in `game-dock-parts.tsx` gives
+   (`table` prop) puts the back link at the left, standing at the far right, and the game,
+   money, bets left and one "Table min / max" plaque centred between them (all 40px tall; on
+   phones the limits and bets left sit in a row under the HUD). The board's status bar drops
+   the game name and centres the message, the board has no "← Story" button (the HUD's back
+   link leaves), and story games show no History corner for now (`GameFieldWithHistory`).
+   A room's sheet before the night is 620px wide on desktop with tonight's four games in one
+   row. Bets: `useStoryTableChips` in `game-dock-parts.tsx` gives
    four chips at the table min, ¼, ½ and all of the table max, then a "Max" pill; a room
    with no max spreads them as if the max were 100 min bets and the pill is "All in". No
    ¼ / ½ wallet-share pills in story. Every game with the shared chip row or chip picker
@@ -192,7 +215,7 @@ boss Cutter Hale at Liar's Dice; a Liar's Dice cash room is listed for the city 
 - `app/story/page.tsx` (hub): no story → intro + "Start the story"; else: header strip
   (city, night, money, owed, rep), circuit map strip (12 cities, act groups, current and
   cleared), Play a night (venue picker by rep), People (talk → `sceneFor({on:'talk'})`;
-  minigame button, "paid tonight" state), Jobs (tonight's hustles + open errands), Boss
+  minigame button, "paid tonight" state), Jobs (tonight's hustles + taken jobs + who has an offer), Boss
   (intro scene → `enterBoss`), Rest / End the night (night summary panel), Travel when
   cleared, the Notary when broke, `news`. Plays queued scenes on mount
   (`playQueued()`). New story behind a confirm dialog.
@@ -216,11 +239,11 @@ The hub is one screen that fits the viewport (no page scroll at 360×740, 390×8
   without a named spot use `p0`–`p3`; a boss without one uses `boss`.
 - Hotspots open `action-sheet.tsx` (bottom sheet below `lg`, a card beside the hotspot
   from `lg`): venue doors (start the night / tonight's game tiles / chained with the rep
-  needed), people (Talk, Play/Practice, their errands), the boss (Talk, Sit down, buy-in and
+  needed), people (Talk, Play/Practice, their job), the boss (Talk, Sit down, buy-in and
   purse), the Notary (only when broke), Rest/End night at the motel room or the car (under
   `CAR_BELOW_M`), the road sign (Travel, lit once cleared). The bottom bar repeats the main
   action (Tables / End the night / The Notary / Hit the road / Rest).
-- HUD buttons: Jobs (`notebook.tsx`, a matchbook with hustles and errands, and last night's
+- HUD buttons: Jobs (`notebook.tsx`, a matchbook with hustles and jobs, and last night's
   tab), Map (`circuit-map.tsx`, road atlas overlay), Menu (New story, behind the confirm).
   News are paper slips (`NewsSlips`). End of night shows `night-card.tsx` (a receipt);
   **queued scenes (bust) now play after "Next night"** instead of straight after ending.
@@ -234,11 +257,11 @@ The hub is one screen that fits the viewport (no page scroll at 360×740, 390×8
 
 ### 3d. Minigames (`lib/story/minigames/*.ts` pure engines + `components/story/minigames/*`, route `app/story/minigame/[id]`)
 - **Last Orders** (Marta): Simon-style memory; 6 drink icons; orders grow 3→8 items over
-  rounds; score = rounds cleared ÷ max (errand needs ≥ 0.8).
+  rounds; score = rounds cleared ÷ max (the written job needs ≥ 0.8).
 - **Shuffle Tracker** (Pike): 3 cups, follow the queen through N swaps, 5 rounds getting
   faster; score = right ÷ 5; with reduced motion, show swaps as slow discrete steps.
 - First play each night pays (`playMinigame`); after that it's practice (no pay, but
-  errands still count). Boards fit without scrolling; respect reduced motion.
+  jobs still count). Boards fit without scrolling; respect reduced motion.
 
 ### 3e. Boss: Liar's Dice against Cutter
 - Reuse the Tables runner and `components/tables/liars-dice-table.tsx` (tournament format,

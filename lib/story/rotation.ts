@@ -10,7 +10,7 @@ import { createRng, seedFromString } from '@/utils/rng'
  * room swaps one or two games for ones it doesn't have, so a room always keeps
  * at least one game from the night before. Seeded by city, night and room, so a
  * reload never rerolls. A city with GAMES_PER_ROOM games or fewer offers them all.
- * An open errand that names a game pins it into the dive (see `gamesFor`).
+ * A taken job that names a game pins it into the dive (see `gamesFor`).
  */
 const cache = new Map<string, GameName[]>()
 
@@ -45,7 +45,7 @@ function lineup(cityId: string, list: GameName[], night: number, venue: number):
 }
 
 /**
- * The dive keeps dealing any game an open errand names, so a job can always be
+ * The dive keeps dealing any game a taken job names, so a job can always be
  * worked. Replaces the last non-pinned slots, deterministically (no RNG).
  */
 function pinned(base: GameName[], must: GameName[], list: GameName[]): GameName[] {
@@ -64,7 +64,7 @@ function pinned(base: GameName[], must: GameName[], list: GameName[]): GameName[
 
 /**
  * Tonight's games in one room. `seen` is the games met so far (for the Summit's
- * 'all-seen' list); `must` is the games open errands name, which the dive always
+ * 'all-seen' list); `must` is the games taken jobs name, which the dive always
  * deals (venue 0 only).
  */
 export function gamesFor(city: City, night: number, venue: number, seen: GameName[] = [], must: GameName[] = []): GameName[] {

@@ -1,4 +1,4 @@
-import type { Errand, Scene } from '../types'
+import type { Scene, WrittenJob } from '../types'
 
 /**
  * Dustwater, act I: a truck stop with back rooms. You arrive with $200 and Jo.
@@ -51,7 +51,7 @@ export const DUSTWATER_SCENES: Scene[] = [
         ],
       },
       s1: { kind: 'line', speaker: 'jo', text: "You know casinos. This isn't one. You pick a room, you stay in it till you call it a night, and you get twelve bets a night. Each room has its own four games and they change a little every night.", next: 's2' },
-      s2: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "Comps, hustles and errands pay on the side, and standing adds a bonus on a good night. Go bust and the Notary will lend you a marker. The rest is in the menu, under How the nights work. Read it on a bad night.", next: 'end' },
+      s2: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "Comps, hustles and jobs pay on the side, and standing adds a bonus on a good night. Go bust and the Notary will lend you a marker. The rest is in the menu, under How the nights work. Read it on a bad night.", next: 'end' },
       f1: { kind: 'line', speaker: 'jo', text: 'A night is one room. You pick it, you sit down, and you stay until you call it a night. No wandering.', next: 'f2' },
       f2: { kind: 'line', speaker: 'jo', text: 'Standing is how a town sees you. Every town starts you at nothing.', next: 'f2s' },
       f2s: { kind: 'line', speaker: 'jo', text: 'Finish a job for someone and it goes up one. Go bust and it drops one. Five is the most any town gives.', next: 'f3' },
@@ -63,14 +63,14 @@ export const DUSTWATER_SCENES: Scene[] = [
       f5: { kind: 'line', speaker: 'jo', text: 'Each room deals its own four games tonight. Tomorrow it swaps one or two. Never marry a game.', next: 'f6' },
       f6: { kind: 'line', speaker: 'jo', text: 'Twelve bets a night, then the house closes your tab. Spend them like money. They are.', next: 'f7' },
       f7: { kind: 'line', speaker: 'jo', text: "Comps. The house gives back a share of everything you bet that night, win or lose. It's not a prize for winning. Better rooms give a bigger share, and there's a cap.", next: 'f8' },
-      f8: { kind: 'line', speaker: 'jo', text: "Hustles: two side goals on the board each night. They pay when the night ends. Errands are jobs people hand you, and those pay when you finish them.", next: 'f8b' },
-      f8b: { kind: 'line', speaker: 'jo', text: "Nobody here trusts a new face with everything. Two people want a word on your first night, then one more each night after. Five jobs in all. Look for who's waving.", next: 'f8c' },
-      f8c: { kind: 'line', speaker: 'jo', text: "After that the work keeps coming. One new job a night, never two from the same person at once. Leave one and it waits. That's how you climb back after a bust.", next: 'f9' },
+      f8: { kind: 'line', speaker: 'jo', text: "Hustles: two side goals on the board each night. They pay when the night ends. Jobs are what people hand you, and those pay the moment you finish them.", next: 'f8b' },
+      f8b: { kind: 'line', speaker: 'jo', text: "Each night somebody new has a job going. Look for who's waving and go talk to them. Say no for now and it keeps until you come back.", next: 'f8c' },
+      f8c: { kind: 'line', speaker: 'jo', text: "One job per person until it's done, three on the go at most. Every one you finish is a point of standing. That's how you climb back after a bust.", next: 'f9' },
       f9: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "Marta's and Pike's games pay only the first time you play each night. After that it's practice. Practice is free, and it's how you get good.", next: 'f10' },
       f10: { kind: 'line', speaker: 'jo', text: "Ending the night: the motel room costs a bit. Short on cash, you sleep in the car, free. It smells like your grandfather.", next: 'f11' },
       f11: { kind: 'line', speaker: 'jo', expression: 'angry', text: "Drop under the minimum bet and you're bust. You lose a point of standing in this town. The Notary will lend you a marker. Fondly. Always fondly.", next: 'f12' },
       f12: { kind: 'line', speaker: 'jo', text: "Last: Cutter at the back table is the way out of town. Fifty times the house minimum to sit. Win and you take the purse. Lose, and he's back after two nights.", next: 'f13' },
-      f13: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "That's the lot. It's all in the menu, under How the nights work, if you forget. Now go see Marta.", next: 'end' },
+      f13: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "That's the lot. It's all in the menu, under How the nights work, if you forget. Now go find whoever's waving.", next: 'end' },
       end: { kind: 'end' },
     },
   },
@@ -85,7 +85,7 @@ export const DUSTWATER_SCENES: Scene[] = [
       m3: {
         kind: 'choice',
         options: [
-          { text: '"I\'ll take the shift."', to: 'm4', effects: [{ errand: 'dustwater-marta-shift', step: 'start' }] },
+          { text: '"I\'ll take the shift."', to: 'm4' },
           { text: '"What happened to the last waiter?"', to: 'm5' },
         ],
       },
@@ -109,57 +109,11 @@ export const DUSTWATER_SCENES: Scene[] = [
           { text: 'Walk on.', to: 'pw' },
         ],
       },
-      pw: { kind: 'line', speaker: 'pike', text: "Your loss. Tell you what: win three at the cups in a row, any table, and the marks will believe anything. Come tell me when you have.", next: 'end' },
+      pw: { kind: 'line', speaker: 'pike', text: "Your loss. The cups will be here tomorrow. So will I.", next: 'end' },
       p3: { kind: 'line', speaker: 'pike', expression: 'angry', text: "Huh. You caught the switch. Fine: help me spot marks who can't, and I'll split the take.", next: 'p5' },
       p4: { kind: 'line', speaker: 'pike', text: 'Jo sent you? Then you get the friends rate. Cutter Hale runs the Liar\'s Dice room. Nobody beats Cutter. Nobody yet.', next: 'p5' },
-      p5: { kind: 'line', speaker: 'pike', text: "Come by any night. Follow the queen through my shuffle and I'll pay you for the lesson.", next: 'p6' },
-      p6: { kind: 'line', speaker: 'pike', expression: 'pleased', text: 'And a job: win three at the cups in a row, any table. The marks see that, they line up.', next: 'end' },
-      end: { kind: 'end', effects: [{ set: 'met-pike' }, { errand: 'dustwater-pike-marks', step: 'start' }] },
-    },
-  },
-  {
-    id: 'dustwater-jo-seed',
-    city: 'dustwater',
-    trigger: { on: 'dawn' },
-    if: { flag: 'arrived-dustwater' },
-    start: 'j1',
-    nodes: {
-      j1: { kind: 'line', speaker: 'jo', text: "Morning. The coffee here is a crime. Sit down, I've got a job for you.", next: 'j2' },
-      j2: { kind: 'line', speaker: 'jo', text: "Finish one night up at the tables. Doesn't matter by how much. I want to see you walk out with more than you walked in with.", next: 'j3' },
-      j3: {
-        kind: 'choice',
-        options: [
-          { text: '"One good night. Easy."', to: 'j4' },
-          { text: '"And if I come out down?"', to: 'j5' },
-        ],
-      },
-      j4: { kind: 'line', speaker: 'jo', expression: 'pleased', text: "Your grandfather said that every night. Prove him wrong.", next: 'end' },
-      j5: { kind: 'line', speaker: 'jo', text: 'Then you try again tomorrow. The job keeps.', next: 'end' },
-      end: { kind: 'end', effects: [{ errand: 'dustwater-jo-stake', step: 'start' }] },
-    },
-  },
-  {
-    id: 'dustwater-marta-trucker',
-    city: 'dustwater',
-    trigger: { on: 'talk', character: 'marta' },
-    if: { flag: 'met-marta' },
-    start: 't1',
-    nodes: {
-      t1: { kind: 'line', speaker: 'marta', text: "Booth three. That trucker's been here since Tuesday telling everyone the casino never pays three to one.", next: 't2' },
-      t2: { kind: 'line', speaker: 'marta', expression: 'pleased', text: "He bet me a week of breakfasts nobody wins three times their stake in one go. Win it and I'll split the breakfasts with you. In cash.", next: 'end' },
-      end: { kind: 'end', effects: [{ errand: 'dustwater-marta-bet', step: 'start' }] },
-    },
-  },
-  {
-    id: 'dustwater-pike-lesson',
-    city: 'dustwater',
-    trigger: { on: 'talk', character: 'pike' },
-    if: { flag: 'met-pike' },
-    start: 'l1',
-    nodes: {
-      l1: { kind: 'line', speaker: 'pike', text: "You've been watching my hands for three nights. Don't think I didn't notice.", next: 'l2' },
-      l2: { kind: 'line', speaker: 'pike', expression: 'pleased', text: "So prove it. Follow the queen through four of my five shuffles in one sitting and I'll put you on the payroll. Lookout rates.", next: 'end' },
-      end: { kind: 'end', effects: [{ errand: 'dustwater-pike-lesson', step: 'start' }] },
+      p5: { kind: 'line', speaker: 'pike', text: "Come by any night. Follow the queen through my shuffle and I'll pay you for the lesson.", next: 'end' },
+      end: { kind: 'end', effects: [{ set: 'met-pike' }] },
     },
   },
   {
@@ -228,11 +182,71 @@ export const DUSTWATER_SCENES: Scene[] = [
   },
 ]
 
-export const DUSTWATER_ERRANDS: Errand[] = [
-  // Night 0: Marta and Pike want a word. Night 1: Jo at breakfast. Night 2: Marta again. Night 3: Pike again.
-  { id: 'dustwater-marta-shift', city: 'dustwater', giver: 'marta', title: 'The bar shift', task: "Clear at least 5 of the 6 rounds on a shift at Marta's bar.", goal: { kind: 'minigame', minigame: 'last-orders', score: 0.8 }, night: 0, opens: { flag: 'met-marta' }, rep: 1 },
-  { id: 'dustwater-pike-marks', city: 'dustwater', giver: 'pike', title: "Pike's marks", task: 'Win 3 rounds of Street Cups in a row, to show the marks it can be done.', goal: { kind: 'streak', game: 'street-cups', wins: 3 }, night: 0, rep: 1 },
-  { id: 'dustwater-jo-stake', city: 'dustwater', giver: 'jo', title: 'Seed money', task: 'Finish a night at the casino up on the night.', goal: { kind: 'night-up' }, night: 1, rep: 1 },
-  { id: 'dustwater-marta-bet', city: 'dustwater', giver: 'marta', title: "A trucker's bet", task: 'A trucker bet Marta nobody wins three times their stake in one go. Prove him wrong.', goal: { kind: 'big-win', mult: 3 }, night: 2, rep: 1 },
-  { id: 'dustwater-pike-lesson', city: 'dustwater', giver: 'pike', title: 'Lookout rates', task: "Follow the queen through at least 4 of Pike's 5 shuffles in one sitting.", goal: { kind: 'minigame', minigame: 'shuffle-tracker', score: 0.8 }, night: 3, rep: 1 },
+/**
+ * Dustwater's written jobs. Each giver offers their own first, in this order, and
+ * generated jobs after (lib/story/jobs.ts). `pitch` is what they say when they offer it.
+ */
+export const DUSTWATER_JOBS: WrittenJob[] = [
+  {
+    id: 'dustwater-marta-shift',
+    city: 'dustwater',
+    giver: 'marta',
+    title: 'The bar shift',
+    task: "Clear at least 5 of the 6 rounds on a shift at Marta's bar.",
+    goal: { kind: 'minigame', minigame: 'last-orders', score: 0.8 },
+    pay: 4,
+    pitch: [
+      "Friday crowd's coming and my new waiter cries when the orders stack up.",
+      'Work a shift and get at least five of the six rounds right. Do that and I owe you.',
+    ],
+  },
+  {
+    id: 'dustwater-pike-marks',
+    city: 'dustwater',
+    giver: 'pike',
+    title: "Pike's marks",
+    task: 'Win 3 rounds of Street Cups in a row, to show the marks it can be done.',
+    goal: { kind: 'streak', game: 'street-cups', wins: 3 },
+    pay: 5,
+    pitch: ['Got a job for you. Win three at the cups in a row, any table in the dive.', 'The marks see that, they line up. You get a cut.'],
+  },
+  {
+    id: 'dustwater-jo-stake',
+    city: 'dustwater',
+    giver: 'jo',
+    title: 'Seed money',
+    task: 'Finish a night at the casino up on the night.',
+    goal: { kind: 'night-up' },
+    pay: 3,
+    pitch: [
+      "The coffee here is a crime. Sit down, I've got a job for you.",
+      "Finish one night up at the tables. Doesn't matter by how much. I want to see you walk out with more than you walked in with.",
+    ],
+  },
+  {
+    id: 'dustwater-marta-bet',
+    city: 'dustwater',
+    giver: 'marta',
+    title: "A trucker's bet",
+    task: 'A trucker bet Marta nobody wins three times their stake in one go. Prove him wrong.',
+    goal: { kind: 'big-win', mult: 3 },
+    pay: 4,
+    pitch: [
+      "Booth three. That trucker's been here since Tuesday telling everyone the casino never pays three to one.",
+      "He bet me a week of breakfasts nobody wins three times their stake in one go. Win it and I'll split the breakfasts with you. In cash.",
+    ],
+  },
+  {
+    id: 'dustwater-pike-lesson',
+    city: 'dustwater',
+    giver: 'pike',
+    title: 'Lookout rates',
+    task: "Follow the queen through at least 4 of Pike's 5 shuffles in one sitting.",
+    goal: { kind: 'minigame', minigame: 'shuffle-tracker', score: 0.8 },
+    pay: 4,
+    pitch: [
+      "You've been watching my hands. Don't think I didn't notice.",
+      "So prove it. Follow the queen through four of my five shuffles in one sitting and I'll put you on the payroll. Lookout rates.",
+    ],
+  },
 ]

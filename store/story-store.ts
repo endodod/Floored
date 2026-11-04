@@ -3,17 +3,17 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { CITIES, CITY_BY_ID, type CityId } from '@/lib/story/cities'
-import { ERRAND_BY_ID, ERRANDS, SCENES, SCENE_BY_ID } from '@/lib/story/content'
+import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
-  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, ERRAND_PAY_M, HUSTLE_PAY_M,
+  BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, BUST_STANDING, CAR_BELOW_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_STANDING,
   LODGING_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MINIGAME_MAX_M, NIGHT_BETS, STANDING_MAX, START_MONEY,
-  TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, errandStanding, standingBonus, STANDING_BONUS,
+  TRAVEL_FARE_M, VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
-import { isJob, spawnJob, type Job } from '@/lib/story/jobs'
+import { goalKey, makeOffer, type Job } from '@/lib/story/jobs'
 import { CHARACTERS } from '@/lib/story/content/characters'
-import type { Effect, Errand, FactionId, MinigameId, Scene, SceneTrigger } from '@/lib/story/types'
+import type { Effect, FactionId, MinigameId, Scene, SceneTrigger } from '@/lib/story/types'
 import type { GameName } from './types'
 
 /**
@@ -30,22 +30,16 @@ import type { GameName } from './types'
  * (they opened on a flag before); a job a save already had open stays open, and
  * the scene that now hands it over counts as played.
  * Version 5: `jobs`, the spawned jobs (lib/story/jobs.ts); older saves start with none.
+ * Version 6: one job system (lib/story/jobs.ts): `errands` is gone, `jobs` holds every
+ * offered and taken job, `jobsGiven` the tasks each town has handed out and
+ * `jobOffered` the night of each town's last offer. Open errands and old jobs are
+ * dropped; finished written jobs count as given, so they never come back.
  */
-export const STORY_SAVE_VERSION = 5
+export const STORY_SAVE_VERSION = 6
 
 /** 0 dive, 1 main floor, 2 high-roller room. */
 export type VenueTier = 0 | 1 | 2
 export const VENUE_NAMES = ['The dive', 'The main floor', 'The high-roller room'] as const
-
-/** The errands a scene hands out (every `errand … start` effect in it). */
-function errandsStartedBy(scene: Scene): string[] {
-  const out: string[] = []
-  for (const node of Object.values(scene.nodes)) {
-    const effects = node.kind === 'end' ? (node.effects ?? []) : node.kind === 'choice' ? node.options.flatMap((o) => o.effects ?? []) : []
-    for (const e of effects) if ('errand' in e && e.step === 'start') out.push(e.errand)
-  }
-  return out
-}
 
 /** Standing after a change, clamped to 0..STANDING_MAX, in one town only. */
 function shiftStanding(all: StorySave['standing'], city: CityId, delta: number): StorySave['standing'] {
@@ -98,9 +92,12 @@ export interface StorySave {
   flags: Record<string, true>
   /** Scenes that played (for once-only scenes). */
   seen: string[]
-  errands: Record<string, 'started' | 'done'>
-  /** Spawned jobs still open, in every town (one new a night once a town's errands are out; one per person). */
+  /** Every job offered or taken and not yet finished, in every town (lib/story/jobs.ts). */
   jobs: Job[]
+  /** The task keys (`goalKey`) each town has handed out: it never gives one twice. */
+  jobsGiven: Partial<Record<CityId, string[]>>
+  /** The global night of each town's last offer (one a night). */
+  jobOffered: Partial<Record<CityId, number>>
   /** Minigame giver → the night their minigame last paid. */
   minigameNight: Record<string, number>
   /** The night the rival is back after a boss loss (null: they're here). */
@@ -113,13 +110,16 @@ export interface StorySave {
   lastNight: NightSummary | null
   /** Scenes waiting to play when the hub is next shown. */
   queue: string[]
-  /** Short messages for the hub ("Errand done: +$30"), newest first. */
+  /** Short messages for the hub ("Job done: +$30"), newest first. */
   news: { id: number; text: string }[]
   /** A scene in progress. */
   scene: { id: string; node: string } | null
 }
 
 const STARTING_CITY: CityId = 'dustwater'
+
+/** Scene ids for job offers: `offer:<job id>`, built from the save (never in content or `seen`). */
+const OFFER_PREFIX = 'offer:'
 
 const fresh = (): StorySave => ({
   started: false,
@@ -136,8 +136,9 @@ const fresh = (): StorySave => ({
   factions: { syndicate: 0, 'old-guard': 0, underground: 0 },
   flags: {},
   seen: [],
-  errands: {},
   jobs: [],
+  jobsGiven: {},
+  jobOffered: {},
   minigameNight: {},
   bossBackOn: null,
   bossTable: null,
@@ -160,8 +161,8 @@ interface StoryActions {
   context: () => StoryContext
   /** Standing in the town you are in (0–STANDING_MAX); a new town starts at 0. */
   rep: () => number
-  /** Games open errands name: the dive always deals them while the job is open. */
-  openErrandGames: () => GameName[]
+  /** Games taken jobs name: the dive always deals them while the job is open. */
+  openJobGames: () => GameName[]
 
   // Scenes
   /** The first scene for a trigger in this city whose condition holds and that may still play. */
@@ -181,8 +182,17 @@ interface StoryActions {
   spend: (dollars: number) => boolean
   takeMarker: () => boolean
 
-  // Errands
-  openErrands: () => Errand[]
+  // Jobs
+  /** Jobs you took in this town and haven't finished. */
+  openJobs: () => Job[]
+  /** The job a person in this town holds (offered or taken), if any. */
+  jobAt: (character: string) => Job | null
+  /** Whether talking to someone has something new: a scene, or a job to offer. */
+  canTalk: (character: string) => boolean
+  /** Talks to someone: their next scene, then their job offer (or the offer alone). */
+  talkTo: (character: string) => boolean
+  /** Tonight's offer in this town, if none was made yet and there is room (safe to call any time). */
+  offerTonight: () => void
 
   // Nights
   venueOpen: (venue: VenueTier) => boolean
@@ -215,6 +225,52 @@ export type StoryStore = StorySave & StoryActions
 
 let newsId = 0
 
+/** Moves a persisted save from an older version onto this one (exported for `pnpm check:story`). */
+export function migrateStorySave(persisted: unknown, version: number): StorySave {
+  // Later versions extend this, filling new fields from fresh().
+  if (!persisted || typeof persisted !== 'object' || version > STORY_SAVE_VERSION) return fresh()
+  // Fields older versions had and this one drops.
+  type Legacy = { rep?: number; errands?: Record<string, 'started' | 'done'> }
+  const old = persisted as Partial<StorySave> & Legacy
+  const base = { ...fresh(), ...old } as StorySave & Legacy
+  const errands = { ...(base.errands ?? {}) }
+  // Written jobs keep the ids the old errands had; every one earns JOB_STANDING.
+  if (version < 2) {
+    // Version 1 kept one reputation figure for the whole circuit. Standing is per
+    // town: move it into the town the save is in, capped by what that town's
+    // finished table jobs would have given. Nothing else in the save moves.
+    const cityId = (base.city ?? STARTING_CITY) as CityId
+    const earned = WRITTEN_JOBS.filter((e) => e.city === cityId && errands[e.id] === 'done').length * JOB_STANDING
+    const moved = Math.max(0, Math.min(old.rep ?? 0, earned, STANDING_MAX))
+    base.standing = { ...(old.standing ?? {}), [cityId]: moved }
+    delete base.rep
+  }
+  if (version < 3) {
+    // Minigame errands earned no standing before version 3; credit the ones already done.
+    let standing = base.standing
+    for (const e of WRITTEN_JOBS) {
+      if (e.goal.kind === 'minigame' && errands[e.id] === 'done') standing = shiftStanding(standing, e.city, JOB_STANDING)
+    }
+    base.standing = standing
+  }
+  if (version < 6) {
+    // One job system. Open errands and spawned jobs are dropped (the town offers
+    // afresh); finished written jobs count as given, so they never come back.
+    const given: StorySave['jobsGiven'] = {}
+    for (const e of WRITTEN_JOBS) {
+      if (errands[e.id] === 'done') given[e.city] = [...(given[e.city] ?? []), goalKey(e.goal)]
+    }
+    base.jobs = []
+    base.jobsGiven = given
+    base.jobOffered = {}
+    delete base.errands
+    // Scenes that only handed out errands are gone: never resume or queue one.
+    if (base.scene && !SCENE_BY_ID.has(base.scene.id)) base.scene = null
+    base.queue = (base.queue ?? []).filter((id) => SCENE_BY_ID.has(id))
+  }
+  return base
+}
+
 export const useStoryStore = create<StoryStore>()(
   persist(
     (set, get) => {
@@ -238,60 +294,71 @@ export const useStoryStore = create<StoryStore>()(
             if (e.money >= 0) get().receive(e.money * m())
             else set({ money: Math.max(0, s.money + e.money * m()) })
           } else if ('rep' in e) set({ standing: shiftStanding(s.standing, s.city, e.rep) })
-          else if ('errand' in e) set({ errands: { ...s.errands, [e.errand]: e.step === 'start' ? 'started' : 'done' } })
+          else if ('job' in e) {
+            // Taking an offered job: it is yours from now on.
+            if (s.jobs.some((j) => j.id === e.job && j.status === 'offered')) {
+              set({ jobs: s.jobs.map((j) => (j.id === e.job ? { ...j, status: 'open' as const } : j)) })
+              const j = get().jobs.find((x) => x.id === e.job)!
+              say(`Job taken: ${j.title}`)
+            }
+          }
           else if ('marker' in e) get().takeMarker()
         }
       }
 
-      const completeErrand = (e: Errand) => {
-        if (isJob(e.id)) {
-          const s = get()
-          if (!s.jobs.some((j) => j.id === e.id)) return
-          const pay = (e.pay ?? 3) * m()
-          const gain = (s.standing[e.city] ?? 0) < STANDING_MAX ? errandStanding(e) : 0
-          set({ jobs: s.jobs.filter((j) => j.id !== e.id), ...(gain ? { standing: shiftStanding(s.standing, e.city, gain) } : {}) })
-          get().receive(pay)
-          say(`Job done: ${e.title} · +$${pay.toLocaleString('en-US')}${gain ? ` · standing +${gain}` : ''}`)
-          return
-        }
-        if (get().errands[e.id] === 'done') return
-        const pay = (e.pay ?? ERRAND_PAY_M) * m()
-        // A finished errand is the only thing that raises standing (owner decision).
-        const gain = errandStanding(e)
-        set((s) => ({ errands: { ...s.errands, [e.id]: 'done' }, ...(gain ? { standing: shiftStanding(s.standing, e.city, gain) } : {}) }))
+      /** A taken job is done: it pays, earns standing (capped) and frees its giver. */
+      const completeJob = (job: Job) => {
+        const s = get()
+        if (!s.jobs.some((j) => j.id === job.id && j.status === 'open')) return
+        const pay = job.pay * CITY_BY_ID.get(job.city)!.minBet
+        const gain = (s.standing[job.city] ?? 0) < STANDING_MAX ? JOB_STANDING : 0
+        set({ jobs: s.jobs.filter((j) => j.id !== job.id), ...(gain ? { standing: shiftStanding(s.standing, job.city, gain) } : {}) })
         get().receive(pay)
-        say(`Errand done: ${e.title} · +$${pay.toLocaleString('en-US')}${gain ? ` · standing +${gain}` : ''}`)
+        say(`Job done: ${job.title} · +$${pay.toLocaleString('en-US')}${gain ? ` · standing +${gain}` : ''}`)
+        // A night whose offer had no room (the town was full) makes it now.
+        get().offerTonight()
       }
 
       /**
-       * Once every story errand of the town is out (the night after the last one's
-       * `night`), one new job a night for a giver with nothing open; open jobs stay.
+       * The offer scene for a job: the giver's pitch, then "I'll do it" or "Not now".
+       * It only starts while the job is on offer (startScene), but plays on to its end
+       * once taken.
        */
-      const spawnTonight = () => {
-        const s = get()
-        const theirs = ERRANDS.filter((e) => e.city === s.city)
-        if (!theirs.length || s.cityNight <= Math.max(...theirs.map((e) => e.night))) return
-        const giverIds = new Set(theirs.map((e) => e.giver))
-        const givers = CHARACTERS.filter((c) => giverIds.has(c.id))
-        const c = city()
-        const games = c.games === 'all-seen' ? s.seenGames : c.games
-        const job = spawnJob({ city: c, night: s.night, givers, open: get().openErrands(), games })
-        if (!job) return
-        set({ jobs: [...get().jobs, job] })
-        say(`New job from ${CHARACTERS.find((x) => x.id === job.giver)?.name ?? 'someone'}: ${job.title}`)
+      const offerJob = (id: string) => get().jobs.find((j) => `${OFFER_PREFIX}${j.id}` === id) ?? null
+      const offerScene = (id: string): Scene | null => {
+        const job = offerJob(id)
+        if (!job) return null
+        const pay = job.pay * CITY_BY_ID.get(job.city)!.minBet
+        const nodes: Scene['nodes'] = {}
+        job.pitch.forEach((text, i) => {
+          nodes[`p${i}`] = { kind: 'line', speaker: job.giver, expression: i === 0 ? 'neutral' : 'pleased', text, next: i + 1 < job.pitch.length ? `p${i + 1}` : 'ask' }
+        })
+        nodes.ask = {
+          kind: 'choice',
+          prompt: `${job.title} · pays $${pay.toLocaleString('en-US')} · +${JOB_STANDING} standing`,
+          options: [
+            { text: '"I\'ll do it."', to: 'yes', effects: [{ job: job.id, step: 'accept' }] },
+            { text: '"Not now."', to: 'no' },
+          ],
+        }
+        nodes.yes = { kind: 'line', speaker: job.giver, expression: 'pleased', text: 'Good. Come find me when it\'s done.', next: 'end' }
+        nodes.no = { kind: 'line', speaker: job.giver, text: 'Suit yourself. It keeps.', next: 'end' }
+        nodes.end = { kind: 'end' }
+        return { id, city: job.city, trigger: { on: 'talk', character: job.giver }, once: false, start: job.pitch.length ? 'p0' : 'ask', nodes }
       }
+      /** A content scene, or an offer scene built from the save. */
+      const sceneOf = (id: string): Scene | null => (id.startsWith(OFFER_PREFIX) ? offerScene(id) : (SCENE_BY_ID.get(id) ?? null))
 
-      /** After a settled round: streak and big-win errands. */
-      const checkRoundErrands = (rounds: NightRound[]) => {
+      /** After a settled round: streak and big-win jobs. */
+      const checkRoundJobs = (rounds: NightRound[]) => {
         const last = rounds[rounds.length - 1]
         if (!last) return
-        for (const e of get().openErrands()) {
-          if (e.goal.kind === 'big-win' && last.bet > 0 && last.payout >= e.goal.mult * last.bet) completeErrand(e)
-          if (e.goal.kind === 'streak') {
-            const goal = e.goal
-            const same = rounds.filter((r) => r.game === goal.game)
-            const tail = same.slice(-goal.wins)
-            if (tail.length === goal.wins && tail.every((r) => r.payout > r.bet)) completeErrand(e)
+        for (const job of get().openJobs()) {
+          const goal = job.goal
+          if (goal.kind === 'big-win' && last.bet > 0 && last.payout >= goal.mult * last.bet) completeJob(job)
+          if (goal.kind === 'streak') {
+            const tail = rounds.filter((r) => r.game === goal.game).slice(-goal.wins)
+            if (tail.length === goal.wins && tail.every((r) => r.payout > r.bet)) completeJob(job)
           }
         }
       }
@@ -303,6 +370,8 @@ export const useStoryStore = create<StoryStore>()(
           set({ ...fresh(), started: true, startedAt: new Date().toISOString(), visited: [STARTING_CITY] })
           queue(get().sceneFor({ on: 'arrival' }))
           queue(get().sceneFor({ on: 'tutorial' }))
+          // The story starts with exactly one job offered.
+          get().offerTonight()
         },
         minBet: m,
         context: () => {
@@ -310,7 +379,7 @@ export const useStoryStore = create<StoryStore>()(
           return { flags: s.flags, factions: s.factions, moneyM: s.money / m() }
         },
         rep: () => get().standing[get().city] ?? 0,
-        openErrandGames: () => get().openErrands().flatMap((e) => (e.goal.kind === 'streak' ? [e.goal.game] : [])),
+        openJobGames: () => get().openJobs().flatMap((j) => (j.goal.kind === 'streak' ? [j.goal.game] : [])),
 
         sceneFor: (trigger) => {
           const s = get()
@@ -321,50 +390,55 @@ export const useStoryStore = create<StoryStore>()(
               sc.trigger.on === trigger.on &&
               (trigger.on !== 'talk' || (sc.trigger.on === 'talk' && sc.trigger.character === trigger.character)) &&
               (sc.once === false || !s.seen.includes(sc.id)) &&
-              holds(sc.if, ctx) &&
-              // A scene that hands out a job waits for the job's night in this town.
-              errandsStartedBy(sc).every((id) => (ERRAND_BY_ID.get(id)?.night ?? 0) <= s.cityNight),
+              holds(sc.if, ctx),
           )
           return found?.id ?? null
         },
         startScene: (id) => {
-          const scene = SCENE_BY_ID.get(id)
+          const scene = sceneOf(id)
           const s = get()
           if (!scene || s.scene) return false
+          if (id.startsWith(OFFER_PREFIX) && offerJob(id)?.status !== 'offered') return false
           if (scene.once !== false && s.seen.includes(id)) return false
           set({ scene: { id, node: scene.start } })
           return true
         },
         playQueued: () => {
-          const s = get()
-          if (s.scene || !s.queue.length) return false
-          const [id, ...rest] = s.queue
-          set({ queue: rest })
-          return get().startScene(id!)
+          // Skips anything that can no longer play (an offer already taken, say).
+          while (!get().scene && get().queue.length) {
+            const [id, ...rest] = get().queue
+            set({ queue: rest })
+            if (get().startScene(id!)) return true
+          }
+          return false
         },
         currentStep: () => {
           const cur = get().scene
           if (!cur) return null
-          const scene = SCENE_BY_ID.get(cur.id)
+          const scene = sceneOf(cur.id)
           return scene ? stepAt(scene, cur.node, get().context()) : null
         },
         advance: () => {
           const cur = get().scene
-          const scene = cur && SCENE_BY_ID.get(cur.id)
-          if (!cur || !scene) return
+          const scene = cur && sceneOf(cur.id)
+          if (!cur || !scene) {
+            // A scene that can't be found (an offer already taken): close it.
+            if (cur) set({ scene: null })
+            return
+          }
           const node = scene.nodes[cur.node]
           if (node?.kind === 'line') set({ scene: { ...cur, node: nextAfterLine(scene, cur.node) } })
           else if (node?.kind === 'end') {
             apply(node.effects ?? [])
             const s = get()
-            set({ scene: null, seen: s.seen.includes(cur.id) ? s.seen : [...s.seen, cur.id] })
+            set({ scene: null, seen: s.seen.includes(cur.id) || cur.id.startsWith(OFFER_PREFIX) ? s.seen : [...s.seen, cur.id] })
             // The next queued scene follows (arrival, then Jo's walkthrough).
             get().playQueued()
           }
         },
         pick: (index) => {
           const cur = get().scene
-          const scene = cur && SCENE_BY_ID.get(cur.id)
+          const scene = cur && sceneOf(cur.id)
           if (!cur || !scene) return
           const { next, effects } = choose(scene, cur.node, index, get().context())
           apply(effects)
@@ -394,13 +468,41 @@ export const useStoryStore = create<StoryStore>()(
           return true
         },
 
-        openErrands: () => {
+        openJobs: () => get().jobs.filter((j) => j.city === get().city && j.status === 'open'),
+        jobAt: (character) => get().jobs.find((j) => j.city === get().city && j.giver === character) ?? null,
+        canTalk: (character) => !!get().sceneFor({ on: 'talk', character }) || get().jobAt(character)?.status === 'offered',
+        talkTo: (character) => {
+          const scene = get().sceneFor({ on: 'talk', character })
+          const offer = get().jobAt(character)
+          const offerId = offer?.status === 'offered' ? `${OFFER_PREFIX}${offer.id}` : null
+          if (scene) {
+            if (!get().startScene(scene)) return false
+            // Their news first, then the job they have going.
+            if (offerId) queue(offerId)
+            return true
+          }
+          return offerId ? get().startScene(offerId) : false
+        },
+        offerTonight: () => {
           const s = get()
-          const ctx = get().context()
-          const story = ERRANDS.filter(
-            (e) => e.city === s.city && s.errands[e.id] !== 'done' && (s.errands[e.id] === 'started' || (e.night <= s.cityNight && !!e.opens && holds(e.opens, ctx))),
-          )
-          return [...story, ...s.jobs.filter((j) => j.city === s.city)]
+          if (!s.started || s.jobOffered[s.city] === s.night) return
+          const c = city()
+          const given = s.jobsGiven[s.city] ?? []
+          const job = makeOffer({
+            city: c,
+            night: s.night,
+            held: s.jobs.filter((j) => j.city === s.city),
+            given,
+            games: c.games === 'all-seen' ? s.seenGames : c.games,
+          })
+          // No room (or nothing new to give): try again later tonight, e.g. once a job is done.
+          if (!job) return
+          set({
+            jobs: [...s.jobs, job],
+            jobsGiven: { ...s.jobsGiven, [s.city]: [...given, job.key] },
+            jobOffered: { ...s.jobOffered, [s.city]: s.night },
+          })
+          say(`${CHARACTERS.find((x) => x.id === job.giver)?.name ?? 'Someone'} has a job going. Go and talk to them.`)
         },
 
         venueOpen: (venue) => get().rep() >= VENUE_REP[venue],
@@ -458,7 +560,7 @@ export const useStoryStore = create<StoryStore>()(
             tonight: x.tonight && { ...x.tonight, openRound: null, rounds },
             stats: { ...x.stats, bestWin: Math.max(x.stats.bestWin, totalPaid - open.bet) },
           }))
-          checkRoundErrands(rounds)
+          checkRoundJobs(rounds)
         },
         endNight: () => {
           const s = get()
@@ -479,7 +581,7 @@ export const useStoryStore = create<StoryStore>()(
             }
             const tableWinnings = t.rounds.reduce((sum, r) => sum + r.payout - r.bet, 0)
             if (tableWinnings > 0) {
-              for (const e of get().openErrands()) if (e.goal.kind === 'night-up' && tableWinnings >= (e.goal.atLeast ?? 0) * m()) completeErrand(e)
+              for (const j of get().openJobs()) if (j.goal.kind === 'night-up' && tableWinnings >= (j.goal.atLeast ?? 0) * m()) completeJob(j)
             }
             // Standing as the night closes (a job finished tonight counts) sets the bonus.
             bonusRate = STANDING_BONUS[get().rep()] ?? 0
@@ -502,9 +604,9 @@ export const useStoryStore = create<StoryStore>()(
             ...(bust ? { standing: shiftStanding(after.standing, after.city, -BUST_STANDING), stats: { ...after.stats, busts: after.stats.busts + 1 } } : {}),
           })
           if (bust) queue(get().sceneFor({ on: 'bust' }))
-          // The morning after: a dawn scene whose job is now due (Jo's jobs).
           queue(get().sceneFor({ on: 'dawn' }))
-          spawnTonight()
+          // A new night: one new job offer in this town, if there is room.
+          get().offerTonight()
           return summary
         },
         playMinigame: (giver, minigame, score) => {
@@ -515,7 +617,7 @@ export const useStoryStore = create<StoryStore>()(
             set({ minigameNight: { ...s.minigameNight, [giver]: s.night } })
             get().receive(pay)
           }
-          for (const e of get().openErrands()) if (e.goal.kind === 'minigame' && e.goal.minigame === minigame && score >= e.goal.score) completeErrand(e)
+          for (const j of get().openJobs()) if (j.goal.kind === 'minigame' && j.goal.minigame === minigame && score >= j.goal.score) completeJob(j)
           return pay
         },
         minigamePaidTonight: (giver) => get().minigameNight[giver] === get().night,
@@ -556,6 +658,8 @@ export const useStoryStore = create<StoryStore>()(
           if (!next || fare == null || s.tonight || !s.cleared.includes(s.city) || !get().spend(fare)) return false
           set({ city: next.id, visited: s.visited.includes(next.id) ? s.visited : [...s.visited, next.id], cityNight: 0, markersHere: 0, bossBackOn: null, lastNight: null })
           queue(get().sceneFor({ on: 'arrival' }))
+          // The first night in a new town starts with one job offered.
+          get().offerTonight()
           return true
         },
       }
@@ -569,49 +673,7 @@ export const useStoryStore = create<StoryStore>()(
         for (const key of STATE_KEYS) (out as Record<string, unknown>)[key] = s[key]
         return out as StorySave
       },
-      migrate: (persisted, version) => {
-        // Later versions extend this, filling new fields from fresh().
-        if (!persisted || typeof persisted !== 'object' || version > STORY_SAVE_VERSION) return fresh()
-        const old = persisted as Partial<StorySave> & { rep?: number }
-        const base = { ...fresh(), ...old } as StorySave & { rep?: number }
-        if (version < 2) {
-          // Version 1 kept one reputation figure for the whole circuit. Standing is per
-          // town: move it into the town the save is in, capped by what that town's
-          // finished table jobs would have given. Nothing else in the save moves.
-          const cityId = (base.city ?? STARTING_CITY) as CityId
-          const earned = ERRANDS.filter((e) => e.city === cityId && base.errands[e.id] === 'done').reduce((n, e) => n + errandStanding(e), 0)
-          const moved = Math.max(0, Math.min(old.rep ?? 0, earned, STANDING_MAX))
-          base.standing = { ...(old.standing ?? {}), [cityId]: moved }
-          delete base.rep
-        }
-        if (version < 3) {
-          // Minigame errands earned no standing before version 3; credit the ones already done.
-          let standing = base.standing
-          for (const e of ERRANDS) {
-            if (e.goal.kind === 'minigame' && base.errands[e.id] === 'done') standing = shiftStanding(standing, e.city, errandStanding(e))
-          }
-          base.standing = standing
-        }
-        if (version < 4) {
-          // These Dustwater jobs opened on a flag before; now a scene hands each one over on
-          // its night. A job a save already had open stays open, and its scene counts as played.
-          const handedOver: [errand: string, flag: string, scene: string | null][] = [
-            ['dustwater-pike-marks', 'met-pike', null],
-            ['dustwater-jo-stake', 'arrived-dustwater', 'dustwater-jo-seed'],
-            ['dustwater-marta-bet', 'met-marta', 'dustwater-marta-trucker'],
-          ]
-          const errands = { ...base.errands }
-          const seen = [...base.seen]
-          for (const [id, flag, scene] of handedOver) {
-            if (!base.flags[flag]) continue
-            if (!errands[id]) errands[id] = 'started'
-            if (scene && !seen.includes(scene)) seen.push(scene)
-          }
-          base.errands = errands
-          base.seen = seen
-        }
-        return base
-      },
+      migrate: (persisted, version) => migrateStorySave(persisted, version),
       merge: (persisted, current) => ({ ...current, ...fresh(), ...(persisted as Partial<StorySave>) }),
     },
   ),

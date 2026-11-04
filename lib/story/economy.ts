@@ -5,8 +5,6 @@
  * section 5; `pnpm sim:story` checks these numbers against its targets.
  */
 
-import type { ErrandGoal } from './types'
-
 /** Money you start the circuit with, in dollars (40 × Dustwater's $5 minimum bet). */
 export const START_MONEY = 200
 
@@ -21,29 +19,21 @@ export const CAR_BELOW_M = 10
 /** A minigame pays up to this at a perfect score; each character's minigame once per night. */
 export const MINIGAME_MAX_M = 3
 
-/** One-time story errands per city, and what each pays. */
-export const ERRANDS_PER_CITY = 5
-export const ERRAND_PAY_M = 6
-
 /**
- * Errands come out over the first nights in a town, not all at once: two people
- * want a word on your first night there, then one more each night after (owner
- * decision 2026-11-04). Each errand names its `night` (0 = the first night in the
- * town); `pnpm check:story` holds every city to this schedule.
+ * Jobs (owner decision 2026-11-04, lib/story/jobs.ts): people in a town hand them
+ * out one at a time. Each night in a town one new offer turns up at someone who
+ * holds none, while the town has fewer than JOB_LIMIT (offered or taken). Every
+ * job pays JOB_PAY_M.min to JOB_PAY_M.max minimum bets and earns JOB_STANDING.
  */
-export const ERRANDS_FIRST_NIGHT = 2
-export const ERRANDS_EACH_NIGHT_AFTER = 1
-/** How many of a town's errands are out by this night in it (0 = the first night). */
-export function errandsOutBy(cityNight: number): number {
-  return Math.min(ERRANDS_PER_CITY, ERRANDS_FIRST_NIGHT + ERRANDS_EACH_NIGHT_AFTER * Math.max(0, cityNight))
-}
+export const JOB_LIMIT = 3
+export const JOB_PAY_M = { min: 3, max: 5 } as const
 
 /**
  * Standing: how a town sees you, 0 to STANDING_MAX, kept per town (the map is in
- * store/story-store.ts). It rises by ERRAND_STANDING for every finished errand,
+ * store/story-store.ts). It rises by JOB_STANDING for every finished job,
  * drops by BUST_STANDING when you go bust, and opens the better rooms.
  */
-export const ERRAND_STANDING = 1
+export const JOB_STANDING = 1
 export const BUST_STANDING = 1
 export const STANDING_MAX = 5
 
@@ -97,14 +87,4 @@ export const MARKER_REPAY_STEP = 0.25
 /** In multiples of m: the dollars a multiple stands for in a city. */
 export function dollars(m: number, minBet: number): number {
   return Math.round(m * minBet)
-}
-
-/**
- * Standing a finished errand earns in its town: ERRAND_STANDING for every errand,
- * minigame jobs included (owner decision 2026-11-04). Content may override it with
- * `rep`, and `pnpm check:story` holds it to the rule.
- */
-export function errandStanding(e: { goal: ErrandGoal; rep?: number }): number {
-  const want = e.rep ?? ERRAND_STANDING
-  return Math.max(0, Math.min(STANDING_MAX, Math.round(want)))
 }
