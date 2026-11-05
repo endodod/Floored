@@ -171,6 +171,14 @@ sign moved from the left edge to the far right, past Cutter's back room (the roa
 the boss), in both layouts; the back room moved left beside the casino and the rest of the wide
 street shifted 290 units left to make room (`DUSTWATER_SCENE` in `lib/story/scene-theme.ts`).
 
+**2026-11-05, street life (owner request):** shooting stars now and then (`ShootingStars`, three
+streaks on 23s/37s/53s cycles), motel and casino windows that switch on and off (`Blink`, an
+opposite-state overlay on a long stepped cycle, `.st-window`), and the diesel board shows a new
+price each night (3.79-4.19, seeded by `night` on `SceneArtState`; 3.99 on the title screen). All
+of it is `st-motion`, so reduced motion keeps the still street. Doors and sleep spots also carry a
+faint gold outline at rest (`.st-hit`); the casino's main doors sit 80 units right of centre
+(`MAIN_DOOR_DX`); the motel-side lamp is drawn in front of the motel.
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 

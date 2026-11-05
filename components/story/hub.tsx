@@ -160,6 +160,7 @@ export function StoryHub() {
     roadOpen: cleared && !!nextCity,
     nextCity: nextCity?.name ?? null,
     car: sleptInCar,
+    night: s.night,
   }
   const restSpot = 'rest'
   const sleepNote = (place: SleepPlace) => {

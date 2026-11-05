@@ -3140,6 +3140,28 @@ body > div.neon-auth-ui {
 .st-headlight {
   animation: st-drive 19s linear infinite;
 }
+/* A window that switches now and then (Blink in scene-art.tsx): off at rest, so
+   reduced motion keeps the base window; on for a stretch of a long cycle. */
+.st-window {
+  visibility: hidden;
+  animation: st-window 23s steps(1, end) infinite;
+}
+@keyframes st-window {
+  0%, 58% { visibility: hidden; }
+  59%, 100% { visibility: visible; }
+}
+/* A shooting star (ShootingStars in scene-art.tsx): idle most of its cycle, then
+   one quick streak down and left. Hidden at rest and under reduced motion. */
+.st-shoot {
+  opacity: 0;
+  animation: st-shoot 30s linear infinite;
+}
+@keyframes st-shoot {
+  0% { opacity: 0; transform: translate(0, 0); }
+  0.5% { opacity: 1; }
+  2.5% { opacity: 0; transform: translate(-260px, 100px); }
+  100% { opacity: 0; transform: translate(-260px, 100px); }
+}
 @keyframes st-flicker {
   0%, 61%, 64%, 66%, 100% { fill-opacity: 1; opacity: 1; }
   62%, 65%, 67%, 72% { fill-opacity: 0.08; opacity: 0.3; }

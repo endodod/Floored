@@ -21,6 +21,8 @@ export interface SceneArtState {
   roadOpen: boolean
   nextCity: string | null
   car: boolean
+  /** The story's night, for things that change from night to night (the diesel price). */
+  night?: number
 }
 
 interface Ctx {
@@ -80,6 +82,7 @@ function Casino({ c }: { c: Ctx }) {
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <g key={i}>
           <rect x={58 + i * 64} y={174} width={36} height={50} fill={i % 3 === 1 ? P.windowDim : P.window} opacity={i % 3 === 1 ? 0.9 : 0.5} />
+          {i !== 3 && <Blink i={i + 20} x={58 + i * 64} y={174} w={36} h={50} fill={i % 3 === 1 ? P.window : P.windowDim} opacity={i % 3 === 1 ? 0.5 : 0.9} />}
           <path d={`M${58 + i * 64} ${186 + (i % 2) * 6}h36M${58 + i * 64} ${200}h36M${58 + i * 64} ${212}h36`} stroke={P.wall} strokeWidth={2} opacity={0.6} />
         </g>
       ))}
@@ -180,6 +183,7 @@ function Motel({ c }: { c: Ctx }) {
           <g key={`u${i}`}>
             <rect x={18 + i * 56} y={70} width={26} height={52} fill={P.wall} />
             <rect x={48 + i * 56} y={80} width={16} height={22} fill={lit ? P.window : P.windowDim} opacity={lit ? 0.7 : 0.9} />
+            {i % 3 !== 2 && <Blink i={i} x={48 + i * 56} y={80} w={16} h={22} fill={lit ? P.windowDim : P.window} opacity={lit ? 0.9 : 0.7} />}
           </g>
         )
       })}
@@ -198,6 +202,7 @@ function Motel({ c }: { c: Ctx }) {
             <rect x={164 + i * 50} y={188} width={22} height={8} fill={mine ? '#d9a441' : P.trim} opacity={mine ? 0.9 : 0.6} />
             {mine && <text x={175 + i * 50} y={195} textAnchor="middle" fontSize={7} fontWeight={800} style={SANS} fill="#2a1c0c">5</text>}
             <rect x={192 + i * 50} y={196} width={14} height={20} fill={lit ? P.window : P.windowDim} opacity={lit ? 0.75 : 0.9} />
+            {!mine && i % 2 === 0 && <Blink i={i + 8} x={192 + i * 50} y={196} w={14} h={20} fill={lit ? P.windowDim : P.window} opacity={lit ? 0.9 : 0.75} />}
           </g>
         )
       })}
@@ -294,6 +299,32 @@ function Cups({ c }: { c: Ctx }) {
   )
 }
 
+/** The diesel board: 3.99 give or take up to 20 cents, a new price each night (seeded, so a reload keeps it). */
+function dieselPrice(night: number | undefined): string {
+  if (night == null) return '3.99'
+  const cents = Math.floor(createRng(9000 + night)() * 41) - 20
+  return (3.99 + cents / 100).toFixed(2)
+}
+
+/**
+ * A window that switches on or off now and then: an overlay in the opposite state,
+ * shown for part of a long cycle. Hidden under reduced motion (the base window stays).
+ */
+function Blink({ x, y, w, h, fill, opacity, i }: { x: number; y: number; w: number; h: number; fill: string; opacity: number; i: number }) {
+  return (
+    <rect
+      x={x}
+      y={y}
+      width={w}
+      height={h}
+      fill={fill}
+      opacity={opacity}
+      className="st-motion st-window"
+      style={{ animationDuration: `${19 + ((i * 7) % 17)}s`, animationDelay: `${-((i * 11) % 23)}s` }}
+    />
+  )
+}
+
 function Gas({ c }: { c: Ctx }) {
   const { P } = c
   return (
@@ -317,7 +348,7 @@ function Gas({ c }: { c: Ctx }) {
       <rect x={352} y={60} width={8} height={220} fill={P.trim} />
       <rect x={316} y={2} width={80} height={72} rx={3} fill="#0a0b0d" stroke={P.trim} strokeWidth={2} />
       <text x={356} y={22} textAnchor="middle" fontSize={11} fontWeight={700} letterSpacing={1} style={SANS} fill="#e9dfc8">DIESEL</text>
-      <text x={356} y={58} textAnchor="middle" fontSize={26} fontWeight={700} style={MONO} fill={P.neonBar} filter={`url(#${c.id}-glow)`}>3.99</text>
+      <text x={356} y={58} textAnchor="middle" fontSize={26} fontWeight={700} style={MONO} fill={P.neonBar} filter={`url(#${c.id}-glow)`}>{dieselPrice(c.state.night)}</text>
     </g>
   )
 }
@@ -447,6 +478,31 @@ function Stars({ w, top, horizon, seed }: { w: number; top: number; horizon: num
   return <>{out}</>
 }
 
+/**
+ * Now and then a star streaks down across the sky: three streaks on long, different
+ * cycles, so one shows every so often and never on a beat. Hidden under reduced motion.
+ */
+function ShootingStars({ w, top, horizon }: { w: number; top: number; horizon: number }) {
+  const sky = horizon - 200 - top
+  const streaks = [
+    { x: w * 0.3, y: top + sky * 0.15, dur: 23, delay: 4 },
+    { x: w * 0.75, y: top + sky * 0.05, dur: 37, delay: 15 },
+    { x: w * 0.55, y: top + sky * 0.35, dur: 53, delay: 31 },
+  ]
+  return (
+    <>
+      {streaks.map((s, i) => (
+        <g key={i} transform={`translate(${s.x} ${s.y})`}>
+          <g className="st-motion st-shoot" style={{ animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }}>
+            <path d="M0 0 L120 -46" stroke="url(#st-shoot-tail)" strokeWidth={2} strokeLinecap="round" />
+            <circle cx={0} cy={0} r={2.2} fill="#fffaf0" />
+          </g>
+        </g>
+      ))}
+    </>
+  )
+}
+
 /** The whole street for one layout. Pure: same props, same picture. */
 export const SceneArt = memo(function SceneArt({
   config,
@@ -511,6 +567,10 @@ export const SceneArt = memo(function SceneArt({
           <stop offset="0" stopColor="#fff4d6" stopOpacity="0.5" />
           <stop offset="1" stopColor="#fff4d6" stopOpacity="0" />
         </linearGradient>
+        <linearGradient id="st-shoot-tail" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fffaf0" stopOpacity="0.9" />
+          <stop offset="1" stopColor="#fffaf0" stopOpacity="0" />
+        </linearGradient>
         <pattern id={`${id}-dots`} width="6" height="6" patternUnits="userSpaceOnUse">
           <circle cx="3" cy="3" r="1.5" fill={P.shade} />
         </pattern>
@@ -534,6 +594,7 @@ export const SceneArt = memo(function SceneArt({
       {/* sky, stars, moon */}
       <rect x={-3000} y={-3000} width={v.w + 6000} height={3000 + v.horizon} fill={`url(#${id}-sky)`} />
       <Stars w={v.w} top={-600} horizon={v.horizon} seed={layout === 'wide' ? 5 : 9} />
+      <ShootingStars w={v.w} top={v.y0} horizon={v.horizon} />
       <circle cx={moon[0]} cy={moon[1]} r={30} fill="#efe6d2" opacity={0.9} filter={`url(#${id}-glowSoft)`} />
       <circle cx={moon[0] + 12} cy={moon[1] - 6} r={27} fill={P.skyTop} opacity={0.92} />
 
