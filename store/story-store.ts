@@ -8,8 +8,11 @@ import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryCont
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
   DEBT_WARN_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
-  VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
+  VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS, PRACTICE_BUYIN_M,
 } from '@/lib/story/economy'
+import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
+import { prizePool } from '@/lib/tables/stakes'
+import type { TableGameName } from '@/lib/tables/types'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { goalKey, kindOf, makeOffers, NIGHT_KINDS, type Job, type JobKind } from '@/lib/story/jobs'
@@ -66,6 +69,16 @@ export interface Tonight {
   startMoney: number
   /** Bets this night has (from where you slept); NIGHT_BETS when missing (saves from before version 8). */
   limit?: number
+  /** A night at the high-roller room's practice table (PRACTICE_BUYIN_M) instead of bets; `result` once your place is decided. */
+  table?: PracticeTable
+}
+
+export interface PracticeTable {
+  game: TableGameName
+  seed: number
+  buyIn: number
+  seats: number
+  result?: { place: number; prize: number }
 }
 
 export interface NightSummary {
@@ -81,6 +94,8 @@ export interface NightSummary {
   car: boolean
   /** Bets the next night has (5 after the car, 10 after a room). */
   nextBets: number
+  /** A practice table night: the game, your place and what it paid (the buy-in was paid on sitting down). */
+  table?: { game: TableGameName; place: number; prize: number; buyIn: number }
   /** Money change over the night, all in. */
   net: number
   bust: boolean
@@ -268,6 +283,16 @@ interface StoryActions {
   /** Any started attempt that never finished (you left mid-game) is a miss: the job is lost. */
   forfeitStartedMinigames: () => void
   dismissNews: (id: number) => void
+
+  // The practice table (high-roller room)
+  /** The bot game this city's high-roller room deals at its practice table: the boss's game. Null when the boss is no table game. */
+  practiceGame: () => TableGameName | null
+  /** The room is open to you, no night is on, and the city has a practice table (money is checked apart). */
+  practiceOpen: () => boolean
+  /** Pays the buy-in and starts tonight at the high-roller room's table; false if you can't. */
+  sitAtPractice: () => boolean
+  /** Your place at the practice table and what the pool pays you (0 below the paid places, or after leaving). Once. */
+  practiceResult: (place: number, prize: number) => void
 
   // Boss and travel
   bossAvailable: () => boolean
@@ -754,7 +779,9 @@ export const useStoryStore = create<StoryStore>()(
           const money = after.money - lodging
           const bust = money < m()
           const nextBets = SLEEP_BETS[place]
-          const summary: NightSummary = { night: after.night + 1, played: !!t, comps, bonus, bonusRate, hustles, lodging, car: place === 'car', nextBets, net: money - before, bust }
+          // A practice table left without a result (the page closed mid-game) counts as last place.
+          const table = t?.table ? { game: t.table.game, place: t.table.result?.place ?? t.table.seats, prize: t.table.result?.prize ?? 0, buyIn: t.table.buyIn } : undefined
+          const summary: NightSummary = { night: after.night + 1, played: !!t, comps, bonus, bonusRate, hustles, lodging, car: place === 'car', nextBets, net: money - before, bust, ...(table ? { table } : {}) }
           set({
             money,
             nextBets,
@@ -797,6 +824,32 @@ export const useStoryStore = create<StoryStore>()(
         },
         dismissNews: (id) => set((s) => ({ news: s.news.filter((n) => n.id !== id) })),
 
+        practiceGame: () => {
+          const boss = city().boss
+          return boss.kind === 'table' ? boss.game : null
+        },
+        practiceOpen: () => !!get().practiceGame() && get().venueOpen(2) && !get().tonight,
+        sitAtPractice: () => {
+          const s = get()
+          const game = get().practiceGame()
+          const buyIn = PRACTICE_BUYIN_M * m()
+          if (!game || !get().practiceOpen() || s.money < buyIn) return false
+          const startMoney = s.money
+          if (!get().spend(buyIn)) return false
+          const seats = TABLE_GAME_BY_NAME.get(game)?.seats ?? 4
+          set({ tonight: { venue: 2, bets: 0, openRound: null, rounds: [], startMoney, limit: 0, table: { game, seed: Math.floor(Math.random() * 2 ** 31), buyIn, seats } } })
+          return true
+        },
+        practiceResult: (place, prize) => {
+          const t = get().tonight
+          if (!t?.table || t.table.result) return
+          const paid = Math.max(0, Math.min(Math.round(prize), prizePool(t.table.buyIn, t.table.seats)))
+          set({ tonight: { ...t, table: { ...t.table, result: { place, prize: paid } } } })
+          // As with a bet: the buy-in comes back whole, and half of the profit repays a loan.
+          const profit = Math.max(0, paid - t.table.buyIn)
+          get().receive(paid - profit)
+          get().receive(profit, { profit: true })
+        },
         bossAvailable: () => {
           const s = get()
           return !s.cleared.includes(s.city) && s.bossBackOn == null && !s.tonight

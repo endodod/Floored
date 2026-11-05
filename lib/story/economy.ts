@@ -97,6 +97,14 @@ export const BOSS_PURSE_M = 300
 export const BOSS_REMATCH_NIGHTS = 2
 
 /**
+ * The practice table in the high-roller room: the boss's own bot game as a tournament
+ * against three (Hold'em: five) regular bots, no boss seated, to learn the game before the
+ * showdown. It takes the whole night in place of bets. The buy-in goes into the prize
+ * pool with the bots' (no rake), paid as the Tables tournaments pay.
+ */
+export const PRACTICE_BUYIN_M = 10
+
+/**
  * A loan (a "marker") from the town's lender, any time: its size, what you repay, and the
  * share of each win's profit that goes to it. Owing DEBT_WARN_M or more brings a warning
  * that offers a fresh start (the story itself can't be lost).

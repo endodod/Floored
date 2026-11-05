@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
+import { ordinal } from '@/lib/tables/stakes'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ArrowRight, Car, Ellipsis, HandCoins, Lightbulb, CircleX, Lock, Map as MapIcon, MessageCircle, Moon, Play, NotebookPen, UtensilsCrossed } from 'lucide-react'
@@ -21,7 +23,7 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, PRACTICE_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
 import { joTips } from '@/lib/story/tips'
@@ -106,6 +108,10 @@ export function StoryHub() {
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
   const gamesIn = (v: number) => s.roomGames(v as VenueTier)
   const broke = s.money < m && !night
+  // The high-roller room's practice table: the boss's bot game (null when the boss plays none).
+  const practiceGame = s.practiceGame()
+  const practiceLabel = practiceGame ? (TABLE_GAME_BY_NAME.get(practiceGame)?.label ?? practiceGame) : ''
+  const practiceBuyIn = PRACTICE_BUYIN_M * m
   const lenderId = s.lenderHere()
   const lender = lenderId ? CHARACTERS.find((c) => c.id === lenderId) ?? null : null
   // Jo's read on the games in the room you're in tonight (the dive's before you sit down).
@@ -196,14 +202,14 @@ export function StoryHub() {
         node: (
           <PlaceSpot
             title={VENUE_SHORT[v]}
-            sub={!unlocked ? `Standing ${VENUE_REP[v]} needed` : here ? `Tonight · ${betsLeft} bets` : undefined}
+            sub={!unlocked ? `Standing ${VENUE_REP[v]} needed` : here ? (night?.table ? 'Tonight · the table' : `Tonight · ${betsLeft} bets`) : undefined}
             icon={!unlocked ? <Lock className="h-2.5 w-2.5" aria-hidden /> : undefined}
             locked={!unlocked}
             lit={here}
             active={isOpen('venue', v)}
             size={DOOR_SIZE[v]!}
             plateBelow={v !== 2}
-            label={`${VENUE_NAMES[v]}: ${!unlocked ? `locked, needs standing ${VENUE_REP[v]}` : here ? `tonight, ${betsLeft} bets left` : stakeNote(v)}`}
+            label={`${VENUE_NAMES[v]}: ${!unlocked ? `locked, needs standing ${VENUE_REP[v]}` : here ? (night?.table ? 'tonight, at the practice table' : `tonight, ${betsLeft} bets left`) : stakeNote(v)}`}
             onOpen={open({ kind: 'venue', v })}
           />
         ),
@@ -308,6 +314,21 @@ export function StoryHub() {
             <SheetNote>You have standing {s.rep()} in {city.name}. The door stays chained until your name is good enough here.</SheetNote>
           </>
         )
+      } else if (here && night?.table) {
+        const t = night.table
+        const label = TABLE_GAME_BY_NAME.get(t.game)?.label ?? 'the table'
+        body = t.result ? (
+          <SheetNote tone="soft">
+            {ordinal(t.result.place)} at the {label} table{t.result.prize ? `, paid ${money(t.result.prize)}` : ''}. That was the night. Call it a night when you're ready.
+          </SheetNote>
+        ) : (
+          <>
+            <SheetNote tone="soft">Your seat at the {label} table is waiting. Leaving it before your place is decided counts as last.</SheetNote>
+            <Actions>
+              <Button onClick={() => router.push('/story/table')}>Back to the table</Button>
+            </Actions>
+          </>
+        )
       } else if (here) {
         body = (
           <>
@@ -372,6 +393,19 @@ export function StoryHub() {
             <Actions>
               <Button onClick={() => s.startNight(v)}>Start the night</Button>
             </Actions>
+            {v === 2 && practiceGame && (
+              <>
+                <SheetNote tone="soft">
+                  Or take the night at the practice table: {practiceLabel} against the house regulars, the game {boss?.name ?? 'the boss'} plays in the back room. Buy-in {money(practiceBuyIn)}, the pot pays the winner. It takes the whole night, no bets.
+                </SheetNote>
+                {s.money < practiceBuyIn && <SheetNote tone="loss">You need {money(practiceBuyIn)} to sit down.</SheetNote>}
+                <Actions>
+                  <Button variant="secondary" disabled={s.money < practiceBuyIn} onClick={() => { if (s.sitAtPractice()) router.push('/story/table') }}>
+                    Sit at the table
+                  </Button>
+                </Actions>
+              </>
+            )}
           </>
         )
       }
@@ -393,7 +427,7 @@ export function StoryHub() {
             {job?.status === 'offered' && (
               <SheetNote tone="gold">
                 {c.name} has a {jobKindName(job)} for you. Talk to hear it.{' '}
-                {s.night - job.night >= JOB_OFFER_NIGHTS - 1 ? 'Last night to take it.' : `It goes to someone else after ${JOB_OFFER_NIGHTS} nights.`}
+                {JOB_OFFER_NIGHTS === 1 ? 'Only on offer tonight.' : s.night - job.night >= JOB_OFFER_NIGHTS - 1 ? 'Last night to take it.' : `It goes to someone else after ${JOB_OFFER_NIGHTS} nights.`}
               </SheetNote>
             )}
             {job?.status === 'open' && (

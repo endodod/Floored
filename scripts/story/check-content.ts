@@ -15,7 +15,7 @@
 import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
-  BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
+  BONUS_STEPS, PRACTICE_BUYIN_M, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
   CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, SLEEP_REP, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
@@ -642,6 +642,26 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (!st().takeMarker() || st().money !== 20 * m || st().owed !== 30 * m) fail('a marker lends 20m and is owed at 30m')
   st().receive(10 * m, { profit: true })
   if (st().money !== 25 * m || st().owed !== 25 * m) fail('half of a win goes to the marker')
+  // The practice table: the boss's game in the high-roller room, a night in place of bets.
+  {
+    useStoryStore.setState({ money: 100 * m, owed: 0, tonight: null, standing: { dustwater: VENUE_REP[2] - 1 } })
+    if (st().practiceGame() !== 'liars-dice') fail("Dustwater's practice table deals the boss's game, Liar's Dice")
+    if (st().sitAtPractice()) fail('the practice table needs the high-roller room open')
+    useStoryStore.setState({ standing: { dustwater: VENUE_REP[2] } })
+    if (!st().sitAtPractice() || st().money !== (100 - PRACTICE_BUYIN_M) * m || st().tonight?.venue !== 2 || !st().tonight?.table) fail(`the practice table takes a ${PRACTICE_BUYIN_M}m buy-in and starts the night in the high-roller room`)
+    if (st().betsLeft() !== 0) fail('a practice table night has no bets')
+    const pool = PRACTICE_BUYIN_M * m * (st().tonight?.table?.seats ?? 4)
+    st().practiceResult(1, pool * 10)
+    if (st().money !== (100 - PRACTICE_BUYIN_M) * m + pool) fail('a practice win pays the pool, never more')
+    st().practiceResult(4, 0)
+    if (st().tonight?.table?.result?.place !== 1) fail('a practice result is set once')
+    const night = st().endNight('car')
+    if (!night.table || night.table.place !== 1 || night.table.prize !== pool || night.net !== pool - PRACTICE_BUYIN_M * m) fail('the night receipt shows the practice table and its net')
+    if (!st().sitAtPractice()) fail('the practice table opens again the next night')
+    const left = st().endNight('car')
+    if (left.table?.prize !== 0 || left.table?.place !== 4) fail('a practice table left without a result is last place (4th of 4), paid nothing')
+    useStoryStore.setState({ standing: { dustwater: 0 } })
+  }
   // The boss: buy-in, loss and the 2-night wait, then a win and travel.
   useStoryStore.setState({ money: 500 * m, owed: 0 })
   if (!st().enterBoss() || st().money !== (500 - BOSS_BUYIN_M) * m || !st().bossTable) fail(`the boss buy-in is ${BOSS_BUYIN_M}m and seats you`)

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import type { NightSummary } from '@/store/story-store'
 import { formatChips } from '@/utils/format'
+import { ordinal } from '@/lib/tables/stakes'
 
 const money = (n: number) => `$${formatChips(n)}`
 
@@ -17,7 +18,10 @@ export function NightCard({ summary, cityName, onNext }: { summary: NightSummary
     btn.current?.focus()
   }, [])
   const rows: { label: string; value: string; tone?: 'win' | 'miss' | 'cost' }[] = []
-  if (summary.played) rows.push({ label: 'Comps', value: `+${money(summary.comps)}`, tone: 'win' })
+  if (summary.table) {
+    rows.push({ label: `Practice table · ${ordinal(summary.table.place)}`, value: `-${money(summary.table.buyIn)}`, tone: 'cost' })
+    if (summary.table.prize) rows.push({ label: 'The pot', value: `+${money(summary.table.prize)}`, tone: 'win' })
+  } else if (summary.played) rows.push({ label: 'Comps', value: `+${money(summary.comps)}`, tone: 'win' })
   if (summary.bonus) rows.push({ label: `Standing bonus · ${Math.round((summary.bonusRate ?? 0) * 100)}% of the win`, value: `+${money(summary.bonus)}`, tone: 'win' })
   for (const h of summary.hustles) rows.push({ label: h.text, value: h.paid ? `+${money(h.paid)}` : 'missed', tone: h.paid ? 'win' : 'miss' })
   rows.push({

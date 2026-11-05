@@ -181,7 +181,8 @@ export function StoryHud({
   const rep = useStoryStore((s) => s.rep())
   const tonight = useStoryStore((s) => s.tonight)
   const city = CITY_BY_ID.get(cityId)!
-  const betsLeft = tonight ? Math.max(0, (tonight.limit ?? NIGHT_BETS) - tonight.bets) : null
+  // A practice table night has no bets to count.
+  const betsLeft = tonight && !tonight.table ? Math.max(0, (tonight.limit ?? NIGHT_BETS) - tonight.bets) : null
   const low = moneyNow < city.minBet
   const bonus = STANDING_BONUS[rep] ?? 0
   const [standingOpen, setStandingOpen] = useState(false)
