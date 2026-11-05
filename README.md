@@ -74,6 +74,8 @@ Toggle with `TABLES_ENABLED` in `lib/features.ts`. Details in `.md/BOT_TABLES_HA
 
 **The Circuit**: a story mode with nights, characters and a boss per city. Only the first town, Dustwater, is playable so far.
 
+- Each town is a drawn night street (SVG, no image files). Click the doors, the motel, the car, the road sign and the people standing around. Every hotspot has a faint gold outline that glows when you point at it, and the car's outline follows the car's shape instead of a box
+
 - A night is one room (dive, main floor, high-roller room) and 5 or 10 bets, set by where you slept: the car (free; 5 bets) or a room (3× the minimum bet in Dustwater, then 4×; 10 bets). A new story starts with 5; each room draws its own 3 of the city's games every night and swaps a couple the next night
 - **Standing** is per town: 0 in every new town, remembered when you go back, max 5. Every finished table job is +1; borrowing from the town's lender (Pike in Dustwater, any night) is −1 (going broke alone costs nothing). The dive is always open, the main floor wants standing 1 and the high-roller room 3; standing 2, 4 and 5 add a bonus of 5%, 10% and 20% of a winning night's table winnings
 - Jobs: each night two people have work going, a minigame job and a table job (the first night too). Talk to them to take it or say not now (it waits). One job per person, three at most in a town. Table jobs pay 3–5× the minimum bet and +1 standing and never repeat; minigame jobs are one attempt, pay 6–8× and give no standing. Minigames are only played as jobs; Jo runs Chip Count
@@ -156,14 +158,18 @@ app/
   challenge/       # The challenge in progress + game routes
   freeplay/        # Freeplay lobby + game routes
   how-to-play/     # Rules page per game
+  tables/          # Tables lobby + bot tables
+  story/           # Story mode (The Circuit)
 components/        # React components and shared UI
   games/           # One component per game
+  story/           # The drawn street, hotspots, sheets and scenes
 games/             # Pure game engines and logic (TS)
 store/             # Zustand stores (daily, ladder + daily ladder, challenge, freeplay, settings)
 lib/
   daily/           # Daily challenge generation and sharing
   ladder/          # Ladder rules, rung offers and sharing
   challenges/      # Challenge presets, limits and validation
+  story/           # Story cities, characters, jobs and street layouts
 .md/               # Project docs — start with ARCHITECTURE.md
 ```
 
