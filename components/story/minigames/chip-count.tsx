@@ -89,9 +89,10 @@ export function ChipCountBoard({ onFinish }: { onFinish: (score: number) => void
         <p className={`text-sm font-semibold ${answered && !right ? 'text-loss' : 'text-ink'}`} aria-live="polite" data-testid="cc-headline">
           {headline}
         </p>
-        {/* The stack, largest chips first, as a dealer would cut it. */}
+        {/* The stack, largest chips first, as a dealer would cut it. It hides at once for the
+            lead-in (no fade, or the next stack would flash as it fades out) and fades in when the clock starts. */}
         <ul
-          className={`flex max-w-[360px] flex-wrap justify-center gap-1.5 transition-opacity duration-200 sm:gap-2 ${phase === 'lead' ? 'opacity-0' : 'opacity-100'}`}
+          className={`flex max-w-[360px] flex-wrap justify-center gap-1.5 sm:gap-2 ${phase === 'lead' ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'}`}
           aria-label={phase === 'lead' ? 'Stack coming' : `Stack of ${shown.stack.length} chips`}
         >
           {shown.stack.map((c, i) => (
