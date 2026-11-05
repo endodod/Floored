@@ -169,7 +169,7 @@ casino marker cards (`.st-news`) with people's names in gold and game names in f
 (`NewsText` in `components/story/notebook.tsx`). The street's gas station, truck and Road Out
 sign moved from the left edge to the far right, past Cutter's back room (the road out is through
 the boss), in both layouts; the back room moved left beside the casino and the rest of the wide
-street shifted 250 units left to make room (`DUSTWATER_SCENE` in `lib/story/scene-theme.ts`).
+street shifted 290 units left to make room (`DUSTWATER_SCENE` in `lib/story/scene-theme.ts`).
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
