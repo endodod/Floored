@@ -200,7 +200,7 @@ export function Navbar() {
           <ul className="flex flex-col px-4 py-2">
             {[{ href: '/', label: 'Home' }, ...MODES, { href: '/account', label: 'Account' }].map((m) => {
               const active = m.href === '/' ? pathname === '/' : inMode(pathname, m)
-              const desktopOnly = m.href === '/survival'
+              const desktopOnly = m.href === '/survival' || m.href === '/story'
               return (
                 <li key={m.href} className="border-b border-rule">
                   {desktopOnly ? (

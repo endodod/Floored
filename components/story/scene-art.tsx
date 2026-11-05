@@ -531,6 +531,45 @@ function ShootingStars({ w, top, horizon }: { w: number; top: number; horizon: n
   )
 }
 
+/**
+ * The way in from the road, drawn on the lot under every building: a worn concrete
+ * path to the dive's side door and a red carpet with gold edges to the main doors.
+ * Placed from the casino piece, so it follows the casino in either layout.
+ */
+function Walkways({ config, layout, road }: { config: CitySceneConfig; layout: SceneLayout; road: number }) {
+  const at = config.pieces.find((p) => p.kind === 'casino')?.[layout]
+  if (!at) return null
+  const X = (x: number) => at.x + x * at.s
+  const top = at.y + 420 * at.s
+  const bottom = road - 3
+  if (bottom <= top) return null
+  // A gentle widening toward the road, capped so the deep phone lot keeps the paths slim.
+  const spread = Math.min((bottom - top) * 0.18, 22)
+  const trap = (l: number, r: number, wide: number) => `M${l} ${top} L${r} ${top} L${r + wide} ${bottom} L${l - wide} ${bottom} Z`
+  const lines = (l: number, r: number, wide: number, step: number) =>
+    Array.from({ length: Math.floor((bottom - top) / step) }, (_, i) => {
+      const y = top + (i + 1) * step
+      const f = (y - top) / (bottom - top)
+      return `M${l - wide * f} ${y} H${r + wide * f}`
+    }).join(' ')
+  const dl = X(70)
+  const dr = X(130)
+  const ml = X(226 + MAIN_DOOR_DX)
+  const mr = X(374 + MAIN_DOOR_DX)
+  return (
+    <g>
+      {/* the dive: concrete slabs */}
+      <path d={trap(dl, dr, spread)} fill="#2a241f" />
+      <path d={lines(dl, dr, spread, 16)} stroke="#1a1512" strokeWidth={2} />
+      <path d={`M${dl} ${top} L${dl - spread} ${bottom} M${dr} ${top} L${dr + spread} ${bottom}`} stroke="#3b3229" strokeWidth={2} />
+      {/* the main floor: a red carpet, gold-edged */}
+      <path d={trap(ml, mr, spread * 1.4)} fill="#6e1f29" />
+      <path d={lines(ml, mr, spread * 1.4, 22)} stroke="#5a1822" strokeWidth={1.5} opacity={0.7} />
+      <path d={`M${ml} ${top} L${ml - spread * 1.4} ${bottom} M${mr} ${top} L${mr + spread * 1.4} ${bottom}`} stroke="#d9a441" strokeWidth={3} opacity={0.85} />
+    </g>
+  )
+}
+
 /** The whole street for one layout. Pure: same props, same picture. */
 export const SceneArt = memo(function SceneArt({
   config,
@@ -635,6 +674,8 @@ export const SceneArt = memo(function SceneArt({
       <rect x={-3000} y={v.road} width={v.w + 6000} height={3000} fill={P.road} />
       <rect x={-3000} y={v.road - 3} width={v.w + 6000} height={6} fill={P.curb} />
       <path d={`M-3000 ${lane} H${v.w + 3000}`} stroke={P.roadLine} strokeWidth={4} strokeDasharray="38 34" opacity={0.55} />
+
+      <Walkways config={config} layout={layout} road={v.road} />
 
       {placed(false)}
 

@@ -197,6 +197,13 @@ align their plates to it (`data-edge` in `components/story/city-scene.tsx`); on 
 the car sits left and up, the back room a little higher, and Marta has her own point left of the
 diner door. The navbar shows the "Money" word from `lg` up (at `md` it pushed the page sideways).
 
+**2026-11-05, desktop only for now (owner decision):** below 640px (`sm`, Survival's line) every
+`/story` page shows a "desktop only for now" note instead (`app/story/layout.tsx`, CSS only), the
+home row's button reads "Desktop only" and the phone menu lists Story as desktop only. The phone
+street layout stays as it is but is no longer a target. The street also has a way in from the
+road: a concrete path to the dive and a gold-edged red carpet to the main doors (`Walkways` in
+`components/story/scene-art.tsx`, placed from the casino piece).
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 

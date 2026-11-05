@@ -162,3 +162,6 @@ every label renders as blank space and the screenshots lie. Installing
 Liberation Sans (metric-compatible with the app's Arial) plus a minimal
 `FONTCONFIG_FILE` was enough here; the font files and libraries are not part of
 the repo.
+
+**2026-11-05:** Story mode is desktop only for now (like Survival): phones see a note on every
+`/story` page; see STORY_MODE_HANDOFF.md.

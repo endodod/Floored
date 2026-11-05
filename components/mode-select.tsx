@@ -144,9 +144,16 @@ export function ModeSelect() {
               figureLabel="Money"
               figure={storyLive ? `$${formatChips(storyMoney)}` : '—'}
               action={
-                <Button asChild className="w-full lg:w-auto">
-                  <Link href="/story">{storyLive ? 'Continue' : 'Begin'}</Link>
-                </Button>
+                // Story is desktop-only for now (owner decision 2026-11-05), like Survival.
+                isMobile ? (
+                  <Button disabled className="w-full lg:w-auto">
+                    Desktop only
+                  </Button>
+                ) : (
+                  <Button asChild className="w-full lg:w-auto">
+                    <Link href="/story">{storyLive ? 'Continue' : 'Begin'}</Link>
+                  </Button>
+                )
               }
             />
           </ModeRowList>
