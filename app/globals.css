@@ -3066,6 +3066,25 @@ body > div.neon-auth-ui {
   box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.85);
   animation: st-slip-in var(--dur-med) var(--ease-out) both;
 }
+/* News marker: dark felt card, gold hairline, a gold chip stripe down the left
+   edge. Square to the screen and all one width, so the stack reads as a column. */
+.st-news {
+  position: relative;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #1c3027, #12211a);
+  box-shadow: inset 0 0 0 1px rgba(217, 164, 65, 0.45), 0 10px 24px -8px rgba(0, 0, 0, 0.85);
+  animation: st-slip-in var(--dur-med) var(--ease-out) both;
+}
+.st-news::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(180deg, var(--gold) 0 5px, rgba(217, 164, 65, 0.25) 5px 8px);
+}
 .st-notebook {
   box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(0, 0, 0, 0.6);
   animation: st-card-in var(--dur-med) var(--ease-out) both;
@@ -3184,6 +3203,7 @@ body > div.neon-auth-ui {
 }
 :root[data-motion='reduced'] .st-motion,
 :root[data-motion='reduced'] .st-slip,
+:root[data-motion='reduced'] .st-news,
 :root[data-motion='reduced'] .st-bubble,
 :root[data-motion='reduced'] .st-bubble-you,
 :root[data-motion='reduced'] .st-caption,
@@ -3200,6 +3220,7 @@ body > div.neon-auth-ui {
 @media (prefers-reduced-motion: reduce) {
   .st-motion,
   .st-slip,
+  .st-news,
   .st-bubble,
   .st-bubble-you,
   .st-caption,

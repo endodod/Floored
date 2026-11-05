@@ -144,19 +144,18 @@ export function Notebook({
   )
 }
 
-/** News as slips of paper pinned to the corner of the street; each one can be dismissed. */
+/** News as casino marker cards (dark felt, gold trim) stacked in the corner of the street, all one width; each can be dismissed. */
 export function NewsSlips({ news, onDismiss }: { news: { id: number; text: string }[]; onDismiss: (id: number) => void }) {
   if (!news.length) return null
   return (
     <ul className="pointer-events-none absolute left-2 right-2 top-2 z-20 flex flex-col items-end gap-1.5 sm:left-auto sm:right-3 sm:top-3 sm:w-[300px]" aria-label="News" aria-live="polite">
-      {news.slice(0, 3).map((n, i) => (
+      {news.slice(0, 3).map((n) => (
         <li
           key={n.id}
-          className="st-slip st-motion pointer-events-auto flex w-full max-w-[300px] items-start gap-2 py-2 pl-3 pr-1.5 text-[12.5px] leading-[17px] text-[#2a2420]"
-          style={{ rotate: `${i % 2 ? 0.8 : -0.8}deg` }}
+          className="st-news st-motion pointer-events-auto flex w-full items-center gap-2 py-2 pl-4 pr-1.5 text-[12.5px] leading-[17px] text-[#efe6d2]"
         >
           <span className="min-w-0 flex-1">{n.text}</span>
-          <button type="button" onClick={() => onDismiss(n.id)} className="-my-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#6f6354] hover:bg-black/10 hover:text-[#2a2420] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Dismiss">
+          <button type="button" onClick={() => onDismiss(n.id)} className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[rgba(217,164,65,0.7)] hover:bg-[rgba(217,164,65,0.15)] hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Dismiss">
             <X className="h-3.5 w-3.5" aria-hidden />
           </button>
         </li>
