@@ -552,16 +552,43 @@ function Walkways({ config, layout, road }: { config: CitySceneConfig; layout: S
       const f = (y - top) / (bottom - top)
       return `M${l - wide * f} ${y} H${r + wide * f}`
     }).join(' ')
-  const dl = X(70)
-  const dr = X(130)
+  // The dive's path: narrower than its door, slabs set unevenly (seeded, so it never changes).
+  const dl = X(84)
+  const dr = X(116)
+  const rng = createRng(4242)
+  const rows = Math.max(3, Math.floor((bottom - top) / 11))
+  const slabs = Array.from({ length: rows }, (_, i) => {
+    const y0 = top + ((bottom - top) * i) / rows + 1
+    const y1 = top + ((bottom - top) * (i + 1)) / rows - 1.5
+    const f0 = (y0 - top) / (bottom - top)
+    const f1 = (y1 - top) / (bottom - top)
+    const w = spread * 0.4
+    const j = () => (rng() - 0.5) * 4
+    const l0 = dl - w * f0 + j()
+    const r0 = dr + w * f0 + j()
+    const l1 = dl - w * f1 + j()
+    const r1 = dr + w * f1 + j()
+    const tones = ['#2e2822', '#27211c', '#332b23', '#241f1a']
+    const gone = rng() < 0.16
+    const cx = l0 + (r0 - l0) * (0.25 + rng() * 0.5)
+    const crack = rng() < 0.55 ? `M${cx} ${y0} l${(rng() - 0.5) * 8} ${(y1 - y0) * 0.5} l${(rng() - 0.5) * 8} ${(y1 - y0) * 0.5}` : null
+    const wx = rng() < 0.5 ? l1 - 1 : r1 + 1
+    const weed = rng() < 0.3 ? `M${wx} ${y1} l-2 -5 M${wx} ${y1} l1 -6 M${wx} ${y1} l3 -4` : null
+    return { d: `M${l0} ${y0} L${r0} ${y0 + j() * 0.4} L${r1} ${y1} L${l1} ${y1 + j() * 0.4} Z`, tone: tones[Math.floor(rng() * tones.length)]!, gone, crack, weed }
+  })
   const ml = X(226 + MAIN_DOOR_DX)
   const mr = X(374 + MAIN_DOOR_DX)
   return (
     <g>
-      {/* the dive: concrete slabs */}
-      <path d={trap(dl, dr, spread)} fill="#2a241f" />
-      <path d={lines(dl, dr, spread, 16)} stroke="#1a1512" strokeWidth={2} />
-      <path d={`M${dl} ${top} L${dl - spread} ${bottom} M${dr} ${top} L${dr + spread} ${bottom}`} stroke="#3b3229" strokeWidth={2} />
+      {/* the dive: a narrow run of cracked, sunken slabs over dirt, a few missing */}
+      <path d={trap(dl, dr, spread * 0.4)} fill="#1c1713" />
+      {slabs.map((sl, i) => (
+        <g key={i}>
+          {!sl.gone && <path d={sl.d} fill={sl.tone} />}
+          {sl.crack && <path d={sl.crack} stroke="#120f0c" strokeWidth={1.2} fill="none" />}
+          {sl.weed && <path d={sl.weed} stroke="#3c4a2a" strokeWidth={1.4} fill="none" strokeLinecap="round" />}
+        </g>
+      ))}
       {/* the main floor: a red carpet, gold-edged */}
       <path d={trap(ml, mr, spread * 1.4)} fill="#6e1f29" />
       <path d={lines(ml, mr, spread * 1.4, 22)} stroke="#5a1822" strokeWidth={1.5} opacity={0.7} />
