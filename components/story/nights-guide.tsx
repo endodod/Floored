@@ -6,7 +6,7 @@ import { CITIES, type City } from '@/lib/story/cities'
 import {
   BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BETS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
   JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, DEBT_WARN_M, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, MEAL_M, MINIGAME_JOB_PAY_M,
-  NIGHT_BETS, ROOM_BETS, SLEEP_COST_M, START_BETS, sleepCostM, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
+  NIGHT_BETS, ROOM_BETS, SLEEP_COST_M, SLEEP_REP, START_BETS, sleepCostM, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
@@ -153,7 +153,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
 
       <Section title="Ending the night">
         <p>
-          You choose where to sleep every night, played or rested. The car is free and gives you {CAR_BETS} bets the next night. A room costs {SLEEP_COST_M.room[0]}× in the first town and {SLEEP_COST_M.room[1]}× after ({money(sleepCostM('room', first) * m)} here), and gives {ROOM_BETS}. Save money in the car and stack it up with minigame jobs, or pay for the room and play more. You can&apos;t take a room you can&apos;t pay for.
+          You choose where to sleep every night, played or rested. The car is free and gives you {CAR_BETS} bets the next night. A room costs {SLEEP_COST_M.room[0]}× in the first town and {SLEEP_COST_M.room[1]}× after ({money(sleepCostM('room', first) * m)} here), and gives {ROOM_BETS}, once your standing in the town is {SLEEP_REP.room}. Save money in the car and stack it up with minigame jobs, or pay for the room and play more. You can&apos;t take a room you can&apos;t pay for.
         </p>
       </Section>
 

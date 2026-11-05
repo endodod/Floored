@@ -179,6 +179,16 @@ of it is `st-motion`, so reduced motion keeps the still street. Doors and sleep 
 faint gold outline at rest (`.st-hit`); the Room 5 hit area is the whole motel (`building` anchor; listed first so people on it stay on top; on the phone its plate sits inside the top-right corner, `plateInsideTall`); the casino's main doors sit 80 units right of centre
 (`MAIN_DOOR_DX`); the motel-side lamp is drawn in front of the motel.
 
+**2026-11-05, the room wants standing 2 (owner decision):** `SLEEP_REP` in `lib/story/economy.ts`
+(car 0, room 2); `sleepOpen` in the store, and `endNight('room')` falls back to the car without
+it. The Room 5 hotspot and rest card show "Standing 2 needed" with a lock; Jo's walkthrough says
+so (checked by `pnpm check:story`); the nights guide too; `pnpm sim:story` gates the room the
+same way (balanced ~120 nights, cautious ~107). Locked doors lost their chains: the doorway dims
+behind a red velvet rope on brass posts with a gold, chip-bodied padlock (`Locked` in
+`components/story/scene-art.tsx`). The HUD's standing plaque (and the stars on smaller screens)
+opens a standing overview on any story page: each level's rooms and bonus, how to gain and lose
+it (`StandingOverview` in `components/story/hud.tsx`).
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 

@@ -12,8 +12,9 @@ export const START_MONEY = 200
  * Where you sleep (owner decision 2026-11-04): you choose every night, playing or
  * resting. The car is free (every city, for now) and gives CAR_BETS the next night; a
  * room costs 3m in the first city (Dustwater) and 4m after, and gives ROOM_BETS. Paid
- * down to $0, never into debt; a room you can't afford can't be chosen. A new story
- * starts with START_BETS.
+ * down to $0, never into debt; a room you can't afford can't be chosen. The room also
+ * wants the town to know you: standing SLEEP_REP.room (owner decision 2026-11-05). A
+ * new story starts with START_BETS.
  */
 export type SleepPlace = 'car' | 'room'
 export const CAR_BETS = 5
@@ -24,6 +25,8 @@ export const NIGHT_BETS = ROOM_BETS
 /** Sleep costs in m: [first city, every city after]. */
 export const SLEEP_COST_M: Record<SleepPlace, readonly [number, number]> = { car: [0, 0], room: [3, 4] }
 export const SLEEP_BETS: Record<SleepPlace, number> = { car: CAR_BETS, room: ROOM_BETS }
+/** The standing each place to sleep asks for (the motel only rents to people the town knows). */
+export const SLEEP_REP: Record<SleepPlace, number> = { car: 0, room: 2 }
 /** What sleeping somewhere costs, in m, in a city (`first`: the first city of the circuit). */
 export const sleepCostM = (place: SleepPlace, first: boolean) => SLEEP_COST_M[place][first ? 0 : 1]
 

@@ -16,7 +16,7 @@ import { CITIES } from '@/lib/story/cities'
 import { CHARACTERS, SCENES, WRITTEN_JOBS } from '@/lib/story/content'
 import {
   BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM, HUSTLES_PER_NIGHT, JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, jobPayM,
-  CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
+  CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, SLEEP_REP, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
 import { goalKey, jobGivers, kindOf, makeOffers, NIGHT_KINDS, type Job } from '@/lib/story/jobs'
@@ -222,6 +222,7 @@ const QUOTES: { re: RegExp; what: string; want: (m: RegExpMatchArray) => [number
   { re: /it drops (\w+)/i, what: 'the standing a marker costs', want: (m) => [[word(m[1]), MARKER_STANDING]] },
   { re: /(\w+) is the most any town gives/i, what: 'the standing cap', want: (m) => [[word(m[1]), STANDING_MAX]] },
   { re: /(\w+) bets a night, (\w+) if you slept in a proper bed/i, what: 'bets a night (car, room)', want: (m) => [[word(m[1]), CAR_BETS], [word(m[2]), ROOM_BETS]] },
+  { re: /rents it once the town knows you: standing (\w+)/i, what: 'the standing a room wants', want: (m) => [[word(m[1]), SLEEP_REP.room]] },
   { re: /Room 5 costs (\w+) times the minimum/i, what: 'the room in the first town', want: (m) => [[word(m[1]), SLEEP_COST_M.room[0]]] },
   { re: /its own (\w+) games/i, what: 'games per room', want: (m) => [[word(m[1]), GAMES_PER_ROOM]] },
   { re: /(\w+) side goals/i, what: 'hustles a night', want: (m) => [[word(m[1]), HUSTLES_PER_NIGHT]] },

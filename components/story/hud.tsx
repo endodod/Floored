@@ -1,10 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { forwardRef, type ReactNode } from 'react'
-import { ChevronLeft, Star } from 'lucide-react'
+import { forwardRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { ChevronLeft, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { ActionSheet } from '@/components/story/action-sheet'
 import { CITY_BY_ID } from '@/lib/story/cities'
-import { NIGHT_BETS, STANDING_BONUS, STANDING_MAX } from '@/lib/story/economy'
+import { CHARACTERS } from '@/lib/story/content/characters'
+import { JOB_STANDING, MARKER_STANDING, NIGHT_BETS, SLEEP_REP, STANDING_BONUS, STANDING_MAX, VENUE_REP } from '@/lib/story/economy'
 import { useStoryStore, VENUE_NAMES } from '@/store/story-store'
 import { cn } from '@/lib/utils'
 import { formatChips } from '@/utils/format'
@@ -82,6 +85,75 @@ export const HudButton = forwardRef<HTMLButtonElement, { icon: ReactNode; label:
   },
 )
 
+/** What each standing opens in a town: the rooms (VENUE_REP) and the room to sleep in (SLEEP_REP). */
+function opensAt(level: number, roomName: string): string[] {
+  const out: string[] = []
+  VENUE_REP.forEach((r, v) => {
+    if (r === level && v > 0) out.push(VENUE_NAMES[v as 0 | 1 | 2])
+  })
+  if (SLEEP_REP.room === level) out.push(roomName)
+  return out
+}
+
+/**
+ * Standing at a glance: what each level opens and pays, and how it moves. Opened from
+ * the HUD's standing plaque (or the stars on smaller screens), on any story page.
+ */
+function StandingOverview({ city, rep, onClose }: { city: { id: string; name: string }; rep: number; onClose: () => void }) {
+  const lender = CHARACTERS.find((c) => c.city === city.id && c.lends)
+  const roomName = city.id === 'dustwater' ? 'Room 5' : 'A room to sleep'
+  return (
+    <div className="fixed inset-0 z-50">
+      <ActionSheet anchor={{ x: 0.5, y: 0.1 }} title={`Standing in ${city.name}`} kicker={`You are at ${rep} of ${STANDING_MAX}`} onClose={onClose} className="lg:left-1/2 lg:w-[400px] lg:-translate-x-1/2">
+        <table className="w-full border-collapse text-left text-[12.5px]">
+          <thead>
+            <tr className="felt-print !text-[9.5px]">
+              <th className="py-1 pr-2 font-semibold">Standing</th>
+              <th className="py-1 pr-2 font-semibold">Opens</th>
+              <th className="py-1 text-right font-semibold">Night-up bonus</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: STANDING_MAX + 1 }, (_, level) => {
+              const opens = opensAt(level, roomName)
+              const bonus = STANDING_BONUS[level] ?? 0
+              const here = level === rep
+              return (
+                <tr key={level} className={cn('border-t border-white/10', here && 'bg-[rgba(217,164,65,0.1)] shadow-[inset_2px_0_0_var(--gold)]')} aria-current={here ? 'true' : undefined}>
+                  <td className="py-1.5 pl-1.5 pr-2">
+                    <span className="flex items-center gap-1.5">
+                      <span className="num w-3 font-bold text-ink">{level}</span>
+                      <StandingStars standing={level} />
+                    </span>
+                  </td>
+                  <td className="py-1.5 pr-2 text-soft">{level === 0 ? 'The dive, the car' : opens.length ? opens.join(', ') : '—'}</td>
+                  <td className={cn('num py-1.5 pr-1.5 text-right font-semibold', bonus ? 'text-gold' : 'text-dim')}>{bonus ? `+${Math.round(bonus * 100)}%` : '—'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        <p className="text-[12px] leading-[17px] text-dim">The bonus is a share of a night&apos;s table winnings, added when you finish the night up.</p>
+        <ul className="flex flex-col gap-2 text-[12.5px] leading-[18px] text-soft">
+          <li className="flex gap-2">
+            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-felt" aria-hidden />
+            <span>
+              <span className="font-semibold text-ink">Gain:</span> +{JOB_STANDING} for every table job you finish, up to {STANDING_MAX}. Minigame jobs pay more but give no standing.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <TrendingDown className="mt-0.5 h-4 w-4 shrink-0 text-loss" aria-hidden />
+            <span>
+              <span className="font-semibold text-ink">Lose:</span> -{MARKER_STANDING} each time you borrow from {lender ? lender.name : "the town's lender"}, never below 0. Going broke costs none.
+            </span>
+          </li>
+        </ul>
+        <p className="text-[12px] leading-[17px] text-dim">Standing is kept per town: a new town starts you at 0.</p>
+      </ActionSheet>
+    </div>
+  )
+}
+
 /**
  * The story HUD: the city and night on a wood title plate, money as a chip
  * stack, the marker in red when one is owed, standing in this town as stars and,
@@ -112,6 +184,9 @@ export function StoryHud({
   const betsLeft = tonight ? Math.max(0, (tonight.limit ?? NIGHT_BETS) - tonight.bets) : null
   const low = moneyNow < city.minBet
   const bonus = STANDING_BONUS[rep] ?? 0
+  const [standingOpen, setStandingOpen] = useState(false)
+  const openStanding = () => setStandingOpen(true)
+  const standingLabel = `Standing ${rep} of ${STANDING_MAX} in ${city.name}${bonus ? `, ${Math.round(bonus * 100)}% bonus on a night up` : ''}. Show what standing gives`
 
   const backEl = back && (
     <Link
@@ -130,7 +205,9 @@ export function StoryHud({
       <p className="flex items-center gap-1.5 whitespace-nowrap text-[10.5px] font-semibold uppercase leading-[13px] tracking-[0.12em] text-[#d9b779]">
         <span className="num">Night {night + 1}</span>
         {tonight && <span className="hidden lg:inline">· {VENUE_NAMES[tonight.venue]}</span>}
-        <StandingStars standing={rep} city={city.name} className="lg:hidden" />
+        <button type="button" onClick={openStanding} aria-label={standingLabel} className="-my-1 rounded-sm py-1 hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold lg:hidden">
+          <StandingStars standing={rep} city={city.name} />
+        </button>
       </p>
     </div>
   )
@@ -144,10 +221,12 @@ export function StoryHud({
     </div>
   )
   const standingEl = (
-    <div
-      className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 lg:flex')}
-      role="group"
-      aria-label={`Standing in ${city.name}${bonus ? `, ${Math.round(bonus * 100)}% bonus on a night up` : ''}`}
+    <button
+      type="button"
+      onClick={openStanding}
+      className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center gap-0.5 px-2.5 transition-shadow hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold lg:flex')}
+      aria-label={standingLabel}
+      aria-haspopup="dialog"
     >
       <span className="felt-print block max-w-[240px] truncate !text-[9px] !tracking-[0.1em]" title={`Standing in ${city.name}`}>
         Standing in {city.name}
@@ -160,8 +239,10 @@ export function StoryHud({
           </span>
         )}
       </span>
-    </div>
+    </button>
   )
+  // Portalled to the body, so it sits above the street and its sheets on any page.
+  const standingSheet = standingOpen && typeof document !== 'undefined' && createPortal(<StandingOverview city={city} rep={rep} onClose={() => setStandingOpen(false)} />, document.body)
   const betsEl = betsLeft != null && (
     <div className={cn(PLAQUE, 'hidden h-10 shrink-0 flex-col items-center justify-center px-2.5 sm:flex')} aria-label={`${betsLeft} of ${tonight?.limit ?? NIGHT_BETS} bets left tonight`} role="group">
       <span className={cn('num text-[15px] font-bold leading-none', betsLeft === 0 ? 'text-loss' : 'text-ink')}>{betsLeft}</span>
@@ -191,6 +272,7 @@ export function StoryHud({
           </div>
         </div>
         {standingEl}
+        {standingSheet}
       </header>
     )
   }
@@ -203,6 +285,7 @@ export function StoryHud({
       {standingEl}
       {betsEl}
       <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>
+      {standingSheet}
     </header>
   )
 }

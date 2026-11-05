@@ -30,7 +30,7 @@ import { CITIES, type City } from '@/lib/story/cities'
 import { gamesFor } from '@/lib/story/rotation'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE,
-  HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, SLEEP_BETS, START_BETS, STANDING_MAX, sleepCostM, START_MONEY, VENUE_MAX_M, VENUE_REP,
+  HUSTLE_PAY_M, JOB_LIMIT, JOB_OFFER_NIGHTS, MINIGAME_JOB_PAY_M, TABLE_JOB_PAY_M, HUSTLES_PER_NIGHT, SLEEP_BETS, START_BETS, STANDING_MAX, sleepCostM, SLEEP_REP, START_MONEY, VENUE_MAX_M, VENUE_REP,
   standingBonus,
 } from '@/lib/story/economy'
 import { BASE_ODDS, lossChanceOf, measurePoker, rtpOf, spreadOf, STORY_POKER_PAYS, STORY_SETTINGS, storyOdds, type BetProfile } from '@/lib/story/odds'
@@ -216,9 +216,10 @@ function circuit(t: PlayerType, rng: () => number): CircuitResult {
       }
       // A table job finished tonight lifts standing (minigame jobs don't).
       if (clearsJob) standing = Math.min(STANDING_MAX, standing + 1)
-      // Where to sleep: a player who spreads bets takes the room (12 bets tomorrow) while
-      // they hold at least ROOM_FROM_M; the bold and the never-gambler take the car (8).
-      const place = t.gamble && !t.bold && money >= ROOM_FROM_M + sleepCostM('room', c === 0) ? 'room' : 'car'
+      // Where to sleep: a player who spreads bets takes the room (10 bets tomorrow) once
+      // standing opens it (SLEEP_REP) and while they hold at least ROOM_FROM_M; the bold and
+      // the never-gambler take the car (5).
+      const place = t.gamble && !t.bold && standing >= SLEEP_REP.room && money >= ROOM_FROM_M + sleepCostM('room', c === 0) ? 'room' : 'car'
       money = Math.max(0, money - sleepCostM(place, c === 0))
       bets = SLEEP_BETS[place]
       n++

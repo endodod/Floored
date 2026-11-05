@@ -7,7 +7,7 @@ import { SCENES, SCENE_BY_ID, WRITTEN_JOBS } from '@/lib/story/content'
 import { choose, holds, nextAfterLine, stepAt, type DialogueStep, type StoryContext } from '@/lib/story/dialogue'
 import {
   BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, JOB_STANDING,
-  DEBT_WARN_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
+  DEBT_WARN_M, MARKER_GARNISH, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, STANDING_MAX, START_BETS, START_MONEY, sleepCostM, type SleepPlace,
   VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
@@ -241,6 +241,8 @@ interface StoryActions {
   resolve: (game: GameName, payout: number, settle: boolean) => void
   /** What sleeping there costs tonight, in dollars. */
   sleepCost: (place: SleepPlace) => number
+  /** Whether standing here lets you sleep there (SLEEP_REP); money is checked apart. */
+  sleepOpen: (place: SleepPlace) => boolean
   /**
    * Ends the night (played or rested): comps, hustles, where you sleep (the car, or a
    * room you can afford; it sets the next night's bets), and a bust check.
@@ -703,6 +705,7 @@ export const useStoryStore = create<StoryStore>()(
           checkRoundJobs(rounds)
         },
         sleepCost: (place) => sleepCostM(place, get().city === CITIES[0]!.id) * m(),
+        sleepOpen: (place) => get().rep() >= SLEEP_REP[place],
         endNight: (choice = 'car') => {
           const s = get()
           const t = s.tonight
@@ -730,8 +733,9 @@ export const useStoryStore = create<StoryStore>()(
             if (bonus) get().receive(bonus)
           }
           const after = get()
-          // A room you can't afford is the car; the car is paid down to $0, never into debt.
-          const place: SleepPlace = choice === 'room' && after.money >= get().sleepCost('room') ? 'room' : 'car'
+          // A room you can't afford, or whose standing you lack, is the car; the car is paid
+          // down to $0, never into debt.
+          const place: SleepPlace = choice === 'room' && get().sleepOpen('room') && after.money >= get().sleepCost('room') ? 'room' : 'car'
           const lodging = Math.min(after.money, get().sleepCost(place))
           const money = after.money - lodging
           const bust = money < m()

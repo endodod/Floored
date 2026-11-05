@@ -35,13 +35,38 @@ interface Ctx {
 const SANS = { fontFamily: 'var(--font-floored-sans)' }
 const MONO = { fontFamily: 'var(--font-floored-mono)' }
 
-function Chain({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+/**
+ * A door the town hasn't opened to you yet: the doorway dims, a red velvet rope hangs
+ * between two brass posts, and a gold padlock whose body is a casino chip sits on it.
+ */
+function Locked({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  const cx = x + w / 2
+  const k = Math.min(1.25, Math.max(0.75, Math.min(w, h) / 90))
+  const postH = Math.min(h * 0.55, 44 * k)
+  const top = y + h - postH
+  const sag = y + h - postH * 0.35
+  const r = 11 * k
+  const ly = y + h * 0.42
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} fill="#050506" opacity={0.75} />
-      <path d={`M${x - 4} ${y + h * 0.2} L${x + w + 4} ${y + h * 0.72} M${x + w + 4} ${y + h * 0.2} L${x - 4} ${y + h * 0.72}`} stroke="#8b9096" strokeWidth={5} strokeDasharray="7 3" fill="none" />
-      <rect x={x + w / 2 - 9} y={y + h * 0.42} width={18} height={15} rx={2} fill="#a87a2e" stroke="#2a1c0c" strokeWidth={1.5} />
-      <path d={`M${x + w / 2 - 5} ${y + h * 0.42} v-5 a5 5 0 0 1 10 0 v5`} stroke="#a87a2e" strokeWidth={3} fill="none" />
+      <rect x={x} y={y} width={w} height={h} fill="#050506" opacity={0.72} />
+      {/* velvet rope on brass posts */}
+      <path d={`M${x + 7 * k} ${top + 3 * k} Q${cx} ${sag + postH * 0.25} ${x + w - 7 * k} ${top + 3 * k}`} stroke="#3a0d16" strokeWidth={6 * k} fill="none" strokeLinecap="round" />
+      <path d={`M${x + 7 * k} ${top + 3 * k} Q${cx} ${sag + postH * 0.25} ${x + w - 7 * k} ${top + 3 * k}`} stroke="#a92b42" strokeWidth={4 * k} fill="none" strokeLinecap="round" />
+      {[x + 7 * k, x + w - 7 * k].map((px) => (
+        <g key={px}>
+          <rect x={px - 1.8 * k} y={top} width={3.6 * k} height={postH} fill="#b8862f" />
+          <circle cx={px} cy={top} r={3.6 * k} fill="#e6bd62" stroke="#6b4a14" strokeWidth={1} />
+          <ellipse cx={px} cy={y + h - 1} rx={6 * k} ry={2 * k} fill="#8a6420" />
+        </g>
+      ))}
+      {/* gold shackle over a chip-bodied padlock */}
+      <path d={`M${cx - r * 0.55} ${ly - r * 0.45} v${-r * 0.55} a${r * 0.55} ${r * 0.55} 0 0 1 ${r * 1.1} 0 v${r * 0.55}`} stroke="#d9a441" strokeWidth={3.2 * k} fill="none" strokeLinecap="round" />
+      <circle cx={cx} cy={ly + r * 0.35} r={r} fill="#8f2633" stroke="#d9a441" strokeWidth={1.6 * k} />
+      <circle cx={cx} cy={ly + r * 0.35} r={r * 0.82} fill="none" stroke="#f4ead2" strokeWidth={2.4 * k} strokeDasharray={`${2.6 * k} ${2.6 * k}`} />
+      <circle cx={cx} cy={ly + r * 0.35} r={r * 0.52} fill="#d9a441" />
+      <circle cx={cx} cy={ly + r * 0.25} r={r * 0.15} fill="#2a1c0c" />
+      <path d={`M${cx} ${ly + r * 0.3} v${r * 0.3}`} stroke="#2a1c0c" strokeWidth={1.6 * k} strokeLinecap="round" />
     </g>
   )
 }
@@ -108,13 +133,13 @@ function Casino({ c }: { c: Ctx }) {
       <rect x={66} y={316} width={68} height={104} fill={P.trim} />
       <rect x={72} y={322} width={56} height={98} fill={state.locked[0] ? '#0b0a0c' : '#6a3d1c'} opacity={doorLit(0)} />
       <rect x={80} y={332} width={40} height={22} fill={state.locked[0] ? '#141215' : P.window} opacity={0.7} />
-      {state.locked[0] && <Chain x={72} y={322} w={56} h={98} />}
+      {state.locked[0] && <Locked x={72} y={322} w={56} h={98} />}
       {/* The main floor: double doors under a bulb marquee, a little right of centre (MAIN_DOOR_DX) */}
       <g transform={`translate(${MAIN_DOOR_DX} 0)`}>
       <rect x={212} y={292} width={176} height={128} fill={P.trim} />
       <rect x={222} y={306} width={156} height={114} fill={state.locked[1] ? '#0b0a0c' : `url(#${c.id}-door)`} opacity={doorLit(1)} />
       <path d="M300 306 V420" stroke={P.trim} strokeWidth={4} />
-      {state.locked[1] && <Chain x={222} y={306} w={156} h={114} />}
+      {state.locked[1] && <Locked x={222} y={306} w={156} h={114} />}
       <path d="M186 266 L414 266 L404 298 L196 298 Z" fill="#2a1418" stroke="#4a2a22" strokeWidth={2} />
       <text x={300} y={290} textAnchor="middle" fontSize={20} fontWeight={800} letterSpacing={6} style={SANS} fill="#d9a441">CASINO</text>
       {Array.from({ length: 16 }, (_, i) => (
@@ -134,7 +159,7 @@ function Casino({ c }: { c: Ctx }) {
       <rect x={451} y={161} width={98} height={79} fill={state.locked[2] ? '#100e10' : '#6e1f29'} opacity={doorLit(2)} />
       {!state.locked[2] && <path d="M451 161 Q500 204 549 161" fill="#a92b42" opacity={0.8} />}
       <path d="M500 161 V240" stroke={state.locked[2] ? '#1c1a1c' : '#d9a441'} strokeWidth={3} />
-      {state.locked[2] && <Chain x={451} y={161} w={98} h={79} />}
+      {state.locked[2] && <Locked x={451} y={161} w={98} h={79} />}
     </g>
   )
 }

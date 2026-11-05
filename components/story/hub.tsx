@@ -21,7 +21,7 @@ import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
-import { BOSS_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
+import { BOSS_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
 import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
@@ -163,24 +163,27 @@ export function StoryHub() {
     night: s.night,
   }
   const restSpot = 'rest'
+  const roomOpen = s.sleepOpen('room')
   const sleepNote = (place: SleepPlace) => {
     const cost = s.sleepCost(place)
     return `${cost ? money(cost) : 'Free'} · ${SLEEP_BETS[place]} bets`
   }
   const spots: SceneSpot[] = [
     // The room: the whole motel, listed first so the people standing on it stay on top.
+    // Locked until standing opens it (SLEEP_REP); it still opens the sheet, where the car is.
     {
       spot: 'rest',
       node: (
         <PlaceSpot
           title={roomShort}
-          sub={sleepNote('room')}
-          icon={<Moon className="h-2.5 w-2.5" aria-hidden />}
+          sub={roomOpen ? sleepNote('room') : `Standing ${SLEEP_REP.room} needed`}
+          icon={roomOpen ? <Moon className="h-2.5 w-2.5" aria-hidden /> : <Lock className="h-2.5 w-2.5" aria-hidden />}
+          locked={!roomOpen}
           active={isOpen('rest')}
           size={[472, 222]}
           plateBelow={false}
           plateInsideTall
-          label={`${night ? 'End the night' : 'Rest'}: ${roomName}, ${sleepNote('room')} next night`}
+          label={`${night ? 'End the night' : 'Rest'}: ${roomName}, ${roomOpen ? `${sleepNote('room')} next night` : `needs standing ${SLEEP_REP.room}`}`}
           onOpen={open({ kind: 'rest' })}
         />
       ),
@@ -490,11 +493,12 @@ export function StoryHub() {
               {(['car', 'room'] as const).map((place) => {
                 const cost = s.sleepCost(place)
                 const short = place === 'room' && s.money < cost
+                const shut = !s.sleepOpen(place)
                 return (
                   <button
                     key={place}
                     type="button"
-                    disabled={short}
+                    disabled={short || shut}
                     onClick={() => endNight(place)}
                     data-sleep={place}
                     className="flex flex-col items-start gap-0.5 rounded-md bg-black/25 px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_rgba(217,164,65,0.25)] transition-shadow hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold disabled:opacity-40"
@@ -506,7 +510,16 @@ export function StoryHub() {
                     </span>
                     <span className="num text-[13px] text-gold">{cost ? money(cost) : 'Free'}</span>
                     <span className="text-[12px] leading-4 text-dim">
-                      {SLEEP_BETS[place]} bets tomorrow{short ? ` · you need ${money(cost)}` : ''}
+                      {shut ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Lock className="h-3 w-3" aria-hidden />
+                          Standing {SLEEP_REP[place]} needed
+                        </span>
+                      ) : (
+                        <>
+                          {SLEEP_BETS[place]} bets tomorrow{short ? ` · you need ${money(cost)}` : ''}
+                        </>
+                      )}
                     </span>
                   </button>
                 )
