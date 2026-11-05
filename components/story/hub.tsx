@@ -375,7 +375,7 @@ export function StoryHub() {
         )
       }
       // Before the night: wide enough for tonight's four games in one row.
-      return { title: VENUE_NAMES[v], kicker: unlocked ? (here ? 'Tonight' : stakeNote(v)) : 'Locked', art: undefined, body, close, size: here ? ('lg' as const) : undefined, className: here ? undefined : 'lg:w-[620px]' }
+      return { title: VENUE_NAMES[v], kicker: unlocked ? (here ? 'Tonight' : stakeNote(v)) : 'Locked', art: undefined, body, close, size: here ? ('lg' as const) : undefined, className: here ? undefined : 'lg:w-[620px] [--sw:620px]' }
     }
     if (w.kind === 'person') {
       const c = CHARACTERS.find((x) => x.id === w.id)

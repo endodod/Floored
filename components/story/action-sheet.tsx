@@ -70,7 +70,9 @@ export function ActionSheet({
           big
             ? 'h-[calc(100%_-_1rem)] sm:inset-x-0 sm:bottom-auto sm:top-1/2 sm:mx-auto sm:h-auto sm:max-h-[calc(100%_-_2rem)] sm:w-[min(880px,calc(100%_-_3rem))] sm:-translate-y-1/2 sm:rounded-xl sm:p-6 sm:pb-6'
             : 'max-h-[calc(100%_-_1.5rem)] lg:inset-x-auto lg:bottom-auto lg:top-1/2 lg:w-[360px] lg:-translate-y-1/2 lg:rounded-xl lg:pb-4',
-          !big && (right ? 'lg:right-[calc((1_-_var(--ax))_*_100%_+_3.5rem)]' : 'lg:left-[calc(var(--ax)_*_100%_+_3.5rem)]'),
+          // Beside the hotspot, but never past the stage's edge. --sw is the card's width
+          // (360px; a wider card sets its own with its width class).
+          !big && (right ? 'lg:right-[clamp(1rem,calc((1_-_var(--ax))_*_100%_+_3.5rem),calc(100%_-_var(--sw,360px)_-_1rem))]' : 'lg:left-[clamp(1rem,calc(var(--ax)_*_100%_+_3.5rem),calc(100%_-_var(--sw,360px)_-_1rem))]'),
           className,
         )}
       >

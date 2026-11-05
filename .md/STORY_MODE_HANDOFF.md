@@ -189,6 +189,14 @@ behind a red velvet rope on brass posts with a gold, chip-bodied padlock (`Locke
 opens a standing overview on any story page: each level's rooms and bonus, how to gain and lose
 it (`StandingOverview` in `components/story/hud.tsx`).
 
+**2026-11-05, design check after the street changes:** every street plate, medallion and sheet
+checked at 360-1920 wide (both layouts) for clipping and overlap. Fixes: a sheet beside its
+hotspot is clamped inside the stage (`--sw`, the card's width, in `components/story/action-sheet.tsx`;
+venue cards set 620px); plates scale with the street (9-11px from `--u`) and spots near a side
+align their plates to it (`data-edge` in `components/story/city-scene.tsx`); on the phone street
+the car sits left and up, the back room a little higher, and Marta has her own point left of the
+diner door. The navbar shows the "Money" word from `lg` up (at `md` it pushed the page sideways).
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 

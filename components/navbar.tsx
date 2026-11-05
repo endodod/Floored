@@ -51,7 +51,7 @@ function BarFigure({ label, value }: { label: string; value: number }) {
   const tick = useTick(value)
   return (
     <p className="flex items-baseline gap-1.5 whitespace-nowrap">
-      <span className="hidden text-xs text-dim md:inline tall:text-[13px] sm:simple:inline simple:text-[13px]">{label}</span>
+      <span className="hidden text-xs text-dim lg:inline tall:text-[13px] sm:simple:inline simple:text-[13px]">{label}</span>
       {/* key re-mounts the span so the flash replays on every change */}
       <span key={tick} className={`num text-sm text-ink tall:text-base simple:text-lg ${tick}`}>
         {formatChips(value)}

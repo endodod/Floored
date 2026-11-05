@@ -80,6 +80,8 @@ export function CityScene({
                   className={cn('absolute', s.raise ? 'z-20' : 'z-10')}
                   style={{ left: `${(p[0] / v.w) * 100}%`, top: `${((p[1] - v.y0) / v.h) * 100}%`, transform: 'translate(-50%, -50%)', ['--s' as string]: spotScale(config, layout, s.spot) } as CSSProperties}
                   data-spot={s.spot}
+                  // Spots near a side keep their plates inside the street: aligned to that side.
+                  data-edge={p[0] / v.w > 0.88 ? 'right' : p[0] / v.w < 0.12 ? 'left' : undefined}
                 >
                   {s.node}
                 </div>
@@ -99,7 +101,8 @@ export function Plate({ children, tone = 'wood', className }: { children: ReactN
   return (
     <span
       className={cn(
-        'st-plate pointer-events-none inline-flex max-w-[9.5rem] items-center gap-1 whitespace-nowrap rounded-[3px] px-1.5 py-[3px] text-[10px] font-semibold uppercase leading-none tracking-[0.12em] sm:text-[11px]',
+        // Scales with the street (--u), 9px to 11px, so plates keep their room on a small stage.
+        'st-plate pointer-events-none inline-flex max-w-[9.5rem] items-center gap-1 whitespace-nowrap rounded-[3px] px-1.5 py-[3px] text-[length:clamp(9px,calc(var(--u,1)*16px),11px)] font-semibold uppercase leading-none tracking-[0.12em]',
         tone === 'wood' && 'st-plate-wood text-[#f4ead2]',
         tone === 'dark' && 'bg-black/70 text-dim shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]',
         tone === 'felt' && 'bg-[#1b4d34] text-[#fffaf0] shadow-[inset_0_0_0_1px_rgba(217,164,65,0.6)]',
@@ -113,8 +116,11 @@ export function Plate({ children, tone = 'wood', className }: { children: ReactN
 
 const HOTSPOT_BTN =
   'st-spot group relative block rounded-md outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold'
-const UNDER = 'pointer-events-none absolute left-1/2 top-full mt-1 flex -translate-x-1/2 flex-col items-center gap-0.5'
-const OVER = 'pointer-events-none absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 flex-col items-center gap-0.5'
+/** A plate stack beside a spot near the street's side hugs that side (`data-edge`). */
+const EDGE =
+  '[[data-edge=right]_&]:left-auto [[data-edge=right]_&]:right-0 [[data-edge=right]_&]:translate-x-0 [[data-edge=right]_&]:items-end [[data-edge=left]_&]:left-0 [[data-edge=left]_&]:translate-x-0 [[data-edge=left]_&]:items-start'
+const UNDER = `pointer-events-none absolute left-1/2 top-full mt-1 flex -translate-x-1/2 flex-col items-center gap-0.5 ${EDGE}`
+const OVER = `pointer-events-none absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 flex-col items-center gap-0.5 ${EDGE}`
 /** Moves an UNDER/OVER plate just inside the top-right corner, on the tall street only. */
 const INSIDE_TALL = '[[data-layout=tall]_&]:bottom-auto [[data-layout=tall]_&]:top-1 [[data-layout=tall]_&]:mb-0 [[data-layout=tall]_&]:mt-0 [[data-layout=tall]_&]:left-auto [[data-layout=tall]_&]:right-1 [[data-layout=tall]_&]:translate-x-0 [[data-layout=tall]_&]:items-end'
 
