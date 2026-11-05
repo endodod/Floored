@@ -560,7 +560,7 @@ export const SceneArt = memo(function SceneArt({
           </g>
         )
       })
-  const moon: [number, number] = layout === 'wide' ? [1330, 130] : [470, 110]
+  const moon: [number, number] = layout === 'wide' ? [1150, 185] : [62, 208]
   const bottom = v.y0 + v.h
   const lane = v.road + (bottom - v.road) * 0.52
   return (
