@@ -201,7 +201,7 @@ diner door. The navbar shows the "Money" word from `lg` up (at `md` it pushed th
 `/story` page shows a "desktop only for now" note instead (`app/story/layout.tsx`, CSS only), the
 home row's button reads "Desktop only" and the phone menu lists Story as desktop only. The phone
 street layout stays as it is but is no longer a target. The street also has a way in from the
-road: a narrow run of cracked, sunken slabs (some missing, weeds) to the dive and a gold-edged red carpet to the main doors (`Walkways` in
+road: a narrow run of cracked, sunken slabs (some missing, weeds) to the dive and a gold-edged red carpet to the main doors, both drawn in depth: narrow at the door, wider at the road, bending on the way (`Walkways` in
 `components/story/scene-art.tsx`, placed from the casino piece).
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,

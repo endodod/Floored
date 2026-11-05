@@ -532,56 +532,87 @@ function ShootingStars({ w, top, horizon }: { w: number; top: number; horizon: n
 }
 
 /**
- * The way in from the road, drawn on the lot under every building: a worn concrete
- * path to the dive's side door and a red carpet with gold edges to the main doors.
- * Placed from the casino piece, so it follows the casino in either layout.
+ * The way in from the road, drawn on the lot under every building. The casino sits
+ * back from the street, so each path is drawn in depth: narrow at its door, wider where
+ * it meets the road, and bending on the way rather than running straight down. The
+ * dive gets a narrow run of cracked, sunken slabs (some missing, weeds at the edges);
+ * the main doors a red carpet with gold edges. Placed from the casino piece, so it
+ * follows the casino in either layout; the slabs are seeded, so they never change.
  */
+type Band = { at: (t: number) => { x: number; y: number; w: number } }
+
+/** A path from a door (t 0) to the road (t 1): a curved centre line, widening with nearness. */
+function band(door: { x: number; y: number }, road: { x: number; y: number }, bend: number, w0: number, w1: number): Band {
+  const cx = door.x + bend
+  const cy = door.y + (road.y - door.y) * 0.55
+  return {
+    at: (t) => {
+      const u = 1 - t
+      return {
+        x: u * u * door.x + 2 * u * t * cx + t * t * road.x,
+        y: u * u * door.y + 2 * u * t * cy + t * t * road.y,
+        w: w0 + (w1 - w0) * t * t,
+      }
+    },
+  }
+}
+
+/** The outline of a band between t0 and t1, sampled. */
+function bandPath(b: Band, t0 = 0, t1 = 1, n = 14): string {
+  const ts = Array.from({ length: n + 1 }, (_, i) => t0 + ((t1 - t0) * i) / n)
+  const left = ts.map((t) => b.at(t)).map((p) => `${p.x - p.w} ${p.y}`)
+  const right = ts.map((t) => b.at(t)).map((p) => `${p.x + p.w} ${p.y}`).reverse()
+  return `M${left.join(' L')} L${right.join(' L')} Z`
+}
+
+/** One edge of a band, as a polyline. */
+function bandEdge(b: Band, side: -1 | 1, n = 14): string {
+  return 'M' + Array.from({ length: n + 1 }, (_, i) => b.at(i / n)).map((p) => `${p.x + side * p.w} ${p.y}`).join(' L')
+}
+
 function Walkways({ config, layout, road }: { config: CitySceneConfig; layout: SceneLayout; road: number }) {
   const at = config.pieces.find((p) => p.kind === 'casino')?.[layout]
   if (!at) return null
   const X = (x: number) => at.x + x * at.s
   const top = at.y + 420 * at.s
   const bottom = road - 3
-  if (bottom <= top) return null
-  // A gentle widening toward the road, capped so the deep phone lot keeps the paths slim.
-  const spread = Math.min((bottom - top) * 0.18, 22)
-  const trap = (l: number, r: number, wide: number) => `M${l} ${top} L${r} ${top} L${r + wide} ${bottom} L${l - wide} ${bottom} Z`
-  const lines = (l: number, r: number, wide: number, step: number) =>
-    Array.from({ length: Math.floor((bottom - top) / step) }, (_, i) => {
-      const y = top + (i + 1) * step
-      const f = (y - top) / (bottom - top)
-      return `M${l - wide * f} ${y} H${r + wide * f}`
-    }).join(' ')
-  // The dive's path: narrower than its door, slabs set unevenly (seeded, so it never changes).
-  const dl = X(84)
-  const dr = X(116)
+  const depth = bottom - top
+  if (depth <= 0) return null
+  // How far a path drifts sideways on its way to the road: more on a deep lot, within reason.
+  const drift = Math.min(70, depth * 0.55)
+
+  const dive = band({ x: X(100), y: top }, { x: X(100) - drift, y: bottom }, -drift * 0.15, 12 * at.s, 26 * at.s)
+  const main = band({ x: X(300 + MAIN_DOOR_DX), y: top }, { x: X(300 + MAIN_DOOR_DX) + drift * 0.6, y: bottom }, -drift * 0.35, 74 * at.s, 128 * at.s)
+
   const rng = createRng(4242)
-  const rows = Math.max(3, Math.floor((bottom - top) / 11))
+  const rows = Math.min(16, Math.max(4, Math.round(depth / 10)))
+  const tones = ['#2e2822', '#27211c', '#332b23', '#241f1a']
   const slabs = Array.from({ length: rows }, (_, i) => {
-    const y0 = top + ((bottom - top) * i) / rows + 1
-    const y1 = top + ((bottom - top) * (i + 1)) / rows - 1.5
-    const f0 = (y0 - top) / (bottom - top)
-    const f1 = (y1 - top) / (bottom - top)
-    const w = spread * 0.4
-    const j = () => (rng() - 0.5) * 4
-    const l0 = dl - w * f0 + j()
-    const r0 = dr + w * f0 + j()
-    const l1 = dl - w * f1 + j()
-    const r1 = dr + w * f1 + j()
-    const tones = ['#2e2822', '#27211c', '#332b23', '#241f1a']
+    const t0 = i / rows + 0.012
+    const t1 = (i + 1) / rows - 0.02
+    const a = dive.at(t0)
+    const c = dive.at(t1)
+    const j = () => (rng() - 0.5) * 3.5
+    const d = `M${a.x - a.w + j()} ${a.y} L${a.x + a.w + j()} ${a.y + j() * 0.3} L${c.x + c.w + j()} ${c.y} L${c.x - c.w + j()} ${c.y + j() * 0.3} Z`
+    const tone = tones[Math.floor(rng() * tones.length)]!
     const gone = rng() < 0.16
-    const cx = l0 + (r0 - l0) * (0.25 + rng() * 0.5)
-    const crack = rng() < 0.55 ? `M${cx} ${y0} l${(rng() - 0.5) * 8} ${(y1 - y0) * 0.5} l${(rng() - 0.5) * 8} ${(y1 - y0) * 0.5}` : null
-    const wx = rng() < 0.5 ? l1 - 1 : r1 + 1
-    const weed = rng() < 0.3 ? `M${wx} ${y1} l-2 -5 M${wx} ${y1} l1 -6 M${wx} ${y1} l3 -4` : null
-    return { d: `M${l0} ${y0} L${r0} ${y0 + j() * 0.4} L${r1} ${y1} L${l1} ${y1 + j() * 0.4} Z`, tone: tones[Math.floor(rng() * tones.length)]!, gone, crack, weed }
+    const kx = a.x + (rng() - 0.5) * a.w
+    const crack = rng() < 0.55 ? `M${kx} ${a.y} l${(rng() - 0.5) * 7} ${(c.y - a.y) * 0.5} l${(rng() - 0.5) * 7} ${(c.y - a.y) * 0.5}` : null
+    const wx = rng() < 0.5 ? c.x - c.w - 1 : c.x + c.w + 1
+    const weed = rng() < 0.3 ? `M${wx} ${c.y} l-2 -5 M${wx} ${c.y} l1 -6 M${wx} ${c.y} l3 -4` : null
+    return { d, tone, gone, crack, weed }
   })
-  const ml = X(226 + MAIN_DOOR_DX)
-  const mr = X(374 + MAIN_DOOR_DX)
+  // The carpet's folds, closer together toward the doors (further away).
+  const folds = Array.from({ length: 7 }, (_, i) => {
+    const t = Math.pow((i + 1) / 8, 1.3)
+    const p = main.at(t)
+    return `M${p.x - p.w} ${p.y} H${p.x + p.w}`
+  }).join(' ')
+
   return (
     <g>
-      {/* the dive: a narrow run of cracked, sunken slabs over dirt, a few missing */}
-      <path d={trap(dl, dr, spread * 0.4)} fill="#1c1713" />
+      {/* the dive */}
+      <path d={bandPath(dive)} fill="#1c1713" />
       {slabs.map((sl, i) => (
         <g key={i}>
           {!sl.gone && <path d={sl.d} fill={sl.tone} />}
@@ -589,10 +620,11 @@ function Walkways({ config, layout, road }: { config: CitySceneConfig; layout: S
           {sl.weed && <path d={sl.weed} stroke="#3c4a2a" strokeWidth={1.4} fill="none" strokeLinecap="round" />}
         </g>
       ))}
-      {/* the main floor: a red carpet, gold-edged */}
-      <path d={trap(ml, mr, spread * 1.4)} fill="#6e1f29" />
-      <path d={lines(ml, mr, spread * 1.4, 22)} stroke="#5a1822" strokeWidth={1.5} opacity={0.7} />
-      <path d={`M${ml} ${top} L${ml - spread * 1.4} ${bottom} M${mr} ${top} L${mr + spread * 1.4} ${bottom}`} stroke="#d9a441" strokeWidth={3} opacity={0.85} />
+      {/* the main floor */}
+      <path d={bandPath(main)} fill="#6e1f29" />
+      <path d={folds} stroke="#5a1822" strokeWidth={1.5} opacity={0.7} />
+      <path d={bandEdge(main, -1)} stroke="#d9a441" strokeWidth={3} fill="none" opacity={0.85} />
+      <path d={bandEdge(main, 1)} stroke="#d9a441" strokeWidth={3} fill="none" opacity={0.85} />
     </g>
   )
 }
