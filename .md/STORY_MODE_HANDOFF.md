@@ -166,7 +166,9 @@ bankroll (night up 15m). Minigame: each giver at 60%, 80% and perfect (6m/7m/8m)
 table task now skips any task written for the town (`nextFor` in `lib/story/jobs.ts`), so a
 generated job can't use up another giver's written one. The news slips are now even, upright
 casino marker cards (`.st-news`) with people's names in gold and game names in felt green
-(`NewsText` in `components/story/notebook.tsx`).
+(`NewsText` in `components/story/notebook.tsx`). The street's gas station, truck and Road Out
+sign moved from the left edge to the right, behind Cutter's back room, in both layouts; the rest
+of the wide street shifted 250 units left to make room (`DUSTWATER_SCENE` in `lib/story/scene-theme.ts`).
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
