@@ -189,7 +189,7 @@ export const DUSTWATER_SCENE: CitySceneConfig = {
   pieces: [
     { id: 'gas', kind: 'gas', wide: { x: 1300, y: 448, s: 0.75 }, tall: { x: 420, y: 534, s: 0.45 } },
     { id: 'truck', kind: 'truck', wide: { x: 1405, y: 590, s: 0.7 }, tall: { x: 470, y: 640, s: 0.45 } },
-    { id: 'motelSign', kind: 'motelSign', wide: { x: 5, y: 278, s: 0.9 }, tall: { x: 232, y: 652, s: 0.45 } },
+    { id: 'motelSign', kind: 'motelSign', wide: { x: -2, y: 295, s: 0.85 }, tall: { x: 232, y: 652, s: 0.45 } },
     { id: 'casino', kind: 'casino', wide: { x: 740, y: 300, s: 0.8 }, tall: { x: 38, y: 190, s: 0.8 } },
     { id: 'backroom', kind: 'backroom', wide: { x: 1210, y: 494, s: 0.74 }, tall: { x: 325, y: 541, s: 0.7 } },
     { id: 'road', kind: 'roadSign', wide: { x: 1465, y: 606, s: 0.78 }, tall: { x: 480, y: 600, s: 0.5 } },
