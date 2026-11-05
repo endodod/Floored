@@ -160,12 +160,13 @@ tile edge to edge.
 **2026-11-05, Dustwater's written jobs filled out (owner request):** Marta, Pike and Jo each
 have **three written table jobs and three written minigame jobs** (18 in `DUSTWATER_JOBS`; the
 five older ones keep their ids and stay first). Table: Marta trucker's bet (3x), jukebox wheel
-(Wheel 2 in a row), rent week (night up 5m); Pike marks (Street Cups 3 in a row), read the deck
+(Fortune Wheel 2 in a row), rent week (night up 5m); Pike marks (Street Cups 3 in a row), read the deck
 (HiLo 3), the long con (5x); Jo seed money (night up), grandfather's coin (Coin Flip 3), a real
 bankroll (night up 15m). Minigame: each giver at 60%, 80% and perfect (6m/7m/8m). A generated
 table task now skips any task written for the town (`nextFor` in `lib/story/jobs.ts`), so a
 generated job can't use up another giver's written one. The news slips are now even, upright
-casino marker cards (`.st-news`).
+casino marker cards (`.st-news`) with people's names in gold and game names in felt green
+(`NewsText` in `components/story/notebook.tsx`).
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).

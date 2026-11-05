@@ -4,7 +4,9 @@ import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { Portrait } from '@/components/story/portrait'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
-import { CHARACTER_BY_ID } from '@/lib/story/content/characters'
+import { CHARACTER_BY_ID, CHARACTERS } from '@/lib/story/content/characters'
+import { GAMES } from '@/lib/game-catalog'
+import { TABLE_GAME_BY_NAME } from '@/lib/tables/catalog'
 import { JOB_LIMIT } from '@/lib/story/economy'
 import { jobKindName, jobReward, type Job } from '@/lib/story/jobs'
 import { formatChips } from '@/utils/format'
@@ -144,6 +146,23 @@ export function Notebook({
   )
 }
 
+const escapeRe = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+/** Words a news line picks out: people (full and first names) and game names, longest first. */
+const NEWS_NAMES = new Set(CHARACTERS.flatMap((c) => [c.name, c.name.split(' ')[0]!]))
+const NEWS_GAMES = new Set([...GAMES.map((g) => g.label), ...[...TABLE_GAME_BY_NAME.values()].map((g) => g.label), "Hold'em", 'Last Orders', 'Shuffle Tracker', 'Chip Count'])
+const NEWS_RE = new RegExp(`\\b(${[...NEWS_NAMES, ...NEWS_GAMES].sort((a, b) => b.length - a.length).map(escapeRe).join('|')})(?!\\w)`, 'g')
+
+/** A news line with its names in gold and its games in felt green. */
+function NewsText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(NEWS_RE).map((part, i) =>
+        i % 2 === 0 ? part : <span key={i} className={NEWS_NAMES.has(part) ? 'st-news-name' : 'st-news-game'}>{part}</span>,
+      )}
+    </>
+  )
+}
+
 /** News as casino marker cards (dark felt, gold trim) stacked in the corner of the street, all one width; each can be dismissed. */
 export function NewsSlips({ news, onDismiss }: { news: { id: number; text: string }[]; onDismiss: (id: number) => void }) {
   if (!news.length) return null
@@ -152,9 +171,9 @@ export function NewsSlips({ news, onDismiss }: { news: { id: number; text: strin
       {news.slice(0, 3).map((n) => (
         <li
           key={n.id}
-          className="st-news st-motion pointer-events-auto flex w-full items-center gap-2 py-2 pl-4 pr-1.5 text-[12.5px] leading-[17px] text-[#efe6d2]"
+          className="st-news st-motion pointer-events-auto flex w-full items-center gap-2 py-2 pl-3 pr-1.5 text-[12.5px] leading-[17px] text-[#efe6d2]"
         >
-          <span className="min-w-0 flex-1">{n.text}</span>
+          <span className="min-w-0 flex-1"><NewsText text={n.text} /></span>
           <button type="button" onClick={() => onDismiss(n.id)} className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[rgba(217,164,65,0.7)] hover:bg-[rgba(217,164,65,0.15)] hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold" aria-label="Dismiss">
             <X className="h-3.5 w-3.5" aria-hidden />
           </button>

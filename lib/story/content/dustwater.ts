@@ -256,7 +256,7 @@ export const DUSTWATER_JOBS: WrittenJob[] = [
     city: 'dustwater',
     giver: 'marta',
     title: 'The jukebox wheel',
-    task: 'Win 2 rounds of Wheel in a row, so Marta can win back the jukebox.',
+    task: 'Win 2 rounds of Fortune Wheel in a row, so Marta can win back the jukebox.',
     goal: { kind: 'streak', game: 'wheel', wins: 2 },
     pay: 3,
     pitch: [
