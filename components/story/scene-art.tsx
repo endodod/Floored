@@ -61,6 +61,9 @@ function Halftone({ c, x, y, w, h, o = 0.4 }: { c: Ctx; x: number; y: number; w:
   return <rect x={x} y={y} width={w} height={h} fill={`url(#${c.id}-dots)`} opacity={o} />
 }
 
+/** How far the main-floor doors sit right of the casino's centre (its `main` anchor in lib/story/scene-theme.ts matches). */
+const MAIN_DOOR_DX = 40
+
 function Casino({ c }: { c: Ctx }) {
   const { P, state, config } = c
   const sign = config.sign
@@ -103,7 +106,8 @@ function Casino({ c }: { c: Ctx }) {
       <rect x={72} y={322} width={56} height={98} fill={state.locked[0] ? '#0b0a0c' : '#6a3d1c'} opacity={doorLit(0)} />
       <rect x={80} y={332} width={40} height={22} fill={state.locked[0] ? '#141215' : P.window} opacity={0.7} />
       {state.locked[0] && <Chain x={72} y={322} w={56} h={98} />}
-      {/* The main floor: double doors under a bulb marquee */}
+      {/* The main floor: double doors under a bulb marquee, a little right of centre (MAIN_DOOR_DX) */}
+      <g transform={`translate(${MAIN_DOOR_DX} 0)`}>
       <rect x={212} y={292} width={176} height={128} fill={P.trim} />
       <rect x={222} y={306} width={156} height={114} fill={state.locked[1] ? '#0b0a0c' : `url(#${c.id}-door)`} opacity={doorLit(1)} />
       <path d="M300 306 V420" stroke={P.trim} strokeWidth={4} />
@@ -114,6 +118,7 @@ function Casino({ c }: { c: Ctx }) {
         <circle key={i} cx={200 + i * 13.3} cy={298} r={3.2} fill="#ffd98a" className="st-motion st-chase" style={{ animationDelay: `${(i % 3) * 0.4}s` }} />
       ))}
       <ellipse cx={300} cy={420} rx={150} ry={16} fill={`url(#${c.id}-pool)`} opacity={state.locked[1] ? 0.2 : 0.9} />
+      </g>
       {/* The high-roller room: upstairs, gold-framed, chained until your name is good enough */}
       <rect x={440} y={240} width={160} height={8} fill={P.trim} />
       <path d="M446 240 V222 M470 240 V222 M560 240 V222 M584 240 V222 M440 222 H600" stroke={P.trim} strokeWidth={3} />

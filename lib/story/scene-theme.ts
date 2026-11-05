@@ -136,7 +136,7 @@ export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
 }
 
 export const PIECE_ANCHORS: Partial<Record<PieceKind, Record<string, [number, number]>>> = {
-  casino: { dive: [100, 368], main: [300, 362], high: [500, 202], sign: [310, 72] },
+  casino: { dive: [100, 368], main: [340, 362], high: [500, 202], sign: [310, 72] },
   backroom: { door: [85, 188] },
   motel: { diner: [70, 200], room: [375, 222] },
   motelSign: { sign: [70, 96] },
