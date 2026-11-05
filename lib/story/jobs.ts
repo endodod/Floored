@@ -119,11 +119,19 @@ const label = (g: GameName) => GAME_BY_NAME.get(g)?.label ?? g
 export const LOW_ODDS_GAMES: readonly GameName[] = ['street-cups', 'poker-1p', 'keno', 'chicken-race', 'run-dice', 'plinko', 'slots']
 /** The share of rounds at or under which a game is low odds. */
 export const LOW_ODDS_WIN = 1 / 3
+/**
+ * Games whose rounds win under NO_STREAK_WIN even played their best way (Slots 9%,
+ * Plinko 15%): even 2 in a row is about 1 in 100, so they never get a streak job.
+ * `pnpm check:story` checks this list too.
+ */
+export const NO_STREAK_GAMES: readonly GameName[] = ['slots', 'plinko']
+export const NO_STREAK_WIN = 0.2
 
 export const JOB_TEMPLATES: Template[] = [
   {
     kind: 'streak',
-    make: ({ rng, games }) => {
+    make: ({ rng, games: all }) => {
+      const games = all.filter((g) => !NO_STREAK_GAMES.includes(g))
       if (!games.length) return null
       const game = pick(rng, games)
       const wins = LOW_ODDS_GAMES.includes(game) ? 2 : pick(rng, [2, 3] as const)

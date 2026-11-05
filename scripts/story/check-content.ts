@@ -19,7 +19,7 @@ import {
   CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, SLEEP_REP, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
-import { goalKey, jobGivers, kindOf, LOW_ODDS_GAMES, LOW_ODDS_WIN, makeOffers, NIGHT_KINDS, type Job } from '@/lib/story/jobs'
+import { goalKey, jobGivers, kindOf, LOW_ODDS_GAMES, LOW_ODDS_WIN, makeOffers, NO_STREAK_GAMES, NO_STREAK_WIN, NIGHT_KINDS, type Job } from '@/lib/story/jobs'
 import { BASE_ODDS, measurePoker, STORY_POKER_PAYS, storyOdds } from '@/lib/story/odds'
 import type { GameName } from '@/store/types'
 import * as chipCount from '@/lib/story/minigames/chip-count'
@@ -96,6 +96,7 @@ for (const e of WRITTEN_JOBS) {
     if (own !== e.goal.minigame) fail(`${where}: a minigame job is the giver's own minigame (${e.giver} has ${own ?? 'none'})`)
   }
   if (e.goal.kind === 'streak' || e.goal.kind === 'wins') {
+    if (e.goal.kind === 'streak' && NO_STREAK_GAMES.includes(e.goal.game)) fail(`${where}: no streak jobs at ${e.goal.game} (NO_STREAK_GAMES)`)
     const city = CITIES.find((c) => c.id === e.city)
     if (city && city.games !== 'all-seen' && !city.games.includes(e.goal.game)) fail(`${where}: ${e.goal.game} isn't played in ${e.city}`)
   }
@@ -110,6 +111,8 @@ for (const e of WRITTEN_JOBS) {
     const best = Math.max(...storyOdds(g, poker).map((b) => b.outcomes.filter((o) => o.mult > 1).reduce((sum, o) => sum + o.p, 0)))
     const low = best <= LOW_ODDS_WIN + 0.005
     if (low !== LOW_ODDS_GAMES.includes(g)) fail(`${g}: its best round wins ${(best * 100).toFixed(1)}%, so it should ${low ? '' : 'not '}be in LOW_ODDS_GAMES`)
+    const none = best < NO_STREAK_WIN
+    if (none !== NO_STREAK_GAMES.includes(g)) fail(`${g}: its best round wins ${(best * 100).toFixed(1)}%, so it should ${none ? '' : 'not '}be in NO_STREAK_GAMES`)
   }
 }
 // A town never gives the same task twice, written ones included.

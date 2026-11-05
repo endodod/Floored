@@ -112,7 +112,8 @@ and spawned jobs). The rules, all in code and all tested by `check:story`:
   repeat**, but never the same one twice in a row from a giver. Each giver's **written jobs of a
   kind come first**, in content order, then generated ones from
   `JOB_TEMPLATES` (seeded by town and night): a streak at one of the town's games (2 or 3 wins; always 2 at a low-odds game,
-  `LOW_ODDS_GAMES`, whose rounds win a third of the time or less),
+  `LOW_ODDS_GAMES`, whose rounds win a third of the time or less; never at Slots or Plinko, `NO_STREAK_GAMES`,
+  under 20% a round),
   a big win (2x to 5x), a night up (by any amount, or 5/10/15/20 minimum bets), or a score at the
   giver's own minigame (60%, 80%, perfect). A generated table task never takes a task some giver
   in the town has written, so every written job is still there when its turn comes. Dustwater has about 20 table tasks; when a town has
@@ -133,7 +134,7 @@ practice included), `streak` `{ game, wins }` (that many wins in a row, a game i
 `{ game, wins }` (that many wins at the game in one night, in any order), `night-up` (end a night
 at the casino up, by `atLeast` minimum bets when given) or `big-win` `{ mult }`. `pitch` is what
 the giver says when offering it, one line each. The checker verifies the giver gives jobs in that
-city, the minigame is theirs, the streak or wins game is in the city, `LOW_ODDS_GAMES` matches the story odds, the pay is in range, no two written
+city, the minigame is theirs, the streak or wins game is in the city, `LOW_ODDS_GAMES` and `NO_STREAK_GAMES` match the story odds, the pay is in range, no two written
 jobs in a city share a task, and every town can offer at least `STANDING_MAX` different jobs.
 Dustwater: Marta (bar shift, trucker's bet), Pike (marks, lookout rates), Jo (seed money).
 
