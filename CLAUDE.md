@@ -36,6 +36,9 @@ Read the one that matches the task before changing code:
 - [.md/CHALLENGES.md](.md/CHALLENGES.md): Challenges (20 house challenges), Community challenges
   (API, tables, migration to deploy), the Daily Ladder and the 15-rung Ladder.
 
+- [.md/DISCORD_LOGIN_PLAN.md](.md/DISCORD_LOGIN_PLAN.md): plan for "Sign in with Discord" next to
+  Google (Neon Auth): the Neon support check that blocks it, the one-line path, the fallback.
+
 - [README.md](README.md): what each mode is and how it plays; the game list.
 - [.md/ARCHITECTURE.md](.md/ARCHITECTURE.md): code layout, the game/engine contract, the
   shared game UI (shell, board and dock pieces, colour rules, layout stability), survival
