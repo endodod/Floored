@@ -5,6 +5,7 @@ import { JOB_LIMIT, JOB_STANDING } from './economy'
 import { GAME_BY_NAME } from '@/lib/game-catalog'
 import type { GameName } from '@/store/types'
 import { createRng, seedFromString } from '@/utils/rng'
+import { storySeed } from './rotation'
 
 /**
  * Jobs (owner decisions 2026-11-04). The rules, all enforced here and in the store:
@@ -38,7 +39,7 @@ export const kindOf = (goal: JobGoal): JobKind => (goal.kind === 'minigame' ? 'm
 export const NIGHT_KINDS: readonly JobKind[] = ['minigame', 'table']
 
 export interface Job {
-  /** `city:night:giver`; unique, as a town gets at most one offer a night. */
+  /** `city:night:giver:kind`; unique, as a town offers each kind at most once a night (older saves hold `city:night:giver`). */
   id: string
   /** The task's identity (`goalKey`): a town never gives the same one twice. */
   key: string
@@ -196,7 +197,9 @@ const DRAWS_PER_TEMPLATE = 24
 function nextFor(args: { rng: Rng; city: City; giver: Character; kind: JobKind; games: GameName[]; given: readonly string[]; held: Job[] }): Made & { pitch: string[] } | null {
   const { rng, city, giver, kind, games, given, held } = args
   const givenSet = new Set([...given, ...held.map((j) => j.key)])
-  const written = WRITTEN_JOBS.find((w) => w.city === city.id && w.giver === giver.id && kindOf(w.goal) === kind && !givenSet.has(goalKey(w.goal)))
+  // A written job that names a game waits for a night that game is dealt in a room you can enter.
+  const dealt = (g: JobGoal) => !('game' in g) || games.includes(g.game)
+  const written = WRITTEN_JOBS.find((w) => w.city === city.id && w.giver === giver.id && kindOf(w.goal) === kind && !givenSet.has(goalKey(w.goal)) && dealt(w.goal))
   if (written) return { goal: written.goal, title: written.title, task: written.task, pay: written.pay, pitch: written.pitch }
   // A minigame job may repeat, just not the one this giver gave last.
   const last = kind === 'minigame' && giver.minigame ? [...given].reverse().find((k) => k.startsWith(`minigame:${giver.minigame}:`)) : undefined
@@ -222,9 +225,9 @@ function nextFor(args: { rng: Rng; city: City; giver: Character; kind: JobKind; 
  * has handed out, in order. Seeded by town, night and what is due, so a reload
  * makes the same offers.
  */
-export function makeOffers(args: { city: City; night: number; kinds: readonly JobKind[]; held: Job[]; given: readonly string[]; games: GameName[] }): Job[] {
+export function makeOffers(args: { city: City; night: number; kinds: readonly JobKind[]; held: Job[]; given: readonly string[]; games: GameName[]; seed?: string }): Job[] {
   const { city, night, held, games } = args
-  const rng = createRng(seedFromString(`offer:${city.id}:${night}:${args.kinds.join('+')}:${held.length}`))
+  const rng = createRng(seedFromString(storySeed(args.seed ?? '', `offer:${city.id}:${night}:${args.kinds.join('+')}:${held.length}`)))
   const room = JOB_LIMIT - held.length
   if (room <= 0 || !args.kinds.length) return []
   // Fewer places than kinds due: a coin flip picks the kind.
@@ -237,7 +240,7 @@ export function makeOffers(args: { city: City; night: number; kinds: readonly Jo
       const made = nextFor({ rng, city, giver, kind, games, given, held: [...held, ...out] })
       if (!made) continue
       const key = goalKey(made.goal)
-      out.push({ id: `${city.id}:${night}:${giver.id}`, key, city: city.id, giver: giver.id, ...made, status: 'offered', night })
+      out.push({ id: `${city.id}:${night}:${giver.id}:${kind}`, key, city: city.id, giver: giver.id, ...made, status: 'offered', night })
       given.push(key)
       break
     }

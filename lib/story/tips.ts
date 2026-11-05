@@ -2,6 +2,7 @@ import { GAME_BY_NAME } from '@/lib/game-catalog'
 import { rtpOf, storyOdds, type BetProfile } from './odds'
 import type { GameName } from '@/store/types'
 import { createRng, seedFromString } from '@/utils/rng'
+import { storySeed } from './rotation'
 
 /**
  * Jo's read on tonight's games (owner decision 2026-11-04): a nudge, not a table of
@@ -40,7 +41,7 @@ const BAD = [
 ]
 
 /** Jo's two lines on tonight's games, or none when there's nothing to tell apart. Seeded by town and night. */
-export function joTips(games: GameName[], city: string, night: number): string[] {
+export function joTips(games: GameName[], city: string, night: number, seed = ''): string[] {
   const rated = games.flatMap((g) => {
     const bet = bestBet(g)
     return bet ? [{ game: g, bet, rtp: rtpOf(bet) }] : []
@@ -50,7 +51,7 @@ export function joTips(games: GameName[], city: string, night: number): string[]
   const kind = rated[0]!
   const harsh = rated[rated.length - 1]!
   if (kind.rtp - harsh.rtp < 0.01) return []
-  const rng = createRng(seedFromString(`tips:${city}:${night}`))
+  const rng = createRng(seedFromString(storySeed(seed, `tips:${city}:${night}`)))
   const pick = <T,>(xs: T[]) => xs[Math.floor(rng() * xs.length)]!
   return [`${pick(GOOD)(label(kind.game))} ${howTo(kind.bet)}`.trim(), pick(BAD)(label(harsh.game))]
 }

@@ -30,8 +30,8 @@ Finished errands raise it: `ERRAND_STANDING` (1) for every errand, minigame jobs
 fails an errand that earns none. Save version 3 credits minigame errands a save already finished. A bust
 costs `BUST_STANDING` (1), never below 0, and a boss win no longer gives any. `VENUE_REP` is now
 `[0, 1, 3]` (dive always open, main floor standing 1, high-roller 3; it was `[0, 1, 2]` until the
-2026-11-04 change below). The dive also keeps dealing any game an open
-errand names (`gamesFor(..., must)`; the card says so), and the jobs book marks each errand
+2026-11-04 change below). (The dive used to keep dealing any game an open
+errand named; removed 2026-11-05, see below.) The the jobs book marks each errand
 "+1 standing" (or "Pays only" for an errand with `rep: 0`). Save version 2 migrates a version-1 `rep` into the current town,
 capped by its finished errands. The sim starts every town in the dive and moves up as
 standing allows.
@@ -95,7 +95,7 @@ badge for a minigame job you hold. The jobs book and person card name the kind a
 Save version 7 (`jobOffered` → `jobNight`, `minigameNight` dropped). **Open:** the sim's
 never-gambler is now stuck (table jobs they can't do fill all three givers, and nothing else
 pays), and balanced/high-variance players are slower with more busts; waiting on the owner.
-**Same day, owner's answer:** offers nobody takes leave after `JOB_OFFER_NIGHTS` (2) nights (an
+**Same day, owner's answer:** offers nobody takes leave after `JOB_OFFER_NIGHTS` nights (2 then; 1 since 2026-11-05) (an
 expired offer was never given, so it can come back); a taken job can be dropped from the
 person's card (`dropJob`: no pay, no standing, giver free); and the never-gambler is no longer a
 sim target (shown for reference; it still can't save the buy-in on minigame jobs alone). Sim
@@ -225,7 +225,8 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Standing bonus (2026-11-04) | standing 2 / 4 / 5: +5% / +10% / +20% of a winning night's table winnings, paid at the end of the night |
 | Jobs (2026-11-04, rebuilt) | a minigame job and a table job each night at two givers with none (first night too; a coin flip for a last place); taken only by talking ("Not now" keeps it waiting); 1 per person; max 3 per town; written jobs first; table jobs 3m-5m, +1 standing, never repeat; minigame jobs one attempt, 6m-8m, no standing, may repeat (not back to back); kept in their town |
 | Minigames (2026-11-04) | only played as jobs (no practice, no nightly pay); Jo runs Chip Count in every town |
-| Rotation pin (2026-11-03) | while a taken job naming a game is open, the dive always deals that game (deterministic draw kept) |
+| Rotation pin (2026-11-03) | removed 2026-11-05: rooms are never changed for a job. Offers only name games dealt tonight in rooms your standing opens (`openRoomGames()`), and offers last one night (`JOB_OFFER_NIGHTS` 1) |
+| Story seed (2026-11-05) | every new story draws a `seed` (saved) mixed into room lineups, job offers, hustles and Jo's tips, so each story plays differently; a reload never rerolls. Saves from before it keep `seed: ''` (their old draws). Job ids are now `city:night:giver:kind`. `check:story` uses a fixed seed (`STORY_CHECK_SEED` for another) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |
 | Names | draft names kept (Jo, Sloane, Vale; seven cities since 2026-11-04) |

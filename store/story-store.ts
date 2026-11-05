@@ -11,6 +11,7 @@ import {
   VENUE_MAX_M, VENUE_REP, standingBonus, STANDING_BONUS,
 } from '@/lib/story/economy'
 import { hustlesFor, type NightRound } from '@/lib/story/hustles'
+import { gamesFor } from '@/lib/story/rotation'
 import { goalKey, kindOf, makeOffers, NIGHT_KINDS, type Job, type JobKind } from '@/lib/story/jobs'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import type { Effect, FactionId, MinigameId, Scene, SceneTrigger } from '@/lib/story/types'
@@ -88,6 +89,8 @@ export interface NightSummary {
 export interface StorySave {
   started: boolean
   startedAt: string | null
+  /** Drawn on a new story and mixed into every seeded draw (room lineups, job offers, hustles, Jo's tips), so each story plays differently and a reload never rerolls. Empty in saves from before it. */
+  seed: string
   city: CityId
   /** Cities reached, in order. */
   visited: CityId[]
@@ -143,6 +146,7 @@ const OFFER_PREFIX = 'offer:'
 const fresh = (): StorySave => ({
   started: false,
   startedAt: null,
+  seed: '',
   city: STARTING_CITY,
   visited: [],
   cleared: [],
@@ -176,14 +180,17 @@ const STATE_KEYS = Object.keys(fresh()) as (keyof StorySave)[]
 
 interface StoryActions {
   /** Starts over (the page asks first). */
-  newStory: () => void
+  /** Starts a story; `seed` is drawn at random unless given (`pnpm check:story` passes one). */
+  newStory: (seed?: string) => void
   /** The current city's minimum bet in dollars. */
   minBet: () => number
   context: () => StoryContext
   /** Standing in the town you are in (0–STANDING_MAX); a new town starts at 0. */
   rep: () => number
-  /** Games taken jobs name: the dive always deals them while the job is open. */
-  openJobGames: () => GameName[]
+  /** Tonight's games in one room of this town (lib/story/rotation.ts, with the story's seed). */
+  roomGames: (venue: VenueTier) => GameName[]
+  /** Every game dealt tonight in a room your standing opens: job offers only name these. */
+  openRoomGames: () => GameName[]
 
   // Scenes
   /** The first scene for a trigger in this city whose condition holds and that may still play. */
@@ -433,7 +440,7 @@ export const useStoryStore = create<StoryStore>()(
           ],
         }
         nodes.yes = { kind: 'line', speaker: job.giver, expression: 'pleased', text: 'Good. Come find me when it\'s done.', next: 'end' }
-        nodes.no = { kind: 'line', speaker: job.giver, text: 'Suit yourself. It keeps.', next: 'end' }
+        nodes.no = { kind: 'line', speaker: job.giver, text: 'Suit yourself. It keeps till tomorrow.', next: 'end' }
         nodes.end = { kind: 'end' }
         return { id, city: job.city, trigger: { on: 'talk', character: job.giver }, once: false, start: job.pitch.length ? 'p0' : 'ask', nodes }
       }
@@ -458,8 +465,8 @@ export const useStoryStore = create<StoryStore>()(
       return {
         ...fresh(),
 
-        newStory: () => {
-          set({ ...fresh(), started: true, startedAt: new Date().toISOString(), visited: [STARTING_CITY] })
+        newStory: (seed) => {
+          set({ ...fresh(), started: true, startedAt: new Date().toISOString(), seed: seed ?? Math.random().toString(36).slice(2, 10), visited: [STARTING_CITY] })
           queue(get().sceneFor({ on: 'arrival' }))
           queue(get().sceneFor({ on: 'tutorial' }))
           // The story starts with tonight's offers: a minigame job and a table job.
@@ -471,7 +478,11 @@ export const useStoryStore = create<StoryStore>()(
           return { flags: s.flags, factions: s.factions, moneyM: s.money / m() }
         },
         rep: () => get().standing[get().city] ?? 0,
-        openJobGames: () => get().openJobs().flatMap((j) => (j.goal.kind === 'streak' || j.goal.kind === 'wins' ? [j.goal.game] : [])),
+        roomGames: (venue) => {
+          const s = get()
+          return gamesFor(city(), s.night, venue, s.seenGames, s.seed)
+        },
+        openRoomGames: () => [...new Set(([0, 1, 2] as VenueTier[]).filter((v) => get().venueOpen(v)).flatMap((v) => get().roomGames(v)))],
 
         sceneFor: (trigger) => {
           const s = get()
@@ -635,7 +646,9 @@ export const useStoryStore = create<StoryStore>()(
             kinds,
             held: s.jobs.filter((j) => j.city === s.city),
             given,
-            games: c.games === 'all-seen' ? s.seenGames : c.games,
+            // Only games dealt tonight in a room you can enter, so every offer can be worked tonight.
+            games: s.openRoomGames(),
+            seed: s.seed,
           })
           // No room (or nothing to give): what is still due comes later tonight, once a job is done.
           if (!jobs.length) return
@@ -719,7 +732,7 @@ export const useStoryStore = create<StoryStore>()(
             const turnover = t.rounds.reduce((sum, r) => sum + r.bet, 0)
             comps = Math.round(Math.min(COMPS_RATE[t.venue] * turnover, COMPS_CAP_M[t.venue] * m()))
             get().receive(comps)
-            for (const h of hustlesFor(s.city, s.night)) {
+            for (const h of hustlesFor(s.city, s.night, s.seed)) {
               const paid = h.met(t.rounds) ? HUSTLE_PAY_M * m() : 0
               if (paid) get().receive(paid)
               hustles.push({ text: h.text, paid })

@@ -1,5 +1,6 @@
 import type { GameName } from '@/store/types'
 import { createRng, seedFromString } from '@/utils/rng'
+import { storySeed } from './rotation'
 
 /**
  * The jobs board: two hustles a night, each a condition met by playing that
@@ -38,8 +39,8 @@ const POOL: Hustle[] = [
 export const HUSTLE_BY_ID = new Map(POOL.map((h) => [h.id, h]))
 
 /** Tonight's two hustles. */
-export function hustlesFor(city: string, night: number, count = 2): Hustle[] {
-  const rng = createRng(seedFromString(`hustles:${city}:${night}`))
+export function hustlesFor(city: string, night: number, seed = '', count = 2): Hustle[] {
+  const rng = createRng(seedFromString(storySeed(seed, `hustles:${city}:${night}`)))
   const pool = [...POOL]
   const out: Hustle[] = []
   while (out.length < count && pool.length) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]!)

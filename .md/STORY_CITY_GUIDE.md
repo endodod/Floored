@@ -22,8 +22,8 @@ playable once it has content. Fields: `id`, `name`, `act` (1-4), `feel`, `minBet
 once its boss is beaten. Order in the array is the circuit order.
 
 **Rooms and games.** Each night every room (0 dive, 1 main floor, 2 high-roller) draws
-`GAMES_PER_ROOM` (4) of `games` via `gamesFor(city, night, venue, seen, must)` in
-`lib/story/rotation.ts` (seeded by city+night+room; keeps at least one game from the room's previous
+`GAMES_PER_ROOM` (4) of `games` via `gamesFor(city, night, venue, seen, seed)` in
+`lib/story/rotation.ts` (seeded by the story's `seed` + city+night+room, so every story deals its own lineups and a reload never rerolls; keeps at least one game from the room's previous
 night; offers all if the city has 4 or fewer). It uses the store's global `night`. Give a city at
 least 5-6 games so rotation means something. The rooms are gated by **standing in that town**
 (`VENUE_REP` `[0, 1, 3]` in `lib/story/economy.ts`): the dive always, the main floor at standing 1,
@@ -32,10 +32,11 @@ the high-roller room at 3. Standing 2, 4 and 5 open nothing; they raise the **st
 tonight's lineup in the room you sat in. `check:story` tests every city's rotation and that every
 house game appears in at least two cities.
 
-**Jobs pin games into the dive.** While a job you took names a game (a `streak` or `wins` goal such as
-Pike's marks needing Street Cups), `openJobGames()` feeds `must` into `gamesFor`, and the dive
-always deals that game. The draw stays deterministic; the pin only replaces slots. A town holds at
-most `JOB_LIMIT` (3) jobs, so at most three pins in the dive's four slots.
+**Jobs only name games dealt tonight.** Job offers draw their games from `openRoomGames()`: tonight's
+lineups in every room your standing opens. A written job that names a game waits for a night that game is
+dealt (the giver's next written job of that kind, or a generated one, comes first). Offers last one night
+(`JOB_OFFER_NIGHTS` 1), so an offer never names a game that's gone. A job you took stays until you finish
+or drop it, and its game may not be dealt every night. Rooms are never changed for a job.
 
 ## 2. Characters: `lib/story/content/characters.ts`
 
@@ -104,14 +105,14 @@ and spawned jobs). The rules, all in code and all tested by `check:story`:
   the kind still missing. The first night in every town works the same way.
 - **Only talking takes a job.** The giver gets a briefcase marker and "has a job for you"; Talk
   plays any new scene of theirs first, then their pitch with "I'll do it" / "Not now". Not now,
-  or never talking to them, leaves the offer waiting for `JOB_OFFER_NIGHTS` (2) nights; then it
+  or never talking to them, leaves the offer waiting until the next night (`JOB_OFFER_NIGHTS` 1); then it
   leaves (it was never given, so it may come back later) and the giver is free.
 - **Drop a job** you took from the person's card (`dropJob`): no pay, no standing, giver free.
 - **One job per person** until it is finished: they offer nothing new before that.
 - **Table jobs never repeat in a town** (`goalKey`: kind + game + numbers); **minigame jobs may
   repeat**, but never the same one twice in a row from a giver. Each giver's **written jobs of a
   kind come first**, in content order, then generated ones from
-  `JOB_TEMPLATES` (seeded by town and night): a streak at one of the town's games (2 or 3 wins; always 2 at a low-odds game,
+  `JOB_TEMPLATES` (seeded by the story's seed, town and night; only tonight's games in open rooms): a streak at one of the town's games (2 or 3 wins; always 2 at a low-odds game,
   `LOW_ODDS_GAMES`, whose rounds win a third of the time or less; never at Slots or Plinko, `NO_STREAK_GAMES`,
   under 20% a round),
   a big win (2x to 5x), a night up (by any amount, or 5/10/15/20 minimum bets), or a score at the
@@ -153,7 +154,7 @@ the reason to keep doing jobs once every room is open. Same numbers for every ci
 nothing here.
 
 **Hustles** (`lib/story/hustles.ts`): two a night, 4m each, paid at the end of a night you played.
-Drawn from a shared `POOL` by `hustlesFor(city, night)` (seeded `hustles:<city>:<night>`, so a reload
+Drawn from a shared `POOL` by `hustlesFor(city, night, seed)` (seeded by the story's seed and `hustles:<city>:<night>`, so a reload
 shows the same board). Nothing to add per city unless you want city-specific hustles; if you do, keep
 them pure (`met(rounds)`) and seeded.
 

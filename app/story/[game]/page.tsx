@@ -70,13 +70,11 @@ export default function StoryGamePage({ params }: { params: Promise<{ game: stri
   const seen = useStoryStore((s) => s.seenGames)
   const tonight = useStoryStore((s) => s.tonight)
 
-  // Only tonight's games in the room you sat down in. The dive also deals any game an
-  // open job names (`openJobGames`), and a game already being played stays put
-  // even if the job that pinned it finished mid-night.
+  // Only tonight's games in the room you sat down in (a game already being played stays put).
   const city = CITY_BY_ID.get(cityId)
-  const must = useStoryStore.getState().openJobGames()
+  const seed = useStoryStore((s) => s.seed)
   const played = !!tonight && (tonight.openRound?.game === game || tonight.rounds.some((r) => r.game === game))
-  const allowed = !!city && venue != null && (gamesFor(city, nightNo, venue, seen, must).includes(game as GameName) || played)
+  const allowed = !!city && venue != null && (gamesFor(city, nightNo, venue, seen, seed).includes(game as GameName) || played)
 
   useEffect(() => {
     if (hydrated && !allowed) router.replace('/story')

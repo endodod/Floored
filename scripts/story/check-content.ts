@@ -273,7 +273,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
 // ── The save's rules, played through once ──
 {
   const st = () => useStoryStore.getState()
-  st().newStory()
+  // A fixed story seed so a failure reproduces; STORY_CHECK_SEED tries another.
+  st().newStory(process.env.STORY_CHECK_SEED ?? 'check')
   const m = st().minBet()
   if (st().money !== 200 || m !== 5) fail('a new story starts in Dustwater with $200')
   if (st().nextBets !== START_BETS || START_BETS !== CAR_BETS) fail(`a new story starts with ${CAR_BETS} bets (the car's)`)
@@ -352,7 +353,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   if (offered().length !== 2) fail('asking again the same night adds no offer')
   // Each giver's written jobs of a kind come first.
   for (const j of first) {
-    const w = WRITTEN_JOBS.find((x) => x.city === 'dustwater' && x.giver === j.giver && kindOf(x.goal) === kindOf(j.goal))
+    // (one that names a game not dealt tonight waits for a night it is)
+    const w = WRITTEN_JOBS.find((x) => x.city === 'dustwater' && x.giver === j.giver && kindOf(x.goal) === kindOf(j.goal) && (!('game' in x.goal) || st().openRoomGames().includes(x.goal.game)))
     if (w && j.key !== goalKey(w.goal)) fail(`a giver offers their written ${kindOf(j.goal)} job first (${j.giver} offered ${j.key})`)
   }
   // Only talking takes a job. "Not now" leaves it waiting with the giver.
@@ -361,25 +363,30 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
   answer(a.giver, false)
   if (!offered().some((j) => j.id === a.id) || st().openJobs().length) fail('"Not now" leaves the offer waiting, not taken')
   if (!st().canTalk(a.giver) || st().sceneFor({ on: 'talk', character: a.giver })) fail('after any first-meeting scene, talking again goes straight to the offer')
-  // Night 2 with both still waiting: one place left, so one more offer, of either kind, at the third person.
+  // Night 2: offers nobody took leave after JOB_OFFER_NIGHTS night (they name that night's
+  // games), and the freed people get tonight's two offers.
+  if (JOB_OFFER_NIGHTS !== 1) fail('an offer lasts one night (it names games dealt that night)')
   st().endNight()
   const night1 = heldHere()
-  if (night1.length !== JOB_LIMIT || new Set(night1.map((j) => j.giver)).size !== JOB_LIMIT) fail(`night 2 fills the last place at the third person (got ${night1.map((j) => j.giver).join()})`)
-  const third = night1.find((j) => !first.some((f) => f.id === j.id))!
-  if (!first.every((f) => offered().some((j) => j.id === f.id))) fail('an offer waits through the next night')
-  // Offers left alone for JOB_OFFER_NIGHTS nights leave: on night 3 the first two go, and the
-  // two freed people get tonight's offers (one of each kind). The third offer stays a night more.
+  if (first.some((f) => night1.some((j) => j.id === f.id))) fail(`offers left alone for ${JOB_OFFER_NIGHTS} night leave`)
+  if (night1.length !== 2 || kinds(night1) !== 'minigame,table') fail(`freed people get tonight's two offers (got ${night1.map((j) => j.giver + ':' + j.key).join()})`)
+  // Never taken means never given: the expired written job can come back from its giver later.
+  for (const f of first) if ((st().jobsGiven.dustwater ?? []).filter((k) => k === f.key).length > (night1.some((j) => j.key === f.key) ? 1 : 0)) fail(`an offer nobody took is not counted as given (${f.key})`)
+  // Every offer names only games dealt tonight in a room you can enter.
+  const dealtTonight = (js: Job[]) => js.every((j) => !('game' in j.goal) || st().openRoomGames().includes(j.goal.game))
+  if (!dealtTonight(night1)) fail('a job offer names a game dealt tonight in an open room')
+  // Take both. Night 3: taken jobs stay, and the third person gets the last place.
+  for (const j of night1) answer(j.giver, true)
   st().endNight()
   const night2 = heldHere()
-  if (first.some((f) => night2.some((j) => j.id === f.id))) fail(`offers left alone for ${JOB_OFFER_NIGHTS} nights leave`)
-  if (!night2.some((j) => j.id === third.id)) fail('a newer offer stays until its own nights are up')
-  const fresh2 = night2.filter((j) => j.night === st().night)
-  if (night2.length !== JOB_LIMIT || fresh2.length !== 2 || kinds(fresh2) !== 'minigame,table') fail(`freed people get tonight's two offers (got ${fresh2.map((j) => j.giver + ':' + j.key).join()})`)
-  // Never taken means never given: the expired written job can come back from its giver later.
-  for (const f of first) if ((st().jobsGiven.dustwater ?? []).filter((k) => k === f.key).length > (night2.some((j) => j.key === f.key) ? 1 : 0)) fail(`an offer nobody took is not counted as given (${f.key})`)
+  if (!night1.every((f) => night2.some((j) => j.id === f.id && j.status === 'open'))) fail('taken jobs stay from night to night')
+  if (night2.length !== JOB_LIMIT || new Set(night2.map((j) => j.giver)).size !== JOB_LIMIT) fail(`night 3 fills the last place at the third person (got ${night2.map((j) => j.giver).join()})`)
+  if (!dealtTonight(night2.filter((j) => j.status === 'offered'))) fail('a job offer names a game dealt tonight in an open room')
+  // Take that one too: night 4 opens full, so no offer comes at nightfall.
+  for (const j of night2.filter((x) => x.status === 'offered')) answer(j.giver, true)
   st().endNight()
   const three = heldHere()
-  if (three.some((j) => j.id === third.id) || three.length !== JOB_LIMIT) fail('the third offer leaves on its own schedule and its place is filled')
+  if (three.length !== JOB_LIMIT || three.some((j) => j.status === 'offered')) fail('a full town makes no offers at nightfall')
   for (const j of three) {
     const range = jobPayM(kindOf(j.goal))
     if (j.pay < range.min || j.pay > range.max) fail(`a ${kindOf(j.goal)} job pays ${range.min}m to ${range.max}m (got ${j.pay}m)`)
@@ -397,21 +404,22 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     }
     if (flips.size !== 2) fail(`the last place is a coin flip between the kinds (only saw ${[...flips].join()})`)
   }
-  // Drop a taken job: no pay, no standing, the giver is free (tonight's offer may come now).
+  // Drop a taken job: no pay, no standing, the giver is free, and tonight's offer (which
+  // had no room at nightfall) takes the place.
   {
-    const d = three.find((j) => j.status === 'offered')!
-    answer(d.giver, true)
+    const d = three[0]!
     const before = { money: st().money, rep: st().rep() }
     st().dropJob(d.id)
     if (st().jobs.some((j) => j.id === d.id) || st().money !== before.money || st().rep() !== before.rep) fail('dropping a job removes it with no pay and no standing')
     if (st().jobAt(d.giver)?.id === d.id) fail('a dropped job frees its giver')
+    if (heldHere().length !== JOB_LIMIT || offered().length !== 1) fail(`a dropped job frees a place for tonight's offer (got ${offered().length} offers)`)
   }
-  // Take one and finish it: it pays and earns standing; the giver is free, and tonight's
-  // offers, which had no room at nightfall, come now (both kinds, one place each).
+  // Take that offer and finish it: it pays and earns standing; the giver is free, and the
+  // kind still due tonight comes into the place.
   const pickUp = offered()[0]!
   answer(pickUp.giver, true)
-  const taken = st().openJobs()
-  if (taken.length !== 1 || taken[0]!.id !== pickUp.id) fail('"I\'ll do it" takes the offered job')
+  const taken = st().openJobs().filter((j) => j.id === pickUp.id)
+  if (taken.length !== 1) fail('"I\'ll do it" takes the offered job')
   if (st().canTalk(pickUp.giver) && !st().sceneFor({ on: 'talk', character: pickUp.giver })) fail('a giver whose job you took has nothing new to offer')
   useStoryStore.setState({ standing: { dustwater: 0 }, money: 2000 * m })
   const moneyBefore = st().money
@@ -446,7 +454,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     }
     // What was offered before, for the written order; table tasks given and no longer held
     // (done or dropped) count against repeats from here on.
-    for (const j of [...first, ...night1, ...night2, ...three]) {
+    for (const j of [...first, ...night1, ...night2, ...three, pickUp]) {
       const list = (firstOf[`${j.giver}:${kindOf(j.goal)}`] ??= [])
       if (!list.includes(j.key)) list.push(j.key)
     }
@@ -457,6 +465,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
       // Take and finish everything, including offers a finished job brings tonight.
       for (let guard = 0; guard < 10 && (offered().length || st().openJobs().length); guard++) {
         note()
+        if (!dealtTonight(offered())) fail('a job offer names a game dealt tonight in an open room')
         for (const j of offered()) answer(j.giver, true)
         for (const j of st().openJobs()) { finish(j); note() }
         const here = heldHere()
@@ -472,7 +481,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
       else {
         // Only once the town has no new table task left.
         const c = CITY_BY_ID.get('dustwater')!
-        const left = makeOffers({ city: c, night: st().night, kinds: ['table'], held: [], given: st().jobsGiven.dustwater ?? [], games: c.games as never })
+        const left = makeOffers({ city: c, night: st().night, kinds: ['table'], held: [], given: st().jobsGiven.dustwater ?? [], games: st().openRoomGames(), seed: st().seed })
         if (left.length || kinds(tonight) !== 'minigame') fail(`a night with everything done brings a minigame job and a table job (night ${st().night}: ${kinds(tonight)})`)
       }
     }
@@ -480,8 +489,11 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     if (both < 10) fail(`with every job done, nights bring one minigame and one table job (only ${both} of 30)`)
     for (const g of givers) for (const k of ['minigame', 'table'] as const) {
       const written = WRITTEN_JOBS.filter((w) => w.city === 'dustwater' && w.giver === g && kindOf(w.goal) === k).map((w) => goalKey(w.goal))
+      // Written jobs come before generated ones, but one that names a game waits for a night
+      // that game is dealt, so the order can shift; every one is offered in time.
       const theirs = firstOf[`${g}:${k}`] ?? []
-      if (written.some((key, i) => theirs[i] !== key)) fail(`${g} offers their written ${k} jobs first, in order (got ${theirs.slice(0, written.length).join()})`)
+      const missing = written.filter((key) => !theirs.includes(key))
+      if (missing.length) fail(`${g} offers all their written ${k} jobs (never offered: ${missing.join()})`)
     }
     if (st().rep() !== STANDING_MAX) fail('finishing jobs takes standing to the cap')
   }

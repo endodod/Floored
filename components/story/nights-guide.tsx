@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { CITIES, type City } from '@/lib/story/cities'
 import {
   BONUS_STEPS, BOSS_BUYIN_M, BOSS_PURSE_M, BOSS_REMATCH_NIGHTS, CAR_BETS, COMPS_CAP_M, COMPS_RATE, GAMES_PER_ROOM,
-  JOB_LIMIT, JOB_OFFER_NIGHTS, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, DEBT_WARN_M, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, MEAL_M, MINIGAME_JOB_PAY_M,
+  JOB_LIMIT, JOB_STANDING, HUSTLE_PAY_M, HUSTLES_PER_NIGHT, DEBT_WARN_M, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, MEAL_M, MINIGAME_JOB_PAY_M,
   NIGHT_BETS, ROOM_BETS, SLEEP_COST_M, SLEEP_REP, START_BETS, sleepCostM, TABLE_JOB_PAY_M, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
@@ -31,7 +31,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
  * lib/story/economy.ts (and the store's room table) and shown in the current
  * city's dollars, so it can't drift from the game.
  */
-export function NightsGuide({ city, night, seen, must, onReplay }: { city: City; night: number; seen: GameName[]; must: GameName[]; onReplay: (() => void) | null }) {
+export function NightsGuide({ city, night, seen, seed, onReplay }: { city: City; night: number; seen: GameName[]; seed: string; onReplay: (() => void) | null }) {
   const m = city.minBet
   const first = city.id === CITIES[0]!.id
   const pct = (r: number) => `${Math.round(r * 1000) / 10}%`
@@ -110,11 +110,11 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
 
       <Section title="Tonight's games">
         <p>Each room deals its own {GAMES_PER_ROOM} of {city.name}&apos;s games. Each night a room swaps a couple and keeps at least one.</p>
-        <p className="text-dim">The dive keeps dealing any game an open job names, so the job can always be worked.</p>
+        <p className="text-dim">Job offers only name games dealt tonight in a room you can enter, and an offer you don&apos;t take is gone the next night.</p>
         <ul className="flex flex-col gap-0.5">
           {([0, 1, 2] as const).map((v) => (
             <li key={v}>
-              <span className="text-ink">{VENUE_NAMES[v]}:</span> {gamesFor(city, night, v, seen, must).map(label).join(', ') || 'none yet'}
+              <span className="text-ink">{VENUE_NAMES[v]}:</span> {gamesFor(city, night, v, seen, seed).map(label).join(', ') || 'none yet'}
             </li>
           ))}
         </ul>
@@ -140,7 +140,7 @@ export function NightsGuide({ city, night, seen, must, onReplay }: { city: City;
           Jobs: work people hand you, two kinds. A table job (a goal at the casino) pays {money(TABLE_JOB_PAY_M.min * m)} to {money(TABLE_JOB_PAY_M.max * m)} the moment it is done and earns {JOB_STANDING} standing, up to {STANDING_MAX}. A minigame job pays {money(MINIGAME_JOB_PAY_M.min * m)} to {money(MINIGAME_JOB_PAY_M.max * m)} and earns no standing.
         </p>
         <p>
-          Each night one of each turns up, at two people, starting with your first night. Look for the briefcase over someone&apos;s head and talk to them. Say not now and the job waits with them for {JOB_OFFER_NIGHTS} nights, then goes to someone else. A job you took can be dropped from that person&apos;s card: no pay, and they can offer another.
+          Each night one of each turns up, at two people, starting with your first night. Look for the briefcase over someone&apos;s head and talk to them. A table job only names games dealt tonight in a room you can enter. Say not now and the job waits with them until the next night, then goes to someone else. A job you took can be dropped from that person&apos;s card: no pay, and they can offer another.
         </p>
         <p>
           Each person gives one job at a time and has nothing new until it is done, and a town gives you at most {JOB_LIMIT} at once, taken or waiting. With one place left, it is a coin flip which kind comes. A town never gives you the same table job twice. Table jobs are how you win back standing lost to a bust.

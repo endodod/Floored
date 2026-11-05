@@ -23,7 +23,6 @@ import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
 import { BOSS_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
-import { gamesFor } from '@/lib/story/rotation'
 import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
 import { joTips } from '@/lib/story/tips'
 import { PaperRow, ServiceButton, ServicePopup } from '@/components/story/service-card'
@@ -99,18 +98,18 @@ export function StoryHub() {
   }
   const taken = s.openJobs()
   const offers = s.jobs.filter((j) => j.city === s.city && j.status === 'offered')
-  const hustles = hustlesFor(s.city, s.night)
+  const hustles = hustlesFor(s.city, s.night, s.seed)
   const boss = bossOf(city)
   // The town's people, then those who travel with you and give jobs everywhere (Jo).
   const people = [...CHARACTERS.filter((c) => c.city === s.city && c !== boss), ...CHARACTERS.filter((c) => (TRAVELLING_GIVERS as readonly string[]).includes(c.id))]
   const cleared = s.cleared.includes(s.city)
   const nextCity = CITIES[CITIES.findIndex((c) => c.id === s.city) + 1]
-  const gamesIn = (v: number) => gamesFor(city, s.night, v, s.seenGames, s.openJobGames())
+  const gamesIn = (v: number) => s.roomGames(v as VenueTier)
   const broke = s.money < m && !night
   const lenderId = s.lenderHere()
   const lender = lenderId ? CHARACTERS.find((c) => c.id === lenderId) ?? null : null
   // Jo's read on the games in the room you're in tonight (the dive's before you sit down).
-  const tips = joTips(gamesIn(night ? night.venue : 0), s.city, s.night)
+  const tips = joTips(gamesIn(night ? night.venue : 0), s.city, s.night, s.seed)
   const hasTips = (c: Character) => (TRAVELLING_GIVERS as readonly string[]).includes(c.id) && tips.length > 0
   // Tonight's bets come from where you slept (8 after the car, 12 after a room).
   const nightBets = night ? (night.limit ?? NIGHT_BETS) : s.nextBets + (s.ateTonight() ? MEAL_BETS : 0)
@@ -473,7 +472,7 @@ export function StoryHub() {
             city={city}
             night={s.night}
             seen={s.seenGames}
-            must={s.openJobGames()}
+            seed={s.seed}
             onReplay={tutorial ? () => { setSheet(null); s.startScene(tutorial.id) } : null}
           />
         ),
