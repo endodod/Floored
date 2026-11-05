@@ -193,6 +193,7 @@ export function PlaceSpot({
   size,
   plateBelow = true,
   plateInsideTall = false,
+  shape,
 }: {
   title: string
   sub?: ReactNode
@@ -207,17 +208,32 @@ export function PlaceSpot({
   plateBelow?: boolean
   /** On the tall (phone) street, put the plates just inside its top-right corner instead. */
   plateInsideTall?: boolean
+  /**
+   * Trace the piece's own outline instead of the box: an SVG path in the piece's units
+   * and the box it sits in ([x, y, w, h], the same size as `size`). The hit area stays the box.
+   */
+  shape?: { path: string; box: [number, number, number, number] }
 }) {
   return (
     <button
       type="button"
-      className={cn(HOTSPOT_BTN, 'st-hit rounded-[4px] transition-[box-shadow,background-color] duration-200', lit && 'st-hit-lit st-motion', active && 'st-hit-on')}
+      className={cn(
+        HOTSPOT_BTN,
+        shape ? 'st-hit-shape focus-visible:outline-none' : 'st-hit rounded-[4px] transition-[box-shadow,background-color] duration-200',
+        lit && 'st-hit-lit st-motion',
+        active && 'st-hit-on',
+      )}
       onClick={onOpen}
       aria-label={label}
       aria-haspopup="dialog"
       aria-expanded={!!active}
       style={{ width: `max(30px, calc(var(--u) * var(--s, 1) * ${size[0]}px))`, height: `max(30px, calc(var(--u) * var(--s, 1) * ${size[1]}px))` }}
     >
+      {shape && (
+        <svg aria-hidden focusable="false" viewBox={shape.box.join(' ')} overflow="visible" className="st-hit-outline pointer-events-none absolute inset-0 h-full w-full">
+          <path d={shape.path} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        </svg>
+      )}
       <span className={cn(plateBelow ? UNDER : OVER, plateInsideTall && INSIDE_TALL)}>
         <Plate tone={lit ? 'felt' : locked ? 'dark' : 'wood'}>
           {icon}

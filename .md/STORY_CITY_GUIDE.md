@@ -198,7 +198,8 @@ and `spots`: hotspots by id (`dive`, `main`, `high`, `rest`, `car`, `road`, `not
 character ids, `jo` (Jo, right of the car), `p0`-`p3` for people without a named spot), each either `{ piece }` or `{ at: { wide,
 tall } }`. `components/story/scene-art.tsx` draws the pieces (`PieceKind`); add a new kind there only
 for a new building. `sceneConfigFor(id, name)` falls back to a **generic night street** with the city
-name on the casino sign, so a city is playable before it has art. Check hotspots do not overlap and
+name on the casino sign, so a city is playable before it has art. A `PlaceSpot` can trace a piece's own shape instead of its box (`shape`: a path in the piece's units
+and its box; the car uses `CAR_OUTLINE`). Check hotspots do not overlap and
 sit on the street at both layouts (screenshots below).
 
 ## 9. Checklist for a new city

@@ -410,6 +410,13 @@ function Lamp({ c }: { c: Ctx }) {
   )
 }
 
+/**
+ * The car's silhouette (body and the bottoms of the wheels) in its own units, so the
+ * hub's car hotspot can trace the car instead of its box. Keep it in step with `Car`.
+ */
+export const CAR_OUTLINE =
+  'M6 52 L6 38 Q10 32 30 30 L50 13 Q56 9 66 9 L112 9 Q122 9 128 15 L146 30 Q164 32 166 40 L166 52 L145 52 A11 11 0 0 1 123 52 L47 52 A11 11 0 0 1 25 52 Z'
+
 function Car({ c }: { c: Ctx }) {
   const asleep = c.state.car
   return (

@@ -16,7 +16,7 @@ import { NightCard } from '@/components/story/night-card'
 import { NightsGuide } from '@/components/story/nights-guide'
 import { NewsSlips, Notebook } from '@/components/story/notebook'
 import { Portrait } from '@/components/story/portrait'
-import type { SceneArtState } from '@/components/story/scene-art'
+import { CAR_OUTLINE, type SceneArtState } from '@/components/story/scene-art'
 import { TitleScreen } from '@/components/story/title-screen'
 import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
@@ -258,6 +258,8 @@ export function StoryHub() {
           icon={<Car className="h-2.5 w-2.5" aria-hidden />}
           active={isOpen('rest')}
           size={[170, 64]}
+          // The car's anchor (85, 30) sits at the box's centre, so the box starts at (0, -2).
+          shape={{ path: CAR_OUTLINE, box: [0, -2, 170, 64] }}
           label={`${night ? 'End the night' : 'Rest'}: the car, ${sleepNote('car')} next night`}
           onOpen={open({ kind: 'rest' })}
         />
