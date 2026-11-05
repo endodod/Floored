@@ -306,6 +306,9 @@ function dieselPrice(night: number | undefined): string {
   return (3.99 + cents / 100).toFixed(2)
 }
 
+/** Stretches every window's cycle: 3 gives cycles of 57-102s (about one switch every 3s along the street). */
+const WINDOW_PACE = 3
+
 /**
  * A window that switches on or off now and then: an overlay in the opposite state,
  * shown for part of a long cycle. Hidden under reduced motion (the base window stays).
@@ -320,7 +323,7 @@ function Blink({ x, y, w, h, fill, opacity, i }: { x: number; y: number; w: numb
       fill={fill}
       opacity={opacity}
       className="st-motion st-window"
-      style={{ animationDuration: `${19 + ((i * 7) % 17)}s`, animationDelay: `${-((i * 11) % 23)}s` }}
+      style={{ animationDuration: `${WINDOW_PACE * (19 + ((i * 7) % 17))}s`, animationDelay: `${-WINDOW_PACE * ((i * 11) % 23)}s` }}
     />
   )
 }

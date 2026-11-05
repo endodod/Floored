@@ -3144,7 +3144,7 @@ body > div.neon-auth-ui {
    reduced motion keeps the base window; on for a stretch of a long cycle. */
 .st-window {
   visibility: hidden;
-  animation: st-window 23s steps(1, end) infinite;
+  animation: st-window 69s steps(1, end) infinite;
 }
 @keyframes st-window {
   0%, 58% { visibility: hidden; }

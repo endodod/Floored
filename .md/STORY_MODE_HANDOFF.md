@@ -173,7 +173,7 @@ street shifted 290 units left to make room (`DUSTWATER_SCENE` in `lib/story/scen
 
 **2026-11-05, street life (owner request):** shooting stars now and then (`ShootingStars`, three
 streaks on 23s/37s/53s cycles), motel and casino windows that switch on and off (`Blink`, an
-opposite-state overlay on a long stepped cycle, `.st-window`), and the diesel board shows a new
+opposite-state overlay on a 57-102s stepped cycle, `WINDOW_PACE` 3, `.st-window`), and the diesel board shows a new
 price each night (3.79-4.19, seeded by `night` on `SceneArtState`; 3.99 on the title screen). All
 of it is `st-motion`, so reduced motion keeps the still street. Doors and sleep spots also carry a
 faint gold outline at rest (`.st-hit`); the Room 5 hit area is the whole motel (`building` anchor; listed first so people on it stay on top; on the phone its plate sits inside the top-right corner, `plateInsideTall`); the casino's main doors sit 80 units right of centre
