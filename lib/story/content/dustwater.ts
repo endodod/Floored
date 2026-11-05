@@ -183,7 +183,8 @@ export const DUSTWATER_SCENES: Scene[] = [
 ]
 
 /**
- * Dustwater's written jobs. Each giver offers their own first, in this order, and
+ * Dustwater's written jobs: Marta, Pike and Jo each have three table jobs and three
+ * minigame jobs. Each giver offers their own of a kind first, in this order, and
  * generated jobs after (lib/story/jobs.ts). `pitch` is what they say when they offer it.
  */
 export const DUSTWATER_JOBS: WrittenJob[] = [
@@ -248,5 +249,159 @@ export const DUSTWATER_JOBS: WrittenJob[] = [
       "You've been watching my hands. Don't think I didn't notice.",
       "So prove it. Follow the queen through four of my five shuffles in one sitting and I'll put you on the payroll. Lookout rates.",
     ],
+  },
+  // ── Marta: the rest of her table jobs, then her bar shifts ──
+  {
+    id: 'dustwater-marta-jukebox',
+    city: 'dustwater',
+    giver: 'marta',
+    title: 'The jukebox wheel',
+    task: 'Win 2 rounds of Wheel in a row, so Marta can win back the jukebox.',
+    goal: { kind: 'streak', game: 'wheel', wins: 2 },
+    pay: 3,
+    pitch: [
+      "The wheel crowd took my jukebox off me in a side bet. Don't ask.",
+      'Win twice running at the wheel and they give it back. I want my records.',
+    ],
+  },
+  {
+    id: 'dustwater-marta-rent',
+    city: 'dustwater',
+    giver: 'marta',
+    title: 'Rent week',
+    task: 'Finish a night at the casino at least 5× the minimum bet ahead.',
+    goal: { kind: 'night-up', atLeast: 5 },
+    pay: 4,
+    pitch: [
+      "Rent's due on the Starlite and the owner counts every dollar twice.",
+      'Come back from the tables at least five minimums ahead and I knock it off your room for a month. Well. Pay you the same.',
+    ],
+  },
+  {
+    id: 'dustwater-marta-quiet',
+    city: 'dustwater',
+    giver: 'marta',
+    title: 'A quiet shift',
+    task: "Clear at least 4 of the 6 rounds on a slow shift at Marta's bar.",
+    goal: { kind: 'minigame', minigame: 'last-orders', score: 0.6 },
+    pay: 6,
+    pitch: ["Slow one tonight. Two truckers and the man who only orders water.", 'Cover the bar for me. Get four of the six rounds right and nobody complains.'],
+  },
+  {
+    id: 'dustwater-marta-convoy',
+    city: 'dustwater',
+    giver: 'marta',
+    title: 'The convoy',
+    task: "Clear all 6 rounds on a shift at Marta's bar, not one order wrong.",
+    goal: { kind: 'minigame', minigame: 'last-orders', score: 1 },
+    pay: 8,
+    pitch: [
+      'Whole convoy just pulled in. Eleven rigs, and every driver orders like it is their last night alive.',
+      'All six rounds, no mistakes. One wrong drink and they tip in pennies.',
+    ],
+  },
+  // ── Pike: the rest of his table jobs, then his shuffles ──
+  {
+    id: 'dustwater-pike-deck',
+    city: 'dustwater',
+    giver: 'pike',
+    title: 'Read the deck',
+    task: 'Win 3 rounds of HiLo in a row.',
+    goal: { kind: 'streak', game: 'hilo', wins: 3 },
+    pay: 5,
+    pitch: ["Kid at the HiLo table swears the deck can't be read.", 'Call it right three times running in front of him. I have money on you.'],
+  },
+  {
+    id: 'dustwater-pike-long-con',
+    city: 'dustwater',
+    giver: 'pike',
+    title: 'The long con',
+    task: 'Win 5× your stake or more on one bet, so Pike can sell the story.',
+    goal: { kind: 'big-win', mult: 5 },
+    pay: 5,
+    pitch: [
+      "A story sells better than cups. Somebody walks in, puts down five, walks out with twenty-five.",
+      "Be that somebody. One bet, five times your stake. I'll tell it in every bar from here to Silver Mesa.",
+    ],
+  },
+  {
+    id: 'dustwater-pike-warmup',
+    city: 'dustwater',
+    giver: 'pike',
+    title: 'Warm-up hands',
+    task: "Follow the queen through at least 3 of Pike's 5 shuffles in one sitting.",
+    goal: { kind: 'minigame', minigame: 'shuffle-tracker', score: 0.6 },
+    pay: 6,
+    pitch: ["My hands are cold tonight. I'll go slow.", 'Three out of five and I pay you anyway. Call it a training wage.'],
+  },
+  {
+    id: 'dustwater-pike-clean',
+    city: 'dustwater',
+    giver: 'pike',
+    title: 'Clean sweep',
+    task: "Follow the queen through all 5 of Pike's shuffles in one sitting.",
+    goal: { kind: 'minigame', minigame: 'shuffle-tracker', score: 1 },
+    pay: 8,
+    pitch: [
+      "Nobody's ever followed all five. Not the sheriff, not Cutter, not me on a bad day.",
+      "Five for five and I'll pay top rates. Miss one and you buy the coffee.",
+    ],
+  },
+  // ── Jo: the rest of the table jobs, then the cashier's drills ──
+  {
+    id: 'dustwater-jo-coin',
+    city: 'dustwater',
+    giver: 'jo',
+    title: "Your grandfather's coin",
+    task: 'Win 3 rounds of Coin Flip in a row.',
+    goal: { kind: 'streak', game: 'coin-flip', wins: 3 },
+    pay: 5,
+    pitch: [
+      'Your grandfather used to open every night with three coin flips. Said it told him whether to stay.',
+      'Win three in a row. Humour an old dealer.',
+    ],
+  },
+  {
+    id: 'dustwater-jo-bankroll',
+    city: 'dustwater',
+    giver: 'jo',
+    title: 'A real bankroll',
+    task: 'Finish a night at the casino at least 15× the minimum bet ahead.',
+    goal: { kind: 'night-up', atLeast: 15 },
+    pay: 5,
+    pitch: [
+      "Cutter's room costs a hundred minimums to sit. We're not getting there on pocket change.",
+      'One good night. Fifteen minimums ahead or better, and then we talk about the champion.',
+    ],
+  },
+  {
+    id: 'dustwater-jo-drill',
+    city: 'dustwater',
+    giver: 'jo',
+    title: "The cashier's drill",
+    task: "Count at least 3 of Jo's 5 stacks right.",
+    goal: { kind: 'minigame', minigame: 'chip-count', score: 0.6 },
+    pay: 6,
+    pitch: ['Every dealer at the Gilded Floor counted chips before they touched a card.', "Five stacks, the clock on each. Get three right and you've earned breakfast."],
+  },
+  {
+    id: 'dustwater-jo-cage',
+    city: 'dustwater',
+    giver: 'jo',
+    title: 'Working the cage',
+    task: "Count at least 4 of Jo's 5 stacks right.",
+    goal: { kind: 'minigame', minigame: 'chip-count', score: 0.8 },
+    pay: 7,
+    pitch: ['Faster this time. The cage at Silver Mesa will not wait for you to move your lips.', 'Four of five. I know you can.'],
+  },
+  {
+    id: 'dustwater-jo-perfect',
+    city: 'dustwater',
+    giver: 'jo',
+    title: 'Twenty years',
+    task: "Count all 5 of Jo's stacks right.",
+    goal: { kind: 'minigame', minigame: 'chip-count', score: 1 },
+    pay: 8,
+    pitch: ['Twenty years at the cage and I never miscounted a stack. Not once.', 'All five. Show me you are his grandkid.'],
   },
 ]

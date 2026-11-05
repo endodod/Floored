@@ -113,7 +113,8 @@ and spawned jobs). The rules, all in code and all tested by `check:story`:
   kind come first**, in content order, then generated ones from
   `JOB_TEMPLATES` (seeded by town and night): a streak at one of the town's games (2 or 3 wins),
   a big win (2x to 5x), a night up (by any amount, or 5/10/15/20 minimum bets), or a score at the
-  giver's own minigame (60%, 80%, perfect). Dustwater has about 20 table tasks; when a town has
+  giver's own minigame (60%, 80%, perfect). A generated table task never takes a task some giver
+  in the town has written, so every written job is still there when its turn comes. Dustwater has about 20 table tasks; when a town has
   no new table task left, only minigame jobs come.
 - **Pay and standing:** a table job pays 3m-5m (`TABLE_JOB_PAY_M`) and earns `JOB_STANDING` (1)
   up to `STANDING_MAX`. A minigame job is **one attempt**: at the target it pays 6m-8m
@@ -207,7 +208,8 @@ sit on the street at both layouts (screenshots below).
 3. Characters (section 2), portrait looks, chip colours.
 4. Minigames for its givers (section 5), then their `MinigameId` goals in written jobs.
 5. `content/<city>.ts`: arrival, a `talk` scene per local, boss intro/win/loss, bust; a few
-   written jobs per giver, Jo included (section 4: pitch lines, pay 3m-5m, no repeated task).
+   written jobs per giver, Jo included (section 4: pitch lines, table jobs 3m-5m, minigame jobs
+   6m-8m, no repeated task). Dustwater gives each giver three of each kind, the model to follow.
    Generated jobs follow on their own. Register in `content/index.ts`. Quote numbers only as the
    checker allows.
 6. Boss (section 6) and the boss page/table for the city.

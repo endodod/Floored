@@ -157,6 +157,16 @@ the next city left (`REMOVED_CITIES` in `lib/story/cities.ts`). The **travel far
 now ~123 and ~112). Nights a city: balanced 12 / 47, cautious 11 / 37. The map spreads the stops over the whole width and its act bands
 tile edge to edge.
 
+**2026-11-05, Dustwater's written jobs filled out (owner request):** Marta, Pike and Jo each
+have **three written table jobs and three written minigame jobs** (18 in `DUSTWATER_JOBS`; the
+five older ones keep their ids and stay first). Table: Marta trucker's bet (3x), jukebox wheel
+(Wheel 2 in a row), rent week (night up 5m); Pike marks (Street Cups 3 in a row), read the deck
+(HiLo 3), the long con (5x); Jo seed money (night up), grandfather's coin (Coin Flip 3), a real
+bankroll (night up 15m). Minigame: each giver at 60%, 80% and perfect (6m/7m/8m). A generated
+table task now skips any task written for the town (`nextFor` in `lib/story/jobs.ts`), so a
+generated job can't use up another giver's written one. The news slips are now even, upright
+casino marker cards (`.st-news`).
+
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,
 `pnpm sim:story` (slow: ~50 s for 3,000 circuits; `pnpm sim:story 500` for a quick run).
 
@@ -337,7 +347,7 @@ The hub is one screen that fits the viewport (no page scroll at 360×740, 390×8
 
 ### 3d. Minigames (`lib/story/minigames/*.ts` pure engines + `components/story/minigames/*`, route `app/story/minigame/[id]`)
 - **Last Orders** (Marta): Simon-style memory; 6 drink icons; orders grow 3→8 items over
-  rounds; score = rounds cleared ÷ max (the written job needs ≥ 0.8).
+  rounds; score = rounds cleared ÷ max (the written jobs need 0.6, 0.8 and 1).
 - **Shuffle Tracker** (Pike): 3 cups, follow the queen through N swaps, 5 rounds getting
   faster; score = right ÷ 5; with reduced motion, show swaps as slow discrete steps.
 - First play each night pays (`playMinigame`); after that it's practice (no pay, but

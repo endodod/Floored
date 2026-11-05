@@ -180,7 +180,9 @@ function nextFor(args: { rng: Rng; city: City; giver: Character; kind: JobKind; 
   if (written) return { goal: written.goal, title: written.title, task: written.task, pay: written.pay, pitch: written.pitch }
   // A minigame job may repeat, just not the one this giver gave last.
   const last = kind === 'minigame' && giver.minigame ? [...given].reverse().find((k) => k.startsWith(`minigame:${giver.minigame}:`)) : undefined
-  const fresh = (key: string) => (kind === 'minigame' ? key !== last : !givenSet.has(key))
+  // A generated table task also leaves alone any task a giver in this town has written.
+  const writtenHere = new Set(WRITTEN_JOBS.filter((w) => w.city === city.id).map((w) => goalKey(w.goal)))
+  const fresh = (key: string) => (kind === 'minigame' ? key !== last : !givenSet.has(key) && !writtenHere.has(key))
   for (const t of shuffled(rng, JOB_TEMPLATES.filter((x) => (x.kind === 'minigame') === (kind === 'minigame')))) {
     for (let d = 0; d < DRAWS_PER_TEMPLATE; d++) {
       const made = t.make({ rng, giver, games })

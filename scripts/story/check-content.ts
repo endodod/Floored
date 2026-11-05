@@ -418,7 +418,8 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
         if (j.city !== 'dustwater' || seen.has(j.id)) continue
         seen.add(j.id)
         const list = (firstOf[`${j.giver}:${kindOf(j.goal)}`] ??= [])
-        if (kindOf(j.goal) === 'table' || !list.includes(j.key)) list.push(j.key)
+        // An offer left alone can come back later, so count each task once.
+        if (!list.includes(j.key)) list.push(j.key)
         if (kindOf(j.goal) === 'table') {
           if (tableKeys.has(j.key)) fail(`the town gave the table task ${j.key} twice`)
           tableKeys.add(j.key)
