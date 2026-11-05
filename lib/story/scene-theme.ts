@@ -138,7 +138,7 @@ export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
 export const PIECE_ANCHORS: Partial<Record<PieceKind, Record<string, [number, number]>>> = {
   casino: { dive: [100, 368], main: [380, 362], high: [500, 202], sign: [310, 72] },
   backroom: { door: [85, 188] },
-  motel: { diner: [70, 200], room: [375, 222] },
+  motel: { diner: [70, 200], room: [375, 222], building: [230, 152] },
   motelSign: { sign: [70, 96] },
   cups: { stand: [45, -6] },
   car: { car: [85, 30] },
@@ -208,8 +208,8 @@ export const DUSTWATER_SCENE: CitySceneConfig = {
     pike: { piece: 'cups', anchor: 'stand' },
     cutter: { piece: 'backroom', anchor: 'door' },
     boss: { piece: 'backroom', anchor: 'door' },
-    // The motel's rooms (right of Marta's diner) are the hit area; the Room 5 label sits above them.
-    rest: { at: { wide: [370, 548], tall: [452, 922] } },
+    // The whole motel is the hit area (people standing on it sit above); the Room 5 label sits on top.
+    rest: { piece: 'motel', anchor: 'building' },
     car: { piece: 'car', anchor: 'car' },
     jo: { at: { wide: [410, 712], tall: [545, 958] } },
     road: { piece: 'road', anchor: 'sign' },

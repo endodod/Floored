@@ -115,6 +115,8 @@ const HOTSPOT_BTN =
   'st-spot group relative block rounded-md outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold'
 const UNDER = 'pointer-events-none absolute left-1/2 top-full mt-1 flex -translate-x-1/2 flex-col items-center gap-0.5'
 const OVER = 'pointer-events-none absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 flex-col items-center gap-0.5'
+/** Moves an UNDER/OVER plate just inside the top-right corner, on the tall street only. */
+const INSIDE_TALL = '[[data-layout=tall]_&]:bottom-auto [[data-layout=tall]_&]:top-1 [[data-layout=tall]_&]:mb-0 [[data-layout=tall]_&]:mt-0 [[data-layout=tall]_&]:left-auto [[data-layout=tall]_&]:right-1 [[data-layout=tall]_&]:translate-x-0 [[data-layout=tall]_&]:items-end'
 
 /** A character standing at their spot: a portrait medallion with a name plate under it. */
 export function PersonSpot({
@@ -184,6 +186,7 @@ export function PlaceSpot({
   label,
   size,
   plateBelow = true,
+  plateInsideTall = false,
 }: {
   title: string
   sub?: ReactNode
@@ -196,6 +199,8 @@ export function PlaceSpot({
   /** Hit area over the art, in the piece's own units. */
   size: [number, number]
   plateBelow?: boolean
+  /** On the tall (phone) street, put the plates just inside its top-right corner instead. */
+  plateInsideTall?: boolean
 }) {
   return (
     <button
@@ -207,7 +212,7 @@ export function PlaceSpot({
       aria-expanded={!!active}
       style={{ width: `max(30px, calc(var(--u) * var(--s, 1) * ${size[0]}px))`, height: `max(30px, calc(var(--u) * var(--s, 1) * ${size[1]}px))` }}
     >
-      <span className={plateBelow ? UNDER : OVER}>
+      <span className={cn(plateBelow ? UNDER : OVER, plateInsideTall && INSIDE_TALL)}>
         <Plate tone={lit ? 'felt' : locked ? 'dark' : 'wood'}>
           {icon}
           {title}

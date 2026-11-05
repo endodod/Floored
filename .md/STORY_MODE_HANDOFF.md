@@ -176,7 +176,7 @@ streaks on 23s/37s/53s cycles), motel and casino windows that switch on and off 
 opposite-state overlay on a long stepped cycle, `.st-window`), and the diesel board shows a new
 price each night (3.79-4.19, seeded by `night` on `SceneArtState`; 3.99 on the title screen). All
 of it is `st-motion`, so reduced motion keeps the still street. Doors and sleep spots also carry a
-faint gold outline at rest (`.st-hit`); the casino's main doors sit 80 units right of centre
+faint gold outline at rest (`.st-hit`); the Room 5 hit area is the whole motel (`building` anchor; listed first so people on it stay on top; on the phone its plate sits inside the top-right corner, `plateInsideTall`); the casino's main doors sit 80 units right of centre
 (`MAIN_DOOR_DX`); the motel-side lamp is drawn in front of the motel.
 
 Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm check:story`,

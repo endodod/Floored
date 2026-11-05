@@ -168,6 +168,23 @@ export function StoryHub() {
     return `${cost ? money(cost) : 'Free'} · ${SLEEP_BETS[place]} bets`
   }
   const spots: SceneSpot[] = [
+    // The room: the whole motel, listed first so the people standing on it stay on top.
+    {
+      spot: 'rest',
+      node: (
+        <PlaceSpot
+          title={roomShort}
+          sub={sleepNote('room')}
+          icon={<Moon className="h-2.5 w-2.5" aria-hidden />}
+          active={isOpen('rest')}
+          size={[472, 222]}
+          plateBelow={false}
+          plateInsideTall
+          label={`${night ? 'End the night' : 'Rest'}: ${roomName}, ${sleepNote('room')} next night`}
+          onOpen={open({ kind: 'rest' })}
+        />
+      ),
+    },
     ...([0, 1, 2] as VenueTier[]).map((v): SceneSpot => {
       const unlocked = s.venueOpen(v)
       const here = night?.venue === v
@@ -228,22 +245,7 @@ export function StoryHub() {
           },
         ]
       : []),
-    // Two places to sleep, both ending the night: the room (12 bets next night) and the car (8).
-    {
-      spot: 'rest',
-      node: (
-        <PlaceSpot
-          title={roomShort}
-          sub={sleepNote('room')}
-          icon={<Moon className="h-2.5 w-2.5" aria-hidden />}
-          active={isOpen('rest')}
-          size={[210, 150]}
-          plateBelow={false}
-          label={`${night ? 'End the night' : 'Rest'}: ${roomName}, ${sleepNote('room')} next night`}
-          onOpen={open({ kind: 'rest' })}
-        />
-      ),
-    },
+    // The car, the other place to sleep (both end the night).
     {
       spot: 'car',
       node: (
