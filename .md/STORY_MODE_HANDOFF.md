@@ -4,7 +4,7 @@
 tournament against regular bots, buy-in `PRACTICE_BUYIN_M` 10m, takes the night; `app/story/table`,
 `practiceGame` / `sitAtPractice` / `practiceResult` in the store). The owner set the **city template**:
 every city works like Dustwater (3 locals: 2 givers + 1 boss; Jo travels; the car and a room; 3 floors
-with the practice table on the top one; the same diner, lender and tips). What changes per city and
+with the practice table on the top one; the same diner, lender and tips), and **each city has its own visual theme** (palette, buildings, background, decoration, signs; guide section 8). What changes per city and
 the visual lessons from Dustwater are in [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md) sections 0 and 8b:
 **read those before building city 2.** The diner's dish is per city (`cities.ts` `plate`, text only).
 

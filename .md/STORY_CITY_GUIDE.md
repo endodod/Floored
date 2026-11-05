@@ -44,7 +44,7 @@ and gets its own design later.
 | Their minigames | `lib/story/minigames/*`, `components/story/minigames/*` | One new minigame per giver (Jo's Chip Count is shared) |
 | Written jobs | `content/<city>.ts` | Three table and three minigame jobs per giver (Jo too), naming this city's games |
 | The diner's dish | `cities.ts` `plate` | Text only, for variety ("Hot plate & coffee" in Dustwater); price and bets never change |
-| Names on the street | `lib/story/scene-theme.ts` | Casino sign, `motelName`, `barName`, palette, building places |
+| **The city's own theme** | `lib/story/scene-theme.ts`, `components/story/scene-art.tsx` | Every city gets its **own look**, never a recolour of Dustwater: its palette, its own buildings, its background (skyline, landscape, water), its decoration and its signs (casino sign, `motelName`, `barName`), drawn from the city's `feel` (section 8) |
 | Scenes and lines | `content/<city>.ts` | Arrival, a talk scene per local, boss scenes, bust |
 
 **What never changes per city:** standing (0-5, per town, jobs +1, loans -1) and its bonus,
@@ -260,6 +260,38 @@ name on the casino sign, so a city is playable before it has art. A `PlaceSpot` 
 and its box; the car uses `CAR_OUTLINE`). Check hotspots do not overlap and
 sit on the street at both layouts (screenshots below).
 
+**Every city has its own theme** (owner decision 2026-11-05). The street is a city's first
+impression, so each city is drawn for its `feel` in `cities.ts`, not reused from Dustwater with new
+colours. Each city needs:
+
+- **Its own palette** (`ScenePalette`): sky, ground, walls, trim, neon and window light that suit the
+  place (Dustwater: desert dust under sodium light).
+- **Its own buildings** as new `PieceKind`s in `scene-art.tsx`: the casino, the floors' doors, the
+  place to sleep, the diner and the boss's room all styled for the city. Keep the same hotspots and
+  anchors (`dive`, `main`, `high`, `rest`, `car`, `road`, the people, the boss), so the hub works
+  unchanged.
+- **Its own background**: what lies behind the street (Dustwater's mesas and stars). A classic strip
+  has a skyline of lit towers, a riverboat town a river and a paddle steamer, the Riviera the sea and
+  hills, an old spa town a mountain valley, an ocean liner the open sea from the deck.
+- **Its own decoration**: the small things that make the place (Dustwater: the truck wash, the cups
+  table, the parked truck, the diesel board, street lamps). Give each city three or four of its own,
+  with slow seeded motion where it fits (section 8b).
+- **Its own signs and names**: the casino sign, the motel and bar names, and any street signs.
+
+Ideas from the plan, to start from:
+
+| City | Feel | Background | Decoration |
+|---|---|---|---|
+| Silver Mesa | classic strip | a skyline of lit towers, searchlights | marquee bulbs, a wedding chapel, palm trees, a taxi rank |
+| Bayou Crossing | riverboat | a dark river, cypress trees, moss | a paddle steamer at the dock, lanterns, a ferry bell |
+| Monte Lune | Riviera | the sea, hills with villas, a moonlit bay | yachts, a promenade with balustrades, cafe awnings |
+| Kurstadt | old spa casino | mountains, pines, a steaming valley | a colonnade, thermal fountains, a funicular |
+| The Aurora | ocean liner | open sea, the northern lights | deck rails, lifeboats, funnels, portholes |
+| The Summit | Vale's private club | above the clouds | the final's own design |
+
+The **generic street** (`sceneConfigFor` fallback) is only a stand-in while a city is being written;
+a city does not ship on it.
+
 ## 8b. Visual lessons from Dustwater (don't repeat these)
 
 Every one of these was a fix the owner asked for on Dustwater between 2026-11-02 and 2026-11-05.
@@ -329,7 +361,8 @@ Build a new street with them from the start, and check each one in the screensho
    checker allows.
 6. Boss (section 6): the boss `Bot`, and the boss page made to run the city's boss game. The
    practice table needs nothing (it reads `boss.game`); check it opens at standing 3.
-7. Scene art (section 8), built with the visual lessons (section 8b), or accept the generic street.
+7. Scene art (section 8): the city's own theme (palette, buildings, background, decoration, signs),
+   built with the visual lessons (section 8b). The generic street is a stand-in only, never shipped.
 8. Checks: `npx tsc --noEmit`, `pnpm lint` (3 known errors: `lib/game-registry.tsx` x2,
    `lib/survival/migrate.ts`), `pnpm check:story`, `pnpm sim:story` (add `500` for a quick run).
    Run the sim after any economy or game-list change; it models the room rotation, room comps and
