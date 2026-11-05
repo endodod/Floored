@@ -62,7 +62,7 @@ function Halftone({ c, x, y, w, h, o = 0.4 }: { c: Ctx; x: number; y: number; w:
 }
 
 /** How far the main-floor doors sit right of the casino's centre (its `main` anchor in lib/story/scene-theme.ts matches). */
-const MAIN_DOOR_DX = 40
+const MAIN_DOOR_DX = 80
 
 function Casino({ c }: { c: Ctx }) {
   const { P, state, config } = c

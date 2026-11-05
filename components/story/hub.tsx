@@ -496,8 +496,9 @@ export function StoryHub() {
                     data-sleep={place}
                     className="flex flex-col items-start gap-0.5 rounded-md bg-black/25 px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_rgba(217,164,65,0.25)] transition-shadow hover:shadow-[inset_0_0_0_1px_rgba(217,164,65,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold disabled:opacity-40"
                   >
-                    <span className="flex items-center gap-1.5 text-[13.5px] font-semibold text-ink">
-                      {place === 'car' ? <Car className="h-3.5 w-3.5" aria-hidden /> : <Moon className="h-3.5 w-3.5" aria-hidden />}
+                    {/* The title takes the spare height, so price and bets line up across both cards. */}
+                    <span className="flex flex-1 items-start gap-1.5 text-[13.5px] font-semibold leading-[18px] text-ink">
+                      {place === 'car' ? <Car className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> : <Moon className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />}
                       {place === 'car' ? 'The car' : roomName}
                     </span>
                     <span className="num text-[13px] text-gold">{cost ? money(cost) : 'Free'}</span>

@@ -2857,8 +2857,11 @@ body > div.neon-auth-ui {
   box-shadow: inset 0 1px 0 rgba(217, 164, 65, 0.35);
 }
 /* Hotspots: a door glows gold when you point at it; tonight's door breathes in felt. */
+/* A door or a place to sleep: a faint gold outline at rest so it reads as
+   something to tap; hover, focus or open brings the full glow. */
 .st-hit {
-  background: transparent;
+  background: rgba(255, 214, 140, 0.04);
+  box-shadow: 0 0 0 1px rgba(217, 164, 65, 0.3), 0 0 10px 0 rgba(217, 164, 65, 0.12);
 }
 .st-hit:hover,
 .st-hit:focus-visible,
