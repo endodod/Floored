@@ -32,7 +32,7 @@ the high-roller room at 3. Standing 2, 4 and 5 open nothing; they raise the **st
 tonight's lineup in the room you sat in. `check:story` tests every city's rotation and that every
 house game appears in at least two cities.
 
-**Jobs pin games into the dive.** While a job you took names a game (a `streak` goal such as
+**Jobs pin games into the dive.** While a job you took names a game (a `streak` or `wins` goal such as
 Pike's marks needing Street Cups), `openJobGames()` feeds `must` into `gamesFor`, and the dive
 always deals that game. The draw stays deterministic; the pin only replaces slots. A town holds at
 most `JOB_LIMIT` (3) jobs, so at most three pins in the dive's four slots.
@@ -111,7 +111,8 @@ and spawned jobs). The rules, all in code and all tested by `check:story`:
 - **Table jobs never repeat in a town** (`goalKey`: kind + game + numbers); **minigame jobs may
   repeat**, but never the same one twice in a row from a giver. Each giver's **written jobs of a
   kind come first**, in content order, then generated ones from
-  `JOB_TEMPLATES` (seeded by town and night): a streak at one of the town's games (2 or 3 wins),
+  `JOB_TEMPLATES` (seeded by town and night): a streak at one of the town's games (2 or 3 wins; always 2 at a low-odds game,
+  `LOW_ODDS_GAMES`, whose rounds win a third of the time or less),
   a big win (2x to 5x), a night up (by any amount, or 5/10/15/20 minimum bets), or a score at the
   giver's own minigame (60%, 80%, perfect). A generated table task never takes a task some giver
   in the town has written, so every written job is still there when its turn comes. Dustwater has about 20 table tasks; when a town has
@@ -128,10 +129,11 @@ per town) and `jobOffered` (each town's last offer night). Offer scenes are buil
 
 **Written jobs** (`WrittenJob`: `id`, `city`, `giver`, `title`, `task`, `goal`, `pay`, `pitch`):
 `goal` is `minigame` `{ minigame, score 0-1 }` (the giver's own minigame; checked on every play,
-practice included), `streak` `{ game, wins }` (a game in the city's list), `night-up` (end a night
+practice included), `streak` `{ game, wins }` (that many wins in a row, a game in the city's list), `wins`
+`{ game, wins }` (that many wins at the game in one night, in any order), `night-up` (end a night
 at the casino up, by `atLeast` minimum bets when given) or `big-win` `{ mult }`. `pitch` is what
 the giver says when offering it, one line each. The checker verifies the giver gives jobs in that
-city, the minigame is theirs, the streak game is in the city, the pay is in range, no two written
+city, the minigame is theirs, the streak or wins game is in the city, `LOW_ODDS_GAMES` matches the story odds, the pay is in range, no two written
 jobs in a city share a task, and every town can offer at least `STANDING_MAX` different jobs.
 Dustwater: Marta (bar shift, trucker's bet), Pike (marks, lookout rates), Jo (seed money).
 

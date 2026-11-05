@@ -160,8 +160,8 @@ tile edge to edge.
 **2026-11-05, Dustwater's written jobs filled out (owner request):** Marta, Pike and Jo each
 have **three written table jobs and three written minigame jobs** (18 in `DUSTWATER_JOBS`; the
 five older ones keep their ids and stay first). Table: Marta trucker's bet (3x), jukebox wheel
-(Fortune Wheel 2 in a row), rent week (night up 5m); Pike marks (Street Cups 3 in a row), read the deck
-(HiLo 3), the long con (5x); Jo seed money (night up), grandfather's coin (Coin Flip 3), a real
+(Fortune Wheel 2 in a row), rent week (night up 5m); Pike marks (3 Street Cups wins in one night), read the deck
+(HiLo 3), the long con (5x); Jo seed money (night up), grandfather's coin (3 Coin Flip wins in one night), a real
 bankroll (night up 15m). Minigame: each giver at 60%, 80% and perfect (6m/7m/8m). A generated
 table task now skips any task written for the town (`nextFor` in `lib/story/jobs.ts`), so a
 generated job can't use up another giver's written one. The news slips are now even, upright
@@ -268,7 +268,7 @@ Port that generator to TypeScript; don't redraw from scratch.
   Returns a `NightSummary`, also kept in `lastNight` for the hub.
 - Jobs: `jobs` (offered and taken, every town), `openJobs()` (taken, this town), `jobAt`,
   `canTalk`, `talkTo`, `minigameJobAt`, `offerTonight()` (idempotent; called on a new story,
-  each night, travel, a finished or lost job and the hub's mount). Goals `streak` / `night-up` /
+  each night, travel, a finished or lost job and the hub's mount). Goals `streak` / `wins` / `night-up` /
   `big-win` are checked automatically; a finished table job pays `pay × m` and +1 standing.
 - `playMinigame(giver, minigame, score)`: the one attempt at a taken minigame job: at the
   target it pays the job (no standing), short of it the job is lost; without a job it does nothing.

@@ -451,6 +451,7 @@ export const useStoryStore = create<StoryStore>()(
             const tail = rounds.filter((r) => r.game === goal.game).slice(-goal.wins)
             if (tail.length === goal.wins && tail.every((r) => r.payout > r.bet)) completeJob(job)
           }
+          if (goal.kind === 'wins' && rounds.filter((r) => r.game === goal.game && r.payout > r.bet).length >= goal.wins) completeJob(job)
         }
       }
 
@@ -470,7 +471,7 @@ export const useStoryStore = create<StoryStore>()(
           return { flags: s.flags, factions: s.factions, moneyM: s.money / m() }
         },
         rep: () => get().standing[get().city] ?? 0,
-        openJobGames: () => get().openJobs().flatMap((j) => (j.goal.kind === 'streak' ? [j.goal.game] : [])),
+        openJobGames: () => get().openJobs().flatMap((j) => (j.goal.kind === 'streak' || j.goal.kind === 'wins' ? [j.goal.game] : [])),
 
         sceneFor: (trigger) => {
           const s = get()

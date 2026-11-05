@@ -76,6 +76,8 @@ export function goalKey(goal: JobGoal): string {
       return `minigame:${goal.minigame}:${goal.score}`
     case 'streak':
       return `streak:${goal.game}:${goal.wins}`
+    case 'wins':
+      return `wins:${goal.game}:${goal.wins}`
     case 'night-up':
       return `night-up:${goal.atLeast ?? 0}`
     case 'big-win':
@@ -108,13 +110,23 @@ interface Template {
 
 const label = (g: GameName) => GAME_BY_NAME.get(g)?.label ?? g
 
+/**
+ * Games whose rounds win a third of the time or less, even played their best way
+ * (story odds: Street Cups 33%, Poker 31%, Keno 25%, Chicken Race 25%, Run Dice 22%,
+ * Plinko 15%, Slots 9%). A generated streak at one of them asks for 2 wins, never 3.
+ * `pnpm check:story` checks this list against lib/story/odds.ts.
+ */
+export const LOW_ODDS_GAMES: readonly GameName[] = ['street-cups', 'poker-1p', 'keno', 'chicken-race', 'run-dice', 'plinko', 'slots']
+/** The share of rounds at or under which a game is low odds. */
+export const LOW_ODDS_WIN = 1 / 3
+
 export const JOB_TEMPLATES: Template[] = [
   {
     kind: 'streak',
     make: ({ rng, games }) => {
       if (!games.length) return null
       const game = pick(rng, games)
-      const wins = pick(rng, [2, 3] as const)
+      const wins = LOW_ODDS_GAMES.includes(game) ? 2 : pick(rng, [2, 3] as const)
       const title = pick(rng, ['Hot streak', 'Run it back', 'Show the room', 'Prove the table'])
       const task = pick(rng, [
         `Win ${wins} rounds of ${label(game)} in a row.`,

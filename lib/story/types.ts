@@ -114,6 +114,8 @@ export type JobGoal =
   | { kind: 'minigame'; minigame: MinigameId; score: number }
   /** Win this many rounds in a row at one game. */
   | { kind: 'streak'; game: GameName; wins: number }
+  /** Win this many rounds at one game in one night, in any order (other results between are fine). */
+  | { kind: 'wins'; game: GameName; wins: number }
   /** End a night at the casino up (by at least `atLeast` minimum bets, when given). */
   | { kind: 'night-up'; atLeast?: number }
   /** Win this multiple or more of the stake on one bet. */

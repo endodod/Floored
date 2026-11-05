@@ -19,7 +19,9 @@ import {
   CAR_BETS, MARKER_M, MARKER_REPAY, MARKER_STANDING, MEAL_BETS, ROOM_BETS, SLEEP_COST_M, SLEEP_REP, START_BETS, STANDING_BONUS, STANDING_MAX, VENUE_MAX_M, VENUE_REP, standingBonus,
 } from '@/lib/story/economy'
 import { gamesFor } from '@/lib/story/rotation'
-import { goalKey, jobGivers, kindOf, makeOffers, NIGHT_KINDS, type Job } from '@/lib/story/jobs'
+import { goalKey, jobGivers, kindOf, LOW_ODDS_GAMES, LOW_ODDS_WIN, makeOffers, NIGHT_KINDS, type Job } from '@/lib/story/jobs'
+import { BASE_ODDS, measurePoker, STORY_POKER_PAYS, storyOdds } from '@/lib/story/odds'
+import type { GameName } from '@/store/types'
 import * as chipCount from '@/lib/story/minigames/chip-count'
 import { seeded } from '@/lib/story/minigames/rng'
 import { CITY_BY_ID } from '@/lib/story/cities'
@@ -93,13 +95,22 @@ for (const e of WRITTEN_JOBS) {
     const own = CHARACTERS.find((c) => c.id === e.giver)?.minigame
     if (own !== e.goal.minigame) fail(`${where}: a minigame job is the giver's own minigame (${e.giver} has ${own ?? 'none'})`)
   }
-  if (e.goal.kind === 'streak') {
+  if (e.goal.kind === 'streak' || e.goal.kind === 'wins') {
     const city = CITIES.find((c) => c.id === e.city)
     if (city && city.games !== 'all-seen' && !city.games.includes(e.goal.game)) fail(`${where}: ${e.goal.game} isn't played in ${e.city}`)
   }
   const range = jobPayM(kindOf(e.goal))
   if (!Number.isInteger(e.pay) || e.pay < range.min || e.pay > range.max) fail(`${where}: pays ${e.pay}m, outside ${range.min}m to ${range.max}m for a ${kindOf(e.goal)} job`)
   if (!e.pitch.length || e.pitch.some((l) => !l.trim())) fail(`${where}: needs a pitch, one line each`)
+}
+// Low-odds games (generated streaks ask 2 wins): exactly the games whose best round wins at most LOW_ODDS_WIN.
+{
+  const poker = [measurePoker(50_000, STORY_POKER_PAYS)]
+  for (const g of Object.keys(BASE_ODDS) as GameName[]) {
+    const best = Math.max(...storyOdds(g, poker).map((b) => b.outcomes.filter((o) => o.mult > 1).reduce((sum, o) => sum + o.p, 0)))
+    const low = best <= LOW_ODDS_WIN + 0.005
+    if (low !== LOW_ODDS_GAMES.includes(g)) fail(`${g}: its best round wins ${(best * 100).toFixed(1)}%, so it should ${low ? '' : 'not '}be in LOW_ODDS_GAMES`)
+  }
 }
 // A town never gives the same task twice, written ones included.
 for (const c of CITIES) {
@@ -323,7 +334,7 @@ for (const id of SHIPPED.characters) if (!characterIds.has(id)) fail(`shipped ch
     useStoryStore.setState({ money: Math.max(st().money, 2000 * m) })
     if (g.kind === 'minigame') return void st().playMinigame(j.giver, g.minigame, 1)
     if (!st().tonight) st().startNight(0)
-    if (g.kind === 'streak') for (let k = 0; k < g.wins; k++) { st().placeBet(g.game, m); st().resolve(g.game, 2 * m, true) }
+    if (g.kind === 'streak' || g.kind === 'wins') for (let k = 0; k < g.wins; k++) { st().placeBet(g.game, m); st().resolve(g.game, 2 * m, true) }
     else if (g.kind === 'big-win') { st().placeBet('hilo', m); st().resolve('hilo', g.mult * m, true) }
     else { st().placeBet('hilo', 10 * m); st().resolve('hilo', (20 + (g.atLeast ?? 0)) * m, true); st().endNight() }
   }
