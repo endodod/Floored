@@ -27,8 +27,10 @@ Read the one that matches the task before changing code:
 - [.md/STORY_MODE_HANDOFF.md](.md/STORY_MODE_HANDOFF.md): Story mode build state: what exists,
   the next steps (3b–3f) in detail, owner decisions, and the portrait reference
   (`.md/story/portrait-styles.html`). **Read first for any story work.**
-- [.md/STORY_CITY_GUIDE.md](.md/STORY_CITY_GUIDE.md): exactly how a story city is set up (entry,
-  characters, scenes, errands, minigames, boss, game settings, scene art, checklist). **Read before building cities 2-12.**
+- [.md/STORY_CITY_GUIDE.md](.md/STORY_CITY_GUIDE.md): exactly how a story city is set up: the city
+  template every city copies and what changes per city (section 0), entry, characters, scenes, jobs,
+  minigames, boss and practice table, game settings, scene art, the visual lessons from Dustwater
+  (section 8b), checklist. **Read before building cities 2-7.**
 - [.md/STORY_MODE_PLAN.md](.md/STORY_MODE_PLAN.md): Story mode ("The Circuit"): the plan
   for the main mode (7 cities, characters with portraits and choices, minigames, economy,
   losing, build order). Being built; every owner question is answered.

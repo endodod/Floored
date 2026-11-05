@@ -1,5 +1,13 @@
 # Story mode — handoff
 
+**2026-11-05, latest:** the high-roller room has a **practice table** (the boss's bot game as a
+tournament against regular bots, buy-in `PRACTICE_BUYIN_M` 10m, takes the night; `app/story/table`,
+`practiceGame` / `sitAtPractice` / `practiceResult` in the store). The owner set the **city template**:
+every city works like Dustwater (3 locals: 2 givers + 1 boss; Jo travels; the car and a room; 3 floors
+with the practice table on the top one; the same diner, lender and tips). What changes per city and
+the visual lessons from Dustwater are in [STORY_CITY_GUIDE.md](STORY_CITY_GUIDE.md) sections 0 and 8b:
+**read those before building city 2.** The diner's dish is per city (`cities.ts` `plate`, text only).
+
 Branch: `claude/friendly-goodall-yvxakz`. Status as of 2026-11-02: **phases 1, 2, 3a, 3b and 3c are built and pushed; next is 3d (minigames)**.
 2026-11-03: 3b (story game mode) and 3c (portraits, dialogue box, hub, navbar, home) built.
 Hub placeholders to replace: minigame buttons and the boss "Sit down" button are disabled
@@ -226,6 +234,8 @@ Checks for story work: `npx tsc --noEmit`, `pnpm lint` (3 known errors), `pnpm c
 | Jobs (2026-11-04, rebuilt) | a minigame job and a table job each night at two givers with none (first night too; a coin flip for a last place); taken only by talking ("Not now" keeps it waiting); 1 per person; max 3 per town; written jobs first; table jobs 3m-5m, +1 standing, never repeat; minigame jobs one attempt, 6m-8m, no standing, may repeat (not back to back); kept in their town |
 | Minigames (2026-11-04) | only played as jobs (no practice, no nightly pay); Jo runs Chip Count in every town |
 | Rotation pin (2026-11-03) | removed 2026-11-05: rooms are never changed for a job. Offers only name games dealt tonight in rooms your standing opens (`openRoomGames()`), and offers last one night (`JOB_OFFER_NIGHTS` 1) |
+| Practice table (2026-11-05) | in the high-roller room of every city: the boss's bot game (`boss.game`), tournament against regular bots, no boss; `PRACTICE_BUYIN_M` 10m into a no-rake pool paid as Tables tournaments pay; takes the night in place of bets (no comps, hustles or bonus); leaving or a reload is last place |
+| City template (2026-11-05) | every city like Dustwater: 3 locals (2 givers with minigames, 1 boss), Jo, the car and a room, 3 floors, practice table on the top floor, diner + lender + Jo's tips. Per city: `m`, the 8 games, the boss game, names, minigames, written jobs, the dish, the street (STORY_CITY_GUIDE section 0) |
 | Story seed (2026-11-05) | every new story draws a `seed` (saved) mixed into room lineups, job offers, hustles and Jo's tips, so each story plays differently; a reload never rerolls. Saves from before it keep `seed: ''` (their old draws). Job ids are now `city:night:giver:kind`. `check:story` uses a fixed seed (`STORY_CHECK_SEED` for another) |
 | The player | unnamed "you", no portrait |
 | Placement | story first on the home page and first in the navbar |

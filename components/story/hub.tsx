@@ -20,7 +20,7 @@ import { NewsSlips, Notebook } from '@/components/story/notebook'
 import { Portrait } from '@/components/story/portrait'
 import { CAR_OUTLINE, type SceneArtState } from '@/components/story/scene-art'
 import { TitleScreen } from '@/components/story/title-screen'
-import { CITIES, CITY_BY_ID, type City } from '@/lib/story/cities'
+import { CITIES, CITY_BY_ID, DEFAULT_PLATE, type City } from '@/lib/story/cities'
 import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
 import { BOSS_BUYIN_M, PRACTICE_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
@@ -730,7 +730,7 @@ export function StoryHub() {
                   </Button>
                 }
               >
-                <PaperRow label="Hot plate & coffee" value={money(price)} />
+                <PaperRow label={city.plate ?? DEFAULT_PLATE} value={money(price)} />
                 <PaperRow label="Bets tonight" value={`+${MEAL_BETS}`} tone="good" />
                 <p className="mt-2 text-center font-mono text-[11px] text-[#6f6354]">One plate a night. Eat before or during the night.</p>
               </ServicePopup>
