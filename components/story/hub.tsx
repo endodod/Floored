@@ -25,7 +25,7 @@ import { CHARACTERS } from '@/lib/story/content/characters'
 import { SCENES } from '@/lib/story/content'
 import { BOSS_BUYIN_M, PRACTICE_BUYIN_M, COMPS_CAP_M, COMPS_RATE, HUSTLE_PAY_M, JOB_OFFER_NIGHTS, MARKER_M, MARKER_REPAY, MARKER_REPAY_STEP, MARKER_STANDING, MEAL_BETS, MEAL_M, NIGHT_BETS, SLEEP_BETS, SLEEP_REP, type SleepPlace, VENUE_MAX_M, VENUE_REP } from '@/lib/story/economy'
 import { hustlesFor } from '@/lib/story/hustles'
-import { TRAVELLING_GIVERS, jobKindName, jobReward } from '@/lib/story/jobs'
+import { TRAVELLING_GIVERS, jobKindName, jobReward, kindOf } from '@/lib/story/jobs'
 import { joTips } from '@/lib/story/tips'
 import { PaperRow, ServiceButton, ServicePopup } from '@/components/story/service-card'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
@@ -216,7 +216,7 @@ export function StoryHub() {
       }
     }),
     ...people.map((c, i): SceneSpot => {
-      // A job offer (its own marker), something new to say, or their minigame job to play.
+      // A job offer (a marker per kind: spade for table, puzzle piece for minigame), something new to say, or their minigame job to play.
       const job = s.jobAt(c.id)
       const offer = job?.status === 'offered'
       const canTalk = s.canTalk(c.id)
@@ -227,7 +227,7 @@ export function StoryHub() {
           <PersonSpot
             id={c.id}
             name={c.name}
-            badge={offer ? 'job' : canTalk ? 'talk' : playable ? 'play' : null}
+            badge={offer ? (job && kindOf(job.goal) === 'minigame' ? 'minigame-job' : 'table-job') : canTalk ? 'talk' : playable ? 'play' : null}
             active={isOpen('person', c.id)}
             label={`${c.name}${offer ? `, has a ${jobKindName(job)} for you` : canTalk ? ', has something to say' : ''}${playable ? ', their minigame job is yours to play' : ''}`}
             onOpen={open({ kind: 'person', id: c.id })}

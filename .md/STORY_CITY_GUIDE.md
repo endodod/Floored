@@ -145,7 +145,7 @@ and spawned jobs). The rules, all in code and all tested by `check:story`:
   random givers who hold none, while the town holds fewer than `JOB_LIMIT` (3), offered or
   taken. With one place left a coin flip picks the kind; a place freed later that night brings
   the kind still missing. The first night in every town works the same way.
-- **Only talking takes a job.** The giver gets a briefcase marker and "has a job for you"; Talk
+- **Only talking takes a job.** The giver gets a job marker (a spade for a table job, a puzzle piece for a minigame job) and "has a job for you"; Talk
   plays any new scene of theirs first, then their pitch with "I'll do it" / "Not now". Not now,
   or never talking to them, leaves the offer waiting until the next night (`JOB_OFFER_NIGHTS` 1); then it
   leaves (it was never given, so it may come back later) and the giver is free.

@@ -140,7 +140,7 @@ export function NightsGuide({ city, night, seen, seed, onReplay }: { city: City;
           Jobs: work people hand you, two kinds. A table job (a goal at the casino) pays {money(TABLE_JOB_PAY_M.min * m)} to {money(TABLE_JOB_PAY_M.max * m)} the moment it is done and earns {JOB_STANDING} standing, up to {STANDING_MAX}. A minigame job pays {money(MINIGAME_JOB_PAY_M.min * m)} to {money(MINIGAME_JOB_PAY_M.max * m)} and earns no standing.
         </p>
         <p>
-          Each night one of each turns up, at two people, starting with your first night. Look for the briefcase over someone&apos;s head and talk to them. A table job only names games dealt tonight in a room you can enter. Say not now and the job waits with them until the next night, then goes to someone else. A job you took can be dropped from that person&apos;s card: no pay, and they can offer another.
+          Each night one of each turns up, at two people, starting with your first night. Look for the marker over someone&apos;s head (a spade for a table job, a puzzle piece for a minigame job) and talk to them. A table job only names games dealt tonight in a room you can enter. Say not now and the job waits with them until the next night, then goes to someone else. A job you took can be dropped from that person&apos;s card: no pay, and they can offer another.
         </p>
         <p>
           Each person gives one job at a time and has nothing new until it is done, and a town gives you at most {JOB_LIMIT} at once, taken or waiting. With one place left, it is a coin flip which kind comes. A town never gives you the same table job twice. Table jobs are how you win back standing lost to a bust.

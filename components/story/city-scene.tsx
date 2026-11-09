@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
-import { BriefcaseBusiness, Play } from 'lucide-react'
+import { Play, Puzzle, Spade } from 'lucide-react'
 import { Portrait } from '@/components/story/portrait'
 import { SceneArt, type SceneArtState } from '@/components/story/scene-art'
 import { PORTRAIT_LOOKS, type PortraitLook } from '@/lib/story/portraits'
@@ -138,8 +138,11 @@ export function PersonSpot({
   id: string
   name: string
   sub?: string
-  /** `job`: a job offer waiting; `talk`: something new to say; `play`: their minigame job is yours to play. */
-  badge?: 'job' | 'talk' | 'play' | null
+  /**
+   * `table-job` / `minigame-job`: a job offer of that kind waiting (a spade / a puzzle piece);
+   * `talk`: something new to say; `play`: their minigame job is yours to play.
+   */
+  badge?: 'table-job' | 'minigame-job' | 'talk' | 'play' | null
   muted?: boolean
   active?: boolean
   onOpen: (e: MouseEvent<HTMLButtonElement>) => void
@@ -161,9 +164,9 @@ export function PersonSpot({
             !
           </span>
         )}
-        {badge === 'job' && (
-          <span aria-hidden className="st-motion st-bob absolute -right-1.5 -top-0.5 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#1b4d34] text-gold shadow-[0_0_0_1.5px_#d9a441,0_0_12px_rgba(217,164,65,0.7)]" data-badge="job">
-            <BriefcaseBusiness className="h-3 w-3" strokeWidth={2.5} />
+        {(badge === 'table-job' || badge === 'minigame-job') && (
+          <span aria-hidden className="st-motion st-bob absolute -right-1.5 -top-0.5 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#1b4d34] text-gold shadow-[0_0_0_1.5px_#d9a441,0_0_12px_rgba(217,164,65,0.7)]" data-badge={badge}>
+            {badge === 'table-job' ? <Spade className="h-3 w-3 fill-current" strokeWidth={2.5} /> : <Puzzle className="h-3 w-3" strokeWidth={2.5} />}
           </span>
         )}
         {badge === 'play' && (

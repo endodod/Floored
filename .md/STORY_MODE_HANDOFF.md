@@ -98,7 +98,7 @@ jobs** (3m-5m, `TABLE_JOB_PAY_M`) earn standing and never repeat in a town; mini
 repeat, never the same one twice in a row from a giver. **Jo** now runs **Chip Count**
 (`lib/story/minigames/chip-count.ts`, `components/story/minigames/chip-count.tsx`: five stacks of
 4-8 chips worth 1/5/25/100, 9 s down to 5 s, pick the total of four; score = stacks right ÷ 5) in
-every town. Street markers: a gold **briefcase** for a job offer, "!" for new dialogue, a play
+every town. Street markers: a gold **spade** for a table job offer and a gold **puzzle piece** for a minigame job offer (2026-11-09, owner request; was one briefcase for both), "!" for new dialogue, a play
 badge for a minigame job you hold. The jobs book and person card name the kind and its reward.
 Save version 7 (`jobOffered` → `jobNight`, `minigameNight` dropped). **Open:** the sim's
 never-gambler is now stuck (table jobs they can't do fill all three givers, and nothing else
